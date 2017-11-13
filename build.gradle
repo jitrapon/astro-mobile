@@ -1,24 +1,51 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
 buildscript {
-    ext.kotlin_version = '1.1.51'
+    ext {
+        versionCode = 1
+        versionName = '1.0'
+        kotlinVersion = '1.1.51'
+        buildToolsVersion = '26.0.2'
+        compileSdkVersion = 26
+        targetSdkVersion = 26
+        minSdkVersion = 23
+        minSdkInstantVersion = 21
+        supportLibVersion = '26.1.0'
+        constraintLayoutVersion = '1.0.2'
+        runnerVersion = '1.0.1'
+        rulesVersion = '1.0.1'
+        archLifecycleVersion = '1.0.0'
+        archRoomVersion = '1.0.0'
+        archPagingVersion = '1.0.0-alpha3'
+        daggerVersion = '2.13'
+        facebookSdkVersion = '[4,5)'
+        glide = '4.3.1'
+        retrofit = '2.3.0'
+        keystoreProperties = new Properties()
+        junitVersion = '4.12'
+        espressoVersion = '3.0.1'
+        releaseKeystorePath = 'release.keystore'
+        instantAppVersion = '1.0.0'
+    }
+
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
-
 allprojects {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
 }
 

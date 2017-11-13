@@ -1,27 +1,44 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    
-
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
 
     defaultConfig {
         applicationId "io.jitrapon.glom"
-        minSdkVersion 23
-        targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode rootProject.versionCode
+        versionName rootProject.versionName
+    }
 
-
+    signingConfigs {
+        release {
+            keyAlias rootProject.keystoreProperties['keyAlias']
+            keyPassword rootProject.keystoreProperties['keyPassword']
+            storeFile file(rootProject.releaseKeystorePath)
+            storePassword rootProject.keystoreProperties['storePassword']
+        }
     }
 
     buildTypes {
-       release {
-           minifyEnabled false
-           proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-       }
+        debug {
+            minifyEnabled false
+            ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
+            ext.alwaysUpdateBuildId = false
+            debuggable = true
+        }
+        release {
+            minifyEnabled true
+            crunchPngs false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
     }
 
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
