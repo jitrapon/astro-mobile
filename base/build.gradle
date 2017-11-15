@@ -13,6 +13,9 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         versionCode rootProject.versionCode
         versionName rootProject.versionName
+
+        // base host url for instant app
+        resValue "string", "instant_app_host", "jitrapon.io"
     }
 
     signingConfigs {
@@ -35,7 +38,8 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
-            ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
+            ext.enableCrashlytics = false
+            //TODO need to disable the Crashlytics kit at runtime
             ext.alwaysUpdateBuildId = false
             debuggable = true
         }
@@ -57,16 +61,16 @@ dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
 
-    api ("com.android.support:design:$rootProject.supportLibVersion") {
+    api("com.android.support:design:$rootProject.supportLibVersion") {
         force = true
     }
-    api ("com.android.support:appcompat-v7:$rootProject.supportLibVersion") {
+    api("com.android.support:appcompat-v7:$rootProject.supportLibVersion") {
         force = true
     }
-    api ("com.android.support:recyclerview-v7:$rootProject.supportLibVersion") {
+    api("com.android.support:recyclerview-v7:$rootProject.supportLibVersion") {
         force = true
     }
-    api ("com.android.support:cardview-v7:$rootProject.supportLibVersion") {
+    api("com.android.support:cardview-v7:$rootProject.supportLibVersion") {
         force = true
     }
     api "com.android.support.constraint:constraint-layout:$rootProject.constraintLayoutVersion"
@@ -90,10 +94,11 @@ dependencies {
     implementation "com.facebook.android:facebook-android-sdk:$rootProject.facebookSdkVersion"
 
     testImplementation "junit:junit:$rootProject.junitVersion"
-    androidTestImplementation ("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion", {
+    androidTestImplementation("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion", {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    feature project(':feature')
+    feature project(':board')
+    feature project(":main")
     application project(':app')
 }

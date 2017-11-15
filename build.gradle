@@ -28,7 +28,7 @@ buildscript {
         junitVersion = '4.12'
         espressoVersion = '3.0.1'
         releaseKeystorePath = 'release.keystore'
-        instantAppVersion = '1.0.0'
+        instantAppVersion = '1.1.0'
     }
 
     repositories {
