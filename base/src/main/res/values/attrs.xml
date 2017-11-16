@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="BadgedBottomNavigationView">
+        <attr name="badgeColor" format="color"/>
+        <attr name="badgeRadius" format="dimension"/>
+    </declare-styleable>
+</resources>

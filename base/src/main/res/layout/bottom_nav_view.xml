@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<io.jitrapon.glom.base.ui.widget.BadgedBottomNavigationView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottom_navigation"
+    style="@style/Widget.Glom.BottomNavigationView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:menu="@menu/bottom_nav_items" />

@@ -99,6 +99,5 @@ dependencies {
     })
 
     feature project(':board')
-    feature project(":main")
     application project(':app')
 }

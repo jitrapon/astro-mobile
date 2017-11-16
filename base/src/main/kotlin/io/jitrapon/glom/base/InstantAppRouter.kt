@@ -15,10 +15,10 @@ object InstantAppRouter {
     /**
      * Launch a specfic activity by specifying the module under which the activity belongs to
      */
-    fun navigateTo(context: Context?, moduleName: String) {
+    fun navigateTo(context: Context?, moduleName: String?) {
         context?.let {
             it.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                    "https://${it.getString(R.string.instant_app_host)}/${moduleName.toLowerCase()}")).apply {
+                    "https://${it.getString(R.string.instant_app_host)}/${moduleName?.toLowerCase()}")).apply {
                 addCategory(Intent.CATEGORY_BROWSABLE)
             })
         }

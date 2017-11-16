@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <!-- application main palette
+        See http://www.colorcombos.com/color-schemes/907/ColorCombo907.html
+         http://www.colorcombos.com/color-schemes/134/ColorCombo134.html
+         http://www.colorcombos.com/color-schemes/202/ColorCombo202.html -->
+
+    <!-- app-wide palette -->
+    <color name="lightish_red">#D74B4B</color>
+    <color name="reddish">#d32f2f</color>
+    <color name="light_grey">#ffeeeeee</color>
+    <color name="lighter_grey">#f6f6f6</color>
+    <color name="blue_grey">#475F77</color>
+    <color name="greyish_brown">#424242</color>
+    <color name="grey">#ffafbdc4</color>
+    <color name="warm_grey">#9b9b9b</color>
+    <color name="blueish_purple">#4151fd</color>
+    <color name="white">#ffffffff</color>
+    <color name="transparent">@null</color>
 </resources>

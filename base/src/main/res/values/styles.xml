@@ -1,11 +1,58 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Root styles that vary by API level -->
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <!-- Prevents crash on certain devices to namespace conflict -->
+    <style name="FrameworkRoot.Theme" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <style name="Theme.Glom" parent="FrameworkRoot.Theme">
+        <item name="colorPrimary">@color/lightish_red</item>
+        <item name="colorPrimaryDark">@color/reddish</item>
+        <item name="colorAccent">@color/reddish</item>
+
+        <item name="windowActionBar">false</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@color/transparent</item>
+
+        <item name="android:homeAsUpIndicator">@drawable/ic_up</item>
+        <item name="homeAsUpIndicator">@drawable/ic_up</item>
+
+        <item name="android:textColorPrimary">@color/greyish_brown</item>
+        <item name="android:textColorLink">@color/blueish_purple</item>
+        <item name="android:textViewStyle">@style/Widget.Glom.TextView</item>
+        <item name="android:textAppearance">@style/TextAppearance.H4</item>
+        <item name="android:textAppearanceSmall">@style/TextAppearance.H4</item>
+        <item name="android:textAppearanceMedium">@style/TextAppearance.H3</item>
+        <item name="android:textAppearanceLarge">@style/TextAppearance.H1</item>
+    </style>
+
+    <!-- Text appearances -->
+    <style name="TextAppearance.H1" parent="@style/TextAppearance.AppCompat.Large" />
+
+    <style name="TextAppearance.H3" parent="@style/TextAppearance.AppCompat.Medium" >
+        <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="TextAppearance.H4" parent="@style/TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="TextAppearance.H5" parent="@style/TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <!-- Widget styles -->
+    <style name="Widget.Glom.TextView" parent="@android:style/Widget.Material.TextView">
+        <item name="android:lineSpacingMultiplier">@dimen/text_line_spacing</item>
+    </style>
+
+    <style name="Widget.Glom.BottomNavigationView" parent="Widget.Design.BottomNavigationView">
+        <item name="itemIconTint">@color/nav_icon_tint</item>
+        <item name="android:background">?android:attr/colorBackground</item>
+        <item name="android:elevation" tools:targetApi="lollipop">@dimen/bottom_nav_elevation</item>
+        <item name="badgeColor">?colorAccent</item>
+        <item name="badgeRadius">@dimen/bottom_nav_badge_radius</item>
     </style>
 
 </resources>

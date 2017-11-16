@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/board_nav_item"
+        android:checkable="true"
+        android:visible="false" />
+    <item
+        android:id="@+id/map_nav_item"
+        android:checkable="true"
+        android:visible="false" />
+    <item
+        android:id="@+id/explore_nav_item"
+        android:checkable="true"
+        android:visible="false" />
+    <item
+        android:id="@+id/profile_nav_item"
+        android:checkable="true"
+        android:visible="false" />
+</menu>

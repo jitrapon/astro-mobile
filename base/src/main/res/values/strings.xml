@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">Glom</string>
+    <string name="application_name">Glom</string>
+
+    <!-- bottom navigation view -->
+    <string name="main_nav_item_board_title">Board</string>
+    <string name="main_nav_item_map_title">Map</string>
+    <string name="main_nav_item_explore_title">Explore</string>
+    <string name="main_nav_item_profile_title">Profile</string>
 </resources>

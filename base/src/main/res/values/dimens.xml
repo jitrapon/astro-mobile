@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- bottom navigation view -->
+    <dimen name="bottom_nav_elevation">8dp</dimen>
+    <dimen name="bottom_nav_badge_radius">3dp</dimen>
+
+    <!-- line spacing -->
+    <item name="text_line_spacing" format="float" type="dimen">1.2</item>
+</resources>
