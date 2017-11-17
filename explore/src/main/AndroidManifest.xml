@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.jitrapon.glom.explore">
+
+    <application>
+        <activity android:name=".ExploreActivity">
+            <intent-filter android:order="1"
+                android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="@string/instant_app_host"
+                    android:pathPattern="/explore" />
+            </intent-filter>
+            <intent-filter android:order="1"
+                android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="http"
+                    android:host="@string/instant_app_host"
+                    android:pathPattern="/explore" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

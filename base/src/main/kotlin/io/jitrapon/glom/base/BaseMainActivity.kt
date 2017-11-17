@@ -1,7 +1,10 @@
 package io.jitrapon.glom.base
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import io.jitrapon.glom.R
+import io.jitrapon.glom.base.navigation.NavigationItem
+import io.jitrapon.glom.base.navigation.Router
+import io.jitrapon.glom.base.ui.BaseActivity
 import kotlinx.android.synthetic.main.bottom_nav_view.*
 
 /**
@@ -12,11 +15,16 @@ import kotlinx.android.synthetic.main.bottom_nav_view.*
  *
  * @author Jitrapon Tiachunpun
  */
-abstract class BaseMainActivity : AppCompatActivity() {
+abstract class BaseMainActivity : BaseActivity() {
 
     /* Navigation item (icon, title) representing this activity.
         This is shown in the navigation bar or drawer */
     private lateinit var selfNavItem: NavigationItem
+
+    companion object {
+
+        private const val BOTTOM_NAV_ANIM_GRACE = 115L
+    }
 
     //region activity lifecycle
 
@@ -49,7 +57,7 @@ abstract class BaseMainActivity : AppCompatActivity() {
             it.setOnNavigationItemSelectedListener {
                 NavigationItem.getById(it.itemId).let {
                     if (it != selfNavItem) {
-//                        InstantAppRouter.navigateTo(BaseMainActivity@this, it.module)
+                        selectBottomNavItem(it)
                         return@setOnNavigationItemSelectedListener true
                     }
                     return@setOnNavigationItemSelectedListener false
@@ -67,6 +75,16 @@ abstract class BaseMainActivity : AppCompatActivity() {
      * NAVDRAWER_ITEM_INVALID to mean that this Activity should not have a Nav Drawer.
      */
     open fun getSelfNavItem() = NavigationItem.INVALID
+
+    /**
+     * Launches a new module based on the navigation item that was clicked. Slightly delay the launch
+     * so that the nav icon animation has ended first.
+     */
+    fun selectBottomNavItem(item: NavigationItem) {
+        handler.postDelayed({
+            Router.navigate(this, item.module, true, arrayOf(R.anim.fade_in, R.anim.fade_out))
+        }, BOTTOM_NAV_ANIM_GRACE)
+    }
 
     //endregion
 }

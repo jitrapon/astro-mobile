@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.explore
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4

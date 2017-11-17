@@ -3,8 +3,9 @@
     package="io.jitrapon.glom.board">
 
     <application>
-        <activity android:name="io.jitrapon.glom.board.BoardActivity">
-            <intent-filter android:order="1">
+        <activity android:name=".BoardActivity">
+            <intent-filter android:order="1"
+                android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -15,7 +16,8 @@
                     android:host="@string/instant_app_host"
                     android:pathPattern="/board" />
             </intent-filter>
-            <intent-filter android:order="1">
+            <intent-filter android:order="1"
+                android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />

@@ -2,5 +2,8 @@ apply plugin: 'com.android.instantapp'
 
 dependencies {
     implementation project(':board')
+    implementation project(':map')
     implementation project(':base')
+    implementation project(':explore')
+    implementation project(':profile')
 }

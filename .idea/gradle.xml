@@ -11,7 +11,10 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/base" />
             <option value="$PROJECT_DIR$/board" />
+            <option value="$PROJECT_DIR$/explore" />
             <option value="$PROJECT_DIR$/instantapp" />
+            <option value="$PROJECT_DIR$/map" />
+            <option value="$PROJECT_DIR$/profile" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
