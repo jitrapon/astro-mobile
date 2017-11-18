@@ -57,7 +57,6 @@ android {
 }
 
 dependencies {
-    api 'com.android.support:appcompat-v7:26.1.0'
     api 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -96,7 +95,7 @@ dependencies {
     implementation "com.google.dagger:dagger-android-support:$rootProject.daggerVersion"
     annotationProcessor "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
 
-    implementation "com.facebook.android:facebook-android-sdk:$rootProject.facebookSdkVersion"
+    implementation "com.facebook.android:facebook-login:$rootProject.facebookSdkVersion"
 
     testImplementation "junit:junit:$rootProject.junitVersion"
     androidTestImplementation("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion", {
