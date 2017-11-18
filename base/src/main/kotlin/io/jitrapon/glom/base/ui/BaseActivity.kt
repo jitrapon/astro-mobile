@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.ui
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
+import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.base.data.Alert
 import io.jitrapon.glom.base.data.Snackbar
 import io.jitrapon.glom.base.data.Toast
@@ -22,6 +23,11 @@ abstract class BaseActivity : AppCompatActivity() {
 
     /* subclass should overwrite this variable for naming the activity */
     var tag: String = "base"
+
+    /* indicates whether or not this Activity instance is Instant App */
+    val isInstantApp: Boolean by lazy {
+        InstantApps.isInstantApp(this)
+    }
 
     /* shared handler object */
     lateinit var handler: Handler

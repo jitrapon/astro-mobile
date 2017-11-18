@@ -61,6 +61,9 @@ dependencies {
     api 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
+    implementation ("com.google.android.instantapps:instantapps:$rootProject.instantAppVersion") {
+        exclude group: 'com.android.support'
+    }
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
 
     api("com.android.support:design:$rootProject.supportLibVersion") {
@@ -101,8 +104,8 @@ dependencies {
     })
 
     feature project(':board')
-    application project(':app')
     feature project(":map")
     feature project(":explore")
     feature project(":profile")
+    application project(':app')
 }

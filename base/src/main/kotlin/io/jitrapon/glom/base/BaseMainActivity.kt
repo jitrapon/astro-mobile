@@ -80,9 +80,9 @@ abstract class BaseMainActivity : BaseActivity() {
      * Launches a new module based on the navigation item that was clicked. Slightly delay the launch
      * so that the nav icon animation has ended first.
      */
-    fun selectBottomNavItem(item: NavigationItem) {
+    private fun selectBottomNavItem(item: NavigationItem) {
         handler.postDelayed({
-            Router.navigate(this, item.module, true, arrayOf(R.anim.fade_in, R.anim.fade_out))
+            Router.navigate(this, isInstantApp, item.module, true, arrayOf(R.anim.fade_in, R.anim.fade_out))
         }, BOTTOM_NAV_ANIM_GRACE)
     }
 

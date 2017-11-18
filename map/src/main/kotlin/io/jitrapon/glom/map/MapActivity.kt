@@ -1,4 +1,4 @@
-package jitrapon.io.glom.map
+package io.jitrapon.glom.map
 
 import android.os.Bundle
 import io.jitrapon.glom.base.BaseMainActivity

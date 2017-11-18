@@ -52,8 +52,5 @@ android {
 
 dependencies {
     implementation project(':base')
-    implementation ("com.google.android.instantapps:instantapps:$rootProject.instantAppVersion") {
-        exclude group: 'com.android.support'
-    }
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
 }
