@@ -56,5 +56,9 @@ class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
     companion object {
         private const val TAG = "SingleLiveEvent"
     }
+
+    fun execute(block: () -> Unit) {
+
+    }
 }
 

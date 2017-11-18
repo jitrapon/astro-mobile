@@ -1,5 +1,7 @@
 package io.jitrapon.glom.base.ui
 
+import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
@@ -36,12 +38,15 @@ abstract class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         handler = Handler()
+
+        onCreateViewModel()
+        subscribeToObservables()
     }
 
     /**
      * Common UI Action handlers for all child activities
      */
-    val uiActionHandler: ((UiActionModel?) -> Unit) = {
+    private val viewActionHandler: Observer<UiActionModel> = Observer {
         it?.let {
             when (it) {
                 is Toast -> showToastMessage(it.message)
@@ -50,6 +55,23 @@ abstract class BaseActivity : AppCompatActivity() {
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
             }
         }
+    }
+
+    /**
+     * Called when one or more ViewModel instances should be created
+     */
+    abstract fun onCreateViewModel()
+
+    /**
+     * Subscribe to LiveData and LiveEvent from the ViewModel
+     */
+    open fun subscribeToObservables() {}
+
+    /**
+     * Should be called by child class to handle all view action observables automatically
+     */
+    fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
+        observableViewAction.observe(this, viewActionHandler)
     }
 
     /**
