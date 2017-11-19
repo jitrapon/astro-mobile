@@ -23,7 +23,7 @@ abstract class BaseMainActivity : BaseActivity() {
 
     companion object {
 
-        private const val BOTTOM_NAV_ANIM_GRACE = 115L
+        private const val BOTTOM_NAV_ANIM_GRACE = 175L
     }
 
     //region activity lifecycle

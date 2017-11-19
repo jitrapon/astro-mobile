@@ -1,5 +1,8 @@
 package io.jitrapon.glom.base.util
 
+import android.arch.lifecycle.ViewModel
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.support.v4.app.Fragment
 
 /**
@@ -29,4 +32,12 @@ fun Fragment.showAlertDialog(title: String?, message: String?, positiveOptionTex
                              onCancel: (() -> Unit)? = null) {
     activity?.showAlertDialog(title, message, positiveOptionText, onPositiveOptionClicked, negativeOptionText, onNegativeOptionClicked,
             isCancelable, onCancel)
+}
+
+/**
+ * Convenient function for retrieving the ViewModel based on its class name
+ */
+fun <T : ViewModel> Fragment.obtainViewModel(viewModelClass: Class<T>, fromActivity: Boolean = false): T {
+    return if (fromActivity) ViewModelProviders.of(activity, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
+    else ViewModelProviders.of(this, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
 }

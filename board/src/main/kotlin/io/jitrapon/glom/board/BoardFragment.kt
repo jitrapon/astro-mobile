@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.util.obtainViewModel
 
 /**
  * Fragment showing the board items in a group
@@ -13,7 +14,21 @@ import io.jitrapon.glom.base.ui.BaseFragment
  */
 class BoardFragment : BaseFragment() {
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.board_fragment, container, false)
+    private lateinit var viewModel: BoardViewModel
+
+    companion object {
+
+        fun newInstance(): BoardFragment = BoardFragment()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+            inflater.inflate(R.layout.board_fragment, container, false)
+
+    override fun onCreateViewModel() {
+        viewModel = obtainViewModel(BoardViewModel::class.java)
+    }
+
+    override fun subscribeToObservables() {
+        subscribeToViewActionObservables(viewModel.getObservableViewAction())
     }
 }

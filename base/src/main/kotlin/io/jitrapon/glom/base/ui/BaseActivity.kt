@@ -41,6 +41,11 @@ abstract class BaseActivity : AppCompatActivity() {
 
         onCreateViewModel()
         subscribeToObservables()
+
+        // if we're being restored from a previous state,
+        // then we don't need to do anything and should return or else
+        // we could end up with overlapping fragments
+        savedInstanceState ?: onCreateFragment(savedInstanceState)
     }
 
     /**
@@ -58,9 +63,15 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     /**
+     * Called when one or more instances of fragments have to be created.
+     * Only called if savedInstanceState is NULL
+     */
+    open fun onCreateFragment(savedInstanceState: Bundle?) {}
+
+    /**
      * Called when one or more ViewModel instances should be created
      */
-    abstract fun onCreateViewModel()
+    open fun onCreateViewModel() {}
 
     /**
      * Subscribe to LiveData and LiveEvent from the ViewModel
@@ -70,7 +81,7 @@ abstract class BaseActivity : AppCompatActivity() {
     /**
      * Should be called by child class to handle all view action observables automatically
      */
-    fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
+    protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
     }
 

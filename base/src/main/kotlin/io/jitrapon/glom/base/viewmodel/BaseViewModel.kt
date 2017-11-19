@@ -13,7 +13,7 @@ import io.jitrapon.glom.base.data.UiActionModel
 abstract class BaseViewModel : ViewModel() {
 
     /* subclass of this class should set appropriate UiActionModel to this variable to emit action to the view */
-    protected val observableViewAction = LiveEvent<UiActionModel>()
+    private val observableViewAction = LiveEvent<UiActionModel>()
 
     fun getObservableViewAction(): LiveData<UiActionModel> = observableViewAction
 }
