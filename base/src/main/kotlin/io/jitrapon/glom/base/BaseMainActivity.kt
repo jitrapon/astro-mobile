@@ -81,9 +81,10 @@ abstract class BaseMainActivity : BaseActivity() {
      * so that the nav icon animation has ended first.
      */
     private fun selectBottomNavItem(item: NavigationItem) {
-        handler.postDelayed({
-            Router.navigate(this, isInstantApp, item.module, true, arrayOf(R.anim.fade_in, R.anim.fade_out))
-        }, BOTTOM_NAV_ANIM_GRACE)
+        delayRun(BOTTOM_NAV_ANIM_GRACE) {
+            Router.navigate(this, isInstantApp, item.module, true,
+                    arrayOf(R.anim.fade_in, R.anim.fade_out))
+        }
     }
 
     //endregion

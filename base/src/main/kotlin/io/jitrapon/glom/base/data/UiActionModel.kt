@@ -17,3 +17,4 @@ class Alert(val title: String?, val message: String?, val positiveOptionText: St
             val onNegativeOptionClicked: (() -> Unit)? = null, val isCancelable: Boolean = true,
             val onCancel: (() -> Unit)? = null) : UiActionModel
 
+class Loading(val show: Boolean): UiActionModel

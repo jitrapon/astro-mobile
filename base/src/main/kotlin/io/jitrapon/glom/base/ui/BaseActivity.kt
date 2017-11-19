@@ -32,15 +32,15 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     /* shared handler object */
-    lateinit var handler: Handler
+    val handler: Handler by lazy {
+        Handler()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        handler = Handler()
-
         onCreateViewModel()
-        subscribeToObservables()
+        onSubscribeToObservables()
 
         // if we're being restored from a previous state,
         // then we don't need to do anything and should return or else
@@ -76,7 +76,7 @@ abstract class BaseActivity : AppCompatActivity() {
     /**
      * Subscribe to LiveData and LiveEvent from the ViewModel
      */
-    open fun subscribeToObservables() {}
+    open fun onSubscribeToObservables() {}
 
     /**
      * Should be called by child class to handle all view action observables automatically
@@ -107,5 +107,14 @@ abstract class BaseActivity : AppCompatActivity() {
                               onNegativeOptionClicked: (() -> Unit)?, cancelable: Boolean, onCancel: (() -> Unit)?) {
         showAlertDialog(title, message, positiveOptionText, onPositiveOptionClicked,
                 negativeOptionText, onNegativeOptionClicked, cancelable, onCancel)
+    }
+
+    /**
+     * Wrapper around Android's handler to delay run a Runnable on the main thread
+     */
+    fun delayRun(delay: Long, block: (Handler) -> Unit) {
+        handler.postDelayed({
+            block(handler)
+        }, delay)
     }
 }

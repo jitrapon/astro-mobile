@@ -3,6 +3,8 @@ package io.jitrapon.glom.base.data
 import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Observer
+import android.os.Handler
+import android.os.Looper
 import android.support.annotation.MainThread
 import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
@@ -24,6 +26,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
 
     private val pending = AtomicBoolean(false)
+
+    private val handler: Handler by lazy {
+        Handler(Looper.getMainLooper())
+    }
 
     @MainThread
     override fun observe(owner: LifecycleOwner, observer: Observer<T>) {
@@ -57,8 +63,21 @@ class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
         private const val TAG = "SingleLiveEvent"
     }
 
-    fun execute(block: () -> Unit) {
-
+    /**
+     * Convenient function to run a series of LiveEvent actions, with an optional of
+     * delay between actions as argument. This can help in avoiding UI lag as multiple events
+     * are fired simultaneously too close to each other. Actions are executed in the order in which
+     * they were added.
+     */
+    fun execute(actions: Array<T?>, delayBetween: Long = 150L) {
+        var index = 0
+        val runnable = object: Runnable {
+            override fun run() {
+                value = actions[index]
+                if (++index < actions.size) handler.postDelayed(this, delayBetween)
+            }
+        }
+        handler.post(runnable)
     }
 }
 
