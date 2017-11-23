@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.util
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
+import android.support.annotation.ColorRes
 import android.support.v4.app.Fragment
 
 /**
@@ -20,9 +21,9 @@ fun Fragment.showToast(message: String?) {
     activity?.showToast(message)
 }
 
-fun Fragment.showSnackbar(message: String?, actionMessage: String? = null, actionCallback: (() -> Unit)? = null) {
+fun Fragment.showSnackbar(message: String?, resId: Int?, actionMessage: String? = null, actionCallback: (() -> Unit)? = null) {
     activity?.let {
-        view?.showSnackbar(message, actionMessage, actionCallback)
+        view?.showSnackbar(message, resId, actionMessage, actionCallback)
     }
 }
 
@@ -41,3 +42,5 @@ fun <T : ViewModel> Fragment.obtainViewModel(viewModelClass: Class<T>, fromActiv
     return if (fromActivity) ViewModelProviders.of(activity, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
     else ViewModelProviders.of(this, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
 }
+
+fun Fragment.color(@ColorRes colorRes: Int) = context?.color(colorRes)

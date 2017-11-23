@@ -65,7 +65,7 @@ class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
 
     /**
      * Convenient function to run a series of LiveEvent actions, with an optional of
-     * delay between actions as argument. This can help in avoiding UI lag as multiple events
+     * delay between actions as an argument. This can help in avoiding UI lag as multiple events
      * are fired simultaneously too close to each other. Actions are executed in the order in which
      * they were added.
      */

@@ -55,7 +55,7 @@ abstract class BaseActivity : AppCompatActivity() {
         it?.let {
             when (it) {
                 is Toast -> showToastMessage(it.message)
-                is Snackbar -> showSnackbarMessage(it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> showSnackbarMessage(it.message, it.resId, it.actionMessage, it.actionCallback)
                 is Alert -> showAlertMessage(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
             }
@@ -95,8 +95,8 @@ abstract class BaseActivity : AppCompatActivity() {
     /**
      * Shows a snackbar message. Override this function to make it behave differently
      */
-    open fun showSnackbarMessage(message: String?, actionMessage: String?, actionCallback: (() -> Unit)? = null) {
-        showSnackbar(message, actionMessage, actionCallback)
+    open fun showSnackbarMessage(message: String?, resId: Int?, actionMessage: String?, actionCallback: (() -> Unit)? = null) {
+        showSnackbar(message, resId, actionMessage, actionCallback)
     }
 
     /**

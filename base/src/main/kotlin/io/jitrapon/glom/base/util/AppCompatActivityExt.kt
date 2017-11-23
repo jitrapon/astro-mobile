@@ -58,7 +58,7 @@ private inline fun FragmentManager.transact(action: FragmentTransaction.() -> Un
 /**
  * Show a snackbar message with optional action and callback
  */
-fun AppCompatActivity.showSnackbar(message: String?, actionMessage: String? = null,
+fun AppCompatActivity.showSnackbar(message: String?, resId: Int?, actionMessage: String? = null,
                                    actionCallback: (() -> Unit)? = null) {
-    window.decorView.rootView.showSnackbar(message, actionMessage, actionCallback)
+    window.decorView.rootView.showSnackbar(message, resId, actionMessage, actionCallback)
 }

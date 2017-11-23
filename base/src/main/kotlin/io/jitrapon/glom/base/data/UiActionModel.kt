@@ -1,5 +1,7 @@
 package io.jitrapon.glom.base.data
 
+import android.support.annotation.StringRes
+
 /**
  * A UiActionModel class represents UI action events (e.g. snackbar, toast, navigation, alert, etc.).
  * Classes that implements this interface are usually wrapped as LiveEvent.
@@ -10,7 +12,7 @@ interface UiActionModel
 
 class Toast(val message: String?) : UiActionModel
 
-class Snackbar(val message: String?, val actionMessage: String? = null, val actionCallback: (() -> Unit)?) : UiActionModel
+class Snackbar(val message: String? = null, @StringRes val resId: Int? = null, val actionMessage: String? = null, val actionCallback: (() -> Unit)? = null) : UiActionModel
 
 class Alert(val title: String?, val message: String?, val positiveOptionText: String? = null,
             val onPositiveOptionClicked: (() -> Unit)? = null, val negativeOptionText: String? = null,
@@ -18,3 +20,5 @@ class Alert(val title: String?, val message: String?, val positiveOptionText: St
             val onCancel: (() -> Unit)? = null) : UiActionModel
 
 class Loading(val show: Boolean): UiActionModel
+
+class EmptyLoading(val show: Boolean): UiActionModel

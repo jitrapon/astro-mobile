@@ -13,23 +13,12 @@ import java.util.*
 interface DataModel : Parcelable {
 
     /**
-     * The time at which the model is retrieved by a repository
+     * Optional field, time at which the model is retrieved by a repository
      */
-    val retrievedTime: Date
+    val retrievedTime: Date?
 
     /**
-     * Type of which the model is retrieved from
+     * Represents the error when the model fails to be retrieved. Null if there is no error.
      */
-    val sourceType: SourceType
-
-    /**
-     * A class that encapsulates the data of the model upon successful data retrieval
-     */
-    interface Data : Parcelable
-
-    /**
-     * A class representing failure to retrieve the model. Classes that implements this will contain
-     * more information about the error.
-     */
-    interface Error: Parcelable
+    val error: Throwable?
 }

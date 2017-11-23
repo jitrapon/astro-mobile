@@ -2,6 +2,9 @@
     <!-- application-level -->
     <string name="application_name">Glom</string>
 
+    <!-- error messages -->
+    <string name="error_generic">An error occurred, please try again</string>
+
     <!-- bottom navigation view -->
     <string name="main_nav_item_board_title">Board</string>
     <string name="main_nav_item_map_title">Map</string>

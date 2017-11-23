@@ -43,6 +43,11 @@
     </style>
 
     <!-- Widget styles -->
+    <style name="Widget.Glom.ProgressBar" parent="@android:style/Widget.ProgressBar">
+        <item name="android:colorAccent">@color/reddish</item>
+        <item name="android:background">@color/transparent</item>
+    </style>
+
     <style name="Widget.Glom.TextView" parent="@android:style/Widget.Material.TextView">
         <item name="android:lineSpacingMultiplier">@dimen/text_line_spacing</item>
     </style>

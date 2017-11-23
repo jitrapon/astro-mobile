@@ -1,9 +1,12 @@
 package io.jitrapon.glom.board
 
+import android.arch.lifecycle.Observer
 import android.support.v4.widget.SwipeRefreshLayout
+import android.widget.ProgressBar
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.obtainViewModel
 import kotlinx.android.synthetic.main.board_fragment.*
+import kotlinx.android.synthetic.main.loading_indicator.*
 
 /**
  * Fragment showing the board items in a group
@@ -29,11 +32,16 @@ class BoardFragment : BaseFragment() {
 
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
+
+        // on refresh board items
+        viewModel.getObservableBoardItems().observe(this, Observer {
+
+        })
     }
 
     override fun onRefresh() {
-        delayRun(1000L) {
-            viewModel.loadBoard()
-        }
+        viewModel.loadBoard()
     }
+
+    override fun getEmptyLoadingView(): ProgressBar? = loading_indicator
 }

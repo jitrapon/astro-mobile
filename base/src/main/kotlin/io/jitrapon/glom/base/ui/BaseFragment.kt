@@ -9,7 +9,10 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import io.jitrapon.glom.R
 import io.jitrapon.glom.base.data.*
+import io.jitrapon.glom.base.util.color
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
@@ -39,6 +42,7 @@ abstract class BaseFragment : Fragment() {
         getSwipeRefreshLayout()?.apply {
             refreshLayout = this
             setOnRefreshListener(onRefreshListener)
+            setColorSchemeColors(color(R.color.lightish_red)!!)
         }
         onSetupView(view)
     }
@@ -57,10 +61,11 @@ abstract class BaseFragment : Fragment() {
         it?.let {
             when (it) {
                 is Toast -> showToastMessage(it.message)
-                is Snackbar -> showSnackbarMessage(it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> showSnackbarMessage(it.message, it.resId, it.actionMessage, it.actionCallback)
                 is Alert -> showAlertMessage(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is Loading -> showLoading(it.show)
+                is EmptyLoading -> showEmptyLoading(it.show)
             }
         }
     }
@@ -123,8 +128,8 @@ abstract class BaseFragment : Fragment() {
     /**
      * Shows a snackbar message. Override this function to make it behave differently
      */
-    open fun showSnackbarMessage(message: String?, actionMessage: String?, actionCallback: (() -> Unit)? = null) {
-        showSnackbar(message, actionMessage, actionCallback)
+    open fun showSnackbarMessage(message: String?, resId: Int?, actionMessage: String?, actionCallback: (() -> Unit)? = null) {
+        showSnackbar(message, resId, actionMessage, actionCallback)
     }
 
     /**
@@ -150,6 +155,23 @@ abstract class BaseFragment : Fragment() {
             }
         }
     }
+
+    /**
+     * Indicates that the view has no data and should be showing the main loading progress bar.
+     * Override this function to make it behave differently
+     */
+    open fun showEmptyLoading(show: Boolean) {
+        getEmptyLoadingView()?.let {
+            it.visibility = if (show) View.VISIBLE else View.GONE
+        }
+        // if somehow the refreshlayout is still loading, set it to hide
+        if (!show) showLoading(false)
+    }
+
+    /**
+     * Returns a loading progress bar shown when the view is empty and is about to load a data
+     */
+    open fun getEmptyLoadingView(): ProgressBar? = null
 
     /**
      * Wrapper around Android's handler to delay run a Runnable on the main thread

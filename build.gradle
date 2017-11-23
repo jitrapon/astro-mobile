@@ -29,6 +29,8 @@ buildscript {
         espressoVersion = '3.0.1'
         releaseKeystorePath = 'release.keystore'
         instantAppVersion = '1.1.0'
+        rxJavaVersion = '2.1.6'
+        rxAndroidVersion = '2.0.1'
     }
 
     repositories {

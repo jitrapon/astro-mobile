@@ -57,14 +57,20 @@ android {
 }
 
 dependencies {
-    api 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
+    // constraint layout
+    api 'com.android.support.constraint:constraint-layout:1.0.2'
+
+    // instant app
     implementation ("com.google.android.instantapps:instantapps:$rootProject.instantAppVersion") {
         exclude group: 'com.android.support'
     }
+
+    // kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
 
+    // support library
     api("com.android.support:design:$rootProject.supportLibVersion") {
         force = true
     }
@@ -79,29 +85,39 @@ dependencies {
     }
     api "com.android.support.constraint:constraint-layout:$rootProject.constraintLayoutVersion"
 
+    // architecture components
     api "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
     implementation "android.arch.lifecycle:common-java8:$rootProject.archLifecycleVersion"
     annotationProcessor "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
     testImplementation "android.arch.core:core-testing:$rootProject.archLifecycleVersion"
 
+    // room
     implementation "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
     annotationProcessor "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
     testImplementation "android.arch.persistence.room:testing:$rootProject.archRoomVersion"
     implementation "android.arch.paging:runtime:$rootProject.archPagingVersion"
 
+    // dagger
     implementation "com.google.dagger:dagger:$rootProject.daggerVersion"
     annotationProcessor "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
     implementation "com.google.dagger:dagger-android:$rootProject.daggerVersion"
     implementation "com.google.dagger:dagger-android-support:$rootProject.daggerVersion"
     annotationProcessor "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
 
+    // facebook
     implementation "com.facebook.android:facebook-login:$rootProject.facebookSdkVersion"
 
+    // reactive
+    api "io.reactivex.rxjava2:rxjava:$rootProject.rxJavaVersion"
+    api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroidVersion"
+
+    // testing
     testImplementation "junit:junit:$rootProject.junitVersion"
     androidTestImplementation("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion", {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+    // modules
     feature project(':board')
     feature project(":map")
     feature project(":explore")

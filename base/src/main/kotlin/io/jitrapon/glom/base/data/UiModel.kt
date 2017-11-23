@@ -6,4 +6,11 @@ package io.jitrapon.glom.base.data
  *
  * @author Jitrapon Tiachunpun
  */
-interface UiModel
+interface UiModel {
+
+    enum class Status {
+        SUCCESS, ERROR
+    }
+
+    val status: Status
+}
