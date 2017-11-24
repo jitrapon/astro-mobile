@@ -24,20 +24,19 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
-            ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
+            useProguard false
+            debuggable true
+            ext.enableCrashlytics = false       //TODO need to disable the Crashlytics kit at runtime
             ext.alwaysUpdateBuildId = false
-            debuggable = true
         }
         release {
             minifyEnabled true
+            useProguard true
+            debuggable false
             crunchPngs false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            shrinkResources true
             signingConfig signingConfigs.release
         }
-    }
-
-    lintOptions {
-        abortOnError false
     }
 }
 

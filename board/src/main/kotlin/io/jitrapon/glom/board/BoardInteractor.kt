@@ -9,6 +9,7 @@ import io.jitrapon.glom.board.data.BoardItem
 import io.jitrapon.glom.board.data.InMemoryBoardRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 /**
  * Interactor for dealing with Board logic
@@ -33,6 +34,7 @@ class BoardInteractor {
 
     fun loadBoardItems(onComplete: (AsyncResult<List<BoardItem>>) -> Unit) {
         networkRepository.load()
+                .delay(1, TimeUnit.SECONDS)
                 .map { it.items }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())

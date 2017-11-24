@@ -11,6 +11,8 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         versionCode rootProject.versionCode
         versionName rootProject.versionName
+
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     signingConfigs {
@@ -35,18 +37,14 @@ android {
             minifyEnabled false
             ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
             ext.alwaysUpdateBuildId = false
-            debuggable = true
+            debuggable true
         }
         release {
             minifyEnabled true
             crunchPngs false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
             signingConfig signingConfigs.release
         }
-    }
-
-    lintOptions {
-        abortOnError false
     }
 }
 

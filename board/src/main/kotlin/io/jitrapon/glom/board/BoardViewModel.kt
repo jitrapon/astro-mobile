@@ -34,7 +34,7 @@ class BoardViewModel : BaseViewModel() {
         loadData(interactor::loadBoardItems, observableBoardItems.value?.isEmpty(), {
             when (it) {
                 is AsyncSuccessResult -> {
-                    BoardUiModel(items = it.result)
+                    observableBoardItems.value = it.result
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
