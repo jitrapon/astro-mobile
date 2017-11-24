@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.data
+package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.data.Repository
 import io.jitrapon.glom.base.data.SourceType

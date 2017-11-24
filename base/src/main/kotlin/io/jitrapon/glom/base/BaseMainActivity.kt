@@ -1,11 +1,11 @@
 package io.jitrapon.glom.base
 
 import android.os.Bundle
+import android.support.design.widget.BottomNavigationView
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.navigation.NavigationItem
 import io.jitrapon.glom.base.navigation.Router
 import io.jitrapon.glom.base.ui.BaseActivity
-import kotlinx.android.synthetic.main.bottom_nav_view.*
 
 /**
  * Base Activity class for the main entry point of the application. Contains shared activity logic
@@ -37,12 +37,12 @@ abstract class BaseMainActivity : BaseActivity() {
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
 
-        setupBottomNavBar(arrayOf(NavigationItem.BOARD, NavigationItem.MAP,
+        setupBottomNavBar(getBottomNavBar(), arrayOf(NavigationItem.BOARD, NavigationItem.MAP,
                 NavigationItem.EXPLORE, NavigationItem.PROFILE))
     }
 
-    private fun setupBottomNavBar(items: Array<NavigationItem>) {
-        bottom_navigation?.let {
+    private fun setupBottomNavBar(bottomNavBar: BottomNavigationView, items: Array<NavigationItem>) {
+        bottomNavBar.let {
             it.menu.let {
                 for (item in items) {
                     it.findItem(item.id)?.let {
@@ -86,6 +86,11 @@ abstract class BaseMainActivity : BaseActivity() {
                     arrayOf(R.anim.fade_in, R.anim.fade_out))
         }
     }
+
+    /**
+     * Returns the bottom navigation view
+     */
+    abstract fun getBottomNavBar(): BottomNavigationView
 
     //endregion
 }

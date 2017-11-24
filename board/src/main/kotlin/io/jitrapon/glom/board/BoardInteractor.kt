@@ -4,9 +4,6 @@ import android.os.Parcel
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
-import io.jitrapon.glom.board.data.Board
-import io.jitrapon.glom.board.data.BoardItem
-import io.jitrapon.glom.board.data.InMemoryBoardRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
@@ -24,23 +21,27 @@ class BoardInteractor {
     private lateinit var networkRepository: InMemoryBoardRepository
 
     /*
-     * Cached board items
+     * Cached board state. Will be updated whenever loadBoard() function
+     * is called
      */
-    private var items: List<BoardItem>? = null
+    private var board: Board? = null
 
     init {
         networkRepository = InMemoryBoardRepository()
     }
 
-    fun loadBoardItems(onComplete: (AsyncResult<List<BoardItem>>) -> Unit) {
+    /**
+     * Force reload of the board state. Will default to network repository. If network fails,
+     * resort to local repository to retrieve board.
+     */
+    fun loadBoard(onComplete: (AsyncResult<Board>) -> Unit) {
         networkRepository.load()
                 .delay(1, TimeUnit.SECONDS)
-                .map { it.items }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
-                    items = it
-                    items?.let { onComplete(AsyncSuccessResult(it)) }
+                    board = it
+                    board?.let { onComplete(AsyncSuccessResult(it)) }
                 }, {
                     onComplete(AsyncErrorResult(it))
                 })

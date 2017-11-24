@@ -13,7 +13,7 @@
 
                 <data
                     android:scheme="https"
-                    android:host="jitrapon.io"
+                    android:host="@string/instant_app_host"
                     android:pathPattern="/board" />
             </intent-filter>
             <intent-filter android:order="1"

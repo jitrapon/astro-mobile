@@ -3,6 +3,8 @@ package io.jitrapon.glom.explore
 import android.os.Bundle
 import io.jitrapon.glom.base.BaseMainActivity
 import io.jitrapon.glom.base.navigation.NavigationItem
+import io.jitrapon.glom.base.ui.widget.BadgedBottomNavigationView
+import kotlinx.android.synthetic.main.explore_activity.*
 
 class ExploreActivity : BaseMainActivity() {
 
@@ -16,6 +18,8 @@ class ExploreActivity : BaseMainActivity() {
 
         tag = "explore"
     }
+
+    override fun getBottomNavBar() = explore_bottom_navigation as BadgedBottomNavigationView
 
     override fun getSelfNavItem() = NavigationItem.EXPLORE
 }

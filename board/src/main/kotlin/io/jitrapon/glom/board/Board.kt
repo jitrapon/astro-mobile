@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.data
+package io.jitrapon.glom.board
 
 import android.os.Parcel
 import android.os.Parcelable
@@ -12,13 +12,13 @@ import java.util.*
  */
 data class Board(val boardId: String,
                  val items: List<BoardItem>,
-                 override val retrievedTime: Date? = null,
+                 override val retrievedTime: Date? = Date(),
                  override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(
             parcel.readString(),
             ArrayList<BoardItem>().apply {
-                parcel.readTypedList(this, BoardItem.Companion)
+                parcel.readTypedList(this, BoardItem)
             },
             parcel.readLong().let {
                 if (it == -1L) null

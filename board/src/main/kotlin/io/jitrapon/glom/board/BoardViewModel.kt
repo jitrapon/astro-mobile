@@ -7,7 +7,7 @@ import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
 import io.jitrapon.glom.base.data.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
-import io.jitrapon.glom.board.data.BoardItem
+import java.util.*
 
 /**
  * ViewModel class responsible for showing and interacting with the Board
@@ -17,7 +17,7 @@ import io.jitrapon.glom.board.data.BoardItem
 class BoardViewModel : BaseViewModel() {
 
     /* live data for the board items */
-    private val observableBoardItems = MutableLiveData<List<BoardItem>>()
+    private val observableBoard = MutableLiveData<BoardUiModel>()
 
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
@@ -27,21 +27,44 @@ class BoardViewModel : BaseViewModel() {
         loadBoard()
     }
 
+    override fun isViewEmpty(): Boolean = observableBoard.value?.items?.isEmpty() ?: true
+
     /**
      * Loads board data
      */
     fun loadBoard() {
-        loadData(interactor::loadBoardItems, observableBoardItems.value?.isEmpty(), {
+        runBlockingIO(interactor::loadBoard) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    observableBoardItems.value = it.result
+                    it.result.items.let {
+                        observableBoard.value = BoardUiModel(
+                                status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS,
+                                items = if (it.isEmpty()) Collections.emptyList() else serializeBoardItems(it)
+                        )
+                    }
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
                     BoardUiModel(UiModel.Status.ERROR)
                 }
             }
-        })
+        }
+    }
+
+    /**
+     * Converts the BoardItem domain model to a list of BoardItemUIModel
+     */
+    private fun serializeBoardItems(items: List<BoardItem>): List<BoardItemUiModel> {
+        return items.map {
+            when (it) {
+                is EventItem -> {
+                    EventItemUiModel(it.itemInfo.eventName, it.itemInfo.startTime, it.itemInfo.endTime)
+                }
+                else -> {
+                    ErrorItemUiModel()
+                }
+            }
+        }
     }
 
     /**
@@ -55,5 +78,5 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns an observable board item live data for the view
      */
-    fun getObservableBoardItems(): LiveData<List<BoardItem>> = observableBoardItems
+    fun getObservableBoard(): LiveData<BoardUiModel> = observableBoard
 }

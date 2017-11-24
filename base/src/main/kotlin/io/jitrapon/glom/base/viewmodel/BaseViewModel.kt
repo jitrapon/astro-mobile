@@ -25,14 +25,15 @@ abstract class BaseViewModel : ViewModel() {
     fun getObservableViewAction(): LiveData<UiActionModel> = observableViewAction
 
     /**
-     * Generic load function
+     * Generic load function to execute long running blocking operation.
+     * Supports automatically showing loading progressbar for convenience
      */
-    fun <T> loadData(asyncLoad: ((AsyncResult<T>) -> Unit) -> Unit, isViewEmpty: Boolean?, onComplete: (AsyncResult<T>) -> Unit) {
-        if (isViewEmpty == null || isViewEmpty) observableViewAction.value = EmptyLoading(true)
+    fun <T> runBlockingIO(function: ((AsyncResult<T>) -> Unit) -> Unit, onComplete: (AsyncResult<T>) -> Unit) {
+        if (isViewEmpty()) observableViewAction.value = EmptyLoading(true)
         else observableViewAction.value = Loading(true)
-        asyncLoad {
+        function {
             arrayOf({
-                if (isViewEmpty == null || isViewEmpty) observableViewAction.value = EmptyLoading(false)
+                if (isViewEmpty()) observableViewAction.value = EmptyLoading(false)
                 else observableViewAction.value = Loading(false)
             }, {
                 onComplete(it)
@@ -49,4 +50,9 @@ abstract class BaseViewModel : ViewModel() {
                 Snackbar(resId = R.string.error_generic)
         ))
     }
+
+    /**
+     * Returns true if the current view has no data to show
+     */
+    abstract fun isViewEmpty(): Boolean
 }

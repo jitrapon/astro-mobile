@@ -2,7 +2,6 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.Observer
 import android.support.v4.widget.SwipeRefreshLayout
-import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.obtainViewModel
@@ -17,38 +16,42 @@ class BoardFragment : BaseFragment() {
 
     private lateinit var viewModel: BoardViewModel
 
-    private lateinit var progressBar: ProgressBar
-
     companion object {
 
         fun newInstance(): BoardFragment = BoardFragment()
     }
 
+    /**
+     * Returns this fragment's XML layout
+     */
     override fun getLayoutId() = R.layout.board_fragment
 
+    /**
+     * Returns the SwipeRefreshLayout in this fragment's XML layout
+     */
     override fun getSwipeRefreshLayout(): SwipeRefreshLayout? = board_refresh_layout
 
+    /**
+     * Called when the ViewModel needs to be instantiated
+     */
     override fun onCreateViewModel() {
         viewModel = obtainViewModel(BoardViewModel::class.java)
     }
 
+    /**
+     * Called when this fragment is ready to subscribe to ViewModel's events
+     */
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
-        // on refresh board items
-        viewModel.getObservableBoardItems().observe(this, Observer {
+        viewModel.getObservableBoard().observe(this, Observer {
 
         })
-    }
-
-    override fun onSetupView(view: View) {
-        // need to use findViewById() because kotlinx extension cannot reference view from other module
-        progressBar = view.findViewById(R.id.board_progressbar)
     }
 
     override fun onRefresh() {
         viewModel.loadBoard()
     }
 
-    override fun getEmptyLoadingView(): ProgressBar? = progressBar
+    override fun getEmptyLoadingView() = board_progressbar as ProgressBar
 }
