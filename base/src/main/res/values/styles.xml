@@ -62,4 +62,13 @@
         <item name="badgeRadius">@dimen/bottom_nav_badge_radius</item>
     </style>
 
+    <style name="CardView.BoardItem" parent="CardView">
+        <item name="cardBackgroundColor">@color/white</item>
+        <item name="cardElevation">@dimen/cardview_default_elevation</item>
+        <item name="cardCornerRadius">8dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+    </style>
+
 </resources>

@@ -6,6 +6,7 @@ import android.util.Log
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
 import io.jitrapon.glom.base.data.UiModel
+import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import java.util.*
 
@@ -28,7 +29,7 @@ class BoardViewModel : BaseViewModel() {
         loadBoard()
     }
 
-    override fun isViewEmpty(): Boolean = boardUiModel.items?.isEmpty() ?: true
+    override fun isViewEmpty(): Boolean = boardUiModel.items?.isEmpty() != false
 
     /**
      * Loads board data
@@ -66,7 +67,8 @@ class BoardViewModel : BaseViewModel() {
         return items.map {
             when (it) {
                 is EventItem -> {
-                    EventItemUiModel(it.itemInfo.eventName, it.itemInfo.startTime, it.itemInfo.endTime)
+                    EventItemUiModel(it.itemInfo.eventName, if (it.itemInfo.startTime == null) "N/A" else Date(it.itemInfo.startTime).toString(),
+                            if (it.itemInfo.endTime == null) "N/A" else Date(it.itemInfo.endTime).toString())
                 }
                 else -> {
                     ErrorItemUiModel()
@@ -87,4 +89,26 @@ class BoardViewModel : BaseViewModel() {
      * Returns an observable board item live data for the view
      */
     fun getObservableBoard(): LiveData<BoardUiModel> = observableBoard
+
+    /**
+     * Returns the number of board items
+     */
+    fun getBoardItemCount(): Int = boardUiModel.items?.size ?: 0
+
+    /**
+     * Returns the item type based on its position
+     */
+    fun getBoardItemType(position: Int): Int {
+        return when (boardUiModel.items.get(position, null)) {
+            is EventItemUiModel -> BoardItemUiModel.TYPE_EVENT
+            else -> BoardItemUiModel.TYPE_ERROR
+        }
+    }
+
+    /**
+     * Returns a specific Board UI item model
+     */
+    fun getBoardItem(position: Int): BoardItemUiModel? {
+        return boardUiModel.items.get(position, null)
+    }
 }

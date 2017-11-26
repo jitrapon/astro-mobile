@@ -2,6 +2,8 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.Observer
 import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.widget.DefaultItemAnimator
+import android.support.v7.widget.LinearLayoutManager
 import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.data.UiModel
@@ -17,7 +19,9 @@ import kotlinx.android.synthetic.main.board_fragment.*
 class BoardFragment : BaseFragment() {
 
     /* this fragment's main ViewModel instance */
-    private lateinit var viewModel: BoardViewModel
+    private val viewModel: BoardViewModel by lazy {
+        obtainViewModel(BoardViewModel::class.java)
+    }
 
     companion object {
 
@@ -40,18 +44,13 @@ class BoardFragment : BaseFragment() {
     override fun getEmptyLoadingView() = board_progressbar as ProgressBar
 
     /**
-     * Called when the ViewModel needs to be instantiated
-     */
-    override fun onCreateViewModel() {
-        viewModel = obtainViewModel(BoardViewModel::class.java)
-    }
-
-    /**
      * Called when any view must be initialized
      */
     override fun onSetupView(view: View) {
         board_recycler_view.apply {
-
+            layoutManager = LinearLayoutManager(view.context)
+            itemAnimator = DefaultItemAnimator()
+            adapter = BoardItemAdapter(viewModel)
         }
     }
 
@@ -72,7 +71,7 @@ class BoardFragment : BaseFragment() {
                     }
                     UiModel.Status.SUCCESS -> {
                         board_status_viewswitcher.reset()
-                        //notify adapter
+                        board_recycler_view.adapter.notifyDataSetChanged()
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
                 }

@@ -50,7 +50,6 @@ abstract class BaseFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        onCreateViewModel()
         onSubscribeToObservables()
     }
 
@@ -100,11 +99,6 @@ abstract class BaseFragment : Fragment() {
      * Override this method to perform all necessary view initializations in the fragment, if any
      */
     open fun onSetupView(view: View) {}
-
-    /**
-     * Called when one or more ViewModel instances should be created
-     */
-    open fun onCreateViewModel() {}
 
     /**
      * Subscribe to LiveData and LiveEvent from the ViewModel
