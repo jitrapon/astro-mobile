@@ -10,7 +10,7 @@
         <item name="colorAccent">@color/reddish</item>
 
         <item name="windowActionBar">false</item>
-        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowBackground">@color/background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowContentOverlay">@color/transparent</item>
 

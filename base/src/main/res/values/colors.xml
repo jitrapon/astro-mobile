@@ -14,6 +14,7 @@
     <color name="greyish_brown">#424242</color>
     <color name="grey">#ffafbdc4</color>
     <color name="warm_grey">#9b9b9b</color>
+    <color name="background">#F4F8FA</color>
     <color name="blueish_purple">#4151fd</color>
     <color name="white">#ffffffff</color>
     <color name="transparent">@null</color>
