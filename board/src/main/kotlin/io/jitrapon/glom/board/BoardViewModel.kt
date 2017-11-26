@@ -18,6 +18,7 @@ class BoardViewModel : BaseViewModel() {
 
     /* live data for the board items */
     private val observableBoard = MutableLiveData<BoardUiModel>()
+    private val boardUiModel = BoardUiModel()
 
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
@@ -27,25 +28,32 @@ class BoardViewModel : BaseViewModel() {
         loadBoard()
     }
 
-    override fun isViewEmpty(): Boolean = observableBoard.value?.items?.isEmpty() ?: true
+    override fun isViewEmpty(): Boolean = boardUiModel.items?.isEmpty() ?: true
 
     /**
      * Loads board data
      */
     fun loadBoard() {
+        observableBoard.value = boardUiModel.apply {
+            status = UiModel.Status.LOADING
+        }
+
         runBlockingIO(interactor::loadBoard) {
             when (it) {
                 is AsyncSuccessResult -> {
                     it.result.items.let {
-                        observableBoard.value = BoardUiModel(
-                                status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS,
-                                items = if (it.isEmpty()) Collections.emptyList() else serializeBoardItems(it)
-                        )
+                        observableBoard.value = boardUiModel.apply {
+                            status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+                            items = if (it.isEmpty()) Collections.emptyList() else serializeBoardItems(it)
+                        }
                     }
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
-                    BoardUiModel(UiModel.Status.ERROR)
+                    observableBoard.value = boardUiModel.apply {
+                        status = UiModel.Status.ERROR
+                        items = null
+                    }
                 }
             }
         }

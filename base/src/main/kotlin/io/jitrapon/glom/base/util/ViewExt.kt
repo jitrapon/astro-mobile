@@ -20,3 +20,17 @@ fun View.showSnackbar(message: String?, resId: Int?, actionMessage: String? = nu
         }).show()
     }
 }
+
+/**
+ * Toggles the visibility of the view to be VISIBLE
+ */
+fun View.show() {
+    visibility = View.VISIBLE
+}
+
+/**
+ * Toggles the visibility of the view to be GONE
+ */
+fun View.hide() {
+    visibility = View.GONE
+}

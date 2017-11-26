@@ -19,6 +19,10 @@ abstract class BaseViewModel : ViewModel() {
         a series of actions */
     protected val observableViewAction = LiveEvent<UiActionModel>()
 
+    init {
+        observableViewAction.value = EmptyLoading(false)
+    }
+
     /**
      * Returns the observable view actions to be observed by the View
      */

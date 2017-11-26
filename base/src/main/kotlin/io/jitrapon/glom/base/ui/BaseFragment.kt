@@ -163,6 +163,10 @@ abstract class BaseFragment : Fragment() {
     open fun showEmptyLoading(show: Boolean) {
         getEmptyLoadingView()?.let {
             it.visibility = if (show) View.VISIBLE else View.GONE
+
+            // if triggered manually by swipe refresh layout, hide it. We don't need to show
+            // two loading icons
+            if (show) showLoading(false)
         }
         // if somehow the refreshlayout is still loading, set it to hide
         if (!show) showLoading(false)

@@ -1,1 +1,8 @@
-<resources></resources>
+<resources>
+    <string name="empty_state_title">No upcoming plans yet!</string>
+    <string name="empty_state_subtitle">All your created and pinned plans appear here.\nHow about initiating one now?</string>
+    <string name="empty_state_icon">empty icon</string>
+    <string name="error_state_title">Oops! This is embarrassing..</string>
+    <string name="error_state_subtitle">Looks like something went wrong. We\'re being notified about this issue. Sorry about that.</string>
+    <string name="error_state_icon">error icon</string>
+</resources>

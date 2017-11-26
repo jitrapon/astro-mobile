@@ -33,6 +33,9 @@ class BoardActivity : BaseMainActivity() {
      */
     override fun getBottomNavBar() = board_bottom_navigation as BadgedBottomNavigationView
 
+    /**
+     * Callback triggered when child fragment is initialized
+     */
     override fun onCreateFragment(savedInstanceState: Bundle?) {
         addFragment(R.id.fragment_container, BoardFragment.newInstance())
     }

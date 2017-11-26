@@ -82,7 +82,7 @@ abstract class BaseMainActivity : BaseActivity() {
      */
     private fun selectBottomNavItem(item: NavigationItem) {
         delayRun(BOTTOM_NAV_ANIM_GRACE) {
-            Router.navigate(this, isInstantApp, item.module, true,
+            Router.navigate(this, isInstantApp, item.module, !isInstantApp,
                     arrayOf(R.anim.fade_in, R.anim.fade_out))
         }
     }

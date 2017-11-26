@@ -27,7 +27,9 @@
     </style>
 
     <!-- Text appearances -->
-    <style name="TextAppearance.H1" parent="@style/TextAppearance.AppCompat.Large" />
+    <style name="TextAppearance.H1" parent="@style/TextAppearance.AppCompat.Large" >
+        <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
 
     <style name="TextAppearance.H3" parent="@style/TextAppearance.AppCompat.Medium" >
         <item name="android:textColor">?android:textColorPrimary</item>

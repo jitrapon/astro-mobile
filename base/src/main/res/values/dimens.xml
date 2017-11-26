@@ -7,4 +7,7 @@
 
     <!-- line spacing -->
     <item name="text_line_spacing" format="float" type="dimen">1.2</item>
+
+    <!-- empty states -->
+    <dimen name="empty_state_size">164dp</dimen>
 </resources>

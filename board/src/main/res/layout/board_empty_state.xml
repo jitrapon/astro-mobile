@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout android:id="@+id/empty_state_layout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
+
+    <ImageView
+        android:id="@+id/empty_state_icon"
+        android:layout_width="@dimen/empty_state_size"
+        android:layout_height="@dimen/empty_state_size"
+        app:srcCompat="@drawable/ic_board_empty"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:contentDescription="@string/empty_state_icon" />
+
+    <TextView
+        android:id="@+id/empty_state_title"
+        style="@style/TextAppearance.H1"
+        app:layout_constraintTop_toBottomOf="@+id/empty_state_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/empty_state_title"
+        android:gravity="center"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <TextView
+        style="@style/TextAppearance.H5"
+        android:textColor="@color/warm_grey"
+        app:layout_constraintTop_toBottomOf="@+id/empty_state_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/empty_state_subtitle"
+        android:gravity="center"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="7dp"
+        android:lineSpacingMultiplier="1.2"
+        android:maxWidth="318dp" />
+
+</android.support.constraint.ConstraintLayout>

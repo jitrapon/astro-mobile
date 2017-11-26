@@ -9,7 +9,7 @@ package io.jitrapon.glom.base.data
 interface UiModel {
 
     enum class Status {
-        SUCCESS, ERROR, EMPTY
+        SUCCESS, ERROR, EMPTY, LOADING
     }
 
     val status: Status
