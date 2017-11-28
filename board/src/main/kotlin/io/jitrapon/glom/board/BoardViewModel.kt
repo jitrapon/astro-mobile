@@ -2,10 +2,11 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
-import android.util.Log
+import io.jitrapon.glom.base.data.AndroidString
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
 import io.jitrapon.glom.base.data.UiModel
+import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import java.util.*
@@ -24,15 +25,18 @@ class BoardViewModel : BaseViewModel() {
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
 
+    /* date time formatter */
+    private val format: Format = Format()
+
     init {
         interactor = BoardInteractor()
         loadBoard()
     }
 
-    override fun isViewEmpty(): Boolean = boardUiModel.items?.isEmpty() != false
+    //region view actions
 
     /**
-     * Loads board data
+     * Loads board data and items
      */
     fun loadBoard() {
         observableBoard.value = boardUiModel.apply {
@@ -45,7 +49,7 @@ class BoardViewModel : BaseViewModel() {
                     it.result.items.let {
                         observableBoard.value = boardUiModel.apply {
                             status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
-                            items = if (it.isEmpty()) Collections.emptyList() else serializeBoardItems(it)
+                            items = it.toUiModel()
                         }
                     }
                 }
@@ -60,15 +64,21 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
+    //endregion
+    //region util functions
+
     /**
      * Converts the BoardItem domain model to a list of BoardItemUIModel
      */
-    private fun serializeBoardItems(items: List<BoardItem>): List<BoardItemUiModel> {
-        return items.map {
+    private fun List<BoardItem>.toUiModel(): List<BoardItemUiModel> {
+        if (isEmpty()) return Collections.emptyList<BoardItemUiModel>()
+        return map {
             when (it) {
                 is EventItem -> {
-                    EventItemUiModel(it.itemInfo.eventName, if (it.itemInfo.startTime == null) "N/A" else Date(it.itemInfo.startTime).toString(),
-                            if (it.itemInfo.endTime == null) "N/A" else Date(it.itemInfo.endTime).toString())
+                    EventItemUiModel(null,
+                            it.itemInfo.eventName,
+                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
+                            getLocationString(it.itemInfo.location))
                 }
                 else -> {
                     ErrorItemUiModel()
@@ -78,17 +88,60 @@ class BoardViewModel : BaseViewModel() {
     }
 
     /**
+     * Returns a formatted date range
+     */
+    private fun getDateRangeString(start: Long?, end: Long?): String? {
+        start ?: return null
+
+        // if end datetime is not present, only show start time (i.e. 20 Jun, 2017 (10:30 AM))
+        if (end == null) return "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)})"
+
+        // if end datetime is present
+        // show one date with time range if end datetime is within the same day
+        // (i.e. 20 Jun, 2017 (10:30 AM - 3:00 PM), otherwise
+        // show 20 Jun, 2017 (10:30 AM) - 21 Jun, 2017 (10:30 AM)
+        val startDate = Calendar.getInstance().apply { time = Date(start) }
+        val endDate = Calendar.getInstance().apply { time = Date(end) }
+        return if (startDate[Calendar.YEAR] < endDate[Calendar.YEAR] ||
+                startDate[Calendar.DAY_OF_YEAR] < endDate[Calendar.DAY_OF_YEAR]) {
+            "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)}) " +
+                    "- ${format.date(end, Format.DEFAULT_DATE_FORMAT)} (${format.time(end)})"
+        }
+        else {
+            "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)} - ${format.time(end)})"
+        }
+    }
+
+    /**
+     * Returns location string from EventLocation
+     */
+    private fun getLocationString(location: EventLocation?): AndroidString? {
+        location ?: return null
+        return AndroidString(R.string.event_card_location_placeholder)
+    }
+
+    /**
      * Clean up any resources
      */
     override fun onCleared() {
         //nothing yet
-        Log.d("BoardViewModel", "onCleared()")
     }
+
+    //endregion
+    //region observables
 
     /**
      * Returns an observable board item live data for the view
      */
     fun getObservableBoard(): LiveData<BoardUiModel> = observableBoard
+
+    //endregion
+    //region view states
+
+    /**
+     * Indicates whether or not this view has items or not
+     */
+    override fun isViewEmpty(): Boolean = boardUiModel.items?.isEmpty() != false
 
     /**
      * Returns the number of board items
@@ -108,7 +161,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns a specific Board UI item model
      */
-    fun getBoardItem(position: Int): BoardItemUiModel? {
-        return boardUiModel.items.get(position, null)
-    }
+    fun getBoardItemUiModel(position: Int): BoardItemUiModel? = boardUiModel.items.get(position, null)
+
+    //endregion
 }

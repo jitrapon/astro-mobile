@@ -5,4 +5,7 @@
     <string name="error_state_title">Oops! This is embarrassing..</string>
     <string name="error_state_subtitle">Looks like something went wrong. We\'re being notified about this issue. Sorry about that.</string>
     <string name="error_state_icon">error icon</string>
+    <string name="event_card_image_content_description">event highlight image</string>
+    <string name="event_card_location_content_description">event map</string>
+    <string name="event_card_location_placeholder">Retrieving location…</string>
 </resources>

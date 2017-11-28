@@ -64,11 +64,11 @@
 
     <style name="CardView.BoardItem" parent="CardView">
         <item name="cardBackgroundColor">@color/white</item>
-        <item name="cardElevation">@dimen/cardview_default_elevation</item>
-        <item name="cardCornerRadius">8dp</item>
-        <item name="android:layout_marginTop">8dp</item>
-        <item name="android:layout_marginStart">8dp</item>
-        <item name="android:layout_marginEnd">8dp</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+        <item name="android:layout_marginTop">@dimen/card_top_margin</item>
+        <item name="android:layout_marginStart">@dimen/card_side_margin</item>
+        <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
     </style>
 
 </resources>

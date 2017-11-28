@@ -10,4 +10,11 @@
 
     <!-- empty states -->
     <dimen name="empty_state_size">164dp</dimen>
+
+    <!-- cardview -->
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_corner_radius">7dp</dimen>
+    <dimen name="card_top_margin">8dp</dimen>
+    <dimen name="card_side_margin">10dp</dimen>
+    <dimen name="card_content_padding">16dp</dimen>
 </resources>

@@ -5,6 +5,7 @@ import android.support.annotation.ColorRes
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.widget.Toast
+import io.jitrapon.glom.base.data.AndroidString
 
 /**
  * Contains various functions using the Context
@@ -48,3 +49,13 @@ fun Context.showAlertDialog(title: String?, message: String?, positiveOptionText
 }
 
 fun Context.color(@ColorRes colorId: Int) = ContextCompat.getColor(this, colorId)
+
+fun Context.getString(string: AndroidString): String? {
+    return if (string.text != null) string.text else {
+        if (string.resId != null) {
+            return if (string.formatArgs != null) getString(string.resId, *string.formatArgs)
+            else getString(string.resId)
+        }
+        return null
+    }
+}
