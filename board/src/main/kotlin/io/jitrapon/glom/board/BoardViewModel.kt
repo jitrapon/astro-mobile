@@ -36,7 +36,7 @@ class BoardViewModel : BaseViewModel() {
     //region view actions
 
     /**
-     * Loads board data and items
+     * Loads board data and items asynchronously
      */
     fun loadBoard() {
         observableBoard.value = boardUiModel.apply {
@@ -78,7 +78,7 @@ class BoardViewModel : BaseViewModel() {
                     EventItemUiModel(null,
                             it.itemInfo.eventName,
                             getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
-                            getLocationString(it.itemInfo.location))
+                            getOrLoadLocationString(it.itemInfo.location))
                 }
                 else -> {
                     ErrorItemUiModel()
@@ -113,9 +113,11 @@ class BoardViewModel : BaseViewModel() {
     }
 
     /**
-     * Returns location string from EventLocation
+     * Returns location string from EventLocation. If the location has been loaded before,
+     * retrieve it from the cache, otherwise asynchronously call the respective API
+     * to retrieve location data
      */
-    private fun getLocationString(location: EventLocation?): AndroidString? {
+    private fun getOrLoadLocationString(location: EventLocation?): AndroidString? {
         location ?: return null
         return AndroidString(R.string.event_card_location_placeholder)
     }
