@@ -88,7 +88,6 @@ dependencies {
     // architecture components
     api "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
     implementation "android.arch.lifecycle:common-java8:$rootProject.archLifecycleVersion"
-    annotationProcessor "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
     testImplementation "android.arch.core:core-testing:$rootProject.archLifecycleVersion"
 
     // room
