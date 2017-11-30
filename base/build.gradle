@@ -46,12 +46,16 @@ android {
             ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
             ext.alwaysUpdateBuildId = false
             debuggable true
+
+            resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
         }
         release {
             minifyEnabled true
             crunchPngs false
             debuggable false
             signingConfig signingConfigs.release
+
+            resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
         }
     }
 }
@@ -109,6 +113,9 @@ dependencies {
     // reactive
     api "io.reactivex.rxjava2:rxjava:$rootProject.rxJavaVersion"
     api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroidVersion"
+
+    // google play services
+    api "com.google.android.gms:play-services-places:$rootProject.playServicesVersion"
 
     // testing
     testImplementation "junit:junit:$rootProject.junitVersion"

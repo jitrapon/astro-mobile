@@ -44,6 +44,8 @@ class BoardInteractor {
                     board?.let { onComplete(AsyncSuccessResult(it)) }
                 }, {
                     onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing here
                 })
     }
 

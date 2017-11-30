@@ -31,6 +31,7 @@ buildscript {
         instantAppVersion = '1.1.0'
         rxJavaVersion = '2.1.6'
         rxAndroidVersion = '2.0.1'
+        playServicesVersion = '11.6.0'
     }
 
     repositories {
