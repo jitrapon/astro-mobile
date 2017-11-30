@@ -4,6 +4,7 @@
 
     <application>
         <activity android:name=".BoardActivity">
+
             <intent-filter android:order="1"
                 android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -11,23 +12,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:scheme="https"
-                    android:host="@string/instant_app_host"
-                    android:pathPattern="/board" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="@string/instant_app_host" />
+                <data android:pathPattern="/board" />
             </intent-filter>
-            <intent-filter android:order="1"
-                android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:scheme="http"
-                    android:host="@string/instant_app_host"
-                    android:pathPattern="/board" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -4,29 +4,18 @@
 
     <application>
         <activity android:name=".ProfileActivity">
-            <intent-filter android:order="1"
+
+            <intent-filter android:order="4"
                 android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:scheme="https"
-                    android:host="@string/instant_app_host"
-                    android:pathPattern="/profile" />
-            </intent-filter>
-            <intent-filter android:order="1"
-                android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:scheme="http"
-                    android:host="@string/instant_app_host"
-                    android:pathPattern="/profile" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="@string/instant_app_host" />
+                <data android:pathPattern="/profile" />
             </intent-filter>
         </activity>
     </application>
