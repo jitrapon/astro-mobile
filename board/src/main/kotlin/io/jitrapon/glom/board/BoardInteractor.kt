@@ -45,7 +45,7 @@ class BoardInteractor {
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }, {
-                    //nothing here
+                    //TODO add loadLocationInfo if necessary
                 })
     }
 
