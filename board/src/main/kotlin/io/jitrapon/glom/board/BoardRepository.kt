@@ -8,7 +8,7 @@ import java.util.*
 /**
  * @author Jitrapon Tiachunpun
  */
-class InMemoryBoardRepository : Repository<Board>() {
+class BoardRepository : Repository<Board>() {
 
     override val type: SourceType = SourceType.CACHE
 
@@ -17,6 +17,8 @@ class InMemoryBoardRepository : Repository<Board>() {
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)
         val dinnerLocation = EventLocation(null, null, "ChIJhfF-wgOf4jARwAQMPbMAAQ8", null)
+        val shoppingLocation = EventLocation(null, null, "ChIJcWLOjAGf4jARWrAvcZ1YFDM", null)
+        val cafeLocation = EventLocation(null, null, "ChIJEyfe5-ee4jAR8d8sxPe29PA", null)
 
         val repeatEvery3Days = RepeatInfo(19, false, 0, 3, 0L, null)
         val repeatEveryWeek = RepeatInfo(1, false, 1, 1, 0L, listOf(1, 3, 5))
@@ -30,5 +32,11 @@ class InMemoryBoardRepository : Repository<Board>() {
         add(EventItem(BoardItem.TYPE_EVENT, "3", 1508230200000L, 1508230200000L, listOf("yoshi3003"),
                 EventInfo("gym", 1511353800000L, null, null, null, "Asia/Bangkok",
                         false, repeatEveryWeek, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "4", 1508230200000L, 1508230200000L, listOf("yoshi3003"),
+                EventInfo("Shopping", null, null, shoppingLocation, null, "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "5", 1508230200000L, 1508230200000L, listOf("yoshi3003"),
+                EventInfo("Board game night", null, null, cafeLocation, null, "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
     }
 }

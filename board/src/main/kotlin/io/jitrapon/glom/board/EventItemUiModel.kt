@@ -9,5 +9,5 @@ import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
 data class EventItemUiModel(val upcomingTime: String?,
                             val title: String,
                             val dateTime: String?,
-                            val location: AndroidString?,
+                            var location: AndroidString?,
                             override val itemType: Int = TYPE_EVENT) : BoardItemUiModel

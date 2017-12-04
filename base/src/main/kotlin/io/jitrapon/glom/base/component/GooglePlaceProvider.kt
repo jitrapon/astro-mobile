@@ -35,9 +35,9 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
      * GeoDataClient instance to talk to a Google server
      */
     private val client: GeoDataClient by lazy {
+        if (context == null && activity == null) throw IllegalArgumentException("Context and Activity must not be null")
         if (context != null) Places.getGeoDataClient(context, null)
-        if (activity != null) Places.getGeoDataClient(activity, null)
-        throw IllegalArgumentException("Must provide either non-null Context or Activity!")
+        else Places.getGeoDataClient(activity!!, null)
     }
 
     //endregion
@@ -48,18 +48,19 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         lifeCycle.removeObserver(this)
     }
 
-    override fun retrievePlaces(map: HashMap<String, Place>): Single<HashMap<String, Place>> {
+    override fun retrievePlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
             if (lifeCycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                client.getPlaceById(*map.keys.toTypedArray()).let {
+                client.getPlaceById(*placeIds).let {
                     it.addOnCompleteListener {
                         if (it.isSuccessful) {
                             val places = it.result
+                            val result = ArrayList<Place>()
                             places
                                     .filter { it.isDataValid }
-                                    .forEach { map.put(it.id, it.freeze()) }
+                                    .forEach { result.add(it.freeze()) }
                             places.release()
-                            single.onSuccess(map)
+                            single.onSuccess(result.toTypedArray())
                         }
                         else single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
                     }
@@ -68,7 +69,7 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                     }
                 }
             }
-            single.onError(Exception("Attempting to retrieve place data while lifecycle is not at least STARTED"))
+            else single.onError(Exception("Attempting to retrieve place data while lifecycle is not at least STARTED"))
         }
     }
 

@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AndroidString
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
@@ -50,6 +51,8 @@ class BoardViewModel : BaseViewModel() {
                         observableBoard.value = boardUiModel.apply {
                             status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = it.toUiModel()
+                            shouldLoadPlaceInfo = true
+                            itemsChangedIndices = null
                         }
                     }
                 }
@@ -59,6 +62,37 @@ class BoardViewModel : BaseViewModel() {
                         status = UiModel.Status.ERROR
                         items = null
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves place information for board items. We need this call from the View because
+     * PlaceProvider can only be instantiated using the Android.view context
+     */
+    fun loadPlaceInfo(placeProvider: PlaceProvider?) {
+        interactor.loadItemPlaceInfo(placeProvider) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableBoard.value = boardUiModel.apply {
+                        shouldLoadPlaceInfo = false
+                        itemsChangedIndices = ArrayList()
+                        val places = it.result
+                        for (i in 0 until places.size()) {
+                            val indexToNotify = places.keyAt(i)
+                            val placeName = places.valueAt(i)
+
+                            itemsChangedIndices?.add(indexToNotify)
+                            val item = items?.get(indexToNotify)
+                            if (item is EventItemUiModel) {
+                                item.location = AndroidString(text = placeName.name.toString())
+                            }
+                        }
+                    }
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
                 }
             }
         }

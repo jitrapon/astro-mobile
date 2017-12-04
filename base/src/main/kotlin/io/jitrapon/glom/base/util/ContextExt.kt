@@ -50,7 +50,8 @@ fun Context.showAlertDialog(title: String?, message: String?, positiveOptionText
 
 fun Context.color(@ColorRes colorId: Int) = ContextCompat.getColor(this, colorId)
 
-fun Context.getString(string: AndroidString): String? {
+fun Context.getString(string: AndroidString?): String? {
+    string ?: return null
     return if (string.text != null) string.text else {
         if (string.resId != null) {
             return if (string.formatArgs != null) getString(string.resId, *string.formatArgs)

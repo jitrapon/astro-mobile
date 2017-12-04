@@ -1,6 +1,9 @@
 package io.jitrapon.glom.board
 
 import android.os.Parcel
+import android.util.SparseArray
+import com.google.android.gms.location.places.Place
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
@@ -18,7 +21,7 @@ class BoardInteractor {
     /*
      * Repository that requests from network to retrieve data
      */
-    private lateinit var networkRepository: InMemoryBoardRepository
+    private lateinit var repository: BoardRepository
 
     /*
      * Cached board state. Will be updated whenever loadBoard() function
@@ -26,27 +29,70 @@ class BoardInteractor {
      */
     private var board: Board? = null
 
+    /*
+     * The number of items that was loaded
+     */
+    private var itemsLoaded: Int = 0
+
     init {
-        networkRepository = InMemoryBoardRepository()
+        repository = BoardRepository()
     }
 
     /**
-     * Force reload of the board state. Will default to network repository. If network fails,
-     * resort to local repository to retrieve board.
+     * Force reload of the board state
      */
     fun loadBoard(onComplete: (AsyncResult<Board>) -> Unit) {
-        networkRepository.load()
+        repository.load()
                 .delay(1, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
                     board = it
+                    itemsLoaded = board?.items?.size ?: 0
                     board?.let { onComplete(AsyncSuccessResult(it)) }
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }, {
-                    //TODO add loadLocationInfo if necessary
+                    //nothing yet
                 })
+    }
+
+    /**
+     * Loads place info for board items that have placeId associated
+     * On completed successfully, returns a sparse array containing the keys as the indices of board items required update,
+     * and the value to be the Place Info
+     */
+    fun loadItemPlaceInfo(placeProvider: PlaceProvider?, onComplete: (AsyncResult<SparseArray<Place>>) -> Unit) {
+        board?.let {
+            val itemIndices = ArrayList<Int>()      // index array to keep track of items that contain location info
+            val placeIds = it.items
+                    .takeLast(itemsLoaded)          // only load place info for items that are loaded in the last page
+                    .filterIndexed { index, item ->
+                        (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null).let {
+                            if (it) itemIndices.add(index)
+                            it
+                        }
+                    }
+                    .map { (it.itemInfo as EventInfo).location?.googlePlaceId!! }.toTypedArray()
+            placeProvider?.retrievePlaces(placeIds)
+                    ?.observeOn(AndroidSchedulers.mainThread())
+                    ?.subscribeOn(Schedulers.io())
+                    ?.subscribe({
+                        if (itemIndices.size == it.size) {
+                            onComplete(AsyncSuccessResult(SparseArray<Place>().apply {
+                                for (i in itemIndices.indices) {
+                                    put(itemIndices[i], it[i])
+                                }
+                            }))
+                        }
+                        else {
+                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                                    " returned places array size (${it.size}) does not match requested item array size (${itemIndices.size})")))
+                        }
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
+        }
     }
 
     private fun testParcelable(board: Board) {

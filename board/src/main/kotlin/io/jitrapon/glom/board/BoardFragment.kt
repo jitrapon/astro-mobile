@@ -6,6 +6,8 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.view.View
 import android.widget.ProgressBar
+import io.jitrapon.glom.base.component.GooglePlaceProvider
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.obtainViewModel
@@ -21,6 +23,13 @@ class BoardFragment : BaseFragment() {
     /* this fragment's main ViewModel instance */
     private val viewModel: BoardViewModel by lazy {
         obtainViewModel(BoardViewModel::class.java)
+    }
+
+    /*
+     * Google place provider
+     */
+    private val placeProvider: PlaceProvider by lazy {
+        GooglePlaceProvider(lifecycle, activity = activity)
     }
 
     companion object {
@@ -72,6 +81,16 @@ class BoardFragment : BaseFragment() {
                     UiModel.Status.SUCCESS -> {
                         board_status_viewswitcher.reset()
                         board_recycler_view.adapter.notifyDataSetChanged()
+
+                        // loads additional place information for items that have them
+                        if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider) else {}
+
+                        // if this list is not null, force update specific items
+                        it.itemsChangedIndices?.let {
+                            it.forEach {
+                                board_recycler_view.adapter.notifyItemChanged(it)
+                            }
+                        }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
                 }

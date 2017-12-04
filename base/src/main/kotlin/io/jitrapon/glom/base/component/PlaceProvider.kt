@@ -12,5 +12,5 @@ import io.reactivex.Single
  */
 interface PlaceProvider : LifecycleObserver {
 
-    fun retrievePlaces(map: HashMap<String, Place>): Single<HashMap<String, Place>>
+    fun retrievePlaces(placeIds: Array<String>): Single<Array<Place>>
 }
