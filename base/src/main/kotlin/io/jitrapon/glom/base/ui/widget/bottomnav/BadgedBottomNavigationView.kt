@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.ui.widget
+package io.jitrapon.glom.base.ui.widget.bottomnav
 
 import android.content.Context
 import android.graphics.Canvas
