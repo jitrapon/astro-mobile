@@ -12,6 +12,7 @@
     <dimen name="empty_state_size">164dp</dimen>
 
     <!-- cardview -->
+    <dimen name="spacing_normal">8dp</dimen>
     <dimen name="card_elevation">2dp</dimen>
     <dimen name="card_corner_radius">7dp</dimen>
     <dimen name="card_top_margin">8dp</dimen>

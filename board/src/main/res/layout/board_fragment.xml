@@ -32,7 +32,11 @@
         <android.support.v7.widget.RecyclerView
             android:id="@+id/board_recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:scrollbarStyle="insideOverlay"
+            android:scrollbars="vertical"
+            android:paddingBottom="@dimen/spacing_normal" >
 
         </android.support.v7.widget.RecyclerView>
 

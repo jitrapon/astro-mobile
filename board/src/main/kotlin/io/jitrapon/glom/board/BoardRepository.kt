@@ -38,5 +38,20 @@ class BoardRepository : Repository<Board>() {
         add(EventItem(BoardItem.TYPE_EVENT, "5", 1508230200000L, 1508230200000L, listOf("yoshi3003"),
                 EventInfo("Board game night", null, null, cafeLocation, null, "Asia/Bangkok",
                         false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "6", 1505874600000L, 1505874600000L, listOf("yoshi3003"),
+                EventInfo("House Party!", 1506078000000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "7", 1505874600000L, 1505874600000L, listOf("yoshi3003"),
+                EventInfo("House Party!", 1506078000000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "8", 1505874600000L, 1505874600000L, listOf("yoshi3003"),
+                EventInfo("House Party!", 1506078000000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "9", 1505874600000L, 1505874600000L, listOf("yoshi3003"),
+                EventInfo("House Party!", 1506078000000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
+        add(EventItem(BoardItem.TYPE_EVENT, "10", 1505874600000L, 1505874600000L, listOf("yoshi3003"),
+                EventInfo("House Party!", 1506078000000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
+                        false, null, false, false, listOf("yoshi3003"))))
     }
 }

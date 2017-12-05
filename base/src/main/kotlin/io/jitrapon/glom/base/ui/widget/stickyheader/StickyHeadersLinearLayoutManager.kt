@@ -6,6 +6,7 @@ import android.os.Parcelable
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
+import android.view.ViewTreeObserver
 
 /**
  * Adds sticky headers capabilities to your {@link RecyclerView.Adapter}. It must implement {@link StickyHeaders} to
@@ -48,7 +49,7 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
      * Offsets the horizontal location of the sticky header relative to the its default position.
      */
     fun setStickyHeaderTranslationX(dx: Float) {
-        translationX = translationX
+        translationX = dx
         requestLayout()
     }
 
@@ -147,30 +148,30 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
 
     private fun scrollToPositionWithOffset(position: Int, offset: Int, adjustForStickyHeader: Boolean) {
         // Reset pending scroll.
-        setPendingScroll(RecyclerView.NO_POSITION, INVALID_OFFSET);
+        setPendingScroll(RecyclerView.NO_POSITION, INVALID_OFFSET)
 
         // Adjusting is disabled.
         if (!adjustForStickyHeader) {
-            super.scrollToPositionWithOffset(position, offset);
+            super.scrollToPositionWithOffset(position, offset)
             return
         }
 
         // There is no header above or the position is a header.
         val headerIndex = findHeaderIndexOrBefore(position)
-        if (headerIndex == -1 || findHeaderIndex(position) !== -1) {
+        if (headerIndex == -1 || findHeaderIndex(position) != -1) {
             super.scrollToPositionWithOffset(position, offset)
             return
         }
 
         // The position is right below a header, scroll to the header.
         if (findHeaderIndex(position - 1) != -1) {
-            super.scrollToPositionWithOffset(position - 1, offset);
+            super.scrollToPositionWithOffset(position - 1, offset)
             return
         }
 
         // Current sticky header is the same as at the position. Adjust the scroll offset and reset pending scroll.
         stickyHeader?.let {
-            if (headerIndex === findHeaderIndex(stickyHeaderPosition)) {
+            if (headerIndex == findHeaderIndex(stickyHeaderPosition)) {
                 val adjustedOffset = (if (offset != INVALID_OFFSET) offset else 0) + it.height
                 super.scrollToPositionWithOffset(position, adjustedOffset)
                 return
@@ -178,7 +179,7 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
         }
 
         // Remember this position and offset and scroll to it to trigger creating the sticky header.
-        setPendingScroll(position, offset);
+        setPendingScroll(position, offset)
         super.scrollToPositionWithOffset(position, offset)
     }
 
@@ -296,7 +297,7 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
 
                     // Draw the sticky header using translation values which depend on orientation, direction and
                     // position of the next header view.
-                    var nextHeaderView: View?
+                    var nextHeaderView: View? = null
                     if (nextHeaderPos != -1) {
                         nextHeaderView = getChildAt(anchorIndex + (nextHeaderPos - anchorPos))
                         // The header view itself is added to the RecyclerView. Discard it if it comes up.
@@ -305,8 +306,8 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
                         }
                     }
                     stickyHeader?.apply {
-                        translationX = getX(stickyHeader, nextHeaderView)
-                        translationY = getY(stickyHeader, nextHeaderView)
+                        translationX = getX(this, nextHeaderView)
+                        translationY = getY(this, nextHeaderView)
                     }
                     return
                 }
@@ -338,6 +339,203 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
 
         stickyHeader = header
         stickyHeaderPosition = position
+    }
+
+    /**
+     * Binds the {@link #stickyHeader} for the given {@code position}.
+     */
+    private fun bindStickyHeader(recycler: RecyclerView.Recycler, position: Int) {
+        // Bind the sticky header.
+        recycler.bindViewToPosition(stickyHeader, position)
+        stickyHeaderPosition = position
+        measureAndLayout(stickyHeader!!)
+
+        // If we have a pending scroll wait until the end of layout and scroll again.
+        if (pendingScrollPosition != RecyclerView.NO_POSITION) {
+            val vto = stickyHeader!!.viewTreeObserver
+            vto.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    vto.removeOnGlobalLayoutListener(this)
+
+                    if (pendingScrollPosition != RecyclerView.NO_POSITION) {
+                        scrollToPositionWithOffset(pendingScrollPosition, pendingScrollOffset)
+                        setPendingScroll(RecyclerView.NO_POSITION, LinearLayoutManager.INVALID_OFFSET)
+                    }
+                }
+            })
+        }
+    }
+
+    /**
+     * Measures and lays out `stickyHeader`.
+     */
+    private fun measureAndLayout(stickyHeader: View) {
+        measureChildWithMargins(stickyHeader, 0, 0)
+        if (orientation == LinearLayoutManager.VERTICAL) {
+            stickyHeader.layout(paddingLeft, 0, width - paddingRight, stickyHeader.measuredHeight)
+        }
+        else {
+            stickyHeader.layout(0, paddingTop, stickyHeader.measuredWidth, height - paddingBottom)
+        }
+    }
+
+    /**
+     * Returns {@link #mStickyHeader} to the {@link RecyclerView}'s {@link RecyclerView.RecycledViewPool}, assigning it
+     * to {@code null}.
+     *
+     * @param recycler If passed, the sticky header will be returned to the recycled view pool.
+     */
+    private fun scrapStickyHeader(recycler: RecyclerView.Recycler?) {
+        val header = stickyHeader
+        stickyHeader = null
+        stickyHeaderPosition = RecyclerView.NO_POSITION
+
+        // Revert translation values.
+        header?.let {
+            it.translationX = 0f
+            it.translationY = 0f
+
+            // Teardown holder if the adapter requires it.
+            if (adapter is StickyHeaders.ViewSetup) {
+                (adapter as StickyHeaders.ViewSetup).teardownStickyHeaderView(it)
+            }
+
+            // Stop ignoring sticky header so that it can be recycled.
+            stopIgnoringView(it)
+
+            // Remove and recycle sticky header.
+            removeView(it)
+            recycler?.recycleView(header)
+        }
+    }
+
+    /**
+     * Returns true when {@code view} is a valid anchor, ie. the first view to be valid and visible.
+     */
+    private fun isViewValidAnchor(view: View, params: RecyclerView.LayoutParams ): Boolean {
+        if (!params.isItemRemoved && !params.isViewInvalid) {
+            return if (orientation == VERTICAL) {
+                if (reverseLayout) {
+                    view.top + view.translationY <= height + translationY
+                } else {
+                    view.bottom - view.translationY >= translationY
+                }
+            }
+            else {
+                if (reverseLayout) {
+                    view.left + view.translationX <= width + translationX
+                }
+                else {
+                    view.right - view.translationX >= translationX
+                }
+            }
+        }
+        else {
+            return false
+        }
+    }
+
+    /**
+     * Returns true when the `view` is at the edge of the parent [RecyclerView].
+     */
+    private fun isViewOnBoundary(view: View): Boolean {
+        return if (orientation == LinearLayoutManager.VERTICAL) {
+            if (reverseLayout) {
+                view.bottom - view.translationY > height + translationY
+            }
+            else {
+                view.top + view.translationY < translationY
+            }
+        }
+        else {
+            if (reverseLayout) {
+                view.right - view.translationX > width + translationX
+            }
+            else {
+                view.left + view.translationX < translationX
+            }
+        }
+    }
+
+    /**
+     * Returns the position in the Y axis to position the header appropriately, depending on orientation, direction and
+     * [android.R.attr.clipToPadding].
+     */
+    private fun getY(headerView: View, nextHeaderView: View?): Float {
+        return if (orientation == LinearLayoutManager.VERTICAL) {
+            var y = translationY
+            if (reverseLayout) {
+                y += (height - headerView.height).toFloat()
+            }
+            if (nextHeaderView != null) {
+                y = if (reverseLayout) Math.max(nextHeaderView.bottom.toFloat(), y) else Math.min((nextHeaderView.top - headerView.height).toFloat(), y)
+            }
+            y
+        }
+        else {
+            translationY
+        }
+    }
+
+    /**
+     * Returns the position in the X axis to position the header appropriately, depending on orientation, direction and
+     * [android.R.attr.clipToPadding].
+     */
+    private fun getX(headerView: View, nextHeaderView: View?): Float {
+        return if (orientation != LinearLayoutManager.VERTICAL) {
+            var x = translationX
+            if (reverseLayout) {
+                x += (width - headerView.width).toFloat()
+            }
+            if (nextHeaderView != null) {
+                x = if (reverseLayout) Math.max(nextHeaderView.right.toFloat(), x) else Math.min((nextHeaderView.left - headerView.width).toFloat(), x)
+            }
+            x
+        }
+        else {
+            translationX
+        }
+    }
+
+    /**
+     * Finds the header index of `position` in `mHeaderPositions`.
+     */
+    private fun findHeaderIndex(position: Int): Int {
+        var low = 0
+        var high = headerPositions.size - 1
+        while (low <= high) {
+            val middle = (low + high) / 2
+            when {
+                headerPositions[middle] > position -> high = middle - 1
+                headerPositions[middle] < position -> low = middle + 1
+                else -> return middle
+            }
+        }
+        return -1
+    }
+
+    /**
+     * Finds the header index of `position` or the one before it in `mHeaderPositions`.
+     */
+    private fun findHeaderIndexOrBefore(position: Int): Int {
+        var low = 0
+        var high = headerPositions.size - 1
+        while (low <= high) {
+            val middle = (low + high) / 2
+            if (headerPositions[middle] > position) {
+                high = middle - 1
+            } else if (middle < headerPositions.size - 1 && headerPositions[middle + 1] <= position) {
+                low = middle + 1
+            } else {
+                return middle
+            }
+        }
+        return -1
+    }
+
+    private fun setPendingScroll(position: Int, offset: Int) {
+        pendingScrollPosition = position
+        pendingScrollOffset = offset
     }
 
     /**

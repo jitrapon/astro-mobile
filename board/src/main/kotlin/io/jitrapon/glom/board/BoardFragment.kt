@@ -80,14 +80,16 @@ class BoardFragment : BaseFragment() {
                     }
                     UiModel.Status.SUCCESS -> {
                         board_status_viewswitcher.reset()
-                        board_recycler_view.adapter.notifyDataSetChanged()
 
                         // loads additional place information for items that have them
                         if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider) else {}
 
                         // if this list is not null, force update specific items
-                        it.itemsChangedIndices?.let {
-                            it.forEach {
+                        if (it.itemsChangedIndices == null) {
+                            board_recycler_view.adapter.notifyDataSetChanged()
+                        }
+                        else {
+                            it.itemsChangedIndices?.forEach {
                                 board_recycler_view.adapter.notifyItemChanged(it)
                             }
                         }
