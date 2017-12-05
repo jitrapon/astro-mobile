@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.getString
 
 /**
@@ -13,7 +14,7 @@ import io.jitrapon.glom.base.util.getString
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), StickyHeaders {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
@@ -63,7 +64,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
 
     override fun getItemViewType(position: Int): Int = viewModel.getBoardItemType(position)
 
-    class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    override fun isStickyHeader(position: Int): Boolean {
+        return false
+    }
+
+    inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val title: TextView = itemView.findViewById(R.id.event_card_title)
         val upcomingTime: TextView = itemView.findViewById(R.id.event_card_time_highlight)
