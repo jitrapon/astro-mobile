@@ -26,6 +26,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             upcomingTime.visibility = View.GONE
                         }
                         else {
+                            upcomingTime.visibility = View.VISIBLE
                             upcomingTime.text = item.upcomingTime
                         }
                         title.text = item.title
@@ -34,6 +35,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             dateTime.visibility = View.GONE
                         }
                         else {
+                            dateTimeIcon.visibility = View.VISIBLE
+                            dateTime.visibility = View.VISIBLE
                             dateTime.text = it.dateTime
                         }
                         if (item.location == null) {
@@ -41,6 +44,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             location.visibility = View.GONE
                         }
                         else {
+                            locationIcon.visibility = View.VISIBLE
+                            location.visibility = View.VISIBLE
                             location.text = location.context.getString(item.location)
                         }
                     }

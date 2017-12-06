@@ -78,12 +78,6 @@ dependencies {
     api("com.android.support:design:$rootProject.supportLibVersion") {
         force = true
     }
-    api("com.android.support:appcompat-v7:$rootProject.supportLibVersion") {
-        force = true
-    }
-    api("com.android.support:recyclerview-v7:$rootProject.supportLibVersion") {
-        force = true
-    }
     api("com.android.support:cardview-v7:$rootProject.supportLibVersion") {
         force = true
     }
@@ -108,7 +102,9 @@ dependencies {
     annotationProcessor "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
 
     // facebook
-    implementation "com.facebook.android:facebook-login:$rootProject.facebookSdkVersion"
+    implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {
+        exclude group: 'com.android.support'
+    }
 
     // reactive
     api "io.reactivex.rxjava2:rxjava:$rootProject.rxJavaVersion"
