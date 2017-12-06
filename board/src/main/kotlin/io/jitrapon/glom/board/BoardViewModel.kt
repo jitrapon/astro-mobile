@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
+import android.util.Log
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AndroidString
 import io.jitrapon.glom.base.data.AsyncErrorResult
@@ -29,6 +30,14 @@ class BoardViewModel : BaseViewModel() {
     /* date time formatter */
     private val format: Format = Format()
 
+    /* default grouping of event items */
+    private val groupType: GroupType = GroupType.WEEK
+
+    companion object {
+
+        const val NUM_WEEK_IN_YEAR = 52
+    }
+
     init {
         interactor = BoardInteractor()
         loadBoard()
@@ -51,7 +60,7 @@ class BoardViewModel : BaseViewModel() {
                         observableBoard.value = boardUiModel.apply {
                             status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = it.toUiModel()
-                            shouldLoadPlaceInfo = true
+                            shouldLoadPlaceInfo = false
                             itemsChangedIndices = null
                         }
                     }
@@ -106,19 +115,59 @@ class BoardViewModel : BaseViewModel() {
      */
     private fun List<BoardItem>.toUiModel(): List<BoardItemUiModel> {
         if (isEmpty()) return Collections.emptyList<BoardItemUiModel>()
-        return map {
-            when (it) {
-                is EventItem -> {
-                    EventItemUiModel(null,
-                            it.itemInfo.eventName,
-                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
-                            getOrLoadLocationString(it.itemInfo.location))
+
+        // get all the event items out of the original list
+        val currTime = Calendar.getInstance().apply { time = Date() }
+        var items = filter { it is EventItem }
+                .sortedBy { (it as EventItem).itemInfo.startTime }
+                .groupBy { item ->
+                    Calendar.getInstance().let {
+                        val startTime = (item as EventItem).itemInfo.startTime
+                        if (startTime == null) null else {
+                            it.time = Date(startTime)
+                            when {
+                                currTime[Calendar.YEAR] > it[Calendar.YEAR] -> {
+                                    (currTime[Calendar.WEEK_OF_YEAR] + ((NUM_WEEK_IN_YEAR
+                                            * (currTime[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+                                }
+                                currTime[Calendar.YEAR] < it[Calendar.YEAR] -> {
+                                    ((NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - currTime[Calendar.YEAR]))
+                                            + it[Calendar.WEEK_OF_YEAR]) - currTime[Calendar.WEEK_OF_YEAR]
+                                }
+                                else -> {
+                                    if (it[Calendar.WEEK_OF_YEAR] < currTime[Calendar.WEEK_OF_YEAR]) {
+                                        (NUM_WEEK_IN_YEAR + it[Calendar.WEEK_OF_YEAR]) - currTime[Calendar.WEEK_OF_YEAR]
+                                    }
+                                    else it[Calendar.WEEK_OF_YEAR] - currTime[Calendar.WEEK_OF_YEAR]
+                                }
+                            }
+                        }
+                    }
                 }
-                else -> {
-                    ErrorItemUiModel()
+                .forEach {
+                    val result = ArrayList<BoardItem>().apply {
+                        for (event in it.value) {
+                            val time = (event as EventItem).itemInfo.startTime
+                            val startTime = if (time == null) null else Date(time)
+                            Log.d("DEBUG", "${it.key}: $startTime")
+                        }
+                    }
                 }
-            }
-        }
+
+//        return map {
+//            when (it) {
+//                is EventItem -> {
+//                    EventItemUiModel(null,
+//                            it.itemInfo.eventName,
+//                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
+//                            getOrLoadLocationString(it.itemInfo.location))
+//                }
+//                else -> {
+//                    ErrorItemUiModel()
+//                }
+//            }
+//        }
+        return Collections.emptyList<BoardItemUiModel>()
     }
 
     /**
