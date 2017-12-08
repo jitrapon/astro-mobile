@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board
 
 import android.os.Parcel
-import android.util.SparseArray
+import android.support.v4.util.ArrayMap
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AsyncErrorResult
@@ -59,17 +59,15 @@ class BoardInteractor {
 
     /**
      * Loads place info for board items that have placeId associated
-     * On completed successfully, returns a sparse array containing the keys as the indices of board items required update,
-     * and the value to be the Place Info
      */
-    fun loadItemPlaceInfo(placeProvider: PlaceProvider?, onComplete: (AsyncResult<SparseArray<Place>>) -> Unit) {
+    fun loadItemPlaceInfo(placeProvider: PlaceProvider?, onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
         board?.let {
-            val itemIndices = ArrayList<Int>()      // index array to keep track of items that contain location info
+            val itemIds = ArrayList<String>()      // list to store item IDs that have Google Place IDs
             val placeIds = it.items
                     .takeLast(itemsLoaded)          // only load place info for items that are loaded in the last page
-                    .filterIndexed { index, item ->
+                    .filter { item ->
                         (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null).let {
-                            if (it) itemIndices.add(index)
+                            if (it) itemIds.add(item.itemId)
                             it
                         }
                     }
@@ -78,16 +76,16 @@ class BoardInteractor {
                     ?.observeOn(AndroidSchedulers.mainThread())
                     ?.subscribeOn(Schedulers.io())
                     ?.subscribe({
-                        if (itemIndices.size == it.size) {
-                            onComplete(AsyncSuccessResult(SparseArray<Place>().apply {
-                                for (i in itemIndices.indices) {
-                                    put(itemIndices[i], it[i])
+                        if (itemIds.size == it.size) {
+                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                                for (i in itemIds.indices) {
+                                    put(itemIds[i], it[i])
                                 }
                             }))
                         }
                         else {
                             onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                    " returned places array size (${it.size}) does not match requested item array size (${itemIndices.size})")))
+                                    " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
                         }
                     }, {
                         onComplete(AsyncErrorResult(it))

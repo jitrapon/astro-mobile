@@ -60,7 +60,7 @@ class BoardViewModel : BaseViewModel() {
                         observableBoard.value = boardUiModel.apply {
                             status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = it.toUiModel()
-                            shouldLoadPlaceInfo = false
+                            shouldLoadPlaceInfo = true
                             itemsChangedIndices = null
                         }
                     }
@@ -87,15 +87,15 @@ class BoardViewModel : BaseViewModel() {
                     observableBoard.value = boardUiModel.apply {
                         shouldLoadPlaceInfo = false
                         itemsChangedIndices = ArrayList()
-                        val places = it.result
-                        for (i in 0 until places.size()) {
-                            val indexToNotify = places.keyAt(i)
-                            val placeName = places.valueAt(i)
-
-                            itemsChangedIndices?.add(indexToNotify)
-                            val item = items?.get(indexToNotify)
-                            if (item is EventItemUiModel) {
-                                item.location = AndroidString(text = placeName.name.toString())
+                        val map = it.result
+                        items?.let {
+                            it.forEachIndexed { index, item ->
+                                if (map.containsKey(item.itemId)) {
+                                    itemsChangedIndices?.add(index)
+                                    if (item is EventItemUiModel) {
+                                        item.location = AndroidString(text = map[item.itemId]?.name.toString())
+                                    }
+                                }
                             }
                         }
                     }
@@ -154,20 +154,21 @@ class BoardViewModel : BaseViewModel() {
                     }
                 }
 
-//        return map {
-//            when (it) {
-//                is EventItem -> {
-//                    EventItemUiModel(null,
-//                            it.itemInfo.eventName,
-//                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
-//                            getOrLoadLocationString(it.itemInfo.location))
-//                }
-//                else -> {
-//                    ErrorItemUiModel()
-//                }
-//            }
-//        }
-        return Collections.emptyList<BoardItemUiModel>()
+        return map {
+            when (it) {
+                is EventItem -> {
+                    EventItemUiModel(
+                            it.itemId,
+                            it.itemInfo.eventName,
+                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
+                            getOrLoadLocationString(it.itemInfo.location)
+                    )
+                }
+                else -> {
+                    ErrorItemUiModel()
+                }
+            }
+        }
     }
 
     /**

@@ -23,30 +23,19 @@
             android:contentDescription="@string/event_card_image_content_description" />
 
         <TextView
-            android:id="@+id/event_card_time_highlight"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.H4.Highlight"
-            android:text="friday night"
-            app:layout_constraintTop_toBottomOf="@+id/event_card_image"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp" />
-
-        <TextView
             android:id="@+id/event_card_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.H1.Bold"
             android:text="Dinner with John"
-            app:layout_constraintTop_toBottomOf="@+id/event_card_time_highlight"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:maxLines="2"
             android:ellipsize="end"
             android:paddingStart="@dimen/card_content_padding"
             android:paddingEnd="@dimen/card_content_padding"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="@dimen/card_content_padding" />
 
         <ImageView
             android:id="@+id/event_card_clock_icon"

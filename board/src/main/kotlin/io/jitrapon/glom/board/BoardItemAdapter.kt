@@ -22,13 +22,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                 is EventItemViewHolder -> {
                     val item = it as EventItemUiModel
                     holder.apply {
-                        if (item.upcomingTime == null) {
-                            upcomingTime.visibility = View.GONE
-                        }
-                        else {
-                            upcomingTime.visibility = View.VISIBLE
-                            upcomingTime.text = item.upcomingTime
-                        }
                         title.text = item.title
                         if (item.dateTime == null) {
                             dateTimeIcon.visibility = View.GONE
@@ -76,7 +69,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
     inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val title: TextView = itemView.findViewById(R.id.event_card_title)
-        val upcomingTime: TextView = itemView.findViewById(R.id.event_card_time_highlight)
         val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)

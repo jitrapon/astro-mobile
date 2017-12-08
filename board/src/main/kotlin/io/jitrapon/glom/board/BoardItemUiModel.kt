@@ -5,6 +5,7 @@ package io.jitrapon.glom.board
  */
 interface BoardItemUiModel {
 
+    val itemId: String?
     val itemType: Int
 
     companion object {

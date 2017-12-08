@@ -13,7 +13,7 @@ interface BoardItem : DataModel {
 
     val itemType: Int
 
-    val itemId: String?
+    val itemId: String
 
     val createdTime: Long?
 

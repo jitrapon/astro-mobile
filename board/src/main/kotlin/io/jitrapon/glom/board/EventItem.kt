@@ -10,7 +10,7 @@ import java.util.*
  * @author Jitrapon Tiachunpun
  */
 data class EventItem(override val itemType: Int,
-                     override val itemId: String?,
+                     override val itemId: String,
                      override val createdTime: Long?,
                      override val updatedTime: Long?,
                      override val owners: List<String>,
