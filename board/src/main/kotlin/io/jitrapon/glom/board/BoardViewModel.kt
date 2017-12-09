@@ -2,7 +2,7 @@ package io.jitrapon.glom.board
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
-import android.util.Log
+import android.support.v4.util.ArrayMap
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AndroidString
 import io.jitrapon.glom.base.data.AsyncErrorResult
@@ -30,8 +30,13 @@ class BoardViewModel : BaseViewModel() {
     /* date time formatter */
     private val format: Format = Format()
 
-    /* default grouping of event items */
-    private val groupType: GroupType = GroupType.WEEK
+    /* default filtering type of items */
+    private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
+
+    /* last grouping key that was emitted from the interactor. This is to indicate
+        whether or not to append a new list of items to the last group, or to start a new group.
+     */
+    private var lastKeyGroup: Any? = null
 
     companion object {
 
@@ -39,7 +44,9 @@ class BoardViewModel : BaseViewModel() {
     }
 
     init {
-        interactor = BoardInteractor()
+        interactor = BoardInteractor().apply {
+            setFilteringType(itemFilterType)
+        }
         loadBoard()
     }
 
@@ -56,9 +63,9 @@ class BoardViewModel : BaseViewModel() {
         runBlockingIO(interactor::loadBoard) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    it.result.items.let {
+                    it.result.let {
                         observableBoard.value = boardUiModel.apply {
-                            status = if (it.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+                            status = if (it.isEmpty) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = it.toUiModel()
                             shouldLoadPlaceInfo = true
                             itemsChangedIndices = null
@@ -113,60 +120,54 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Converts the BoardItem domain model to a list of BoardItemUIModel
      */
-    private fun List<BoardItem>.toUiModel(): List<BoardItemUiModel> {
-        if (isEmpty()) return Collections.emptyList<BoardItemUiModel>()
+    private fun ArrayMap<*, List<BoardItem>>.toUiModel(): List<BoardItemUiModel> {
+        if (isEmpty) return Collections.emptyList<BoardItemUiModel>()
 
-        // get all the event items out of the original list
-        val currTime = Calendar.getInstance().apply { time = Date() }
-        var items = filter { it is EventItem }
-                .sortedBy { (it as EventItem).itemInfo.startTime }
-                .groupBy { item ->
-                    Calendar.getInstance().let {
-                        val startTime = (item as EventItem).itemInfo.startTime
-                        if (startTime == null) null else {
-                            it.time = Date(startTime)
-                            when {
-                                currTime[Calendar.YEAR] > it[Calendar.YEAR] -> {
-                                    (currTime[Calendar.WEEK_OF_YEAR] + ((NUM_WEEK_IN_YEAR
-                                            * (currTime[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
-                                }
-                                currTime[Calendar.YEAR] < it[Calendar.YEAR] -> {
-                                    ((NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - currTime[Calendar.YEAR]))
-                                            + it[Calendar.WEEK_OF_YEAR]) - currTime[Calendar.WEEK_OF_YEAR]
-                                }
-                                else -> {
-                                    if (it[Calendar.WEEK_OF_YEAR] < currTime[Calendar.WEEK_OF_YEAR]) {
-                                        (NUM_WEEK_IN_YEAR + it[Calendar.WEEK_OF_YEAR]) - currTime[Calendar.WEEK_OF_YEAR]
-                                    }
-                                    else it[Calendar.WEEK_OF_YEAR] - currTime[Calendar.WEEK_OF_YEAR]
-                                }
+        // every key in this map represents an information about a group's heading
+        // however if there is only one key, we don't have to group any items
+        if (keys.size == 1) {
+            return this[0]!!.map { it.toUiModel() }
+        }
+
+        val map = this
+        return ArrayList<BoardItemUiModel>().apply {
+            for ((keyIndex, key) in keys.withIndex()) {
+                if (keyIndex == map.size - 1) lastKeyGroup = key
+                add(HeaderItemUiModel(AndroidString(
+                        resId = when (key) {
+                            null -> R.string.board_item_header_no_date
+                            0 -> R.string.board_item_header_this_week
+                            1 -> R.string.board_item_header_next_week
+                            else -> R.string.board_item_header_other_weeks
+                        },
+                        formatArgs = if (key == null) null else {
+                            if (key is Int) {
+                                if (key > 1) arrayOf(key.toString()) else null
                             }
+                            else null
                         }
+                )))
+                map[key]?.let { items ->
+                    items.forEach { item ->
+                        add(item.toUiModel())
                     }
                 }
-                .forEach {
-                    val result = ArrayList<BoardItem>().apply {
-                        for (event in it.value) {
-                            val time = (event as EventItem).itemInfo.startTime
-                            val startTime = if (time == null) null else Date(time)
-                            Log.d("DEBUG", "${it.key}: $startTime")
-                        }
-                    }
-                }
+            }
+        }
+    }
 
-        return map {
-            when (it) {
-                is EventItem -> {
-                    EventItemUiModel(
-                            it.itemId,
-                            it.itemInfo.eventName,
-                            getDateRangeString(it.itemInfo.startTime, it.itemInfo.endTime),
-                            getOrLoadLocationString(it.itemInfo.location)
-                    )
-                }
-                else -> {
-                    ErrorItemUiModel()
-                }
+    private fun BoardItem.toUiModel(): BoardItemUiModel {
+        return when (this) {
+            is EventItem -> {
+                EventItemUiModel(
+                        itemId,
+                        itemInfo.eventName,
+                        getDateRangeString(itemInfo.startTime, itemInfo.endTime),
+                        getOrLoadLocationString(itemInfo.location)
+                )
+            }
+            else -> {
+                ErrorItemUiModel()
             }
         }
     }
@@ -240,6 +241,7 @@ class BoardViewModel : BaseViewModel() {
     fun getBoardItemType(position: Int): Int {
         return when (boardUiModel.items.get(position, null)) {
             is EventItemUiModel -> BoardItemUiModel.TYPE_EVENT
+            is HeaderItemUiModel -> BoardItemUiModel.TYPE_HEADER
             else -> BoardItemUiModel.TYPE_ERROR
         }
     }

@@ -18,6 +18,7 @@
         <item name="homeAsUpIndicator">@drawable/ic_up</item>
 
         <item name="android:textColorPrimary">@color/greyish_brown</item>
+        <item name="android:textColorSecondary">@color/warm_grey</item>
         <item name="android:textColorLink">@color/blueish_purple</item>
         <item name="android:textViewStyle">@style/Widget.Glom.TextView</item>
         <item name="android:textAppearance">@style/TextAppearance.H4</item>
@@ -66,7 +67,8 @@
         <item name="cardBackgroundColor">@color/white</item>
         <item name="cardElevation">@dimen/card_elevation</item>
         <item name="cardCornerRadius">@dimen/card_corner_radius</item>
-        <item name="android:layout_marginTop">@dimen/card_top_margin</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="cardPreventCornerOverlap">false</item>
         <item name="android:layout_marginStart">@dimen/card_side_margin</item>
         <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
     </style>

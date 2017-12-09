@@ -8,4 +8,8 @@
     <string name="event_card_image_content_description">event highlight image</string>
     <string name="event_card_location_content_description">event map</string>
     <string name="event_card_location_placeholder">Retrieving location…</string>
+    <string name="board_item_header_this_week">This week</string>
+    <string name="board_item_header_next_week">Next week</string>
+    <string name="board_item_header_other_weeks">In %1$s weeks</string>
+    <string name="board_item_header_no_date">No date</string>
 </resources>

@@ -11,7 +11,7 @@ interface BoardItemUiModel {
     companion object {
 
         const val TYPE_ERROR = -1
-        const val TYPE_HEADER_DATE = 0
+        const val TYPE_HEADER = 0
         const val TYPE_EVENT = 1
         const val TYPE_FILE = 2
         const val TYPE_DRAWING = 3

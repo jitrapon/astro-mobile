@@ -7,8 +7,10 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AsyncErrorResult
 import io.jitrapon.glom.base.data.AsyncResult
 import io.jitrapon.glom.base.data.AsyncSuccessResult
+import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -34,27 +36,102 @@ class BoardInteractor {
      */
     private var itemsLoaded: Int = 0
 
+    /*
+     * Filtering type of items
+     */
+    private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
+
     init {
         repository = BoardRepository()
     }
 
     /**
-     * Force reload of the board state
+     * Initializes the filtering type of items when items are loaded.
      */
-    fun loadBoard(onComplete: (AsyncResult<Board>) -> Unit) {
+    fun setFilteringType(filterType: ItemFilterType) {
+        itemFilterType = filterType
+    }
+
+    /**
+     * Force reload of the board state, then transforms the items
+     * based on the current filtering types.
+     *
+     * OnComplete returns the ArrayMap containing
+     * keys based on the filtering type, with values containing the list of grouped items that fits
+     * the criteria in each key.
+     *
+     * Loading of items will be executed on the IO thread pool, while processing items will be executed
+     * on the computation thread pool, after which the result is observed on the Android main thread.
+     */
+    fun loadBoard(onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
         repository.load()
                 .delay(1, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
-                .subscribe({
-                    board = it
+                .observeOn(Schedulers.computation())
+                .flatMap {
+                    processItems(it)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    board = it.first
                     itemsLoaded = board?.items?.size ?: 0
-                    board?.let { onComplete(AsyncSuccessResult(it)) }
+                }
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it.second))
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
                 })
+    }
+
+    /**
+     * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.
+     * This function call should be run in a background thread.
+     */
+    private fun processItems(board: Board): Flowable<Pair<Board, ArrayMap<*, List<BoardItem>>>> {
+        val map = when (itemFilterType) {
+            ItemFilterType.EVENTS_BY_WEEK -> {
+                ArrayMap<Int?, List<BoardItem>>().apply {
+                    if (board.items.isEmpty()) put(null, board.items)
+
+                    val now = Calendar.getInstance().apply { time = Date() }
+                    board.items.filter { it is EventItem }                              // make sure that all items are event items
+                            .sortedBy { (it as EventItem).itemInfo.startTime }          // then sort by start time
+                            .groupBy { item ->                                          // group by the week of year
+                                Calendar.getInstance().let {
+                                    val startTime = (item as EventItem).itemInfo.startTime
+                                    if (startTime == null) null else {
+                                        it.time = Date(startTime)
+                                        when {
+                                            now[Calendar.YEAR] > it[Calendar.YEAR] -> {
+                                                (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
+                                                        * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+                                            }
+                                            now[Calendar.YEAR] < it[Calendar.YEAR] -> {
+                                                ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
+                                                        + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
+                                            }
+                                            else -> {
+                                                if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR]) {
+                                                    (BoardViewModel.NUM_WEEK_IN_YEAR + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
+                                                }
+                                                else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            .forEach { put(it.key, it.value) }
+                }
+            }
+            else -> {
+                ArrayMap<Int?, List<BoardItem>>().apply {
+                    put(null, ArrayList())
+                }
+            }
+        }
+        return Flowable.just(board to map)
     }
 
     /**

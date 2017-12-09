@@ -14,11 +14,18 @@ import io.jitrapon.glom.base.util.getString
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), StickyHeaders {
+class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+        StickyHeaders, StickyHeaders.ViewSetup {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
+                is HeaderItemViewHolder -> {
+                    val item = it as HeaderItemUiModel
+                    holder.apply {
+                        text.text = text.context.getString(item.text)
+                    }
+                }
                 is EventItemViewHolder -> {
                     val item = it as EventItemUiModel
                     holder.apply {
@@ -56,6 +63,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_event, parent, false))
+            BoardItemUiModel.TYPE_HEADER -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
+                    .inflate(R.layout.board_item_header, parent, false))
             else -> null
         }
     }
@@ -63,7 +72,20 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
     override fun getItemViewType(position: Int): Int = viewModel.getBoardItemType(position)
 
     override fun isStickyHeader(position: Int): Boolean {
-        return false
+        return viewModel.getBoardItemType(position) == BoardItemUiModel.TYPE_HEADER
+    }
+
+    override fun setupStickyHeaderView(stickyHeader: View) {
+        stickyHeader.translationZ = stickyHeader.context.resources.getDimension(R.dimen.card_header_item_stuck_elevation)
+    }
+
+    override fun teardownStickyHeaderView(stickyHeader: View) {
+        stickyHeader.translationZ = 0f
+    }
+
+    inner class HeaderItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val text: TextView = itemView.findViewById(R.id.board_item_header_text)
     }
 
     inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
