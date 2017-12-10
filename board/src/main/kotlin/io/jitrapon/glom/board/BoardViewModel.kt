@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
+import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.data.AndroidString
 import io.jitrapon.glom.base.data.AsyncErrorResult
@@ -166,7 +167,8 @@ class BoardViewModel : BaseViewModel() {
                         itemId,
                         itemInfo.eventName,
                         getDateRangeString(itemInfo.startTime, itemInfo.endTime),
-                        getOrLoadLocationString(itemInfo.location)
+                        getOrLoadLocationString(itemInfo.location),
+                        getMapLatLng(itemInfo.location)
                 )
             }
             else -> {
@@ -207,11 +209,22 @@ class BoardViewModel : BaseViewModel() {
      */
     private fun getOrLoadLocationString(location: EventLocation?): AndroidString? {
         location ?: return null
-        if (location.placeId == null || location.googlePlaceId == null) {
+        if (location.placeId == null && location.googlePlaceId == null) {
             return AndroidString(resId = R.string.event_card_location_latlng,
                     formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
         }
         return AndroidString(R.string.event_card_location_placeholder)
+    }
+
+    /**
+     * Returns a latlng corresponding to the location of the event
+     */
+    private fun getMapLatLng(location: EventLocation?): LatLng? {
+        location ?: return null
+        if (location.latitude != null && location.longitude != null) {
+            return LatLng(location.latitude, location.longitude)
+        }
+        return null
     }
 
     /**

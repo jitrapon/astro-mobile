@@ -6,6 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.MapsInitializer
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.getString
 
@@ -16,6 +21,13 @@ import io.jitrapon.glom.base.util.getString
  */
 class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         StickyHeaders, StickyHeaders.ViewSetup {
+
+    companion object {
+
+        fun setMapLocation(map: GoogleMap, data: LatLng) {
+
+        }
+    }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
@@ -47,6 +59,13 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             locationIcon.visibility = View.VISIBLE
                             location.visibility = View.VISIBLE
                             location.text = location.context.getString(item.location)
+                        }
+                        if (item.mapLatLng == null) {
+                            // clear the map and free up resources by changing the map type to none
+
+                        }
+                        else {
+
                         }
                     }
                 }
@@ -88,12 +107,37 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
         val text: TextView = itemView.findViewById(R.id.board_item_header_text)
     }
 
-    inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    /**
+     * On event item that has a map, the map will be initialized and onMapReady called.
+     * The map is then initialized with LatLng that is stored as the tag of the MapView.
+     * This ensures that the map is initialised with the latest data that it should display.
+     */
+    inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
 
         val title: TextView = itemView.findViewById(R.id.event_card_title)
         val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)
         val location: TextView = itemView.findViewById(R.id.event_card_location)
+        val mapView: MapView = itemView.findViewById(R.id.event_card_map)
+        var map: GoogleMap? = null
+
+        override fun onMapReady(googleMap: GoogleMap) {
+            MapsInitializer.initialize(itemView.context.applicationContext)
+            map = googleMap
+            map?.let { map ->
+                mapView.tag?.let {
+                    setMapLocation(map, it as LatLng)
+                }
+            }
+        }
+
+        fun initializeMapView() {
+            mapView.apply {
+                visibility = View.VISIBLE
+                onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
+                getMapAsync(this@EventItemViewHolder)
+            }
+        }
     }
 }
