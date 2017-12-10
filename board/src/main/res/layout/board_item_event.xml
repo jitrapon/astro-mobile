@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.H1.Bold"
             android:text="Dinner with John"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/event_card_image"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:maxLines="2"
@@ -83,16 +83,16 @@
             android:layout_marginStart="8dp"
             android:paddingEnd="@dimen/card_content_padding" />
 
-        <ImageView
+        <com.google.android.gms.maps.MapView
             android:visibility="gone"
-            android:id="@+id/event_card_location_map"
+            android:id="@+id/event_card_map"
             android:layout_width="0dp"
             android:layout_height="115dp"
             app:layout_constraintTop_toBottomOf="@+id/event_card_location"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:contentDescription="@string/event_card_location_content_description"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="@dimen/card_content_padding" />
 
     </android.support.constraint.ConstraintLayout>
 

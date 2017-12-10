@@ -113,7 +113,9 @@ class BoardInteractor {
                                                         + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
                                             }
                                             else -> {
-                                                if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR]) {
+
+                                                // for special case where the day falls in the first week of next year
+                                                if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
                                                     (BoardViewModel.NUM_WEEK_IN_YEAR + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
                                                 }
                                                 else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]

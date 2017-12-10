@@ -134,15 +134,18 @@ class BoardViewModel : BaseViewModel() {
             for ((keyIndex, key) in keys.withIndex()) {
                 if (keyIndex == map.size - 1) lastKeyGroup = key
                 add(HeaderItemUiModel(AndroidString(
-                        resId = when (key) {
-                            null -> R.string.board_item_header_no_date
-                            0 -> R.string.board_item_header_this_week
-                            1 -> R.string.board_item_header_next_week
-                            else -> R.string.board_item_header_other_weeks
+                        resId = when {
+                            (key is Int && key < -1) -> { R.string.event_card_header_last_n_weeks }
+                            (key is Int && key == -1) -> { R.string.event_card_header_last_week }
+                            key == null -> R.string.board_item_header_no_date
+                            (key is Int && key == 0) -> R.string.board_item_header_this_week
+                            (key is Int && key == 1) -> R.string.board_item_header_next_week
+                            (key is Int && key > 1) -> R.string.board_item_header_other_weeks
+                            else -> R.string.board_item_header_undefined
                         },
                         formatArgs = if (key == null) null else {
                             if (key is Int) {
-                                if (key > 1) arrayOf(key.toString()) else null
+                                if (key > 1 || key < -1) arrayOf(key.toString()) else null
                             }
                             else null
                         }
@@ -204,6 +207,10 @@ class BoardViewModel : BaseViewModel() {
      */
     private fun getOrLoadLocationString(location: EventLocation?): AndroidString? {
         location ?: return null
+        if (location.placeId == null || location.googlePlaceId == null) {
+            return AndroidString(resId = R.string.event_card_location_latlng,
+                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+        }
         return AndroidString(R.string.event_card_location_placeholder)
     }
 

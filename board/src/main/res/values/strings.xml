@@ -12,4 +12,8 @@
     <string name="board_item_header_next_week">Next week</string>
     <string name="board_item_header_other_weeks">In %1$s weeks</string>
     <string name="board_item_header_no_date">No date</string>
+    <string name="event_card_location_latlng">%1$s, %2$s</string>
+    <string name="event_card_header_last_week">Last week</string>
+    <string name="event_card_header_last_n_weeks">%1$s weeks ago</string>
+    <string name="board_item_header_undefined">Undefined</string>
 </resources>
