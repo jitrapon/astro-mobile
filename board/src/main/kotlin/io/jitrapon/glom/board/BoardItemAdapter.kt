@@ -1,16 +1,20 @@
 package io.jitrapon.glom.board
 
+import android.arch.lifecycle.Lifecycle
+import android.arch.lifecycle.LifecycleObserver
+import android.arch.lifecycle.OnLifecycleEvent
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.getString
 
@@ -19,15 +23,73 @@ import io.jitrapon.glom.base.util.getString
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-        StickyHeaders, StickyHeaders.ViewSetup {
+class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecycle) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+        StickyHeaders, StickyHeaders.ViewSetup, LifecycleObserver {
 
     companion object {
 
-        fun setMapLocation(map: GoogleMap, data: LatLng) {
+        private const val CAMERA_ZOOM_LEVEL = 10f
 
+        /**
+         * Displays a LatLng location on a
+         * {@link com.google.android.gms.maps.GoogleMap}.
+         * Adds a marker and centers the camera on the location with the normal map type.
+         */
+        private fun setMapLocation(map: GoogleMap, data: LatLng) {
+            // Add a marker for this item and set the camera
+            map.apply {
+                // Add a marker for this item and set the camera
+                moveCamera(CameraUpdateFactory.newLatLngZoom(data, CAMERA_ZOOM_LEVEL))
+                addMarker(MarkerOptions().position(data))
+
+                // Set the map type back to normal.
+                mapType = GoogleMap.MAP_TYPE_NORMAL
+            }
         }
     }
+
+    /**
+     * Set containing MapView objects that are created programmatically
+     * in the ViewHolder instances
+     */
+    private val mapViews: HashSet<MapView> = HashSet()
+
+    /**
+     * Initializes the life cycle object from the constructor to be notified of any change in the
+     * state in the life cycle
+     */
+    private var lifeCycle: Lifecycle = lifeCycle.apply {
+        addObserver(this@BoardItemAdapter)
+    }
+
+    //region lifecycle
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    fun onViewResumed() {
+        mapViews.forEach {
+            it.onResume()
+        }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+    fun onViewPaused() {
+        mapViews.forEach {
+            it.onPause()
+        }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onViewDestroyed() {
+        mapViews.forEach {
+            it.onDestroy()
+        }
+        mapViews.clear()
+        lifeCycle.removeObserver(this)
+    }
+
+    //endregion
+
+    //region adapter callbacks
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
@@ -41,7 +103,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                 is EventItemViewHolder -> {
                     val item = it as EventItemUiModel
                     holder.apply {
+
+                        // set up title
                         title.text = item.title
+
+                        // set up event's date time
                         if (item.dateTime == null) {
                             dateTimeIcon.visibility = View.GONE
                             dateTime.visibility = View.GONE
@@ -51,6 +117,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             dateTime.visibility = View.VISIBLE
                             dateTime.text = it.dateTime
                         }
+
+                        // set up event's location text
                         if (item.location == null) {
                             locationIcon.visibility = View.GONE
                             location.visibility = View.GONE
@@ -60,12 +128,12 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
                             location.visibility = View.VISIBLE
                             location.text = location.context.getString(item.location)
                         }
-                        if (item.mapLatLng == null) {
-                            // clear the map and free up resources by changing the map type to none
 
-                        }
-                        else {
-
+                        // set up event's map, if available
+                        item.mapLatLng.let {
+                            mapView.tag = it
+                            if (it == null) clearMapView()
+                            else showMapView(it)
                         }
                     }
                 }
@@ -73,6 +141,12 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
 
                 }
             }
+        }
+    }
+
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        if (holder is EventItemViewHolder) {
+            holder.clearMapView()
         }
     }
 
@@ -102,6 +176,9 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
         stickyHeader.translationZ = 0f
     }
 
+    //endregion
+    //region view holder classes
+
     inner class HeaderItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val text: TextView = itemView.findViewById(R.id.board_item_header_text)
@@ -122,10 +199,19 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
         val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         var map: GoogleMap? = null
 
+        init {
+            // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
+            // rather, we should do it as soon as this ViewHolder instance is created.
+            initializeMapView()
+            mapViews.add(mapView)
+        }
+
         override fun onMapReady(googleMap: GoogleMap) {
-            MapsInitializer.initialize(itemView.context.applicationContext)
             map = googleMap
             map?.let { map ->
+                map.uiSettings.isMapToolbarEnabled = false
+
+                // this view tag will be set if onBindViewHolder() is called before onMapReady called
                 mapView.tag?.let {
                     setMapLocation(map, it as LatLng)
                 }
@@ -134,10 +220,28 @@ class BoardItemAdapter(private val viewModel: BoardViewModel) : RecyclerView.Ada
 
         fun initializeMapView() {
             mapView.apply {
-                visibility = View.VISIBLE
+                visibility = View.GONE
                 onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
                 getMapAsync(this@EventItemViewHolder)
             }
         }
+
+        fun showMapView(data: LatLng) {
+            mapView.visibility = View.VISIBLE
+            map?.let { it ->
+                setMapLocation(it, data)
+            }
+        }
+
+        fun clearMapView() {
+            mapView.visibility = View.GONE
+            map?.apply {
+                // clear the map and free up resources by changing the map type to none
+                clear()
+                mapType = GoogleMap.MAP_TYPE_NONE
+            }
+        }
     }
+
+    //endregion
 }

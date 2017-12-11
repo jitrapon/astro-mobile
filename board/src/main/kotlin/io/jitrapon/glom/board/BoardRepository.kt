@@ -16,6 +16,7 @@ class BoardRepository : Repository<Board>() {
 
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)
+        val condoLocation = EventLocation(13.722591, 100.580225, null, null)
         val dinnerLocation = EventLocation(null, null, "ChIJhfF-wgOf4jARwAQMPbMAAQ8", null)
         val shoppingLocation = EventLocation(null, null, "ChIJcWLOjAGf4jARWrAvcZ1YFDM", null)
         val cafeLocation = EventLocation(null, null, "ChIJEyfe5-ee4jAR8d8sxPe29PA", null)
@@ -61,7 +62,7 @@ class BoardRepository : Repository<Board>() {
                         false, null, false, false, listOf("yoshi3003"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "10", createdTime, createdTime, listOf("yoshi3003"),
-                EventInfo("2018 new year party", 1514725200000L, 1514746800000L, houseLocation, null, "Asia/Bangkok",
+                EventInfo("2018 new year party", 1514725200000L, 1514746800000L, condoLocation, null, "Asia/Bangkok",
                         false, null, false, false, listOf("yoshi3003"))))
     }
 }

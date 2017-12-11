@@ -57,7 +57,7 @@ class BoardFragment : BaseFragment() {
      */
     override fun onSetupView(view: View) {
         board_recycler_view.apply {
-            adapter = BoardItemAdapter(viewModel)
+            adapter = BoardItemAdapter(viewModel, this@BoardFragment.lifecycle)
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
         }

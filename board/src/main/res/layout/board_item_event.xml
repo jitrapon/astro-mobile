@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/CardView.BoardItem"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    xmlns:map="http://schemas.android.com/apk/res-auto" >
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
@@ -92,7 +93,9 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:contentDescription="@string/event_card_location_content_description"
-            android:layout_marginTop="@dimen/card_content_padding" />
+            android:layout_marginTop="@dimen/card_content_padding"
+            map:liteMode="true"
+            map:mapType="none" />
 
     </android.support.constraint.ConstraintLayout>
 
