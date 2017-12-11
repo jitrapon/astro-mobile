@@ -28,7 +28,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
 
     companion object {
 
-        private const val CAMERA_ZOOM_LEVEL = 10f
+        private const val CAMERA_ZOOM_LEVEL = 13f
 
         /**
          * Displays a LatLng location on a

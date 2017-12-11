@@ -7,7 +7,7 @@ import android.os.Looper
  * Executes an array of function, by an optional amount of time in-between them, using Android's
  * Handler
  */
-fun Array<() -> Unit>.run(delayBetween: Long = 150L) {
+fun Array<() -> Unit>.run(delayBetween: Long) {
     var index = 0
     val array = this
     val handler = Handler(Looper.getMainLooper())

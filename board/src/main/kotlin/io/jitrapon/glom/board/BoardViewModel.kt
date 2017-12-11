@@ -61,7 +61,7 @@ class BoardViewModel : BaseViewModel() {
             status = UiModel.Status.LOADING
         }
 
-        runBlockingIO(interactor::loadBoard) {
+        runBlockingIO(interactor::loadBoard, 0L) {
             when (it) {
                 is AsyncSuccessResult -> {
                     it.result.let {
