@@ -4,7 +4,7 @@ import android.support.annotation.DrawableRes
 import android.support.annotation.IdRes
 import android.support.annotation.StringRes
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.data.UiActionModel
+import io.jitrapon.glom.base.model.UiActionModel
 
 /**
  * List of all possible navigation items

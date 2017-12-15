@@ -1,18 +1,22 @@
 package io.jitrapon.glom.board
 
-import io.jitrapon.glom.base.data.Repository
-import io.jitrapon.glom.base.data.SourceType
+import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import java.util.*
 
 /**
+ * Repository for retrieving and saving Board information
+ *
  * @author Jitrapon Tiachunpun
  */
 class BoardRepository : Repository<Board>() {
 
-    override val type: SourceType = SourceType.CACHE
-
     override fun load(): Flowable<Board> = Flowable.just(Board("abcd1234", getItems()))
+
+    override fun loadList(): Flowable<List<Board>> {
+        //not applicable
+        throw NotImplementedError()
+    }
 
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)

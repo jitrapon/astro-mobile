@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.data
+package io.jitrapon.glom.base.model
 
 /**
  * A UiModel class encapsulates data that is ready to be presented by a View through ViewModel. Classes

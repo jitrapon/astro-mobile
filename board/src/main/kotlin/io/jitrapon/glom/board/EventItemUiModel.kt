@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board
 
 import com.google.android.gms.maps.model.LatLng
-import io.jitrapon.glom.base.data.AndroidString
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
 
 /**

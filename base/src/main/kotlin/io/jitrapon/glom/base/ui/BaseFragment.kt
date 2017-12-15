@@ -11,7 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.data.*
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.color
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar

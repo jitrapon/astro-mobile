@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.data.UiModel
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.obtainViewModel
@@ -82,7 +82,7 @@ class BoardFragment : BaseFragment() {
                         board_status_viewswitcher.reset()
 
                         // loads additional place information for items that have them
-                        if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider) else {}
+                        if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider)
 
                         // if this list is not null, force update specific items
                         if (it.itemsChangedIndices == null) {

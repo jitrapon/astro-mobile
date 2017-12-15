@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.data
+package io.jitrapon.glom.base.model
 
 import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.MutableLiveData

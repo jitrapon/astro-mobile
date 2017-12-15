@@ -4,9 +4,9 @@ import android.os.Parcel
 import android.support.v4.util.ArrayMap
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.data.AsyncErrorResult
-import io.jitrapon.glom.base.data.AsyncResult
-import io.jitrapon.glom.base.data.AsyncSuccessResult
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers

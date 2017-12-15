@@ -3,7 +3,7 @@ package io.jitrapon.glom.base.viewmodel
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.ViewModel
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.data.*
+import io.jitrapon.glom.base.model.*
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic

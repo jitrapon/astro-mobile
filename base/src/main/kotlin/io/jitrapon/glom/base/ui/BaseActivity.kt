@@ -6,10 +6,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 import com.google.android.instantapps.InstantApps
-import io.jitrapon.glom.base.data.Alert
-import io.jitrapon.glom.base.data.Snackbar
-import io.jitrapon.glom.base.data.Toast
-import io.jitrapon.glom.base.data.UiActionModel
+import io.jitrapon.glom.base.model.Alert
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.Toast
+import io.jitrapon.glom.base.model.UiActionModel
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast

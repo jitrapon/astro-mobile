@@ -5,10 +5,10 @@ import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.data.AndroidString
-import io.jitrapon.glom.base.data.AsyncErrorResult
-import io.jitrapon.glom.base.data.AsyncSuccessResult
-import io.jitrapon.glom.base.data.UiModel
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
@@ -69,6 +69,7 @@ class BoardViewModel : BaseViewModel() {
                             status = if (it.isEmpty) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = it.toUiModel()
                             shouldLoadPlaceInfo = true
+                            shouldLoadUserAvatars = true
                             itemsChangedIndices = null
                         }
                     }
@@ -113,6 +114,10 @@ class BoardViewModel : BaseViewModel() {
                 }
             }
         }
+    }
+
+    fun loadUserAvatars() {
+
     }
 
     //endregion
@@ -169,6 +174,7 @@ class BoardViewModel : BaseViewModel() {
                         getDateRangeString(itemInfo.startTime, itemInfo.endTime),
                         getOrLoadLocationString(itemInfo.location),
                         getMapLatLng(itemInfo.location)
+                        //TODO get user avatar from userId
                 )
             }
             else -> {

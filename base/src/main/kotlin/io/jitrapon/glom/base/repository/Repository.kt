@@ -1,5 +1,6 @@
-package io.jitrapon.glom.base.data
+package io.jitrapon.glom.base.repository
 
+import io.jitrapon.glom.base.model.DataModel
 import io.reactivex.Flowable
 
 /**
@@ -13,14 +14,14 @@ import io.reactivex.Flowable
 abstract class Repository<T> where T : DataModel {
 
     /**
-     * The type of data source this repository retrieves its DataModel from.
-     */
-    abstract val type: SourceType
-
-    /**
-     * Loads a data from a data source. Must be implemented by child repository.
+     * Loads a data from a data source.
      */
     abstract fun load(): Flowable<T>
+
+    /**
+     * Loads a list of data from a data source.
+     */
+    abstract fun loadList(): Flowable<List<T>>
 
     /**
      * Creates or updates the specified data to a data source. Can be optionally implemented by child repository.

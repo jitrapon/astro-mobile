@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board
 
-import io.jitrapon.glom.base.data.AndroidString
+import io.jitrapon.glom.base.model.AndroidString
 
 /**
  * @author Jitrapon Tiachunpun

@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.data
+package io.jitrapon.glom.base.model
 
 /**
  * @author Jitrapon Tiachunpun

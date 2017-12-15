@@ -5,7 +5,7 @@ import android.support.annotation.ColorRes
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.widget.Toast
-import io.jitrapon.glom.base.data.AndroidString
+import io.jitrapon.glom.base.model.AndroidString
 
 /**
  * Contains various functions using the Context

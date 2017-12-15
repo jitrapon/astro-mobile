@@ -2,7 +2,7 @@ package io.jitrapon.glom.board
 
 import android.os.Parcel
 import android.os.Parcelable
-import io.jitrapon.glom.base.data.DataModel
+import io.jitrapon.glom.base.model.DataModel
 import java.util.*
 
 /**
