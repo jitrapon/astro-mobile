@@ -7,11 +7,13 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.User
+import io.jitrapon.glom.base.repository.UserRepository
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 /**
  * Interactor for dealing with Board logic
@@ -21,15 +23,14 @@ import java.util.concurrent.TimeUnit
 class BoardInteractor {
 
     /*
-     * Repository that requests from network to retrieve data
+     * Repository retrieving and saving board data
      */
-    private lateinit var repository: BoardRepository
+    private lateinit var boardRepository: BoardRepository
 
     /*
-     * Cached board state. Will be updated whenever loadBoard() function
-     * is called
+     * Repository retrieving and saving user data
      */
-    private var board: Board? = null
+    private lateinit var userRepository: UserRepository
 
     /*
      * The number of items that was loaded
@@ -42,7 +43,8 @@ class BoardInteractor {
     private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
     init {
-        repository = BoardRepository()
+        boardRepository = BoardRepository()
+        userRepository = UserRepository()
     }
 
     /**
@@ -64,17 +66,18 @@ class BoardInteractor {
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
     fun loadBoard(onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
-        repository.load()
-                .delay(1, TimeUnit.SECONDS)
+        Flowable.zip(boardRepository.load(), userRepository.loadList(),
+                        BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
+                            board to users
+                        })
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .flatMap {
-                    processItems(it)
+                    processItems(it.first)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext {
-                    board = it.first
-                    itemsLoaded = board?.items?.size ?: 0
+                    itemsLoaded = it.first.items.size
                 }
                 .subscribe({
                     onComplete(AsyncSuccessResult(it.second))
@@ -140,7 +143,7 @@ class BoardInteractor {
      * Loads place info for board items that have placeId associated
      */
     fun loadItemPlaceInfo(placeProvider: PlaceProvider?, onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
-        board?.let {
+        boardRepository.getCache()?.let {
             val itemIds = ArrayList<String>()      // list to store item IDs that have Google Place IDs
             val placeIds = it.items
                     .takeLast(itemsLoaded)          // only load place info for items that are loaded in the last page

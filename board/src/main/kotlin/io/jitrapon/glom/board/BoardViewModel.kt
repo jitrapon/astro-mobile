@@ -28,6 +28,9 @@ class BoardViewModel : BaseViewModel() {
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
 
+    /* whether or not first load function has been called */
+    private var firstLoadCalled: Boolean = false
+
     /* date time formatter */
     private val format: Format = Format()
 
@@ -42,6 +45,8 @@ class BoardViewModel : BaseViewModel() {
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
+        const val FIRST_LOAD_ANIM_DELAY = 0L
+        const val SUBSEQUENT_LOAD_ANIM_DELAY = 300L
     }
 
     init {
@@ -61,7 +66,7 @@ class BoardViewModel : BaseViewModel() {
             status = UiModel.Status.LOADING
         }
 
-        runBlockingIO(interactor::loadBoard, 0L) {
+        runBlockingIO(interactor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
                 is AsyncSuccessResult -> {
                     it.result.let {
@@ -83,6 +88,7 @@ class BoardViewModel : BaseViewModel() {
                 }
             }
         }
+        firstLoadCalled = true
     }
 
     /**
@@ -114,10 +120,6 @@ class BoardViewModel : BaseViewModel() {
                 }
             }
         }
-    }
-
-    fun loadUserAvatars() {
-
     }
 
     //endregion

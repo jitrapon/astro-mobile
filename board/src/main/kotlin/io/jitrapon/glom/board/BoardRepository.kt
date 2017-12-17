@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * Repository for retrieving and saving Board information
@@ -11,7 +12,18 @@ import java.util.*
  */
 class BoardRepository : Repository<Board>() {
 
-    override fun load(): Flowable<Board> = Flowable.just(Board("abcd1234", getItems()))
+    /*
+     * Cached board state. Will be updated whenever loadBoard() function
+     * is called
+     */
+    private var board: Board? = null
+
+    override fun load(): Flowable<Board> {
+        board = board ?: Board("abcd1234", getItems())
+        return Flowable.just(board!!).delay(1000L, TimeUnit.MILLISECONDS)
+    }
+
+    fun getCache(): Board? = board
 
     override fun loadList(): Flowable<List<Board>> {
         //not applicable
