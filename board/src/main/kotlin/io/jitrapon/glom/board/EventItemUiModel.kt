@@ -12,4 +12,5 @@ data class EventItemUiModel(override val itemId: String?,
                             val dateTime: String?,
                             var location: AndroidString?,
                             val mapLatLng: LatLng?,     // if not null, will show mini map at the specified lat lng
+                            val attendeesAvatars: List<String?>?,
                             override val itemType: Int = TYPE_EVENT) : BoardItemUiModel

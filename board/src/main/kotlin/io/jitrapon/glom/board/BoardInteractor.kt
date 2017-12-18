@@ -175,6 +175,17 @@ class BoardInteractor {
         }
     }
 
+    /**
+     * Returns list of loaded users, if available from specified IDs
+     */
+    fun getUsers(userIds: List<String>): List<User?>? {
+        return ArrayList<User?>().apply {
+            userIds.forEach {
+                add(userRepository.getById(it))
+            }
+        }
+    }
+
     private fun testParcelable(board: Board) {
         val parcel = Parcel.obtain()
         board.writeToParcel(parcel, 0)

@@ -9,10 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
@@ -207,6 +204,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
         }
 
         override fun onMapReady(googleMap: GoogleMap) {
+            MapsInitializer.initialize(itemView.context)
             map = googleMap
             map?.let { map ->
                 map.uiSettings.isMapToolbarEnabled = false

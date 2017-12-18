@@ -13,6 +13,7 @@ import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import java.util.*
+import kotlin.math.absoluteValue
 
 /**
  * ViewModel class responsible for showing and interacting with the Board
@@ -153,7 +154,7 @@ class BoardViewModel : BaseViewModel() {
                         },
                         formatArgs = if (key == null) null else {
                             if (key is Int) {
-                                if (key > 1 || key < -1) arrayOf(key.toString()) else null
+                                if (key > 1 || key < -1) arrayOf(key.absoluteValue.toString()) else null
                             }
                             else null
                         }
@@ -175,8 +176,8 @@ class BoardViewModel : BaseViewModel() {
                         itemInfo.eventName,
                         getDateRangeString(itemInfo.startTime, itemInfo.endTime),
                         getOrLoadLocationString(itemInfo.location),
-                        getMapLatLng(itemInfo.location)
-                        //TODO get user avatar from userId
+                        getMapLatLng(itemInfo.location),
+                        getUserAvatars(itemInfo.attendees)
                 )
             }
             else -> {
@@ -233,6 +234,14 @@ class BoardViewModel : BaseViewModel() {
             return LatLng(location.latitude, location.longitude)
         }
         return null
+    }
+
+    /**
+     * Returns the list of user avatars from user ids
+     */
+    private fun getUserAvatars(userIds: List<String>): List<String?>? {
+        val users = interactor.getUsers(userIds) ?: return null
+        return users.map { it?.avatar }
     }
 
     /**
