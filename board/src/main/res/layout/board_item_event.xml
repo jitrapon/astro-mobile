@@ -97,6 +97,15 @@
             map:liteMode="true"
             map:mapType="none" />
 
+        <ImageView
+            android:id="@+id/event_card_attendee1_avatar"
+            android:layout_marginTop="@dimen/card_content_padding"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/event_card_map"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="@dimen/card_content_padding" />
+
     </android.support.constraint.ConstraintLayout>
 
 </android.support.v7.widget.CardView>

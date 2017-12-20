@@ -33,6 +33,7 @@ buildscript {
         rxAndroidVersion = '2.0.1'
         playServicesVersion = '11.6.2'
         retrofitVersion = '2.3.0'
+        okhttp3Version = '3.9.1'
     }
 
     repositories {

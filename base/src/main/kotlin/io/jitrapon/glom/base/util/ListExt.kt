@@ -16,3 +16,12 @@ fun <T> List<T>?.get(position: Int, defaultValue: T?): T? {
     if (isEmpty() || position < 0 || position > size - 1) return defaultValue
     return get(position)
 }
+
+/**
+ * Returns true iff this List is null or empty
+ */
+fun <T> List<T>?.isNullOrEmpty(): Boolean {
+    this ?: return true
+    if (isEmpty()) return true
+    return false
+}

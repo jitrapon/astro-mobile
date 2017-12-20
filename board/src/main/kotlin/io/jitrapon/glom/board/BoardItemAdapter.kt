@@ -3,24 +3,33 @@ package io.jitrapon.glom.board
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
+import android.support.v4.app.Fragment
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import io.jitrapon.glom.base.component.clear
+import io.jitrapon.glom.base.component.loadFromUrl
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.getString
+import io.jitrapon.glom.base.util.hide
+import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.show
 
 /**
  * RecyclerView's Adapter for the board items
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecycle) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         StickyHeaders, StickyHeaders.ViewSetup, LifecycleObserver {
 
     companion object {
@@ -55,7 +64,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
      * Initializes the life cycle object from the constructor to be notified of any change in the
      * state in the life cycle
      */
-    private var lifeCycle: Lifecycle = lifeCycle.apply {
+    private var lifeCycle: Lifecycle = fragment.lifecycle.apply {
         addObserver(this@BoardItemAdapter)
     }
 
@@ -106,23 +115,23 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
 
                         // set up event's date time
                         if (item.dateTime == null) {
-                            dateTimeIcon.visibility = View.GONE
-                            dateTime.visibility = View.GONE
+                            dateTimeIcon.hide()
+                            dateTime.hide()
                         }
                         else {
-                            dateTimeIcon.visibility = View.VISIBLE
-                            dateTime.visibility = View.VISIBLE
+                            dateTimeIcon.show()
+                            dateTime.show()
                             dateTime.text = it.dateTime
                         }
 
                         // set up event's location text
                         if (item.location == null) {
-                            locationIcon.visibility = View.GONE
-                            location.visibility = View.GONE
+                            locationIcon.hide()
+                            location.hide()
                         }
                         else {
-                            locationIcon.visibility = View.VISIBLE
-                            location.visibility = View.VISIBLE
+                            locationIcon.show()
+                            location.show()
                             location.text = location.context.getString(item.location)
                         }
 
@@ -131,6 +140,20 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
                             mapView.tag = it
                             if (it == null) clearMapView()
                             else showMapView(it)
+                        }
+
+                        // set up event's attendee list
+                        item.attendeesAvatars.let {
+                            if (it.isNullOrEmpty()) {
+                                clearImages()
+                                attendee1Avatar.hide()
+                            }
+                            else {
+                                attendee1Avatar.apply {
+                                    show()
+                                    loadFromUrl(fragment, it!![0])
+                                }
+                            }
                         }
                     }
                 }
@@ -143,7 +166,10 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         if (holder is EventItemViewHolder) {
-            holder.clearMapView()
+            holder.apply {
+                clearMapView()
+                clearImages()
+            }
         }
     }
 
@@ -195,6 +221,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
         val location: TextView = itemView.findViewById(R.id.event_card_location)
         val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         var map: GoogleMap? = null
+        val attendee1Avatar: ImageView = itemView.findViewById(R.id.event_card_attendee1_avatar)
 
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
@@ -204,7 +231,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
         }
 
         override fun onMapReady(googleMap: GoogleMap) {
-            MapsInitializer.initialize(itemView.context)
             map = googleMap
             map?.let { map ->
                 map.uiSettings.isMapToolbarEnabled = false
@@ -218,26 +244,30 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, lifeCycle: Lifecyc
 
         fun initializeMapView() {
             mapView.apply {
-                visibility = View.GONE
+                hide()
                 onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
                 getMapAsync(this@EventItemViewHolder)
             }
         }
 
         fun showMapView(data: LatLng) {
-            mapView.visibility = View.VISIBLE
+            mapView.show()
             map?.let { it ->
                 setMapLocation(it, data)
             }
         }
 
         fun clearMapView() {
-            mapView.visibility = View.GONE
+            mapView.hide()
             map?.apply {
                 // clear the map and free up resources by changing the map type to none
                 clear()
                 mapType = GoogleMap.MAP_TYPE_NONE
             }
+        }
+
+        fun clearImages() {
+            attendee1Avatar.clear(fragment)
         }
     }
 

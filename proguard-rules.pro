@@ -23,11 +23,12 @@
 -keep class android.support.v7.widget.RoundRectDrawable { *; }
 
 # glide
--keep public class * implements com.bumptech.glide.module.GlideModule
+-keep public class * extends com.bumptech.glide.module.AppGlideModule
 -keep public enum com.bumptech.glide.load.resource.bitmap.ImageHeaderParser$** {
     **[] $VALUES;
     public *;
 }
+-keep class com.bumptech.glide.GeneratedAppGlideModuleImpl
 
 # architecture components
 -keepclassmembers class * implements android.arch.lifecycle.LifecycleObserver {
@@ -93,7 +94,7 @@
     public static final ** CREATOR;
 }
 
-# retrofit
+# retrofit & okhttp
 -dontwarn okio.**
 -dontwarn javax.annotation.**
 -dontwarn retrofit2.**
@@ -103,6 +104,12 @@
 -keepclasseswithmembers class * {
     @retrofit2.http.* <methods>;
 }
--dontwarn rx.**
+-keepclasseswithmembers interface * {
+    @retrofit2.* <methods>;
+}
+-dontwarn okhttp3.**
+-dontnote retrofit2.Platform
+-dontwarn retrofit2.Platform$Java8
 # Also you must note that if you are using GSON for conversion from JSON to POJO representation, you must ignore those POJO classes from being obfuscated.
 # Here include the POJO's that have you have created for mapping JSON response to POJO for example.
+
