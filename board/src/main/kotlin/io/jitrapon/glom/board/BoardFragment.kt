@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import android.arch.lifecycle.Observer
+import android.support.v4.app.FragmentActivity
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
 import android.view.View
@@ -21,9 +22,7 @@ import kotlinx.android.synthetic.main.board_fragment.*
 class BoardFragment : BaseFragment() {
 
     /* this fragment's main ViewModel instance */
-    private val viewModel: BoardViewModel by lazy {
-        obtainViewModel(BoardViewModel::class.java)
-    }
+    private lateinit var viewModel: BoardViewModel
 
     /*
      * Google place provider
@@ -51,6 +50,13 @@ class BoardFragment : BaseFragment() {
      * Returns the progress bar for when this view is empty
      */
     override fun getEmptyLoadingView() = board_progressbar as ProgressBar
+
+    /**
+     * Create this fragment's ViewModel instance
+     */
+    override fun onCreateViewModel(activity: FragmentActivity) {
+        viewModel = obtainViewModel(BoardViewModel::class.java)
+    }
 
     /**
      * Called when any view must be initialized

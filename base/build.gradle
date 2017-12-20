@@ -83,6 +83,12 @@ dependencies {
     }
     api "com.android.support.constraint:constraint-layout:$rootProject.constraintLayoutVersion"
 
+    // media loading
+    api ("com.github.bumptech.glide:glide:$rootProject.glideVersion") {
+        exclude group: 'com.android.support'
+    }
+    annotationProcessor "com.github.bumptech.glide:compiler:$rootProject.glideVersion"
+
     // architecture components
     api "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
     implementation "android.arch.lifecycle:common-java8:$rootProject.archLifecycleVersion"

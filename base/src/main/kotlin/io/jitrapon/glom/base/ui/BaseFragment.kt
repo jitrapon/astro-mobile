@@ -5,6 +5,7 @@ import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentActivity
 import android.support.v4.widget.SwipeRefreshLayout
 import android.view.LayoutInflater
 import android.view.View
@@ -44,6 +45,7 @@ abstract class BaseFragment : Fragment() {
             setOnRefreshListener(onRefreshListener)
             setColorSchemeColors(color(R.color.lightish_red)!!)
         }
+        onCreateViewModel(activity!!)
         onSetupView(view)
     }
 
@@ -94,6 +96,11 @@ abstract class BaseFragment : Fragment() {
      * to call any necessary ViewModel's function to (re)-load the data
      */
     open fun onRefresh() {}
+
+    /**
+     * Called when a ViewModel needs to be initialized for use later
+     */
+    open fun onCreateViewModel(activity: FragmentActivity) {}
 
     /**
      * Override this method to perform all necessary view initializations in the fragment, if any

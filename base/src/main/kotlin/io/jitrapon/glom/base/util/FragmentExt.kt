@@ -5,6 +5,7 @@ import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.support.annotation.ColorRes
 import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentActivity
 
 /**
  * Various extension functions for Fragment and wrapper around ContextExt to handle nullable
@@ -38,8 +39,8 @@ fun Fragment.showAlertDialog(title: String?, message: String?, positiveOptionTex
 /**
  * Convenient function for retrieving the ViewModel based on its class name
  */
-fun <T : ViewModel> Fragment.obtainViewModel(viewModelClass: Class<T>, fromActivity: Boolean = false): T {
-    return if (fromActivity) ViewModelProviders.of(activity, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
+fun <T : ViewModel> Fragment.obtainViewModel(viewModelClass: Class<T>, activity: FragmentActivity? = null): T {
+    return if (activity != null) ViewModelProviders.of(activity, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
     else ViewModelProviders.of(this, ViewModelProvider.NewInstanceFactory()).get(viewModelClass)
 }
 
