@@ -32,6 +32,7 @@ buildscript {
         rxJavaVersion = '2.1.6'
         rxAndroidVersion = '2.0.1'
         playServicesVersion = '11.6.2'
+        retrofitVersion = '2.3.0'
     }
 
     repositories {

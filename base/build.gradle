@@ -14,8 +14,6 @@ android {
         versionCode rootProject.versionCode
         versionName rootProject.versionName
 
-        consumerProguardFiles 'proguard-rules.pro'
-
         // support vector graphics for pre-lollipop devices
         vectorDrawables.useSupportLibrary = true
 
@@ -54,6 +52,7 @@ android {
             crunchPngs false
             debuggable false
             signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
 
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
         }
@@ -118,6 +117,10 @@ dependencies {
 
     // google play services
     api "com.google.android.gms:play-services-places:$rootProject.playServicesVersion"
+
+    // networking
+    api "com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion"
+    api "com.squareup.retrofit2:adapter-rxjava2:$rootProject.retrofitVersion"
 
     // testing
     testImplementation "junit:junit:$rootProject.junitVersion"
