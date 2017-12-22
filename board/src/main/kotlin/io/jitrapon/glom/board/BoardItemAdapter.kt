@@ -100,65 +100,96 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
-                is HeaderItemViewHolder -> {
-                    val item = it as HeaderItemUiModel
-                    holder.apply {
-                        text.text = text.context.getString(item.text)
-                    }
+                is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
+                is EventItemViewHolder -> bindEventItem(it as EventItemUiModel, holder)
+                else -> {}
+            }
+        }
+    }
+
+    /**
+     * @param payloads A non-null list of merged payloads. Can be empty list if requires full
+     *                 update.
+     */
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int, payloads: List<Any>) {
+        viewModel.getBoardItemUiModel(position)?.let {
+            when (holder) {
+                is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
+                is EventItemViewHolder -> bindEventItem(it as EventItemUiModel, holder, payloads)
+                else -> {}
+            }
+        }
+    }
+
+    private fun bindHeaderItem(item: HeaderItemUiModel, holder: HeaderItemViewHolder) {
+        holder.apply {
+            text.text = text.context.getString(item.text)
+        }
+    }
+
+    private fun bindEventItem(item: EventItemUiModel, holder: EventItemViewHolder, payloads: List<Any>? = null) {
+        //TODO create seperate method in holder to update individual fields
+        // if payload is null or empty, perform full update.
+        // otherwise, other each field accordingly
+        if (payloads.isNullOrEmpty()) {
+            holder.apply {
+                // update all fields
+            }
+        }
+        else {
+            for (field in payloads!!) {
+                when (field as Int) {
+                    0 -> {}
+                    1 -> {}
+                    2 -> {}
                 }
-                is EventItemViewHolder -> {
-                    val item = it as EventItemUiModel
-                    holder.apply {
+            }
+        }
 
-                        // set up title
-                        title.text = item.title
+        holder.apply {
+            // set up title
+            title.text = item.title
 
-                        // set up event's date time
-                        if (item.dateTime == null) {
-                            dateTimeIcon.hide()
-                            dateTime.hide()
-                        }
-                        else {
-                            dateTimeIcon.show()
-                            dateTime.show()
-                            dateTime.text = it.dateTime
-                        }
+            // set up event's date time
+            if (item.dateTime == null) {
+                dateTimeIcon.hide()
+                dateTime.hide()
+            }
+            else {
+                dateTimeIcon.show()
+                dateTime.show()
+                dateTime.text = item.dateTime
+            }
 
-                        // set up event's location text
-                        if (item.location == null) {
-                            locationIcon.hide()
-                            location.hide()
-                        }
-                        else {
-                            locationIcon.show()
-                            location.show()
-                            location.text = location.context.getString(item.location)
-                        }
+            // set up event's location text
+            if (item.location == null) {
+                locationIcon.hide()
+                location.hide()
+            }
+            else {
+                locationIcon.show()
+                location.show()
+                location.text = location.context.getString(item.location)
+            }
 
-                        // set up event's map, if available
-                        item.mapLatLng.let {
-                            mapView.tag = it
-                            if (it == null) clearMapView()
-                            else showMapView(it)
-                        }
+            // set up event's map, if available
+            item.mapLatLng.let {
+                mapView.tag = it
+                if (it == null) clearMapView()
+                else showMapView(it)
+            }
 
-                        // set up event's attendee list
-                        item.attendeesAvatars.let {
-                            if (it.isNullOrEmpty()) {
-                                clearImages()
-                                attendee1Avatar.hide()
-                            }
-                            else {
-                                attendee1Avatar.apply {
-                                    show()
-                                    loadFromUrl(fragment, it!![0])
-                                }
-                            }
-                        }
-                    }
+            // set up event's attendee list
+            item.attendeesAvatars.let {
+                if (it.isNullOrEmpty()) {
+                    clearImages()
+                    attendee1Avatar.hide()
                 }
-                else -> {
-
+                else {
+                    attendee1Avatar.apply {
+                        show()
+                        loadFromUrl(fragment, it!![0])
+                    }
                 }
             }
         }
