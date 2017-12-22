@@ -128,67 +128,23 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     }
 
     private fun bindEventItem(item: EventItemUiModel, holder: EventItemViewHolder, payloads: List<Any>? = null) {
-        //TODO create seperate method in holder to update individual fields
-        // if payload is null or empty, perform full update.
-        // otherwise, other each field accordingly
-        if (payloads.isNullOrEmpty()) {
-            holder.apply {
-                // update all fields
-            }
-        }
-        else {
-            for (field in payloads!!) {
-                when (field as Int) {
-                    0 -> {}
-                    1 -> {}
-                    2 -> {}
-                }
-            }
-        }
-
         holder.apply {
-            // set up title
-            title.text = item.title
-
-            // set up event's date time
-            if (item.dateTime == null) {
-                dateTimeIcon.hide()
-                dateTime.hide()
+            if (payloads.isNullOrEmpty()) {
+                updateTitle(item)
+                updateDateTime(item)
+                updateLocation(item)
+                updateMap(item)
+                updateAttendees(item)
             }
             else {
-                dateTimeIcon.show()
-                dateTime.show()
-                dateTime.text = item.dateTime
-            }
-
-            // set up event's location text
-            if (item.location == null) {
-                locationIcon.hide()
-                location.hide()
-            }
-            else {
-                locationIcon.show()
-                location.show()
-                location.text = location.context.getString(item.location)
-            }
-
-            // set up event's map, if available
-            item.mapLatLng.let {
-                mapView.tag = it
-                if (it == null) clearMapView()
-                else showMapView(it)
-            }
-
-            // set up event's attendee list
-            item.attendeesAvatars.let {
-                if (it.isNullOrEmpty()) {
-                    clearImages()
-                    attendee1Avatar.hide()
-                }
-                else {
-                    attendee1Avatar.apply {
-                        show()
-                        loadFromUrl(fragment, it!![0])
+                val fields = payloads!!.first() as List<*>
+                for (field in fields) {
+                    when (field as Int) {
+                        EventItemUiModel.TITLE -> { updateTitle(item) }
+                        EventItemUiModel.DATETIME -> { updateDateTime(item) }
+                        EventItemUiModel.LOCATION -> { updateLocation(item) }
+                        EventItemUiModel.MAPLATLNG -> { updateMap(item) }
+                        EventItemUiModel.ATTENDEES -> { updateAttendees(item) }
                     }
                 }
             }
@@ -299,6 +255,57 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
         fun clearImages() {
             attendee1Avatar.clear(fragment)
+        }
+
+        fun updateTitle(item: EventItemUiModel) {
+            title.text = item.title
+        }
+
+        fun updateDateTime(item: EventItemUiModel) {
+            if (item.dateTime == null) {
+                dateTimeIcon.hide()
+                dateTime.hide()
+            }
+            else {
+                dateTimeIcon.show()
+                dateTime.show()
+                dateTime.text = item.dateTime
+            }
+        }
+
+        fun updateLocation(item: EventItemUiModel) {
+            if (item.location == null) {
+                locationIcon.hide()
+                location.hide()
+            }
+            else {
+                locationIcon.show()
+                location.show()
+                location.text = location.context.getString(item.location)
+            }
+        }
+
+        fun updateMap(item: EventItemUiModel) {
+            item.mapLatLng.let {
+                mapView.tag = it
+                if (it == null) clearMapView()
+                else showMapView(it)
+            }
+        }
+
+        fun updateAttendees(item: EventItemUiModel) {
+            item.attendeesAvatars.let {
+                if (it.isNullOrEmpty()) {
+                    clearImages()
+                    attendee1Avatar.hide()
+                }
+                else {
+                    attendee1Avatar.apply {
+                        show()
+                        loadFromUrl(fragment, it!![0])
+                    }
+                }
+            }
         }
     }
 

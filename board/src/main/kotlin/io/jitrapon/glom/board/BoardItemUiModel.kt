@@ -5,7 +5,7 @@ package io.jitrapon.glom.board
  */
 interface BoardItemUiModel {
 
-    val itemId: String
+    val itemId: String?
     val itemType: Int
 
     companion object {
@@ -19,4 +19,11 @@ interface BoardItemUiModel {
         const val TYPE_LIST = 5
         const val TYPE_NOTE = 6
     }
+
+    /**
+     * Returns the list of Integer defining which field of the UiModel has changed.
+     * Used by the RecyclerView adapter's onBindViewHolder. An empty list represents a full update
+     * of all fields.
+     */
+    fun getChangePayload(other: BoardItemUiModel?): List<Int>
 }

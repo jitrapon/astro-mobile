@@ -1,14 +1,15 @@
 package io.jitrapon.glom.board
 
+import android.support.v7.util.DiffUtil
 import io.jitrapon.glom.base.model.UiModel
 
 /**
- * UiModel for the board screen
+ * UiModel that controls visual representation of the board with items
  *
  * @author Jitrapon Tiachunpun
  */
 data class BoardUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
                         var items: List<BoardItemUiModel>? = null,
-                        var shouldLoadPlaceInfo: Boolean = false,
-                        var shouldLoadUserAvatars: Boolean = false,
-                        var itemsChangedIndices: MutableList<Int>? = null) : UiModel
+                        var diffResult: DiffUtil.DiffResult? = null,
+                        var itemsChangedIndices: MutableList<Int>? = null,
+                        var shouldLoadPlaceInfo: Boolean = false) : UiModel

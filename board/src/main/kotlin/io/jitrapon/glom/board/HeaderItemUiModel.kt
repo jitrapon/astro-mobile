@@ -5,6 +5,11 @@ import io.jitrapon.glom.base.model.AndroidString
 /**
  * @author Jitrapon Tiachunpun
  */
-class HeaderItemUiModel(val text: AndroidString,
+data class HeaderItemUiModel(val text: AndroidString,
                         override val itemType: Int = BoardItemUiModel.TYPE_HEADER,
-                        override val itemId: String? = null) : BoardItemUiModel
+                        override val itemId: String? = null) : BoardItemUiModel {
+
+    override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
+        return ArrayList()
+    }
+}

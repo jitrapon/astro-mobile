@@ -91,12 +91,20 @@ class BoardFragment : BaseFragment() {
                         if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider)
 
                         // if this list is not null, force update specific items
-                        if (it.itemsChangedIndices == null) {
-                            board_recycler_view.adapter.notifyDataSetChanged()
-                        }
-                        else {
+                        if (it.itemsChangedIndices != null) {
                             it.itemsChangedIndices?.forEach {
                                 board_recycler_view.adapter.notifyItemChanged(it)
+                            }
+                        }
+                        else {
+                            // perform full recyclerview updates only when diff results is not available
+                            it.diffResult.let {
+                                if (it == null) {
+                                    board_recycler_view.adapter.notifyDataSetChanged()
+                                }
+                                else {
+                                    it.dispatchUpdatesTo(board_recycler_view.adapter)
+                                }
                             }
                         }
                     }

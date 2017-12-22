@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
+import android.support.v7.util.DiffUtil
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.AndroidString
@@ -11,7 +12,9 @@ import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.base.util.get
+import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
+import io.jitrapon.glom.base.viewmodel.runAsync
 import java.util.*
 import kotlin.math.absoluteValue
 
@@ -70,15 +73,25 @@ class BoardViewModel : BaseViewModel() {
         runBlockingIO(interactor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    it.result.let {
-                        observableBoard.value = boardUiModel.apply {
-                            status = if (it.isEmpty) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
-                            items = it.toUiModel()
-                            shouldLoadPlaceInfo = true
-                            shouldLoadUserAvatars = true
-                            itemsChangedIndices = null
+                    runAsync({
+                        it.result.toUiModel().let {
+                            it to if (boardUiModel.items.isNullOrEmpty()) null else
+                                DiffUtil.calculateDiff(BoardItemDiffCallback(boardUiModel.items, it), true)
                         }
-                    }
+                    }, onComplete = { (uiModel, diff) ->
+                        observableBoard.value = boardUiModel.apply {
+                            status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+                            items = uiModel
+                            diffResult = diff
+                            shouldLoadPlaceInfo = true
+                        }
+                    }, onError = {
+                        handleError(it)
+                        observableBoard.value = boardUiModel.apply {
+                            status = UiModel.Status.ERROR
+                            items = null
+                        }
+                    })
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
@@ -93,8 +106,7 @@ class BoardViewModel : BaseViewModel() {
     }
 
     /**
-     * Retrieves place information for board items. We need this call from the View because
-     * PlaceProvider can only be instantiated using the Android.view context
+     * Retrieves place information for board items that need to show them.
      */
     fun loadPlaceInfo(placeProvider: PlaceProvider?) {
         interactor.loadItemPlaceInfo(placeProvider) {
@@ -103,6 +115,7 @@ class BoardViewModel : BaseViewModel() {
                     observableBoard.value = boardUiModel.apply {
                         shouldLoadPlaceInfo = false
                         itemsChangedIndices = ArrayList()
+                        diffResult = null
                         val map = it.result
                         items?.let {
                             it.forEachIndexed { index, item ->
@@ -130,7 +143,7 @@ class BoardViewModel : BaseViewModel() {
      * Converts the BoardItem domain model to a list of BoardItemUIModel
      */
     private fun ArrayMap<*, List<BoardItem>>.toUiModel(): List<BoardItemUiModel> {
-        if (isEmpty) return Collections.emptyList<BoardItemUiModel>()
+        if (isEmpty) return ArrayList()
 
         // every key in this map represents an information about a group's heading
         // however if there is only one key, we don't have to group any items
