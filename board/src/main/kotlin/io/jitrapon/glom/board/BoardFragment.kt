@@ -11,6 +11,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
+import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.obtainViewModel
 import kotlinx.android.synthetic.main.board_fragment.*
 
@@ -91,7 +92,7 @@ class BoardFragment : BaseFragment() {
                         if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider)
 
                         // if this list is not null, force update specific items
-                        if (it.itemsChangedIndices != null) {
+                        if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
                                 board_recycler_view.adapter.notifyItemChanged(it)
                             }

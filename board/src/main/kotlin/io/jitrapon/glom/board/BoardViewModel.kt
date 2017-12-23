@@ -80,6 +80,7 @@ class BoardViewModel : BaseViewModel() {
                         }
                     }, onComplete = { (uiModel, diff) ->
                         observableBoard.value = boardUiModel.apply {
+                            itemsChangedIndices = null
                             status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                             items = uiModel
                             diffResult = diff
