@@ -1,43 +1,76 @@
 package io.jitrapon.glom.board
 
+import android.support.v4.app.Fragment
 import android.support.v7.widget.RecyclerView
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import io.jitrapon.glom.base.component.loadFromUrl
 import io.jitrapon.glom.base.ui.widget.recyclerview.PartialRecyclerViewAdapter
+import io.jitrapon.glom.base.util.isNullOrEmpty
 
 /**
+ * Recyclerview Adapter that displays the list of event attendees
+ *
  * Created by Jitrapon
  */
-class AttendeeAdapter : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+class AttendeeAdapter(private val fragment: Fragment, private var attendees: List<String?>? = null,
+                      private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
 
-    override fun getMoreItemViewType(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    companion object {
+
+        private const val TYPE_AVATAR = 0
+        private const val TYPE_MORE = 1
     }
 
-    override fun getVisibleItemCount(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun setItems(attendees: List<String?>?) {
+        this.attendees = attendees
+        notifyDataSetChanged()
     }
 
-    override fun getAllItemCount(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getMoreItemViewType(): Int = TYPE_MORE
+
+    override fun getVisibleItemCount(): Int = visibleItemCount
+
+    override fun getAllItemCount(): Int = attendees.let {
+        if (it.isNullOrEmpty()) 0 else it!!.size
     }
 
-    override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder =
+            MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.avatar_remaining_item, parent, false))
 
-    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+            AvatarViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.avatar_item, parent, false))
 
-    override fun getOtherItemViewType(position: Int): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getOtherItemViewType(position: Int): Int = TYPE_AVATAR
 
     override fun onBindMoreItemViewHolder(holder: RecyclerView.ViewHolder, remainingItemCount: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        (holder as MoreItemViewHolder).updateCount(remainingItemCount)
     }
 
     override fun onBindOtherItemViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        attendees?.let {
+            (holder as AvatarViewHolder).setAvatar(it[position])
+        }
+    }
+
+    inner class MoreItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val text: TextView = itemView.findViewById(R.id.remaining_count_text)
+
+        fun updateCount(count: Int) {
+            text.text = "+$count"
+        }
+    }
+
+    inner class AvatarViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+
+        val image: ImageView = itemView.findViewById(R.id.avatar_image)
+
+        fun setAvatar(imageUrl: String?) {
+            image.loadFromUrl(fragment, imageUrl)
+        }
     }
 }

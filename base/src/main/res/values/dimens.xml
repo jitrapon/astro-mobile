@@ -19,4 +19,5 @@
     <dimen name="card_content_padding">16dp</dimen>
     <dimen name="card_header_item_stuck_elevation">5dp</dimen>
     <dimen name="card_header_item_text_margin">30dp</dimen>
+    <dimen name="card_avatar_small">24dp</dimen>
 </resources>

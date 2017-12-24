@@ -97,14 +97,19 @@
             map:liteMode="true"
             map:mapType="none" />
 
-        <ImageView
-            android:id="@+id/event_card_attendee1_avatar"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/event_card_attendees"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/card_content_padding"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/event_card_map"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="@dimen/card_content_padding" />
+            app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+            android:orientation="horizontal"
+            android:clipToPadding="false"
+            android:layout_marginStart="@dimen/card_content_padding"
+            android:paddingEnd="@dimen/card_content_padding" />
 
     </android.support.constraint.ConstraintLayout>
 

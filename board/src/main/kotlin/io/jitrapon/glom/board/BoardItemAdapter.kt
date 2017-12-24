@@ -16,8 +16,6 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import io.jitrapon.glom.base.component.clear
-import io.jitrapon.glom.base.component.loadFromUrl
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
@@ -94,7 +92,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     }
 
     //endregion
-
     //region adapter callbacks
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
@@ -155,7 +152,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         if (holder is EventItemViewHolder) {
             holder.apply {
                 clearMapView()
-                clearImages()
             }
         }
     }
@@ -208,13 +204,16 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         val location: TextView = itemView.findViewById(R.id.event_card_location)
         val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         var map: GoogleMap? = null
-        val attendee1Avatar: ImageView = itemView.findViewById(R.id.event_card_attendee1_avatar)
+        val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
 
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
             // rather, we should do it as soon as this ViewHolder instance is created.
             initializeMapView()
             mapViews.add(mapView)
+            attendees.apply {
+                adapter = AttendeeAdapter(fragment)
+            }
         }
 
         override fun onMapReady(googleMap: GoogleMap) {
@@ -251,10 +250,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 clear()
                 mapType = GoogleMap.MAP_TYPE_NONE
             }
-        }
-
-        fun clearImages() {
-            attendee1Avatar.clear(fragment)
         }
 
         fun updateTitle(item: EventItemUiModel) {
@@ -295,14 +290,15 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
         fun updateAttendees(item: EventItemUiModel) {
             item.attendeesAvatars.let {
-                if (it.isNullOrEmpty()) {
-                    clearImages()
-                    attendee1Avatar.hide()
-                }
-                else {
-                    attendee1Avatar.apply {
+                attendees.apply {
+                    if (it.isNullOrEmpty()) {
+                        hide()
+                    }
+                    else {
                         show()
-                        loadFromUrl(fragment, it!![0])
+                        adapter?.let {
+                            (it as AttendeeAdapter).setItems(item.attendeesAvatars)
+                        }
                     }
                 }
             }

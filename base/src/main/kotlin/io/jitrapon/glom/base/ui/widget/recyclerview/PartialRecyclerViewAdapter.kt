@@ -58,9 +58,7 @@ abstract class PartialRecyclerViewAdapter<T> : RecyclerView.Adapter<T>() where T
     override fun getItemCount(): Int {
         val allCount = getAllItemCount()
         val visibleCount = getVisibleItemCount()
-        return if (allCount == 0) 0 else {
-            if (visibleCount >= allCount) allCount else visibleCount + 1
-        }
+        return if (allCount == 0) 0 else Math.min(allCount, visibleCount + 1)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): T {
