@@ -51,7 +51,7 @@ abstract class PartialRecyclerViewAdapter<T> : RecyclerView.Adapter<T>() where T
     abstract fun onBindOtherItemViewHolder(holder: T, position: Int)
     
     override fun getItemViewType(position: Int): Int {
-        return if (position == itemCount - 1 && itemCount != getVisibleItemCount()) getMoreItemViewType() 
+        return if (position == itemCount - 1 && getVisibleItemCount() < getAllItemCount()) getMoreItemViewType()
         else getOtherItemViewType(position)
     }
     

@@ -113,17 +113,19 @@ class BoardViewModel : BaseViewModel() {
         interactor.loadItemPlaceInfo(placeProvider) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    observableBoard.value = boardUiModel.apply {
-                        shouldLoadPlaceInfo = false
-                        itemsChangedIndices = ArrayList()
-                        diffResult = null
-                        val map = it.result
-                        items?.let {
-                            it.forEachIndexed { index, item ->
-                                if (map.containsKey(item.itemId)) {
-                                    itemsChangedIndices?.add(index)
-                                    if (item is EventItemUiModel) {
-                                        item.location = AndroidString(text = map[item.itemId]?.name.toString())
+                    if (!it.result.isEmpty) {
+                        observableBoard.value = boardUiModel.apply {
+                            shouldLoadPlaceInfo = false
+                            itemsChangedIndices = ArrayList()
+                            diffResult = null
+                            val map = it.result
+                            items?.let {
+                                it.forEachIndexed { index, item ->
+                                    if (map.containsKey(item.itemId)) {
+                                        itemsChangedIndices?.add(index)
+                                        if (item is EventItemUiModel) {
+                                            item.location = AndroidString(text = map[item.itemId]?.name.toString())
+                                        }
                                     }
                                 }
                             }
@@ -149,7 +151,7 @@ class BoardViewModel : BaseViewModel() {
         // every key in this map represents an information about a group's heading
         // however if there is only one key, we don't have to group any items
         if (keys.size == 1) {
-            return this[0]!!.map { it.toUiModel() }
+            return this[keyAt(0)]!!.map { it.toUiModel() }
         }
 
         val map = this

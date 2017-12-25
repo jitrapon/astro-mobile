@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import io.jitrapon.glom.base.component.Transformation
 import io.jitrapon.glom.base.component.loadFromUrl
 import io.jitrapon.glom.base.ui.widget.recyclerview.PartialRecyclerViewAdapter
 import io.jitrapon.glom.base.util.isNullOrEmpty
@@ -61,7 +62,7 @@ class AttendeeAdapter(private val fragment: Fragment, private var attendees: Lis
         val text: TextView = itemView.findViewById(R.id.remaining_count_text)
 
         fun updateCount(count: Int) {
-            text.text = "+$count"
+            text.text = "$count more"
         }
     }
 
@@ -70,7 +71,7 @@ class AttendeeAdapter(private val fragment: Fragment, private var attendees: Lis
         val image: ImageView = itemView.findViewById(R.id.avatar_image)
 
         fun setAvatar(imageUrl: String?) {
-            image.loadFromUrl(fragment, imageUrl)
+            image.loadFromUrl(fragment, imageUrl, transformation = Transformation.CIRCLE_CROP)
         }
     }
 }

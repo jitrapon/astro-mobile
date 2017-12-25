@@ -136,6 +136,9 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+    // logging
+    api "com.jakewharton.timber:timber:$rootProject.timberVersion"
+
     // modules
     feature project(':board')
     feature project(":map")

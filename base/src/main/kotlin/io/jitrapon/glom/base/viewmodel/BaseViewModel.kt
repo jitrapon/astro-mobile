@@ -4,6 +4,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.ViewModel
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.AppLogger
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
@@ -49,6 +50,7 @@ abstract class BaseViewModel : ViewModel() {
      * Generic error handling from a response
      */
     fun handleError(throwable: Throwable) {
+        AppLogger.e(throwable)
         observableViewAction.execute(arrayOf(
                 Loading(false),
                 Snackbar(resId = R.string.error_generic)

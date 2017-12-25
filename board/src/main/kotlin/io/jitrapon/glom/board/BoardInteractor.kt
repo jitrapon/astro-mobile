@@ -154,24 +154,28 @@ class BoardInteractor {
                         }
                     }
                     .map { (it.itemInfo as EventInfo).location?.googlePlaceId!! }.toTypedArray()
-            placeProvider?.retrievePlaces(placeIds)
-                    ?.observeOn(AndroidSchedulers.mainThread())
-                    ?.subscribeOn(Schedulers.io())
-                    ?.subscribe({
-                        if (itemIds.size == it.size) {
-                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
-                                for (i in itemIds.indices) {
-                                    put(itemIds[i], it[i])
-                                }
-                            }))
-                        }
-                        else {
-                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                    " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
-                        }
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
+            if (placeIds.isEmpty()) {
+                onComplete(AsyncSuccessResult(ArrayMap()))
+            }
+            else {
+                placeProvider?.retrievePlaces(placeIds)
+                        ?.observeOn(AndroidSchedulers.mainThread())
+                        ?.subscribeOn(Schedulers.io())
+                        ?.subscribe({
+                            if (itemIds.size == it.size) {
+                                onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                                    for (i in itemIds.indices) {
+                                        put(itemIds[i], it[i])
+                                    }
+                                }))
+                            } else {
+                                onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                                        " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
+                            }
+                        }, {
+                            onComplete(AsyncErrorResult(it))
+                        })
+            }
         }
     }
 

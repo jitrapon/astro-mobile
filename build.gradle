@@ -34,6 +34,7 @@ buildscript {
         playServicesVersion = '11.6.2'
         retrofitVersion = '2.3.0'
         okhttp3Version = '3.9.1'
+        timberVersion = '4.6.0'
     }
 
     repositories {

@@ -6,8 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.support.annotation.Size
 import android.support.v4.app.Fragment
-import android.util.Log
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.finish
 
 /**
@@ -16,8 +16,6 @@ import io.jitrapon.glom.base.util.finish
  * @author Jitrapon Tiachunpun
  */
 object Router {
-
-    private const val TAG = "Router"
 
     /**
      * Launch a specfic activity by specifying the module under which the activity belongs to
@@ -40,7 +38,7 @@ object Router {
                     it.startActivity(Intent(it, Class.forName(className)))
                 }
                 catch (ex: Exception) {
-                    Log.e(TAG, "Failed to launch module '$module'. Could not find class $className")
+                    AppLogger.w("Failed to launch module '$module'. Could not find class $className")
                 }
             }
             if (shouldFinish) {

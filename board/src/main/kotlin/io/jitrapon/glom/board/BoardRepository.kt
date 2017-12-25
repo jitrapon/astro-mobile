@@ -43,7 +43,7 @@ class BoardRepository : Repository<Board>() {
 
         add(EventItem(BoardItem.TYPE_EVENT, "1", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("House Party!", 1512993600000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, listOf("yoshi3003", "fatcat18", "fluffy", "panda"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "2", createdTime, createdTime, listOf("yoshi3003", "fatcat18"),
                 EventInfo("Dinner", 1513076400000L, 1508594400000L, dinnerLocation, null, "Asia/Bangkok",
@@ -55,15 +55,15 @@ class BoardRepository : Repository<Board>() {
 
         add(EventItem(BoardItem.TYPE_EVENT, "4", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Shopping", null, null, shoppingLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, listOf("yoshi3003", "fatcat18"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "5", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Board game night", null, null, cafeLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, listOf("yoshi3003", "fluffy", "panda"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "6", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Beach trip", 1513702800000L, 1514048400000L, null, null, "Asia/Bangkok",
-                        true, null, false, false, listOf("yoshi3003"))))
+                        true, null, false, false, listOf("yoshi3003", "fatcat18"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "7", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Christmas Party", 1514203200000L, null, houseLocation, null, "Asia/Bangkok",

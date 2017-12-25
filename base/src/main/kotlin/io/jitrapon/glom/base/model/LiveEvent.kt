@@ -6,7 +6,7 @@ import android.arch.lifecycle.Observer
 import android.os.Handler
 import android.os.Looper
 import android.support.annotation.MainThread
-import android.util.Log
+import io.jitrapon.glom.base.util.AppLogger
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -34,7 +34,7 @@ class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
     @MainThread
     override fun observe(owner: LifecycleOwner, observer: Observer<T>) {
         if (hasActiveObservers()) {
-            Log.w(TAG, "Multiple observers registered but only one will be notified of changes.")
+            AppLogger.w("Multiple observers registered but only one will be notified of changes.")
         }
 
         // Observe the internal MutableLiveData
@@ -57,10 +57,6 @@ class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
     @MainThread
     fun call() {
         value = null
-    }
-
-    companion object {
-        private const val TAG = "SingleLiveEvent"
     }
 
     /**

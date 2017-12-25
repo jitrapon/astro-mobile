@@ -21,11 +21,12 @@ enum class Transformation {
  * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
  */
 fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeholder: Int? = null,
-                          transformation: Transformation = Transformation.NONE) {
+                          @DrawableRes error: Int? = null, transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
             .load(url)
             .apply {
                 placeholder?.let (this::placeholder)
+                error?.let (this::error)
                 when (transformation) {
                     Transformation.FIT_CENTER -> fitCenter()
                     Transformation.CENTER_INSIDE -> centerInside()
