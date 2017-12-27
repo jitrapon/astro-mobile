@@ -27,7 +27,7 @@
             android:id="@+id/event_card_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.H1.Bold"
+            android:textAppearance="@style/TextAppearance.H1"
             android:text="Dinner with John"
             app:layout_constraintTop_toBottomOf="@+id/event_card_image"
             app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +40,7 @@
 
         <ImageView
             android:id="@+id/event_card_clock_icon"
-            android:layout_width="wrap_content"
+            android:layout_width="@dimen/card_icon_small"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_time"
             app:layout_constraintTop_toBottomOf="@+id/event_card_title"
@@ -63,7 +63,7 @@
 
         <ImageView
             android:id="@+id/event_card_location_icon"
-            android:layout_width="wrap_content"
+            android:layout_width="@dimen/card_icon_small"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_marker"
             app:layout_constraintTop_toBottomOf="@+id/event_card_date_time"

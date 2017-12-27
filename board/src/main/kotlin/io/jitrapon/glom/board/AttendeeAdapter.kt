@@ -17,7 +17,8 @@ import io.jitrapon.glom.base.util.isNullOrEmpty
  *
  * Created by Jitrapon
  */
-class AttendeeAdapter(private val fragment: Fragment, private var attendees: List<String?>? = null,
+class AttendeeAdapter(private val fragment: Fragment,
+                      private var attendees: List<String?>? = null,
                       private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -62,7 +63,9 @@ class AttendeeAdapter(private val fragment: Fragment, private var attendees: Lis
         val text: TextView = itemView.findViewById(R.id.remaining_count_text)
 
         fun updateCount(count: Int) {
-            text.text = "$count more"
+            fragment.context?.let {
+                text.text = String.format(it.getString(R.string.event_attendee_remaining_count), count)
+            }
         }
     }
 

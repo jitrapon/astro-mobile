@@ -21,4 +21,5 @@
     <dimen name="card_header_item_text_margin">30dp</dimen>
     <dimen name="avatar_small">30dp</dimen>
     <dimen name="avatar_normal">40dp</dimen>
+    <dimen name="avatar_spacing">7dp</dimen>
 </resources>

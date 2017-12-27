@@ -15,12 +15,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
+import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
-import io.jitrapon.glom.base.util.getString
-import io.jitrapon.glom.base.util.hide
-import io.jitrapon.glom.base.util.isNullOrEmpty
-import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.*
 
 /**
  * RecyclerView's Adapter for the board items
@@ -32,7 +31,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     companion object {
 
-        private const val CAMERA_ZOOM_LEVEL = 13f
+        private const val CAMERA_ZOOM_LEVEL = 15f
 
         /**
          * Displays a LatLng location on a
@@ -212,13 +211,25 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             initializeMapView()
             mapViews.add(mapView)
             attendees.apply {
-                adapter = AttendeeAdapter(fragment)
+                adapter = AttendeeAdapter(fragment, visibleItemCount = 3)
+                fragment.context?.let {
+                    addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(R.dimen.avatar_spacing)))
+                }
             }
         }
 
         override fun onMapReady(googleMap: GoogleMap) {
             map = googleMap
             map?.let { map ->
+                try {
+                    map.setMapStyle(MapStyleOptions.loadRawResourceStyle(fragment.context, R.raw.map_style)).let {
+                        if (!it) AppLogger.w("Google Maps custom style parsing failed")
+                    }
+                }
+                catch (ex: Exception) {
+                    AppLogger.w(ex)
+                }
+
                 map.uiSettings.isMapToolbarEnabled = false
 
                 // this view tag will be set if onBindViewHolder() is called before onMapReady called

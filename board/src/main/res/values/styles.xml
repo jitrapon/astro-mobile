@@ -6,12 +6,7 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="TextAppearance.H1.Bold" parent="@style/TextAppearance.H1">
-        <item name="android:textStyle">bold</item>
-    </style>
-
     <style name="TextAppearance.H4.Light" parent="@style/TextAppearance.H4">
         <item name="android:textColor">@color/warm_grey</item>
-        <item name="android:textStyle">bold</item>
     </style>
 </resources>

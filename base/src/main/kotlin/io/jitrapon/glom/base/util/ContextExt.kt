@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.util
 
 import android.content.Context
 import android.support.annotation.ColorRes
+import android.support.annotation.DimenRes
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.widget.Toast
@@ -60,3 +61,5 @@ fun Context.getString(string: AndroidString?): String? {
         return null
     }
 }
+
+fun Context.dimen(@DimenRes dimenId: Int): Int = resources.getDimensionPixelSize(dimenId)

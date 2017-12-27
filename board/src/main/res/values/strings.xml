@@ -16,4 +16,5 @@
     <string name="event_card_header_last_week">Last week</string>
     <string name="event_card_header_last_n_weeks">%1$s weeks ago</string>
     <string name="board_item_header_undefined">Undefined</string>
+    <string name="event_attendee_remaining_count">+%1$s</string>
 </resources>
