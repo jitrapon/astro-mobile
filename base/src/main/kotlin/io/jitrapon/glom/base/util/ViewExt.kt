@@ -1,5 +1,7 @@
 package io.jitrapon.glom.base.util
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.support.design.widget.Snackbar
 import android.view.View
 
@@ -25,12 +27,27 @@ fun View.showSnackbar(message: String?, resId: Int?, actionMessage: String? = nu
  * Toggles the visibility of the view to be VISIBLE
  */
 fun View.show() {
+    if (alpha != 1.0f) alpha = 1.0f
     if (visibility != View.VISIBLE) visibility = View.VISIBLE
 }
 
 /**
  * Toggles the visibility of the view to be GONE
  */
-fun View.hide() {
-    if (visibility != View.GONE) visibility = View.GONE
+fun View.hide(animateDuration: Long? = null) {
+    animateDuration.let {
+        if (it == null) {
+            if (visibility != View.GONE) visibility = View.GONE else {}
+        }
+        else {
+            animate().alpha(0.0f)
+                    .setDuration(it)
+                    .setListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            super.onAnimationEnd(animation)
+                            visibility = View.GONE
+                        }}
+                    )
+        }
+    }
 }

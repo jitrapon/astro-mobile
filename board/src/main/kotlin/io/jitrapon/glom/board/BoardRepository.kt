@@ -43,42 +43,76 @@ class BoardRepository : Repository<Board>() {
 
         add(EventItem(BoardItem.TYPE_EVENT, "1", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("House Party!", 1512993600000L, null, houseLocation, "Celebrate my birthday", "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003", "fatcat18", "fluffy", "panda"))))
+                        false, null, false, false, arrayListOf("yoshi3003", "fatcat18", "fluffy", "panda"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "2", createdTime, createdTime, listOf("yoshi3003", "fatcat18"),
                 EventInfo("Dinner", 1513076400000L, 1508594400000L, dinnerLocation, null, "Asia/Bangkok",
-                        false, repeatEvery3Days, false, false, listOf("yoshi3003", "fatcat18"))))
+                        false, repeatEvery3Days, false, false, arrayListOf("fatcat18"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "3", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("gym", 1512720000000L, null, null, null, "Asia/Bangkok",
-                        false, repeatEveryWeek, false, false, listOf("yoshi3003"))))
+                        false, repeatEveryWeek, false, false, arrayListOf("yoshi3003"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "4", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Shopping", null, null, shoppingLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003", "fatcat18"))))
+                        false, null, false, false, arrayListOf("fatcat18"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "5", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Board game night", null, null, cafeLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003", "fluffy", "panda"))))
+                        false, null, false, false, arrayListOf("yoshi3003", "fluffy", "panda"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "6", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Beach trip", 1513702800000L, 1514048400000L, null, null, "Asia/Bangkok",
-                        true, null, false, false, listOf("yoshi3003", "fatcat18"))))
+                        true, null, false, false, arrayListOf("fatcat18"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "7", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Christmas Party", 1514203200000L, null, houseLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, arrayListOf("fluffy"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "8", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Office christmas dinner", 1513310400000L, null, null, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, arrayListOf("panda"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "9", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("Movie - Star Wars: The Last Jedi", 1513429200000L, 1513438200000L, null, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, arrayListOf("yoshi3003"))))
 
         add(EventItem(BoardItem.TYPE_EVENT, "10", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("2018 new year party", 1514725200000L, 1514746800000L, condoLocation, null, "Asia/Bangkok",
-                        false, null, false, false, listOf("yoshi3003"))))
+                        false, null, false, false, arrayListOf("yoshi3003"))))
+    }
+
+    fun joinEvent(userId: String, itemId: String?): Flowable<EditAttendeeResponse> {
+        return Flowable.just(EditAttendeeResponse(userId, 2))
+                .flatMap { response ->
+                    Flowable.fromCallable {
+                        board?.items?.find { it.itemId == itemId }?.let {
+                            if (it is EventItem) {
+                                it.itemInfo.attendees.add(userId)
+                                response.attendees = it.itemInfo.attendees
+                            }
+                        }
+                        response
+                    }
+                }
+                .delay(1000L, TimeUnit.MILLISECONDS)
+    }
+
+    fun declineEvent(userId: String, itemId: String?): Flowable<EditAttendeeResponse> {
+        return Flowable.just(EditAttendeeResponse(userId, 1))
+                .flatMap { response ->
+                    Flowable.fromCallable {
+                        board?.items?.find { it.itemId == itemId }?.let {
+                            if (it is EventItem) {
+                                it.itemInfo.attendees.removeAll {
+                                    it.equals(userId, true)
+                                }
+                                response.attendees = it.itemInfo.attendees
+                            }
+                        }
+                        response
+                    }
+                }
+                .delay(1000L, TimeUnit.MILLISECONDS)
     }
 }

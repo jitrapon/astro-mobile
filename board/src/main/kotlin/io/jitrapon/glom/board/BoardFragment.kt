@@ -4,6 +4,7 @@ import android.arch.lifecycle.Observer
 import android.support.v4.app.FragmentActivity
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
+import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.component.GooglePlaceProvider
@@ -11,6 +12,8 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
+import io.jitrapon.glom.base.util.AnimationUtils
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.obtainViewModel
 import kotlinx.android.synthetic.main.board_fragment.*
@@ -67,6 +70,7 @@ class BoardFragment : BaseFragment() {
             adapter = BoardItemAdapter(viewModel, this@BoardFragment)
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }
     }
 
@@ -107,6 +111,14 @@ class BoardFragment : BaseFragment() {
                                     it.dispatchUpdatesTo(board_recycler_view.adapter)
                                 }
                             }
+                        }
+
+                        // play animation if set
+                        it.animation?.let {
+                            context!!.assets.list("").filter { it.toLowerCase().endsWith(".json") }.forEach {
+                                AppLogger.i(it)
+                            }
+                            AnimationUtils.play(board_animation_view, it)
                         }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()

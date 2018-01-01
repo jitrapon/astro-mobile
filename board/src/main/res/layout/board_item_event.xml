@@ -101,16 +101,29 @@
             android:id="@+id/event_card_attendees"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent="0.5"
             android:layout_marginTop="@dimen/card_content_padding"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/event_card_map"
             app:layoutManager="android.support.v7.widget.LinearLayoutManager"
             android:orientation="horizontal"
             android:clipToPadding="false"
             android:layout_marginStart="@dimen/card_content_padding"
-            android:paddingEnd="@dimen/card_content_padding" />
+            android:layout_marginEnd="@dimen/card_content_padding" />
 
     </android.support.constraint.ConstraintLayout>
+
+    <ImageButton
+        android:id="@+id/event_card_join_status_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?android:selectableItemBackground"
+        app:srcCompat="@drawable/ic_emoticon_neutral"
+        android:layout_gravity="bottom|end"
+        android:paddingStart="@dimen/card_content_padding"
+        android:paddingEnd="@dimen/card_content_padding"
+        android:paddingBottom="@dimen/card_content_padding"
+        android:paddingTop="@dimen/card_content_padding" />
 
 </android.support.v7.widget.CardView>

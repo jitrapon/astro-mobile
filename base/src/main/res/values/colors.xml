@@ -18,4 +18,5 @@
     <color name="blueish_purple">#4151fd</color>
     <color name="white">#ffffffff</color>
     <color name="transparent">@null</color>
+    <color name="spring_green">#69F0AE</color>
 </resources>

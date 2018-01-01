@@ -139,6 +139,9 @@ dependencies {
     // logging
     api "com.jakewharton.timber:timber:$rootProject.timberVersion"
 
+    // animation
+    api "com.airbnb.android:lottie:$rootProject.lottieVersion"
+
     // modules
     feature project(':board')
     feature project(":map")

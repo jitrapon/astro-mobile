@@ -43,4 +43,6 @@ class UserRepository : Repository<User>() {
             add(User(User.TYPE_USER, "panda", "panda", null))
         }
     }
+
+    fun getCurrentUser(): User? = getById("yoshi3003")
 }

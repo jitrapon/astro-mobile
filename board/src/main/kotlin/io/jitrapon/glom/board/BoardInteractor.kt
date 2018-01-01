@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.os.Parcel
 import android.support.v4.util.ArrayMap
+import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.AsyncErrorResult
@@ -10,6 +11,7 @@ import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.UserRepository
 import io.reactivex.Flowable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
@@ -143,39 +145,37 @@ class BoardInteractor {
      * Loads place info for board items that have placeId associated
      */
     fun loadItemPlaceInfo(placeProvider: PlaceProvider?, onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
+        placeProvider ?: return
+        val itemIds = ArrayList<String>()      // list to store item IDs that have Google Place IDs
         boardRepository.getCache()?.let {
-            val itemIds = ArrayList<String>()      // list to store item IDs that have Google Place IDs
-            val placeIds = it.items
-                    .takeLast(itemsLoaded)          // only load place info for items that are loaded in the last page
-                    .filter { item ->
-                        (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null).let {
-                            if (it) itemIds.add(item.itemId)
-                            it
-                        }
-                    }
-                    .map { (it.itemInfo as EventInfo).location?.googlePlaceId!! }.toTypedArray()
-            if (placeIds.isEmpty()) {
-                onComplete(AsyncSuccessResult(ArrayMap()))
-            }
-            else {
-                placeProvider?.retrievePlaces(placeIds)
-                        ?.observeOn(AndroidSchedulers.mainThread())
-                        ?.subscribeOn(Schedulers.io())
-                        ?.subscribe({
-                            if (itemIds.size == it.size) {
-                                onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
-                                    for (i in itemIds.indices) {
-                                        put(itemIds[i], it[i])
-                                    }
-                                }))
-                            } else {
-                                onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                        " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
+            Single.fromCallable {
+                it.items.takeLast(itemsLoaded)          // only load place info for items that are loaded in the last page
+                        .filter { item ->
+                            (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null).let {
+                                if (it) itemIds.add(item.itemId)
+                                it
                             }
-                        }, {
-                            onComplete(AsyncErrorResult(it))
-                        })
-            }
+                        }
+                        .map { (it.itemInfo as EventInfo).location?.googlePlaceId!! }.toTypedArray()
+            }.flatMap {
+                placeProvider.retrievePlaces(it)
+            }.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        if (itemIds.size == it.size) {
+                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                                for (i in itemIds.indices) {
+                                    put(itemIds[i], it[i])
+                                }
+                            }))
+                        }
+                        else {
+                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                                    " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
+                        }
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
         }
     }
 
@@ -188,6 +188,49 @@ class BoardInteractor {
                 add(userRepository.getById(it))
             }
         }
+    }
+
+    /**
+     * Joins the current user to an event
+     *
+     * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
+     */
+    fun markEventAttendStatusForCurrentUser(itemId: String?, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+        if (itemId == null) {
+            onComplete(AsyncErrorResult(Exception("ItemId cannot be NULL")))
+            return
+        }
+        val userId = userRepository.getCurrentUser()?.userId
+        if (TextUtils.isEmpty(userId)) {
+            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
+            return
+        }
+
+        boardRepository.getCache()?.let {
+            Flowable.fromCallable {
+                it.items.find { it.itemId == itemId && it is EventItem }
+            }.flatMap {
+                when (statusCode) {
+                    2 -> boardRepository.joinEvent(userId!!, it.itemId)
+                    else -> boardRepository.declineEvent(userId!!, it.itemId)
+                }
+            }.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.attendees))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
+    }
+
+    /**
+     * Returns the currently signed in User object
+     */
+    fun getCurrentUser(): User? {
+        return userRepository.getCurrentUser()
     }
 
     private fun testParcelable(board: Board) {

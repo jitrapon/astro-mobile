@@ -39,6 +39,13 @@ fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeho
 }
 
 /**
+ * Compatible function that loads image from a Vector Drawable
+ */
+fun ImageView.loadFromResource(@DrawableRes resId: Int) {
+    setImageResource(resId)
+}
+
+/**
  * Recycles any resources manually
  */
 fun ImageView.clear(fragment: Fragment) {

@@ -51,21 +51,26 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
     override fun retrievePlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
             if (lifeCycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                client.getPlaceById(*placeIds).let {
-                    it.addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            val places = it.result
-                            val result = ArrayList<Place>()
-                            places
-                                    .filter { it.isDataValid }
-                                    .forEach { result.add(it.freeze()) }
-                            places.release()
-                            single.onSuccess(result.toTypedArray())
+                if (placeIds.isEmpty()) {
+                    single.onSuccess(emptyArray())
+                }
+                else {
+                    client.getPlaceById(*placeIds).let {
+                        it.addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                val places = it.result
+                                val result = ArrayList<Place>()
+                                places
+                                        .filter { it.isDataValid }
+                                        .forEach { result.add(it.freeze()) }
+                                places.release()
+                                single.onSuccess(result.toTypedArray())
+                            }
+                            else single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
                         }
-                        else single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
-                    }
-                    it.addOnFailureListener {
-                        // api exception is thrown automatically, we don't need to call onError
+                        it.addOnFailureListener {
+                            // api exception is thrown automatically, we don't need to call onError
+                        }
                     }
                 }
             }

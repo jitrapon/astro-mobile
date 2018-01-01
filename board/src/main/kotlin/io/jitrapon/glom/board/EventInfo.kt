@@ -18,7 +18,7 @@ data class EventInfo(val eventName: String,
                      val repeatInfo: RepeatInfo?,
                      val datePollStatus: Boolean,
                      val placePollStatus: Boolean,
-                     val attendees: List<String>,
+                     val attendees: MutableList<String>,
                      override val retrievedTime: Date? = null,
                      override val error: Throwable? = null): BoardItemInfo {
 

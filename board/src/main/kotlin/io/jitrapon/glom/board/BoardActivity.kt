@@ -37,7 +37,7 @@ class BoardActivity : BaseMainActivity() {
      * Callback triggered when child fragment is initialized
      */
     override fun onCreateFragment(savedInstanceState: Bundle?) {
-        addFragment(R.id.fragment_container, BoardFragment.newInstance())
+        addFragment(R.id.board_fragment_container, BoardFragment.newInstance())
     }
 
     //endregion

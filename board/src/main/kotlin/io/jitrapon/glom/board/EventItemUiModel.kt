@@ -4,15 +4,18 @@ import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
 
+
+
 /**
  * @author Jitrapon Tiachunpun
  */
 data class EventItemUiModel(override val itemId: String?,
-                            val title: String,
-                            val dateTime: String?,
+                            var title: String,
+                            var dateTime: String?,
                             var location: AndroidString?,
-                            val mapLatLng: LatLng?,     // if not null, will show mini map at the specified lat lng
-                            val attendeesAvatars: List<String?>?,
+                            var mapLatLng: LatLng?,     // if not null, will show mini map at the specified lat lng
+                            var attendeesAvatars: MutableList<String?>?,
+                            var attendStatus: AttendStatus,
                             override val itemType: Int = TYPE_EVENT) : BoardItemUiModel {
 
     companion object {
@@ -22,6 +25,7 @@ data class EventItemUiModel(override val itemId: String?,
         const val LOCATION = 2
         const val MAPLATLNG = 3
         const val ATTENDEES = 4
+        const val ATTENDSTATUS = 5
     }
 
     override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
@@ -34,6 +38,14 @@ data class EventItemUiModel(override val itemId: String?,
             if (location != otherItem.location) add(LOCATION)
             if (mapLatLng != otherItem.mapLatLng) add(MAPLATLNG)
             if (attendeesAvatars != otherItem.attendeesAvatars) add(ATTENDEES)
+            if (attendStatus != otherItem.attendStatus) add(ATTENDSTATUS)
         }
+    }
+
+    /**
+     * Status of attending the event of this current user
+     */
+    enum class AttendStatus {
+        DECLINED, MAYBE, GOING;
     }
 }

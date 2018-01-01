@@ -6,10 +6,7 @@ import android.support.v4.util.ArrayMap
 import android.support.v7.util.DiffUtil
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
@@ -85,6 +82,7 @@ class BoardViewModel : BaseViewModel() {
                             items = uiModel
                             diffResult = diff
                             shouldLoadPlaceInfo = true
+                            animation = null
                         }
                     }, onError = {
                         handleError(it)
@@ -129,6 +127,7 @@ class BoardViewModel : BaseViewModel() {
                                     }
                                 }
                             }
+                            animation = null
                         }
                     }
                 }
@@ -190,10 +189,11 @@ class BoardViewModel : BaseViewModel() {
                 EventItemUiModel(
                         itemId,
                         itemInfo.eventName,
-                        getDateRangeString(itemInfo.startTime, itemInfo.endTime),
-                        getOrLoadLocationString(itemInfo.location),
-                        getMapLatLng(itemInfo.location),
-                        getUserAvatars(itemInfo.attendees)
+                        getEventDateRange(itemInfo.startTime, itemInfo.endTime),
+                        getEventLocation(itemInfo.location),
+                        getEventLatLng(itemInfo.location),
+                        getEventAttendees(itemInfo.attendees),
+                        getEventAttendStatus(itemInfo.attendees)
                 )
             }
             else -> {
@@ -202,10 +202,12 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
+    // region EventItem to EventItemUiModel util functions
+
     /**
      * Returns a formatted date range
      */
-    private fun getDateRangeString(start: Long?, end: Long?): String? {
+    private fun getEventDateRange(start: Long?, end: Long?): String? {
         start ?: return null
 
         // if end datetime is not present, only show start time (i.e. 20 Jun, 2017 (10:30 AM))
@@ -232,7 +234,7 @@ class BoardViewModel : BaseViewModel() {
      * retrieve it from the cache, otherwise asynchronously call the respective API
      * to retrieve location data
      */
-    private fun getOrLoadLocationString(location: EventLocation?): AndroidString? {
+    private fun getEventLocation(location: EventLocation?): AndroidString? {
         location ?: return null
         if (location.placeId == null && location.googlePlaceId == null) {
             return AndroidString(resId = R.string.event_card_location_latlng,
@@ -244,7 +246,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns a latlng corresponding to the location of the event
      */
-    private fun getMapLatLng(location: EventLocation?): LatLng? {
+    private fun getEventLatLng(location: EventLocation?): LatLng? {
         location ?: return null
         if (location.latitude != null && location.longitude != null) {
             return LatLng(location.latitude, location.longitude)
@@ -255,10 +257,56 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns the list of user avatars from user ids
      */
-    private fun getUserAvatars(userIds: List<String>): List<String?>? {
+    private fun getEventAttendees(userIds: List<String>?): MutableList<String?>? {
+        userIds ?: return null
         val users = interactor.getUsers(userIds) ?: return null
-        return users.map { it?.avatar }
+        return users.map { it?.avatar }.toMutableList()
     }
+
+    /**
+     * Returns a AttendStatus from the list of attending userIds
+     */
+    private fun getEventAttendStatus(userIds: List<String>): EventItemUiModel.AttendStatus {
+        return if (userIds.any { it.equals(interactor.getCurrentUser()?.userId, true) })  EventItemUiModel.AttendStatus.GOING
+        else EventItemUiModel.AttendStatus.MAYBE
+    }
+
+    /**
+     * Change current attend status of the user id on a specified event
+     */
+    fun setEventAttendStatus(position: Int, newStatus: EventItemUiModel.AttendStatus) {
+        boardUiModel.items?.let { items ->
+            val item = items.getOrNull(position)
+            if (item is EventItemUiModel) {
+                val statusCode = when (newStatus) {
+                    EventItemUiModel.AttendStatus.GOING -> 2
+                    EventItemUiModel.AttendStatus.MAYBE -> 1
+                    EventItemUiModel.AttendStatus.DECLINED -> 0
+                }
+                interactor.markEventAttendStatusForCurrentUser(item.itemId, statusCode) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            item.apply {
+                                attendeesAvatars = getEventAttendees(it.result)
+                                attendStatus = newStatus
+                            }
+                            observableBoard.value = boardUiModel.apply {
+                                shouldLoadPlaceInfo = false
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Int>().apply { add(position) }
+                                animation = AnimationItem.JOIN_EVENT
+                            }
+                        }
+                        is AsyncErrorResult -> {
+                            handleError(it.error)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //endregion
 
     /**
      * Clean up any resources

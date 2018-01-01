@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -17,6 +18,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
+import io.jitrapon.glom.base.component.loadFromResource
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
@@ -125,12 +127,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     private fun bindEventItem(item: EventItemUiModel, holder: EventItemViewHolder, payloads: List<Any>? = null) {
         holder.apply {
+            itemId = item.itemId
             if (payloads.isNullOrEmpty()) {
                 updateTitle(item)
                 updateDateTime(item)
                 updateLocation(item)
                 updateMap(item)
                 updateAttendees(item)
+                updateAttendStatus(item)
             }
             else {
                 val fields = payloads!!.first() as List<*>
@@ -141,6 +145,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         EventItemUiModel.LOCATION -> { updateLocation(item) }
                         EventItemUiModel.MAPLATLNG -> { updateMap(item) }
                         EventItemUiModel.ATTENDEES -> { updateAttendees(item) }
+                        EventItemUiModel.ATTENDSTATUS-> { updateAttendStatus(item) }
                     }
                 }
             }
@@ -196,6 +201,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      */
     inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
 
+        var itemId: String? = null
         val title: TextView = itemView.findViewById(R.id.event_card_title)
         val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
@@ -204,6 +210,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         var map: GoogleMap? = null
         val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
+        val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
 
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
@@ -214,6 +221,12 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 adapter = AttendeeAdapter(fragment, visibleItemCount = 3)
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(R.dimen.avatar_spacing)))
+                }
+            }
+            attendStatus.setOnClickListener {
+                itemId?.let {
+                    val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
+                    viewModel.setEventAttendStatus(adapterPosition, newStatus)
                 }
             }
         }
@@ -239,7 +252,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             }
         }
 
-        fun initializeMapView() {
+        private fun initializeMapView() {
             mapView.apply {
                 hide()
                 onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
@@ -247,7 +260,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             }
         }
 
-        fun showMapView(data: LatLng) {
+        private fun showMapView(data: LatLng) {
             mapView.show()
             map?.let { it ->
                 setMapLocation(it, data)
@@ -312,6 +325,30 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         }
                     }
                 }
+            }
+        }
+
+        fun updateAttendStatus(item: EventItemUiModel) {
+            item.attendStatus.let {
+                when (it) {
+                    EventItemUiModel.AttendStatus.GOING -> {
+                        attendStatus.loadFromResource(R.drawable.ic_emoticon_excited)
+                    }
+                    EventItemUiModel.AttendStatus.MAYBE -> {
+                        attendStatus.loadFromResource(R.drawable.ic_emoticon_neutral)
+                    }
+                    EventItemUiModel.AttendStatus.DECLINED -> {
+                        attendStatus.hide()
+                    }
+                }
+                attendStatus.tag = it
+            }
+        }
+
+        private fun getNewAttendStatus(status: EventItemUiModel.AttendStatus): EventItemUiModel.AttendStatus {
+            return when (status) {
+                EventItemUiModel.AttendStatus.GOING -> EventItemUiModel.AttendStatus.MAYBE
+                else -> EventItemUiModel.AttendStatus.GOING
             }
         }
     }
