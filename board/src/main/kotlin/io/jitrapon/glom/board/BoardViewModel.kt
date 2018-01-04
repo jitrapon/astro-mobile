@@ -54,7 +54,6 @@ class BoardViewModel : BaseViewModel() {
         interactor = BoardInteractor().apply {
             setFilteringType(itemFilterType)
         }
-        loadBoard()
     }
 
     //region view actions
@@ -278,24 +277,48 @@ class BoardViewModel : BaseViewModel() {
         boardUiModel.items?.let { items ->
             val item = items.getOrNull(position)
             if (item is EventItemUiModel) {
-                val statusCode = when (newStatus) {
-                    EventItemUiModel.AttendStatus.GOING -> 2
-                    EventItemUiModel.AttendStatus.MAYBE -> 1
-                    EventItemUiModel.AttendStatus.DECLINED -> 0
+                val statusCode: Int
+                val animationItem: AnimationItem
+                val message: AndroidString
+                when (newStatus) {
+                    EventItemUiModel.AttendStatus.GOING -> {
+                        statusCode = 2
+                        animationItem = AnimationItem.JOIN_EVENT
+                        message = AndroidString(R.string.event_card_join_success, arrayOf(item.title))
+                    }
+                    EventItemUiModel.AttendStatus.MAYBE -> {
+                        statusCode = 1
+                        animationItem = AnimationItem.DECLINE_EVENT
+                        message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title))
+                    }
+                    EventItemUiModel.AttendStatus.DECLINED -> {
+                        statusCode = 0
+                        animationItem = AnimationItem.DECLINE_EVENT
+                        message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title))
+                    }
+                }
+                item.apply {
+                    attendStatus = newStatus
+                }
+                observableBoard.value = boardUiModel.apply {
+                    shouldLoadPlaceInfo = false
+                    diffResult = null
+                    itemsChangedIndices = ArrayList<Int>().apply { add(position) }
+                    animation = null
                 }
                 interactor.markEventAttendStatusForCurrentUser(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {
                             item.apply {
                                 attendeesAvatars = getEventAttendees(it.result)
-                                attendStatus = newStatus
                             }
                             observableBoard.value = boardUiModel.apply {
                                 shouldLoadPlaceInfo = false
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Int>().apply { add(position) }
-                                animation = AnimationItem.JOIN_EVENT
+                                animation = animationItem
                             }
+                            observableViewAction.value = Snackbar(message)
                         }
                         is AsyncErrorResult -> {
                             handleError(it.error)

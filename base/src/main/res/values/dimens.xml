@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- app bar -->
+    <dimen name="app_bar_elevation">4dp</dimen>
 
     <!-- bottom navigation view -->
     <dimen name="bottom_nav_elevation">8dp</dimen>
@@ -22,4 +24,7 @@
     <dimen name="avatar_small">30dp</dimen>
     <dimen name="avatar_normal">40dp</dimen>
     <dimen name="avatar_spacing">7dp</dimen>
+
+    <!-- floating action button -->
+    <dimen name="fab_margin">16dp</dimen>
 </resources>

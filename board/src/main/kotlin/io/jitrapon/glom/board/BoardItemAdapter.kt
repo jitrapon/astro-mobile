@@ -4,6 +4,7 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -31,9 +32,14 @@ import io.jitrapon.glom.base.util.*
 class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         StickyHeaders, StickyHeaders.ViewSetup, LifecycleObserver {
 
+    /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
+    private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool = RecyclerView.RecycledViewPool()
+
     companion object {
 
         private const val CAMERA_ZOOM_LEVEL = 15f
+        private const val VISIBLE_ATTENDEE_AVATARS = 3
+        private const val MAX_RECYCLED_EVENT_ITEMS = 10
 
         /**
          * Displays a LatLng location on a
@@ -165,7 +171,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.board_item_event, parent, false))
+                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool)
             BoardItemUiModel.TYPE_HEADER -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_header, parent, false))
             else -> null
@@ -199,7 +205,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * The map is then initialized with LatLng that is stored as the tag of the MapView.
      * This ensures that the map is initialised with the latest data that it should display.
      */
-    inner class EventItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
+    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
 
         var itemId: String? = null
         val title: TextView = itemView.findViewById(R.id.event_card_title)
@@ -215,10 +221,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
             // rather, we should do it as soon as this ViewHolder instance is created.
-            initializeMapView()
-            mapViews.add(mapView)
+            if (map == null) {
+                initializeMapView()
+                mapViews.add(mapView)
+            }
             attendees.apply {
-                adapter = AttendeeAdapter(fragment, visibleItemCount = 3)
+                recycledViewPool = attendeesPool
+                (layoutManager as LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
+                adapter = AttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(R.dimen.avatar_spacing)))
                 }

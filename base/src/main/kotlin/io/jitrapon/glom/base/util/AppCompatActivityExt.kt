@@ -11,6 +11,7 @@ import android.support.v4.app.FragmentTransaction
 import android.support.v7.app.ActionBar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import io.jitrapon.glom.base.model.AndroidString
 
 /**
  * Various extension functions for AppCompatActivity
@@ -56,9 +57,16 @@ private inline fun FragmentManager.transact(action: FragmentTransaction.() -> Un
 }
 
 /**
+ * Shows a toast message
+ */
+fun AppCompatActivity.showToast(message: AndroidString) {
+    application?.showToast(message)
+}
+
+/**
  * Show a snackbar message with optional action and callback
  */
-fun AppCompatActivity.showSnackbar(message: String?, resId: Int?, actionMessage: String? = null,
+fun AppCompatActivity.showSnackbar(message: AndroidString, actionMessage: AndroidString? = null,
                                    actionCallback: (() -> Unit)? = null) {
-    window.decorView.rootView.showSnackbar(message, resId, actionMessage, actionCallback)
+    window.decorView.rootView.showSnackbar(message, actionMessage, actionCallback = actionCallback)
 }

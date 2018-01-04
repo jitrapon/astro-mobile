@@ -6,6 +6,7 @@ import android.arch.lifecycle.ViewModelProviders
 import android.support.annotation.ColorRes
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
+import io.jitrapon.glom.base.model.AndroidString
 
 /**
  * Various extension functions for Fragment and wrapper around ContextExt to handle nullable
@@ -18,20 +19,20 @@ fun Fragment.finish() {
     activity?.finish()
 }
 
-fun Fragment.showToast(message: String?) {
-    activity?.showToast(message)
+fun Fragment.showToast(message: AndroidString) {
+    activity?.application?.showToast(message)
 }
 
-fun Fragment.showSnackbar(message: String?, resId: Int?, actionMessage: String? = null, actionCallback: (() -> Unit)? = null) {
+fun Fragment.showSnackbar(message: AndroidString, actionMessage: AndroidString?, actionCallback: (() -> Unit)?) {
     activity?.let {
-        view?.showSnackbar(message, resId, actionMessage, actionCallback)
+        view?.showSnackbar(message, actionMessage, actionCallback = actionCallback)
     }
 }
 
-fun Fragment.showAlertDialog(title: String?, message: String?, positiveOptionText: String? = null,
-                             onPositiveOptionClicked: (() -> Unit)? = null, negativeOptionText: String? = null,
-                             onNegativeOptionClicked: (() -> Unit)? = null, isCancelable: Boolean = true,
-                             onCancel: (() -> Unit)? = null) {
+fun Fragment.showAlertDialog(title: AndroidString?, message: AndroidString, positiveOptionText: AndroidString?,
+                             onPositiveOptionClicked: (() -> Unit)?, negativeOptionText: AndroidString?,
+                             onNegativeOptionClicked: (() -> Unit)?, isCancelable: Boolean,
+                             onCancel: (() -> Unit)?) {
     activity?.showAlertDialog(title, message, positiveOptionText, onPositiveOptionClicked, negativeOptionText, onNegativeOptionClicked,
             isCancelable, onCancel)
 }

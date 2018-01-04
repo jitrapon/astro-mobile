@@ -10,6 +10,7 @@ import io.jitrapon.glom.base.model.Alert
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.Toast
 import io.jitrapon.glom.base.model.UiActionModel
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
@@ -54,10 +55,13 @@ abstract class BaseActivity : AppCompatActivity() {
     private val viewActionHandler: Observer<UiActionModel> = Observer {
         it?.let {
             when (it) {
-                is Toast -> showToastMessage(it.message)
-                is Snackbar -> showSnackbarMessage(it.message, it.resId, it.actionMessage, it.actionCallback)
-                is Alert -> showAlertMessage(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
+                is Toast -> showToast(it.message)
+                is Snackbar -> showSnackbar(it.message, it.actionMessage, it.actionCallback)
+                is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                else -> {
+                    AppLogger.w("This ViewAction is is not yet supported by this handler")
+                }
             }
         }
     }
@@ -83,30 +87,6 @@ abstract class BaseActivity : AppCompatActivity() {
      */
     protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
-    }
-
-    /**
-     * Shows a simple toast message. Override this function to make it behave differently
-     */
-    open fun showToastMessage(message: String?) {
-        showToast(message)
-    }
-
-    /**
-     * Shows a snackbar message. Override this function to make it behave differently
-     */
-    open fun showSnackbarMessage(message: String?, resId: Int?, actionMessage: String?, actionCallback: (() -> Unit)? = null) {
-        showSnackbar(message, resId, actionMessage, actionCallback)
-    }
-
-    /**
-     * Shows an alert message. Override this function to make it behave differently
-     */
-    open fun showAlertMessage(title: String?, message: String?, positiveOptionText: String?,
-                              onPositiveOptionClicked: (() -> Unit)?, negativeOptionText: String?,
-                              onNegativeOptionClicked: (() -> Unit)?, cancelable: Boolean, onCancel: (() -> Unit)?) {
-        showAlertDialog(title, message, positiveOptionText, onPositiveOptionClicked,
-                negativeOptionText, onNegativeOptionClicked, cancelable, onCancel)
     }
 
     /**

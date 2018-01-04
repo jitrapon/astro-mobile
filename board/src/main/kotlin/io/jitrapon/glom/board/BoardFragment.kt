@@ -12,8 +12,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
-import io.jitrapon.glom.base.util.AnimationUtils
-import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.animate
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.obtainViewModel
 import kotlinx.android.synthetic.main.board_fragment.*
@@ -71,7 +70,18 @@ class BoardFragment : BaseFragment() {
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
+            // uncomment lines below to pre-create recyclerview viewholders
+//            val poolCount = 6
+//            recycledViewPool = RecyclerView.RecycledViewPool().apply {
+//                setMaxRecycledViews(BoardItemUiModel.TYPE_EVENT, poolCount)
+//                for (i in 0 .. poolCount) {
+//                    putRecycledView(adapter.createViewHolder(board_recycler_view, BoardItemUiModel.TYPE_EVENT))
+//                }
+//            }
         }
+
+        viewModel.loadBoard()
     }
 
     /**
@@ -115,10 +125,7 @@ class BoardFragment : BaseFragment() {
 
                         // play animation if set
                         it.animation?.let {
-                            context!!.assets.list("").filter { it.toLowerCase().endsWith(".json") }.forEach {
-                                AppLogger.i(it)
-                            }
-                            AnimationUtils.play(board_animation_view, it)
+                            board_animation_view.animate(it)
                         }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
