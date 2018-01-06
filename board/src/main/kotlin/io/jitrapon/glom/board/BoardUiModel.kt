@@ -1,7 +1,6 @@
 package io.jitrapon.glom.board
 
 import android.support.v7.util.DiffUtil
-import io.jitrapon.glom.base.model.AnimationItem
 import io.jitrapon.glom.base.model.UiModel
 
 /**
@@ -12,6 +11,5 @@ import io.jitrapon.glom.base.model.UiModel
 data class BoardUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
                         var items: List<BoardItemUiModel>? = null,
                         var diffResult: DiffUtil.DiffResult? = null,
-                        var itemsChangedIndices: MutableList<Int>? = null,
-                        var shouldLoadPlaceInfo: Boolean = false,
-                        var animation: AnimationItem? = null) : UiModel
+                        var itemsChangedIndices: MutableList<Pair<Int, Any?>>? = null,
+                        var shouldLoadPlaceInfo: Boolean = false) : UiModel

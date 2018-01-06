@@ -19,6 +19,7 @@ object AnimationState {
 fun LottieAnimationView.animate(animation: AnimationItem, shouldRestartIfPlaying: Boolean = true,
          loopForever: Boolean = false, useHardwareAcceleration: Boolean = true) {
     try {
+        AnimationState.useHardWareAcceleration = useHardwareAcceleration
         if (shouldRestartIfPlaying && isAnimating && AnimationState.currentAnimation == animation) progress = 0f
         else {
             removeAnimatorListener(animatorListener)

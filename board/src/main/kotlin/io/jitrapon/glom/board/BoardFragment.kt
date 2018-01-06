@@ -108,7 +108,7 @@ class BoardFragment : BaseFragment() {
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
-                                board_recycler_view.adapter.notifyItemChanged(it)
+                                board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
                             }
                         }
                         else {
@@ -122,14 +122,15 @@ class BoardFragment : BaseFragment() {
                                 }
                             }
                         }
-
-                        // play animation if set
-                        it.animation?.let {
-                            board_animation_view.animate(it)
-                        }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
                 }
+            }
+        })
+
+        viewModel.getObservableAnimation().observe(this, Observer {
+            it?.let {
+                board_animation_view.animate(it)
             }
         })
     }

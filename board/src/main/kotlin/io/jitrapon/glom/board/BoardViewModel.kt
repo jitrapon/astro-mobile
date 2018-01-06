@@ -26,6 +26,9 @@ class BoardViewModel : BaseViewModel() {
     private val observableBoard = MutableLiveData<BoardUiModel>()
     private val boardUiModel = BoardUiModel()
 
+    /* live event for full-screen animation */
+    private val observableAnimation = LiveEvent<AnimationItem>()
+
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
 
@@ -81,7 +84,6 @@ class BoardViewModel : BaseViewModel() {
                             items = uiModel
                             diffResult = diff
                             shouldLoadPlaceInfo = true
-                            animation = null
                         }
                     }, onError = {
                         handleError(it)
@@ -119,14 +121,13 @@ class BoardViewModel : BaseViewModel() {
                             items?.let {
                                 it.forEachIndexed { index, item ->
                                     if (map.containsKey(item.itemId)) {
-                                        itemsChangedIndices?.add(index)
+                                        itemsChangedIndices?.add(index to arrayListOf(EventItemUiModel.LOCATION))
                                         if (item is EventItemUiModel) {
                                             item.location = AndroidString(text = map[item.itemId]?.name.toString())
                                         }
                                     }
                                 }
                             }
-                            animation = null
                         }
                     }
                 }
@@ -303,9 +304,9 @@ class BoardViewModel : BaseViewModel() {
                 observableBoard.value = boardUiModel.apply {
                     shouldLoadPlaceInfo = false
                     diffResult = null
-                    itemsChangedIndices = ArrayList<Int>().apply { add(position) }
-                    animation = null
+                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(EventItemUiModel.ATTENDSTATUS)) }
                 }
+                observableAnimation.value = animationItem
                 interactor.markEventAttendStatusForCurrentUser(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {
@@ -315,8 +316,8 @@ class BoardViewModel : BaseViewModel() {
                             observableBoard.value = boardUiModel.apply {
                                 shouldLoadPlaceInfo = false
                                 diffResult = null
-                                itemsChangedIndices = ArrayList<Int>().apply { add(position) }
-                                animation = animationItem
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
+                                        arrayListOf(EventItemUiModel.ATTENDSTATUS, EventItemUiModel.ATTENDEES)) }
                             }
                             observableViewAction.value = Snackbar(message)
                         }
@@ -345,6 +346,11 @@ class BoardViewModel : BaseViewModel() {
      * Returns an observable board item live data for the view
      */
     fun getObservableBoard(): LiveData<BoardUiModel> = observableBoard
+
+    /**
+     * Returns an observable animation item
+     */
+    fun getObservableAnimation(): LiveEvent<AnimationItem> = observableAnimation
 
     //endregion
     //region view states
