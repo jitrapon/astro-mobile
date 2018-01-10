@@ -39,7 +39,6 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
         private const val CAMERA_ZOOM_LEVEL = 15f
         private const val VISIBLE_ATTENDEE_AVATARS = 3
-        private const val MAX_RECYCLED_EVENT_ITEMS = 10
 
         /**
          * Displays a LatLng location on a
@@ -222,10 +221,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
             // rather, we should do it as soon as this ViewHolder instance is created.
-            if (map == null) {
-                initializeMapView()
-                mapViews.add(mapView)
-            }
+            initializeMap()
+            mapViews.add(mapView)
             attendees.apply {
                 recycledViewPool = attendeesPool
                 (layoutManager as LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
@@ -266,11 +263,13 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             }
         }
 
-        private fun initializeMapView() {
-            mapView.apply {
-                hide()
-                onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
-                getMapAsync(this@EventItemViewHolder)
+        private fun initializeMap() {
+            if (map == null) {
+                mapView.apply {
+                    hide()
+                    onCreate(null)          // it is mandatory to call onCreate(), otherwise no map will appear
+                    getMapAsync(this@EventItemViewHolder)
+                }
             }
         }
 

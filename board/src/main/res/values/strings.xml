@@ -17,6 +17,6 @@
     <string name="event_card_header_last_n_weeks">%1$s weeks ago</string>
     <string name="board_item_header_undefined">Undefined</string>
     <string name="event_attendee_remaining_count">+%1$s</string>
-    <string name="event_card_join_success">Joined %1$s!</string>
-    <string name="event_card_maybe_success">Marked %1$s as tentative</string>
+    <string name="event_card_join_success">%1$s confirmed</string>
+    <string name="event_card_maybe_success">%1$s unconfirmed</string>
 </resources>

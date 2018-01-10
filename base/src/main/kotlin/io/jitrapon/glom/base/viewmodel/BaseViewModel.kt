@@ -53,7 +53,7 @@ abstract class BaseViewModel : ViewModel() {
         AppLogger.e(throwable)
         observableViewAction.execute(arrayOf(
                 Loading(false),
-                Snackbar(AndroidString(R.string.error_generic))
+                Snackbar(AndroidString(R.string.error_generic), level = MessageLevel.ERROR)
         ))
     }
 

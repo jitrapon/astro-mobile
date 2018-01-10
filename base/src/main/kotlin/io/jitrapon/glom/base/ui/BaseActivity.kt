@@ -56,7 +56,7 @@ abstract class BaseActivity : AppCompatActivity() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> showSnackbar(it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 else -> {

@@ -24,9 +24,9 @@ fun Fragment.showToast(message: AndroidString) {
     activity?.application?.showToast(message)
 }
 
-fun Fragment.showSnackbar(message: AndroidString, actionMessage: AndroidString?, actionCallback: (() -> Unit)?) {
+fun Fragment.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString?, actionCallback: (() -> Unit)?) {
     activity?.let {
-        view?.showSnackbar(message, actionMessage, actionCallback = actionCallback)
+        view?.showSnackbar(level, message, actionMessage, actionCallback = actionCallback)
     }
 }
 

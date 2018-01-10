@@ -299,11 +299,13 @@ class BoardViewModel : BaseViewModel() {
                 val statusCode: Int
                 val animationItem: AnimationItem
                 val message: AndroidString
+                var level: Int = MessageLevel.INFO
                 when (newStatus) {
                     EventItemUiModel.AttendStatus.GOING -> {
                         statusCode = 2
                         animationItem = AnimationItem.JOIN_EVENT
                         message = AndroidString(R.string.event_card_join_success, arrayOf(item.title))
+                        level = MessageLevel.SUCCESS
                     }
                     EventItemUiModel.AttendStatus.MAYBE -> {
                         statusCode = 1
@@ -337,7 +339,7 @@ class BoardViewModel : BaseViewModel() {
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
                                         arrayListOf(EventItemUiModel.ATTENDSTATUS, EventItemUiModel.ATTENDEES)) }
                             }
-                            observableViewAction.value = Snackbar(message)
+                            observableViewAction.value = Snackbar(message, level = level)
                         }
                         is AsyncErrorResult -> {
                             handleError(it.error)

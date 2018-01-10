@@ -66,7 +66,7 @@ fun AppCompatActivity.showToast(message: AndroidString) {
 /**
  * Show a snackbar message with optional action and callback
  */
-fun AppCompatActivity.showSnackbar(message: AndroidString, actionMessage: AndroidString? = null,
+fun AppCompatActivity.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString? = null,
                                    actionCallback: (() -> Unit)? = null) {
-    window.decorView.rootView.showSnackbar(message, actionMessage, actionCallback = actionCallback)
+    window.decorView.rootView.showSnackbar(level, message, actionMessage, actionCallback = actionCallback)
 }

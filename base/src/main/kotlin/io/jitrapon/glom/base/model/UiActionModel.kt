@@ -10,7 +10,7 @@ interface UiActionModel
 
 class Toast(val message: AndroidString) : UiActionModel
 
-class Snackbar(val message: AndroidString, val actionMessage: AndroidString? = null, val actionCallback: (() -> Unit)? = null) : UiActionModel
+class Snackbar(val message: AndroidString, val actionMessage: AndroidString? = null, val actionCallback: (() -> Unit)? = null, val level: Int = MessageLevel.INFO) : UiActionModel
 
 class Alert(val title: AndroidString? = null, val message: AndroidString, val positiveOptionText: AndroidString? = null,
             val onPositiveOptionClicked: (() -> Unit)? = null, val negativeOptionText: AndroidString? = null,
@@ -20,3 +20,11 @@ class Alert(val title: AndroidString? = null, val message: AndroidString, val po
 class Loading(val show: Boolean): UiActionModel
 
 class EmptyLoading(val show: Boolean): UiActionModel
+
+object MessageLevel {
+
+    const val INFO = 0
+    const val SUCCESS = 1
+    const val WARNING = 2
+    const val ERROR = 3
+}
