@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.util
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.support.annotation.ColorRes
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
@@ -46,3 +47,14 @@ fun <T : ViewModel> Fragment.obtainViewModel(viewModelClass: Class<T>, activity:
 }
 
 fun Fragment.color(@ColorRes colorRes: Int) = context?.color(colorRes)
+
+/**
+ * Start an activity specifying destination class and optional block of code to run
+ */
+fun <T> Fragment.startActivity(clazz: Class<T>, action: (Intent.() -> Unit)? = null) {
+    activity?.let {
+        startActivity(Intent(it, clazz).apply {
+            action?.invoke(this)
+        })
+    }
+}

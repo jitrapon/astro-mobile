@@ -191,6 +191,14 @@ class BoardInteractor {
     }
 
     /**
+     * Returns a board item from cache, if available from specified item ID
+     */
+    fun getBoardItem(itemId: String?): BoardItem? {
+        itemId ?: return null
+        return boardRepository.getCache()?.items?.find { it.itemId == itemId }
+    }
+
+    /**
      * Joins the current user to an event
      *
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)

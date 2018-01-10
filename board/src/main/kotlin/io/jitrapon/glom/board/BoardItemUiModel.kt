@@ -1,9 +1,11 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.base.model.UiModel
+
 /**
  * @author Jitrapon Tiachunpun
  */
-interface BoardItemUiModel {
+interface BoardItemUiModel : UiModel {
 
     val itemId: String?
     val itemType: Int

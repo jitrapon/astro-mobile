@@ -29,6 +29,9 @@ class BoardViewModel : BaseViewModel() {
     /* live event for full-screen animation */
     private val observableAnimation = LiveEvent<AnimationItem>()
 
+    /* live data for selected board item */
+    private val observableSelectedBoardItem = MutableLiveData<BoardItem>()
+
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
 
@@ -107,6 +110,8 @@ class BoardViewModel : BaseViewModel() {
 
     /**
      * Retrieves place information for board items that need to show them.
+     *
+     * @param placeProvider Subclass of PlaceProvider that implements get place info
      */
     fun loadPlaceInfo(placeProvider: PlaceProvider?) {
         interactor.loadItemPlaceInfo(placeProvider) {
@@ -134,6 +139,19 @@ class BoardViewModel : BaseViewModel() {
                 is AsyncErrorResult -> {
                     handleError(it.error)
                 }
+            }
+        }
+    }
+
+    /**
+     * Expands current board item (specified by position in the recyclerview)
+     *
+     * @param position The position of the item to view in the RecyclerView
+     */
+    fun selectItem(position: Int) {
+        boardUiModel.items?.getOrNull(position)?.let {
+            interactor.getBoardItem(it.itemId)?.let {
+                observableSelectedBoardItem.value = it
             }
         }
     }
@@ -351,6 +369,11 @@ class BoardViewModel : BaseViewModel() {
      * Returns an observable animation item
      */
     fun getObservableAnimation(): LiveEvent<AnimationItem> = observableAnimation
+
+    /**
+     * Returns an observable that if set, becomes the currently selected item
+     */
+    fun getObservableSelectedBoardItem(): LiveData<BoardItem> = observableSelectedBoardItem
 
     //endregion
     //region view states

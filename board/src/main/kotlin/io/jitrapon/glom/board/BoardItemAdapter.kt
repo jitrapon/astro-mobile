@@ -171,7 +171,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool)
+                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::selectItem)
             BoardItemUiModel.TYPE_HEADER -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_header, parent, false))
             else -> null
@@ -205,7 +205,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * The map is then initialized with LatLng that is stored as the tag of the MapView.
      * This ensures that the map is initialised with the latest data that it should display.
      */
-    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
+    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
+                                    onEventItemClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
 
         var itemId: String? = null
         val title: TextView = itemView.findViewById(R.id.event_card_title)
@@ -238,6 +239,9 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                     val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
                     viewModel.setEventAttendStatus(adapterPosition, newStatus)
                 }
+            }
+            itemView.setOnClickListener {
+                onEventItemClicked(adapterPosition)
             }
         }
 

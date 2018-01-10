@@ -15,6 +15,7 @@ import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutMan
 import io.jitrapon.glom.base.util.animate
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.obtainViewModel
+import io.jitrapon.glom.base.util.startActivity
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -90,6 +91,7 @@ class BoardFragment : BaseFragment() {
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
+        // observes board and its items
         viewModel.getObservableBoard().observe(this, Observer {
             it?.let {
                 when (it.status) {
@@ -128,10 +130,18 @@ class BoardFragment : BaseFragment() {
             }
         })
 
+        // observes animation
         viewModel.getObservableAnimation().observe(this, Observer {
             it?.let {
                 board_animation_view.animate(it)
             }
+        })
+
+        // observes new selected board item
+        viewModel.getObservableSelectedBoardItem().observe(this, Observer {
+            startActivity(BoardItemActivity::class.java, {
+                putExtra(Const.EXTRA_BOARD_ITEM, it)
+            })
         })
     }
 

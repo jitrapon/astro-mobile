@@ -71,6 +71,8 @@
         <item name="cardPreventCornerOverlap">false</item>
         <item name="android:layout_marginStart">@dimen/card_side_margin</item>
         <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
     </style>
 
 </resources>
