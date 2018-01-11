@@ -40,6 +40,7 @@ abstract class BaseFragment : Fragment() {
             inflater.inflate(getLayoutId(), container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        showEmptyLoading(false)
         getSwipeRefreshLayout()?.apply {
             refreshLayout = this
             setOnRefreshListener(onRefreshListener)

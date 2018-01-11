@@ -60,6 +60,7 @@ class BoardViewModel : BaseViewModel() {
         interactor = BoardInteractor().apply {
             setFilteringType(itemFilterType)
         }
+        loadBoard()
     }
 
     //region view actions

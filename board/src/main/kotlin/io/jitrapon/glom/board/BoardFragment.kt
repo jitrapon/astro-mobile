@@ -12,10 +12,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
-import io.jitrapon.glom.base.util.animate
-import io.jitrapon.glom.base.util.isNullOrEmpty
-import io.jitrapon.glom.base.util.obtainViewModel
-import io.jitrapon.glom.base.util.startActivity
+import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -81,8 +78,7 @@ class BoardFragment : BaseFragment() {
 //                }
 //            }
         }
-
-        viewModel.loadBoard()
+        board_animation_view.hide()
     }
 
     /**
