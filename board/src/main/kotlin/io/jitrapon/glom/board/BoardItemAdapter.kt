@@ -3,7 +3,9 @@ package io.jitrapon.glom.board
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
+import android.support.constraint.ConstraintLayout
 import android.support.v4.app.Fragment
+import android.support.v4.util.Pair
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
@@ -205,10 +207,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * This ensures that the map is initialised with the latest data that it should display.
      */
     inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
-                                    onEventItemClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
+                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
 
         var itemId: String? = null
         val title: TextView = itemView.findViewById(R.id.event_card_title)
+        val rootView: ConstraintLayout = itemView.findViewById(R.id.event_card_root_view)
         val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)
@@ -238,7 +241,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 }
             }
             itemView.setOnClickListener {
-                onEventItemClicked(adapterPosition)
+                onEventItemClicked(adapterPosition, listOf(
+                        Pair.create(rootView as View, itemView.context.getString(R.string.event_card_background_transition))))
             }
         }
 

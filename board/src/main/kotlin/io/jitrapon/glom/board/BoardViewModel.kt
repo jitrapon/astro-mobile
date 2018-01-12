@@ -4,6 +4,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
 import android.support.v7.util.DiffUtil
+import android.view.View
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
@@ -29,8 +30,9 @@ class BoardViewModel : BaseViewModel() {
     /* live event for full-screen animation */
     private val observableAnimation = LiveEvent<AnimationItem>()
 
-    /* live data for selected board item */
-    private val observableSelectedBoardItem = MutableLiveData<BoardItem>()
+    /* live data for selected board item and list of shared views for transition */
+    private val observableSelectedBoardItem = LiveEvent<Pair<BoardItem,
+            List<android.support.v4.util.Pair<View, String>>?>>()
 
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
@@ -148,11 +150,12 @@ class BoardViewModel : BaseViewModel() {
      * Expands current board item (specified by position in the recyclerview)
      *
      * @param position The position of the item to view in the RecyclerView
+     * @param transitionViews The shared views to allow smooth transition animation between activities
      */
-    fun selectItem(position: Int) {
+    fun selectItem(position: Int, transitionViews: List<android.support.v4.util.Pair<View, String>>? = null) {
         boardUiModel.items?.getOrNull(position)?.let {
             interactor.getBoardItem(it.itemId)?.let {
-                observableSelectedBoardItem.value = it
+                observableSelectedBoardItem.value = it to transitionViews
             }
         }
     }
@@ -376,7 +379,8 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns an observable that if set, becomes the currently selected item
      */
-    fun getObservableSelectedBoardItem(): LiveData<BoardItem> = observableSelectedBoardItem
+    fun getObservableSelectedBoardItem(): LiveEvent<Pair<BoardItem,
+            List<android.support.v4.util.Pair<View, String>>?>> = observableSelectedBoardItem
 
     //endregion
     //region view states

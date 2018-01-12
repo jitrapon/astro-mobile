@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- cardview -->
+    <dimen name="card_elevation">3dp</dimen>
+    <dimen name="card_corner_radius">4dp</dimen>
+    <dimen name="card_side_margin">12dp</dimen>
+    <dimen name="card_content_padding">16dp</dimen>
+    <dimen name="card_header_item_stuck_elevation">5dp</dimen>
+    <dimen name="card_header_item_text_margin">30dp</dimen>
     <dimen name="card_icon_small">18dp</dimen>
     <dimen name="card_icon_medium">24dp</dimen>
+    <dimen name="card_expand_vertical_margin">55dp</dimen>
+    <dimen name="card_expand_horizontal_margin">10dp</dimen>
 </resources>

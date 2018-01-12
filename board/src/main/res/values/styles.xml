@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <style name="TextAppearance.H4.Highlight" parent="@style/TextAppearance.H4">
         <item name="android:textAllCaps">true</item>
@@ -10,6 +10,18 @@
         <item name="android:textColor">@color/warm_grey</item>
     </style>
 
+    <style name="CardView.BoardItem" parent="CardView">
+        <item name="cardBackgroundColor">@color/white</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="cardPreventCornerOverlap">false</item>
+        <item name="android:layout_marginStart">@dimen/card_side_margin</item>
+        <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+    </style>
+
     <style name="Theme.Glom.DialogActivity" parent="@style/Theme.AppCompat.Dialog">
         <item name="android:windowFrame">@null</item>
         <item name="android:windowIsFloating">true</item>
@@ -19,7 +31,26 @@
         <item name="windowNoTitle">true</item>
         <item name="windowActionBar">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:paddingLeft">2dp</item>
-        <item name="android:paddingRight">2dp</item>
+        <item name="android:backgroundDimEnabled">false</item>
     </style>
+
+    <style name="Widget.Glom.TextInputLayout" parent="Widget.Design.TextInputLayout">
+
+        <!-- hint color of TextInputLayout when not focused -->
+        <item name="android:textColorHint">@color/warm_grey</item>
+    </style>
+
+    <!-- hint color of TextInputLayout when focused -->
+    <style name="Widget.Glom.TextInputLayout.HintTextAppearance" parent="TextAppearance.AppCompat" >
+        <item name="android:textColor">@color/reddish</item>
+    </style>
+
+    <style name="TextAppearance.H1.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">@color/greyish_brown</item>
+    </style>
+
+    <style name="TextAppearance.H3.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">@color/greyish_brown</item>
+    </style>
+
 </resources>

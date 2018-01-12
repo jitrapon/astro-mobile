@@ -135,9 +135,19 @@ class BoardFragment : BaseFragment() {
 
         // observes new selected board item
         viewModel.getObservableSelectedBoardItem().observe(this, Observer {
-            startActivity(BoardItemActivity::class.java, {
-                putExtra(Const.EXTRA_BOARD_ITEM, it)
-            })
+            it?.let { pair ->
+                val boardItem = pair.first
+                val sharedElements = pair.second
+                val launchOption = when (boardItem) {
+                    is EventItem -> EventItemActivity::class.java to pair.first
+                    else -> null
+                }
+                launchOption?.let { option ->
+                    startActivity(option.first, {
+                        putExtra(Const.EXTRA_BOARD_ITEM, option.second)
+                    }, sharedElements)
+                }
+            }
         })
     }
 

@@ -19,4 +19,6 @@
     <string name="event_attendee_remaining_count">+%1$s</string>
     <string name="event_card_join_success">%1$s confirmed</string>
     <string name="event_card_maybe_success">%1$s unconfirmed</string>
+    <string name="event_card_background_transition">event_card_background_transition</string>
+    <string name="event_item_name_placeholder">Name</string>
 </resources>

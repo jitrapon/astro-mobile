@@ -24,7 +24,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".BoardItemActivity"
+        <activity android:name=".EventItemActivity"
             android:theme="@style/Theme.Glom.DialogActivity"
             android:excludeFromRecents="true" />
     </application>

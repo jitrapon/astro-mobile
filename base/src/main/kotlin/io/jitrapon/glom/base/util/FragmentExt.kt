@@ -5,8 +5,11 @@ import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.support.annotation.ColorRes
+import android.support.v4.app.ActivityOptionsCompat
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
+import android.support.v4.util.Pair
+import android.view.View
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -51,10 +54,13 @@ fun Fragment.color(@ColorRes colorRes: Int) = context?.color(colorRes)
 /**
  * Start an activity specifying destination class and optional block of code to run
  */
-fun <T> Fragment.startActivity(clazz: Class<T>, action: (Intent.() -> Unit)? = null) {
+fun <T> Fragment.startActivity(clazz: Class<T>, action: (Intent.() -> Unit)? = null, sharedElements: List<Pair<View, String>>? = null) {
     activity?.let {
         startActivity(Intent(it, clazz).apply {
             action?.invoke(this)
+        }, sharedElements.let { elements ->
+            if (elements.isNullOrEmpty()) null
+            else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.toTypedArray())).toBundle()
         })
     }
 }

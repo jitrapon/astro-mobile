@@ -13,6 +13,7 @@
         <item name="android:windowBackground">@color/background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowContentOverlay">@color/transparent</item>
+        <item name="android:windowContentTransitions">true</item>
 
         <item name="android:homeAsUpIndicator">@drawable/ic_up</item>
         <item name="homeAsUpIndicator">@drawable/ic_up</item>
@@ -61,18 +62,6 @@
         <item name="android:elevation" tools:targetApi="lollipop">@dimen/bottom_nav_elevation</item>
         <item name="badgeColor">?colorAccent</item>
         <item name="badgeRadius">@dimen/bottom_nav_badge_radius</item>
-    </style>
-
-    <style name="CardView.BoardItem" parent="CardView">
-        <item name="cardBackgroundColor">@color/white</item>
-        <item name="cardElevation">@dimen/card_elevation</item>
-        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
-        <item name="cardUseCompatPadding">true</item>
-        <item name="cardPreventCornerOverlap">false</item>
-        <item name="android:layout_marginStart">@dimen/card_side_margin</item>
-        <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
-        <item name="android:foreground">?android:attr/selectableItemBackground</item>
-        <item name="android:clickable">true</item>
     </style>
 
 </resources>

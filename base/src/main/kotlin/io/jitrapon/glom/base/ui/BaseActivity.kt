@@ -5,6 +5,7 @@ import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
+import android.view.MenuItem
 import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.base.model.Alert
 import io.jitrapon.glom.base.model.Snackbar
@@ -96,5 +97,15 @@ abstract class BaseActivity : AppCompatActivity() {
         handler.postDelayed({
             block(handler)
         }, delay)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                supportFinishAfterTransition()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

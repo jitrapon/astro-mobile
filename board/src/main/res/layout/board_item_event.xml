@@ -7,9 +7,11 @@
     xmlns:map="http://schemas.android.com/apk/res-auto" >
 
     <android.support.constraint.ConstraintLayout
+        android:id="@+id/event_card_root_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="@dimen/card_content_padding" >
+        android:paddingBottom="@dimen/card_content_padding"
+        android:transitionName="@string/event_card_background_transition" >
 
         <ImageView
             android:visibility="gone"

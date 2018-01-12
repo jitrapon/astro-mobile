@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @author Jitrapon Tiachunpun
  */
-class LiveEvent<T : UiActionModel> : MutableLiveData<T>() {
+class LiveEvent<T> : MutableLiveData<T>() {
 
     private val pending = AtomicBoolean(false)
 
