@@ -11,6 +11,9 @@ import io.jitrapon.glom.base.ui.BaseActivity
  */
 abstract class BoardItemActivity : BaseActivity() {
 
+    /*
+     * Indicates whether or not this activity has been started yet
+     */
     private var isActivityStarted: Boolean = false
 
     /**
@@ -35,17 +38,11 @@ abstract class BoardItemActivity : BaseActivity() {
             else onFinishTransitionAnimationEnd()
         }
 
-        override fun onTransitionResume(p0: android.transition.Transition?) {
-//            AppLogger.i("onTransitionResume")
-        }
+        override fun onTransitionResume(p0: android.transition.Transition?) {}
 
-        override fun onTransitionPause(p0: android.transition.Transition?) {
-//            AppLogger.i("onTransitionPause")
-        }
+        override fun onTransitionPause(p0: android.transition.Transition?) {}
 
-        override fun onTransitionCancel(p0: android.transition.Transition?) {
-//            AppLogger.i("onTransitionCancel")
-        }
+        override fun onTransitionCancel(p0: android.transition.Transition?) {}
     }
 
     //region lifecycle
@@ -64,8 +61,7 @@ abstract class BoardItemActivity : BaseActivity() {
     }
 
     /**
-     * Needs to be overriden because we want to make sure to save user's changes before finishing
-     * this activity
+     * We want to make sure to save user's changes before finishing this activity
      */
     override fun onBackPressed() {
         onActivityWillFinish()

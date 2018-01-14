@@ -34,23 +34,9 @@
         <item name="android:backgroundDimEnabled">false</item>
     </style>
 
-    <style name="Widget.Glom.TextInputLayout" parent="Widget.Design.TextInputLayout">
-
-        <!-- hint color of TextInputLayout when not focused -->
-        <item name="android:textColorHint">@color/warm_grey</item>
-    </style>
-
-    <!-- hint color of TextInputLayout when focused -->
-    <style name="Widget.Glom.TextInputLayout.HintTextAppearance" parent="TextAppearance.AppCompat" >
-        <item name="android:textColor">@color/reddish</item>
-    </style>
-
-    <style name="TextAppearance.H1.EditText" parent="Widget.AppCompat.EditText">
-        <item name="android:textColor">@color/greyish_brown</item>
-    </style>
-
-    <style name="TextAppearance.H3.EditText" parent="Widget.AppCompat.EditText">
-        <item name="android:textColor">@color/greyish_brown</item>
+    <style name="Theme.Glom.EditText.Title" parent="Theme.Glom">
+        <item name="colorControlNormal">@color/white</item>
+        <item name="colorControlActivated">@color/lightish_red</item>
     </style>
 
 </resources>

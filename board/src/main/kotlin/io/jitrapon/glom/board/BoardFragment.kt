@@ -7,8 +7,6 @@ import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
 import android.widget.ProgressBar
-import io.jitrapon.glom.base.component.GooglePlaceProvider
-import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
@@ -24,13 +22,6 @@ class BoardFragment : BaseFragment() {
 
     /* this fragment's main ViewModel instance */
     private lateinit var viewModel: BoardViewModel
-
-    /*
-     * Google place provider
-     */
-    private val placeProvider: PlaceProvider by lazy {
-        GooglePlaceProvider(lifecycle, activity = activity)
-    }
 
     companion object {
 

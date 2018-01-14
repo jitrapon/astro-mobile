@@ -7,6 +7,8 @@ import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
 import com.google.android.instantapps.InstantApps
+import io.jitrapon.glom.base.component.GooglePlaceProvider
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.Alert
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.Toast
@@ -36,6 +38,11 @@ abstract class BaseActivity : AppCompatActivity() {
     /* shared handler object */
     val handler: Handler by lazy {
         Handler()
+    }
+
+    /* shared google place provider */
+    val placeProvider: PlaceProvider by lazy {
+        GooglePlaceProvider(lifecycle, activity = this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

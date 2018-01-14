@@ -20,5 +20,6 @@
     <string name="event_card_join_success">%1$s confirmed</string>
     <string name="event_card_maybe_success">%1$s unconfirmed</string>
     <string name="event_card_background_transition">event_card_background_transition</string>
-    <string name="event_item_name_placeholder">Name</string>
+    <string name="event_item_name_hint">Name</string>
+    <string name="event_item_name_helper">e.g. Lunch with John tomorrow at 1 PM</string>
 </resources>

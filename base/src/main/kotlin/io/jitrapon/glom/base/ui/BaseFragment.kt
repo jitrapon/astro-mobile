@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.component.GooglePlaceProvider
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.color
 import io.jitrapon.glom.base.util.showAlertDialog
@@ -34,6 +36,13 @@ abstract class BaseFragment : Fragment() {
     /* shared handler object */
     val handler: Handler by lazy {
         Handler()
+    }
+
+    /*
+     * shared Google place provider
+     */
+    val placeProvider: PlaceProvider by lazy {
+        GooglePlaceProvider(lifecycle, activity = activity)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =

@@ -64,4 +64,15 @@
         <item name="badgeRadius">@dimen/bottom_nav_badge_radius</item>
     </style>
 
+    <style name="Widget.Glom.TextInputLayout" parent="Widget.Design.TextInputLayout">
+
+        <!-- hint color of TextInputLayout when not focused -->
+        <item name="android:textColorHint">@color/warm_grey</item>
+    </style>
+
+    <!-- hint color of TextInputLayout when focused -->
+    <style name="Widget.Glom.TextInputLayout.HintTextAppearance" parent="TextAppearance.AppCompat" >
+        <item name="android:textColor">@color/reddish</item>
+    </style>
+
 </resources>
