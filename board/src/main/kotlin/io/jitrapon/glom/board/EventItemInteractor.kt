@@ -26,9 +26,9 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
     }
 
     /**
-     * Perform analysis to the new text
+     * Call this method to update name letter-by-letter for autocompletion analysis
      */
-    fun updateName(text: String) {
+    fun onNameChanged(text: String) {
         autocompleter?.updateText(text)
     }
 

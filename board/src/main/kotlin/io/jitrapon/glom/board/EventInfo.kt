@@ -8,19 +8,19 @@ import java.util.*
  * @author Jitrapon Tiachunpun
  */
 
-data class EventInfo(val eventName: String,
-                     val startTime: Long?,
-                     val endTime: Long?,
-                     val location: EventLocation?,
-                     val note: String?,
-                     val timeZone: String?,
-                     val isFullDay: Boolean,
-                     val repeatInfo: RepeatInfo?,
-                     val datePollStatus: Boolean,
-                     val placePollStatus: Boolean,
-                     val attendees: MutableList<String>,
-                     override val retrievedTime: Date? = null,
-                     override val error: Throwable? = null): BoardItemInfo {
+data class EventInfo(var eventName: String,
+                     var startTime: Long?,
+                     var endTime: Long?,
+                     var location: EventLocation?,
+                     var note: String?,
+                     var timeZone: String?,
+                     var isFullDay: Boolean,
+                     var repeatInfo: RepeatInfo?,
+                     var datePollStatus: Boolean,
+                     var placePollStatus: Boolean,
+                     var attendees: MutableList<String>,
+                     override var retrievedTime: Date? = null,
+                     override var error: Throwable? = null): BoardItemInfo {
 
     constructor(parcel: Parcel) : this(
             parcel.readString(),

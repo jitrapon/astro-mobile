@@ -11,7 +11,7 @@ import java.util.*
  * @author Jitrapon Tiachunpun
  */
 data class Board(val boardId: String,
-                 val items: List<BoardItem>,
+                 val items: MutableList<BoardItem>,
                  override val retrievedTime: Date? = Date(),
                  override val error: Throwable? = null) : DataModel {
 

@@ -12,9 +12,9 @@ import java.util.*
 data class EventItem(override val itemType: Int,
                      override val itemId: String,
                      override val createdTime: Long?,
-                     override val updatedTime: Long?,
+                     override var updatedTime: Long?,
                      override val owners: List<String>,
-                     override val itemInfo: EventInfo,
+                     override var itemInfo: EventInfo,
                      override val retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : BoardItem {
 

@@ -1,6 +1,8 @@
 package io.jitrapon.glom.board
 
+import android.app.Activity
 import android.arch.lifecycle.Observer
+import android.content.Intent
 import android.support.v4.app.FragmentActivity
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
@@ -134,12 +136,21 @@ class BoardFragment : BaseFragment() {
                     else -> null
                 }
                 launchOption?.let { option ->
-                    startActivity(option.first, {
+                    startActivity(option.first, Const.RESULT_CODE_BOARD_ITEM, {
                         putExtra(Const.EXTRA_BOARD_ITEM, option.second)
                     }, sharedElements)
                 }
             }
         })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == Const.RESULT_CODE_BOARD_ITEM) {
+            if (resultCode == Activity.RESULT_OK) {
+                val item = data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)
+                AppLogger.i("onActivityResult() with id ${item?.itemId}")
+            }
+        }
     }
 
     /**

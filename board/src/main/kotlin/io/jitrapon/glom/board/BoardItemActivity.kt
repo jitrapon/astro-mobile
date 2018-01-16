@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import io.jitrapon.glom.base.ui.BaseActivity
@@ -64,7 +65,9 @@ abstract class BoardItemActivity : BaseActivity() {
      * We want to make sure to save user's changes before finishing this activity
      */
     override fun onBackPressed() {
-        onActivityWillFinish()
+        setResult(RESULT_OK, Intent().apply {
+            putExtra(Const.EXTRA_BOARD_ITEM, getCurrentBoardItem())
+        })
 
         super.onBackPressed()
     }
@@ -78,9 +81,9 @@ abstract class BoardItemActivity : BaseActivity() {
     protected fun getBoardItemFromIntent() = intent?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)
 
     /**
-     * Called when activity is about to finish. Child classes should save any data here
+     * Returns the current board item after user has edited or filled
      */
-    abstract fun onActivityWillFinish()
+    abstract fun getCurrentBoardItem(): BoardItem?
 
     /**
      * Returns the layout ID of this activity to be inflated

@@ -115,4 +115,25 @@ class BoardRepository : Repository<Board>() {
                 }
                 .delay(1000L, TimeUnit.MILLISECONDS)
     }
+
+    /**
+     * Edits the board item's specific item info using the specified new board item
+     */
+    fun editBoardItemInfo(item: BoardItem): Flowable<EditBoardItemResponse> {
+        return Flowable.just(EditBoardItemResponse("circleId", "123"))
+                .flatMap { response ->
+                    Flowable.fromCallable {
+                        board?.items?.let {
+                            it.forEachIndexed { index, _ ->
+                                if (it[index].itemId == item.itemId) {
+                                    it[index] = item
+                                    return@forEachIndexed
+                                }
+                            }
+                        }
+                        response
+                    }
+                }
+                .delay(1000L, TimeUnit.MILLISECONDS)
+    }
 }

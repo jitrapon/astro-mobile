@@ -23,9 +23,11 @@
             style="@style/CardView.BoardItem" >
 
             <android.support.constraint.ConstraintLayout
+                android:id="@+id/event_item_root_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="@dimen/card_content_padding" >
+                android:paddingBottom="@dimen/card_content_padding"
+                android:focusableInTouchMode="true" >
 
                 <ImageView
                     android:visibility="gone"
@@ -48,8 +50,7 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_image"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    android:layout_marginTop="@dimen/card_content_padding"
-                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginStart="13dp"
                     android:layout_marginEnd="@dimen/card_content_padding" >
 
                     <android.support.design.widget.TextInputEditText
@@ -62,6 +63,75 @@
                         android:hint="@string/event_item_name_hint" />
 
                 </android.support.design.widget.TextInputLayout>
+
+                <ImageView
+                    android:id="@+id/event_item_clock_icon"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_time"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_title_til"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/event_item_start_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.H4.Light"
+                    android:text="Sat, Jan 18\n9:30 PM"
+                    android:lineSpacingMultiplier="1.3"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_clock_icon"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_clock_icon"
+                    android:layout_marginTop="1dp"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:paddingEnd="@dimen/card_content_padding" />
+
+                <ImageView
+                    android:id="@+id/event_item_right_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    app:srcCompat="@drawable/ic_right"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_start_time"
+                    android:layout_marginTop="12dp" />
+
+                <TextView
+                    android:id="@+id/event_item_end_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.H4.Light"
+                    android:text="Sat, Jan 18\n9:30 PM"
+                    android:lineSpacingMultiplier="1.3"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_clock_icon"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_right_icon"
+                    android:layout_marginTop="1dp"
+                    android:layout_marginStart="38dp"
+                    android:paddingEnd="@dimen/card_content_padding" />
+
+                <ImageView
+                    android:id="@+id/event_card_location_icon"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_marker"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:id="@+id/event_card_location"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.H4.Light"
+                    android:text="123 Geneva Avenue"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
+                    app:layout_constraintStart_toEndOf="@+id/event_card_location_icon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:paddingEnd="@dimen/card_content_padding" />
 
             </android.support.constraint.ConstraintLayout>
 
