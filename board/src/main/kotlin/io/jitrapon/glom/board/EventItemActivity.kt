@@ -76,7 +76,7 @@ class EventItemActivity : BoardItemActivity() {
     //region other view callbacks
 
     override fun getCurrentBoardItem(): BoardItem? {
-        return viewModel.getCurrentBoardItem()
+        return viewModel.getCurrentBoardItem(event_item_title.text.toString())
     }
 
     override fun onBeginTransitionAnimationStart() {

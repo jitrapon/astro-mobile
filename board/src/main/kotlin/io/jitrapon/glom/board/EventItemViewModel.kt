@@ -87,8 +87,11 @@ class EventItemViewModel : BaseViewModel() {
     /**
      * Converts the current UiModel to Model
      */
-    fun getCurrentBoardItem(): EventItem? {
-        return eventItemUiModel?.toModel()
+    fun getCurrentBoardItem(name: String): EventItem? {
+        return eventItemUiModel?.let {
+            it.title = name
+            it.toModel()
+        }
     }
 
     /**

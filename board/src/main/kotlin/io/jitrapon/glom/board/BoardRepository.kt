@@ -119,19 +119,15 @@ class BoardRepository : Repository<Board>() {
     /**
      * Edits the board item's specific item info using the specified new board item
      */
-    fun editBoardItemInfo(item: BoardItem): Flowable<EditBoardItemResponse> {
+    fun editBoardItemInfo(item: BoardItem): Flowable<BoardItem> {
         return Flowable.just(EditBoardItemResponse("circleId", "123"))
                 .flatMap { response ->
                     Flowable.fromCallable {
                         board?.items?.let {
-                            it.forEachIndexed { index, _ ->
-                                if (it[index].itemId == item.itemId) {
-                                    it[index] = item
-                                    return@forEachIndexed
-                                }
-                            }
+                            val index = it.indexOfFirst { it.itemId == item.itemId }
+                            if (index != -1) it[index] = item
                         }
-                        response
+                        item
                     }
                 }
                 .delay(1000L, TimeUnit.MILLISECONDS)

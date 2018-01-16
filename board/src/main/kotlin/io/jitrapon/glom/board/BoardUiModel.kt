@@ -9,7 +9,7 @@ import io.jitrapon.glom.base.model.UiModel
  * @author Jitrapon Tiachunpun
  */
 data class BoardUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
-                        var items: List<BoardItemUiModel>? = null,
+                        var items: MutableList<BoardItemUiModel>? = null,
                         var diffResult: DiffUtil.DiffResult? = null,
                         var itemsChangedIndices: MutableList<Pair<Int, Any?>>? = null,
                         var shouldLoadPlaceInfo: Boolean = false) : UiModel

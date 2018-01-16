@@ -87,7 +87,7 @@ class BoardViewModel : BaseViewModel() {
                         observableBoard.value = boardUiModel.apply {
                             itemsChangedIndices = null
                             status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
-                            items = uiModel
+                            items = uiModel.toMutableList()
                             diffResult = diff
                             shouldLoadPlaceInfo = true
                         }
@@ -158,6 +158,35 @@ class BoardViewModel : BaseViewModel() {
                 observableSelectedBoardItem.value = it to transitionViews
             }
         }
+    }
+
+    /**
+     * Edits this board item with a new info
+     */
+    fun editItem(boardItem: BoardItem) {
+        interactor.editBoardItemInfo(boardItem, {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    val result = it.result
+                    boardUiModel.items?.let { items ->
+                        val index = items.indexOfFirst { result.itemId == it.itemId }
+                        if (index != -1) {
+                            items[index] = result.toUiModel()
+                        }
+
+                        observableBoard.value = boardUiModel.apply {
+                            shouldLoadPlaceInfo = true
+                            diffResult = null
+                            itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to null) }
+                        }
+                        observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
+                    }
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
+                }
+            }
+        })
     }
 
     //endregion

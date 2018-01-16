@@ -9,5 +9,5 @@ package io.jitrapon.glom.board
 object Const {
 
     const val EXTRA_BOARD_ITEM = "android.intent.EXTRA_BOARD_ITEM"
-    const val RESULT_CODE_BOARD_ITEM = 1000
+    const val EDIT_ITEM_RESULT_CODE = 1001
 }

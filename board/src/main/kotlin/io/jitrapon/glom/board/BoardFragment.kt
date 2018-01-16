@@ -136,7 +136,7 @@ class BoardFragment : BaseFragment() {
                     else -> null
                 }
                 launchOption?.let { option ->
-                    startActivity(option.first, Const.RESULT_CODE_BOARD_ITEM, {
+                    startActivity(option.first, Const.EDIT_ITEM_RESULT_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, option.second)
                     }, sharedElements)
                 }
@@ -145,10 +145,16 @@ class BoardFragment : BaseFragment() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == Const.RESULT_CODE_BOARD_ITEM) {
+        if (requestCode == Const.EDIT_ITEM_RESULT_CODE) {
             if (resultCode == Activity.RESULT_OK) {
-                val item = data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)
-                AppLogger.i("onActivityResult() with id ${item?.itemId}")
+                try {
+                    data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
+                        viewModel.editItem(it)
+                    }
+                }
+                catch (ex: Exception) {
+                    AppLogger.e(ex)
+                }
             }
         }
     }

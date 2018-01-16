@@ -241,6 +241,22 @@ class BoardInteractor {
         return userRepository.getCurrentUser()
     }
 
+    /**
+     * Edits this board item with a new info
+     */
+    fun editBoardItemInfo(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
+        boardRepository.editBoardItemInfo(item)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
+    }
+
     private fun testParcelable(board: Board) {
         val parcel = Parcel.obtain()
         board.writeToParcel(parcel, 0)
