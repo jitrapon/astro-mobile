@@ -12,13 +12,12 @@ import io.jitrapon.glom.base.util.show
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
- * Container activity for expanded board items
+ * Shows dialog-like UI for viewing and/or editing an event in a board.
  *
  * @author Jitrapon Tiachunpun
  */
 class EventItemActivity : BoardItemActivity() {
 
-    /* this activity's viewmodel */
     private lateinit var viewModel: EventItemViewModel
 
     /* animation delay time in ms before content of this view appears */
@@ -40,7 +39,7 @@ class EventItemActivity : BoardItemActivity() {
         // setup all views
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {
-                it.init(GooglePlaceProvider(lifecycle, activity = this))
+                it.setPlaceProvider(GooglePlaceProvider(lifecycle, activity = this))
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
@@ -50,15 +49,17 @@ class EventItemActivity : BoardItemActivity() {
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
-        // subscribe to changes in this event
-        // when an observable event changes, the whole layout is invalidated
-        viewModel.getObservableEvent().observe(this, Observer {
+        viewModel.getObservableName().observe(this, Observer {
             it?.let {
-                event_item_title.setText(it.title)
+                event_item_title.setText(it)
             }
         })
     }
 
+    /*
+     * TextWatcher for smart auto-complete suggestions when the user
+     * begins to type event name
+     */
     private fun addAutocompleteCallbacks(editText: EditText) {
         editText.addTextChangedListener(object : TextWatcher {
 
@@ -76,11 +77,15 @@ class EventItemActivity : BoardItemActivity() {
     //region other view callbacks
 
     override fun getCurrentBoardItem(): BoardItem? {
-        return viewModel.getCurrentBoardItem(event_item_title.text.toString())
+        return viewModel.saveAndGetItem(event_item_title.text.toString())
     }
 
+    /**
+     * When this event item is about to expand, we want to show only the title as part
+     * of the transition animation
+     */
     override fun onBeginTransitionAnimationStart() {
-        event_item_title_til.hint = " "
+        event_item_title_til.hint = " "         // hide the hint above the text
         event_item_title.clearFocus()
         event_item_clock_icon.hide()
         event_item_start_time.hide()
@@ -100,6 +105,7 @@ class EventItemActivity : BoardItemActivity() {
     }
 
     override fun onFinishTransitionAnimationStart() {
+        event_item_title.setText(viewModel.getPreviousName())
         event_item_root_layout.requestFocus()
         event_item_clock_icon.hide()
         event_item_start_time.hide()

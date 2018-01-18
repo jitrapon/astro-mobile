@@ -18,6 +18,11 @@ data class EventItem(override val itemType: Int,
                      override val retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : BoardItem {
 
+    override fun setInfo(info: BoardItemInfo) {
+        updatedTime = Date().time
+        itemInfo = info as EventInfo
+    }
+
     constructor(parcel: Parcel, type: Int) : this(
             type,
             parcel.readString(),

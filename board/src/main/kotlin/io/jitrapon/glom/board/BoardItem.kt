@@ -48,4 +48,6 @@ interface BoardItem : DataModel {
             }
         }
     }
+
+    fun setInfo(info: BoardItemInfo)
 }

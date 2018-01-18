@@ -5,22 +5,18 @@ import android.arch.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
-import java.util.*
 
 /**
- * ViewModel class that controls EventItemActivity
+ * Manages all view states in the Event detail screen
  *
  * Created by Jitrapon
  */
 class EventItemViewModel : BaseViewModel() {
 
-    /* interactor for event item */
     private lateinit var interactor: EventItemInteractor
 
-    /* Uimodel responsible for this event */
-    private val observableEvent = MutableLiveData<EventItemUiModel>()
-    private var eventItemUiModel: EventItemUiModel? = null
-    private var eventItem: EventItem? = null
+    private var prevName: String? = null
+    private val observableName = MutableLiveData<String>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -29,10 +25,8 @@ class EventItemViewModel : BaseViewModel() {
         interactor = EventItemInteractor()
     }
 
-    fun init(placeProvider: PlaceProvider) {
-        if (shouldShowNameAutocomplete) {
-            interactor.initializeNameAutocompleter(placeProvider)
-        }
+    fun setPlaceProvider(placeProvider: PlaceProvider) {
+        interactor.initializeNameAutocompleter(placeProvider)
     }
 
     /**
@@ -45,10 +39,9 @@ class EventItemViewModel : BaseViewModel() {
             }
             else {
                 if (item is EventItem) {
-                    eventItem = item
-                    observableEvent.value = item.toUiModel().apply {
-                        eventItemUiModel = this
-                    }
+                    interactor.setItem(item)
+                    prevName = item.itemInfo.eventName
+                    observableName.value = item.itemInfo.eventName
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -85,23 +78,14 @@ class EventItemViewModel : BaseViewModel() {
     }
 
     /**
-     * Converts the current UiModel to Model
+     * Saves the current state and returns a model object with the state
      */
-    fun getCurrentBoardItem(name: String): EventItem? {
-        return eventItemUiModel?.let {
-            it.title = name
-            it.toModel()
-        }
-    }
-
-    /**
-     * Converts an instance of UiModel to Model
-     */
-    private fun EventItemUiModel.toModel(): EventItem? {
-        val uiModel = this
-        return eventItem?.apply {
-            updatedTime = Date().time
-            itemInfo.eventName = uiModel.title
+    fun saveAndGetItem(name: String): BoardItem? {
+        val item = interactor.getItem()
+        return (item?.itemInfo as? EventInfo)?.let {
+            it.eventName = name
+            interactor.saveItem(it)
+            item
         }
     }
 
@@ -112,10 +96,15 @@ class EventItemViewModel : BaseViewModel() {
      */
     override fun isViewEmpty(): Boolean = false
 
+    /**
+     * Returns the event name before change
+     */
+    fun getPreviousName(): String? = prevName
+
     //endregion
     //region observables
 
-    fun getObservableEvent(): LiveData<EventItemUiModel> = observableEvent
+    fun getObservableName(): LiveData<String> = observableName
 
     //endregion
 }
