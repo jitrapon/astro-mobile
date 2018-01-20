@@ -12,5 +12,5 @@ interface UiModel {
         SUCCESS, ERROR, EMPTY, LOADING
     }
 
-    val status: Status
+    var status: Status
 }

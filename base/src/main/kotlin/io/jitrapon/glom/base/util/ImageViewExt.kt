@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.component
+package io.jitrapon.glom.base.util
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -6,6 +6,8 @@ import android.graphics.drawable.Drawable
 import android.support.annotation.DrawableRes
 import android.support.v4.app.Fragment
 import android.widget.ImageView
+import io.jitrapon.glom.base.component.GlideApp
+
 
 /**
  * Wrapper and extension functions around image loading to allow Android's ImageView

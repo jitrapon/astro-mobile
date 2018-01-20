@@ -7,10 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import io.jitrapon.glom.base.component.Transformation
-import io.jitrapon.glom.base.component.loadFromUrl
 import io.jitrapon.glom.base.ui.widget.recyclerview.PartialRecyclerViewAdapter
+import io.jitrapon.glom.base.util.Transformation
 import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.loadFromUrl
 
 /**
  * Recyclerview Adapter that displays the list of event attendees

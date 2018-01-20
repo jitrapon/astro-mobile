@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     style="@style/CardView.BoardItem"
     android:id="@+id/event_card_root_view"
     android:layout_width="match_parent"
@@ -33,12 +34,22 @@
             android:text="Dinner with John"
             app:layout_constraintTop_toBottomOf="@+id/event_card_image"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/event_card_sync_status"
             android:maxLines="2"
             android:ellipsize="end"
             android:paddingStart="@dimen/card_content_padding"
             android:paddingEnd="@dimen/card_content_padding"
             android:layout_marginTop="@dimen/card_content_padding" />
+
+        <ImageView
+            android:id="@+id/event_card_sync_status"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="@dimen/card_content_padding"
+            android:layout_marginEnd="@dimen/card_content_padding"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:srcCompat="@drawable/ic_sync" />
 
         <ImageView
             android:id="@+id/event_card_clock_icon"

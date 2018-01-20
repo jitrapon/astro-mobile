@@ -51,21 +51,6 @@ class EventItemViewModel : BaseViewModel() {
     }
 
     /**
-     * Converts EventItem model to its UiModel counterpart
-     */
-    private fun EventItem.toUiModel(): EventItemUiModel {
-        return EventItemUiModel(
-                itemId,
-                itemInfo.eventName,
-                null,
-                null,
-                null,
-                null,
-                EventItemUiModel.AttendStatus.MAYBE
-        )
-    }
-
-    /**
      * Returns whether or not autocomplete on the name text should be enabled
      */
     fun shouldShowNameAutocomplete(): Boolean = shouldShowNameAutocomplete

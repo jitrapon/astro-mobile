@@ -130,6 +130,6 @@ class BoardRepository : Repository<Board>() {
                         item
                     }
                 }
-                .delay(1000L, TimeUnit.MILLISECONDS)
+                .delay(2000L, TimeUnit.MILLISECONDS)
     }
 }

@@ -22,7 +22,7 @@ fun View.showSnackbar(level: Int, message: AndroidString, actionMessage: Android
         MessageLevel.INFO -> R.color.calm_blue to R.color.reddish
         MessageLevel.WARNING -> R.color.warning_orange to R.color.reddish
         MessageLevel.ERROR -> R.color.bright_red to R.color.blueish_purple
-        MessageLevel.SUCCESS -> R.color.spring_green to R.color.white
+        MessageLevel.SUCCESS -> R.color.success_green to R.color.white
         else -> null to null
     }
     showStyledSnackbar(message, actionMessage, duration, actionCallback, colors.first, colors.second)

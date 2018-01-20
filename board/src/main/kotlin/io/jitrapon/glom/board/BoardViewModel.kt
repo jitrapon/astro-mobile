@@ -164,26 +164,41 @@ class BoardViewModel : BaseViewModel() {
      * Edits this board item with a new info
      */
     fun editItem(boardItem: BoardItem) {
-        interactor.editBoardItemInfo(boardItem, {
-            when (it) {
-                is AsyncSuccessResult -> {
-                    val result = it.result
-                    boardUiModel.items?.let { items ->
-                        val index = items.indexOfFirst { result.itemId == it.itemId }
-                        if (index != -1) {
-                            items[index] = result.toUiModel()
-                        }
-
-                        observableBoard.value = boardUiModel.apply {
-                            shouldLoadPlaceInfo = true
-                            diffResult = null
-                            itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to null) }
-                        }
-                        observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
-                    }
+        boardUiModel.items?.let { items ->
+            val index = items.indexOfFirst { boardItem.itemId == it.itemId }
+            if (index != -1) {
+                items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
+                observableBoard.value = boardUiModel.apply {
+                    shouldLoadPlaceInfo = true
+                    diffResult = null
+                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to null) }
                 }
-                is AsyncErrorResult -> {
-                    handleError(it.error)
+            }
+        }
+        interactor.editBoardItemInfo(boardItem, {
+            boardUiModel.items?.let { items ->
+                val index = items.indexOfFirst { boardItem.itemId == it.itemId }
+                if (index != -1) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            items[index].status = UiModel.Status.SUCCESS
+                            observableBoard.value = boardUiModel.apply {
+                                shouldLoadPlaceInfo = false
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to arrayListOf(EventItemUiModel.STATUS)) }
+                            }
+                            observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
+                        }
+                        is AsyncErrorResult -> {
+                            handleError(it.error)
+                            items[index].status = UiModel.Status.ERROR
+                            observableBoard.value = boardUiModel.apply {
+                                shouldLoadPlaceInfo = false
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to arrayListOf(EventItemUiModel.STATUS)) }
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -234,7 +249,7 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
-    private fun BoardItem.toUiModel(): BoardItemUiModel {
+    private fun BoardItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): BoardItemUiModel {
         return when (this) {
             is EventItem -> {
                 EventItemUiModel(
@@ -244,7 +259,8 @@ class BoardViewModel : BaseViewModel() {
                         getEventLocation(itemInfo.location),
                         getEventLatLng(itemInfo.location),
                         getEventAttendees(itemInfo.attendees),
-                        getEventAttendStatus(itemInfo.attendees)
+                        getEventAttendStatus(itemInfo.attendees),
+                        status = status
                 )
             }
             else -> {
@@ -330,7 +346,7 @@ class BoardViewModel : BaseViewModel() {
             val item = items.getOrNull(position)
             if (item is EventItemUiModel) {
                 val statusCode: Int
-                val animationItem: AnimationItem
+                var animationItem: AnimationItem? = null
                 val message: AndroidString
                 var level: Int = MessageLevel.INFO
                 when (newStatus) {
@@ -342,12 +358,10 @@ class BoardViewModel : BaseViewModel() {
                     }
                     EventItemUiModel.AttendStatus.MAYBE -> {
                         statusCode = 1
-                        animationItem = AnimationItem.DECLINE_EVENT
                         message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title))
                     }
                     EventItemUiModel.AttendStatus.DECLINED -> {
                         statusCode = 0
-                        animationItem = AnimationItem.DECLINE_EVENT
                         message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title))
                     }
                 }
@@ -359,7 +373,9 @@ class BoardViewModel : BaseViewModel() {
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(EventItemUiModel.ATTENDSTATUS)) }
                 }
-                observableAnimation.value = animationItem
+                animationItem?.let {
+                    observableAnimation.value = it
+                }
                 interactor.markEventAttendStatusForCurrentUser(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {

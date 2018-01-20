@@ -8,5 +8,4 @@ package io.jitrapon.glom.base.model
 enum class AnimationItem(val fileName: String): UiActionModel {
 
     JOIN_EVENT("animations/join_event.json"),
-    DECLINE_EVENT("animations/decline_event.json")
 }

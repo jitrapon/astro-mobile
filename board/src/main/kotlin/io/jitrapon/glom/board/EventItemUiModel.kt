@@ -26,6 +26,7 @@ data class EventItemUiModel(override val itemId: String?,
         const val MAPLATLNG = 3
         const val ATTENDEES = 4
         const val ATTENDSTATUS = 5
+        const val STATUS = 6
     }
 
     override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
@@ -39,6 +40,7 @@ data class EventItemUiModel(override val itemId: String?,
             if (mapLatLng != otherItem.mapLatLng) add(MAPLATLNG)
             if (attendeesAvatars != otherItem.attendeesAvatars) add(ATTENDEES)
             if (attendStatus != otherItem.attendStatus) add(ATTENDSTATUS)
+            if (status != otherItem.status) add(STATUS)
         }
     }
 

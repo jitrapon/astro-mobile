@@ -12,7 +12,7 @@ import java.util.*
 data class AndroidString(@StringRes val resId: Int? = null,
                     val formatArgs: Array<String>? = null,
                     val text: String? = null,
-                    override val status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel {
+                    override var status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

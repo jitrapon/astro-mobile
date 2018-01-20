@@ -7,7 +7,7 @@ import io.jitrapon.glom.base.model.UiModel
  */
 data class ErrorItemUiModel(override val itemType: Int = BoardItemUiModel.TYPE_ERROR,
                             override val itemId: String? = null,
-                            override val status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
+                            override var status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
 
     override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
         return ArrayList()

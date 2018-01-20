@@ -11,6 +11,8 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,7 +23,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
-import io.jitrapon.glom.base.component.loadFromResource
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
@@ -41,6 +43,12 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
         private const val CAMERA_ZOOM_LEVEL = 15f
         private const val VISIBLE_ATTENDEE_AVATARS = 3
+        private val ANIM_ROTATION = RotateAnimation(0f, 360f,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+                0.5f).apply {
+            duration = 1000
+            repeatCount = Animation.INFINITE
+        }
 
         /**
          * Displays a LatLng location on a
@@ -142,6 +150,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 updateMap(item)
                 updateAttendees(item)
                 updateAttendStatus(item)
+                updateStatus(item)
             }
             else {
                 val fields = payloads!!.first() as List<*>
@@ -152,7 +161,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         EventItemUiModel.LOCATION -> { updateLocation(item) }
                         EventItemUiModel.MAPLATLNG -> { updateMap(item) }
                         EventItemUiModel.ATTENDEES -> { updateAttendees(item) }
-                        EventItemUiModel.ATTENDSTATUS-> { updateAttendStatus(item) }
+                        EventItemUiModel.ATTENDSTATUS -> { updateAttendStatus(item) }
+                        EventItemUiModel.STATUS -> { updateStatus(item) }
                     }
                 }
             }
@@ -220,6 +230,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         var map: GoogleMap? = null
         val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
         val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
+        val syncStatus: ImageView = itemView.findViewById(R.id.event_card_sync_status)
 
         init {
             // to avoid stutter when scrolling, we shouldn't be initializing the map in onBindViewHolder().
@@ -245,6 +256,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         listOf(Pair.create(cardView as View, itemView.context.getString(R.string.event_card_background_transition))
                 ))
             }
+            syncStatus.hide()
         }
 
         override fun onMapReady(googleMap: GoogleMap) {
@@ -367,6 +379,34 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             return when (status) {
                 EventItemUiModel.AttendStatus.GOING -> EventItemUiModel.AttendStatus.MAYBE
                 else -> EventItemUiModel.AttendStatus.GOING
+            }
+        }
+
+        fun updateStatus(item: EventItemUiModel) {
+            item.status.let {
+                when (it) {
+                    UiModel.Status.LOADING -> {
+                        syncStatus.apply {
+                            show()
+//                            startAnimation(ANIM_ROTATION)     // cause no shared element transition
+                        }
+                    }
+                    UiModel.Status.SUCCESS -> {
+                        syncStatus.apply {
+                            hide(200L)
+                            animation?.let {
+                                it.reset()
+                                it.cancel()
+                            }
+                        }
+                    }
+                    UiModel.Status.ERROR -> {
+                        syncStatus.hide()
+                    }
+                    UiModel.Status.EMPTY -> {
+                        //not applicable
+                    }
+                }
             }
         }
     }

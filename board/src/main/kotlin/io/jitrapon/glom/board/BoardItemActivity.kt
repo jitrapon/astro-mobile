@@ -66,10 +66,10 @@ abstract class BoardItemActivity : BaseActivity() {
      */
     override fun onBackPressed() {
         setResult(RESULT_OK, Intent().apply {
-            putExtra(Const.EXTRA_BOARD_ITEM, getCurrentBoardItem())
+            putExtra(Const.EXTRA_BOARD_ITEM, onSaveItem())
         })
 
-        super.onBackPressed()
+        supportFinishAfterTransition()
     }
 
     //endregion
@@ -82,8 +82,9 @@ abstract class BoardItemActivity : BaseActivity() {
 
     /**
      * Returns the current board item after user has edited or filled
+     * This will be executed in a background thread
      */
-    abstract fun getCurrentBoardItem(): BoardItem?
+    abstract fun onSaveItem(): BoardItem?
 
     /**
      * Returns the layout ID of this activity to be inflated
