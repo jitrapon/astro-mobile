@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.ui
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.Observer
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
@@ -43,6 +44,14 @@ abstract class BaseFragment : Fragment() {
      */
     val placeProvider: PlaceProvider by lazy {
         GooglePlaceProvider(lifecycle, activity = activity)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // needs to handle inconsistent behavior with livedata
+        // https://stackoverflow.com/questions/48364340/inconsistent-behavior-with-livedata-in-android-7-and-pre-android-7
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) onDispatchPendingLiveData()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -128,6 +137,11 @@ abstract class BaseFragment : Fragment() {
     protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
     }
+
+    /**
+     * Override to allow child class to know that it can begin dispatching LiveData to observe changes
+     */
+    open fun onDispatchPendingLiveData() {}
 
     /**
      * Indicates that the view is loading some data. Override this function to make it behave differently

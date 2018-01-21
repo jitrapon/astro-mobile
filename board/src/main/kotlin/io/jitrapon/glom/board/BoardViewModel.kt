@@ -51,6 +51,13 @@ class BoardViewModel : BaseViewModel() {
      */
     private var lastKeyGroup: Any? = null
 
+    /* List that caches item indices that have not been dispatched to the observer because
+       there are no active observers
+     */
+    private val undispatchedItemIndices: ArrayList<Pair<Int, Any?>> by lazy {
+        ArrayList<Pair<Int, Any?>>()
+    }
+
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
@@ -62,15 +69,18 @@ class BoardViewModel : BaseViewModel() {
         interactor = BoardInteractor().apply {
             setFilteringType(itemFilterType)
         }
-        loadBoard()
     }
 
     //region view actions
 
     /**
      * Loads board data and items asynchronously
+     *
+     * @param refresh If true, old data will be discarded and will be refreshed from the server again
      */
-    fun loadBoard() {
+    fun loadBoard(refresh: Boolean) {
+        if (!refresh && interactor.getCachedBoard() != null) return
+
         observableBoard.value = boardUiModel.apply {
             status = UiModel.Status.LOADING
         }
@@ -171,7 +181,15 @@ class BoardViewModel : BaseViewModel() {
                 observableBoard.value = boardUiModel.apply {
                     shouldLoadPlaceInfo = true
                     diffResult = null
-                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to null) }
+                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                        add(index to null)
+                        undispatchedItemIndices.let {
+                            if (!it.isNullOrEmpty()) {
+                                addAll(it)
+                                it.clear()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -198,6 +216,11 @@ class BoardViewModel : BaseViewModel() {
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to arrayListOf(EventItemUiModel.STATUS)) }
                             }
                         }
+                    }
+
+                    // make sure to dispatch these indices when we set the observableBoard value again
+                    if (!observableBoard.hasActiveObservers()) {
+                        undispatchedItemIndices.add(index to arrayListOf(EventItemUiModel.STATUS))
                     }
                 }
             }

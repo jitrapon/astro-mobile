@@ -1,7 +1,9 @@
 package io.jitrapon.glom.base.viewmodel
 
 import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
+import android.os.Build
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
@@ -19,6 +21,11 @@ abstract class BaseViewModel : ViewModel() {
         this can be done by setting its value directly, or calling the run() function to run
         a series of actions */
     protected val observableViewAction = LiveEvent<UiActionModel>()
+
+    /* List that caches LiveData instances that have not been dispatched to the observer because
+       there are no active observers
+     */
+    private val undispatchedLiveDataList = ArrayList<LiveData<*>>()
 
     init {
         observableViewAction.value = EmptyLoading(false)
@@ -44,6 +51,29 @@ abstract class BaseViewModel : ViewModel() {
                 onComplete(it)
             }).run(callbackDelay)
         }
+    }
+
+    /**
+     * Dispatches any pending live data waiting because the observer was not active.
+     * Should be called when the Observer changes its state to ACTIVE
+     */
+    fun dispatchPendingLiveData() {
+        undispatchedLiveDataList.apply {
+            forEach {
+                if (it is MutableLiveData) it.value = it.value
+            }
+            clear()
+        }
+    }
+
+    /**
+     * Add the specified LiveData instance to the undispatched list. If the Observer changes to active state,
+     * it will be dispatched automatically. Only applicable to Android version less than 7.0
+     */
+    fun addLiveDataToUndispatchedList(liveData: LiveData<*>) {
+       if (!liveData.hasActiveObservers() && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+           undispatchedLiveDataList.add(liveData)
+       }
     }
 
     /**

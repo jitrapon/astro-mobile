@@ -4,15 +4,15 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.os.Handler
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
+import android.view.View
+import android.widget.ProgressBar
 import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.Alert
-import io.jitrapon.glom.base.model.Snackbar
-import io.jitrapon.glom.base.model.Toast
-import io.jitrapon.glom.base.model.UiActionModel
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
@@ -26,6 +26,9 @@ import io.jitrapon.glom.base.util.showToast
  * @author Jitrapon Tiachunpun
  */
 abstract class BaseActivity : AppCompatActivity() {
+
+    /* this activity 's swipe refresh layout, if provided */
+    private var refreshLayout: SwipeRefreshLayout? = null
 
     /* subclass should overwrite this variable for naming the activity */
     var tag: String = "base"
@@ -67,6 +70,7 @@ abstract class BaseActivity : AppCompatActivity() {
                 is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                is EmptyLoading -> showEmptyLoading(it.show)
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -95,6 +99,41 @@ abstract class BaseActivity : AppCompatActivity() {
      */
     protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
+    }
+
+    /**
+     * Indicates that the view has no data and should be showing the main loading progress bar.
+     * Override this function to make it behave differently
+     */
+    open fun showEmptyLoading(show: Boolean) {
+        getEmptyLoadingView()?.let {
+            it.visibility = if (show) View.VISIBLE else View.GONE
+
+            // if triggered manually by swipe refresh layout, hide it. We don't need to show
+            // two loading icons
+            if (show) showLoading(false)
+        }
+        // if somehow the refreshlayout is still loading, set it to hide
+        if (!show) showLoading(false)
+    }
+
+    /**
+     * Returns a loading progress bar shown when the view is empty and is about to load a data
+     */
+    open fun getEmptyLoadingView(): ProgressBar? = null
+
+    /**
+     * Indicates that the view is loading some data. Override this function to make it behave differently
+     */
+    open fun showLoading(show: Boolean) {
+        refreshLayout?.let {
+            if (show) {
+                if (!it.isRefreshing) it.isRefreshing = true
+            }
+            else {
+                if (it.isRefreshing) it.isRefreshing = false
+            }
+        }
     }
 
     /**

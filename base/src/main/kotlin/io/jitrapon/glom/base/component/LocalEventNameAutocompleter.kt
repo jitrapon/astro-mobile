@@ -2,7 +2,6 @@ package io.jitrapon.glom.base.component
 
 import android.text.TextUtils
 import android.util.SparseArray
-import io.jitrapon.glom.base.util.AppLogger
 import java.util.*
 
 /**
@@ -68,10 +67,10 @@ class LocalEventNameAutocompleter(private val callback: Callbacks, private val p
             }
 
             // if the last word matches any of the keywords, show suggestions based on that category
-            AppLogger.i("Last word entered is \"$lastWord\"")
+//            AppLogger.i("Last word entered is \"$lastWord\"")
             val categories = ArrayList<Any>()
             keywords.find { it.equals(lastWord, ignoreCase = true) }?.let {
-                AppLogger.i("Keyword $it found")
+//                AppLogger.i("Keyword $it found")
                 categories.addAll(listOf("Tomorrow", "Today", "Some place", "Other place", "Jitrapon"))
             }
 
@@ -94,10 +93,10 @@ class LocalEventNameAutocompleter(private val callback: Callbacks, private val p
                 }
             }
 
-            AppLogger.i("NAME = ${fields[Field.NAME]}, " +
-                    "DATE = ${fields[Field.DATE]}, " +
-                    "PLACE = ${fields[Field.PLACE]}, " +
-                    "INVITEES = ${fields[Field.INVITEES]}")
+//            AppLogger.i("NAME = ${fields[Field.NAME]}, " +
+//                    "DATE = ${fields[Field.DATE]}, " +
+//                    "PLACE = ${fields[Field.PLACE]}, " +
+//                    "INVITEES = ${fields[Field.INVITEES]}")
 
             callback.onSuggestionsAvailable(ArrayList<Any>().apply {
                 addAll(names)

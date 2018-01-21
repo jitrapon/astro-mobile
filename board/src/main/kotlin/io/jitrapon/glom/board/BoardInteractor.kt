@@ -269,4 +269,6 @@ class BoardInteractor {
         }
         parcel.recycle()
     }
+
+    fun getCachedBoard(): Board? = boardRepository.getCache()
 }

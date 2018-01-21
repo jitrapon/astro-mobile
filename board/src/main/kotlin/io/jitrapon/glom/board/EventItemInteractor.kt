@@ -2,7 +2,6 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.component.LocalEventNameAutocompleter
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.util.AppLogger
 
 /**
  * Controller that handles all interactions for editing, saving, and updating
@@ -57,7 +56,6 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
             results.forEach {
                 append("$it, ")
             }
-            AppLogger.i("Suggestions: $this")
         }
     }
 

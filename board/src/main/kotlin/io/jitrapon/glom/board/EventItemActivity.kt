@@ -6,7 +6,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 import io.jitrapon.glom.base.component.GooglePlaceProvider
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.obtainViewModel
 import io.jitrapon.glom.base.util.show
@@ -106,7 +105,6 @@ class EventItemActivity : BoardItemActivity() {
     }
 
     override fun onFinishTransitionAnimationStart() {
-        AppLogger.i("ANIM START")
         event_item_title.setText(viewModel.getPreviousName())
         event_item_root_layout.requestFocus()
         event_item_clock_icon.hide()
@@ -118,7 +116,7 @@ class EventItemActivity : BoardItemActivity() {
     }
 
     override fun onFinishTransitionAnimationEnd() {
-        AppLogger.i("ANIM END")
+        //nothing yet
     }
 
     //endregion

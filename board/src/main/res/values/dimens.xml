@@ -10,6 +10,6 @@
     <dimen name="card_header_item_text_margin">30dp</dimen>
     <dimen name="card_icon_small">18dp</dimen>
     <dimen name="card_icon_medium">24dp</dimen>
-    <dimen name="card_expand_vertical_margin">55dp</dimen>
+    <dimen name="card_expand_vertical_margin">75dp</dimen>
     <dimen name="card_expand_horizontal_margin">10dp</dimen>
 </resources>

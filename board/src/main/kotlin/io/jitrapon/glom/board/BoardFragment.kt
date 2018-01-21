@@ -6,6 +6,7 @@ import android.content.Intent
 import android.support.v4.app.FragmentActivity
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
+import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
 import android.widget.ProgressBar
@@ -63,15 +64,14 @@ class BoardFragment : BaseFragment() {
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
 
             // uncomment lines below to pre-create recyclerview viewholders
-//            val poolCount = 6
-//            recycledViewPool = RecyclerView.RecycledViewPool().apply {
-//                setMaxRecycledViews(BoardItemUiModel.TYPE_EVENT, poolCount)
-//                for (i in 0 .. poolCount) {
-//                    putRecycledView(adapter.createViewHolder(board_recycler_view, BoardItemUiModel.TYPE_EVENT))
-//                }
-//            }
+//            createRecycledPool(this, 15)
         }
         board_animation_view.hide()
+
+        // start loading data
+        // we don't force-refresh data because when configuration changes occur,
+        // we can reuse the same loaded data
+        viewModel.loadBoard(false)
     }
 
     /**
@@ -99,6 +99,7 @@ class BoardFragment : BaseFragment() {
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
+                                AppLogger.i("Observer triggered for notifyItemChanged at index ${it.first}")
                                 board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
                             }
                         }
@@ -163,6 +164,21 @@ class BoardFragment : BaseFragment() {
      * Callback for when the board has been manually refreshed
      */
     override fun onRefresh() {
-        viewModel.loadBoard()
+        viewModel.loadBoard(true)
+    }
+
+    /**
+     * Experiment: optimize recyclerview by creating viewholders beforehand for better
+     * scrolling performance
+     */
+    private fun createRecycledPool(recyclerView: RecyclerView, poolCount: Int) {
+        recyclerView.apply {
+            recycledViewPool = RecyclerView.RecycledViewPool().apply {
+                setMaxRecycledViews(BoardItemUiModel.TYPE_EVENT, poolCount)
+                for (i in 0..poolCount) {
+                    putRecycledView(adapter.createViewHolder(board_recycler_view, BoardItemUiModel.TYPE_EVENT))
+                }
+            }
+        }
     }
 }
