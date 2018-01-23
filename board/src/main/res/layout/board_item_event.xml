@@ -48,8 +48,7 @@
             android:layout_marginTop="@dimen/card_content_padding"
             android:layout_marginEnd="@dimen/card_content_padding"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_sync" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <ImageView
             android:id="@+id/event_card_clock_icon"
