@@ -257,8 +257,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 ))
             }
             syncStatus.apply {
-                loadFromUrl(fragment,
-                        "https://camo.envatousercontent.com/d93870945fc182dbd80e3f43834fa3194aad3038/687474703a2f2f7770657870657274732e696f2f77702d636f6e74656e742f75706c6f6164732f323031372f30392f73796e63726f6e6973652e676966")
+                loadFromResource(R.drawable.ic_sync)
                 hide()
             }
         }

@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.support.annotation.DrawableRes
+import android.support.annotation.RawRes
 import android.support.v4.app.Fragment
 import android.widget.ImageView
 import io.jitrapon.glom.base.component.GlideApp
@@ -29,6 +30,25 @@ fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeho
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
             .load(url)
+            .apply {
+                placeholder?.let (this::placeholder)
+                error?.let (this::error)
+                fallback?.let (this::fallback)
+                when (transformation) {
+                    Transformation.FIT_CENTER -> fitCenter()
+                    Transformation.CENTER_INSIDE -> centerInside()
+                    Transformation.CENTER_CROP -> centerCrop()
+                    Transformation.CIRCLE_CROP -> circleCrop()
+                    else -> { /* do nothing */ }
+                }
+            }
+            .into(this)
+}
+
+fun ImageView.loadFromRaw(fragment: Fragment, @RawRes resId: Int, @DrawableRes placeholder: Int? = null,
+                          @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
+    GlideApp.with(fragment)
+            .load(resId)
             .apply {
                 placeholder?.let (this::placeholder)
                 error?.let (this::error)
