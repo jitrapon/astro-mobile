@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import android.os.Parcel
 import android.os.Parcelable

@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.Observer
 import android.os.Bundle
@@ -9,6 +9,9 @@ import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.obtainViewModel
 import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.board.BoardItem
+import io.jitrapon.glom.board.BoardItemActivity
+import io.jitrapon.glom.board.R
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**

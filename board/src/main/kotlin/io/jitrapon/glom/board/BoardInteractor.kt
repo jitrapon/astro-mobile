@@ -10,6 +10,8 @@ import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.UserRepository
+import io.jitrapon.glom.board.event.EventInfo
+import io.jitrapon.glom.board.event.EventItem
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers

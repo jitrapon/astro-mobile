@@ -14,6 +14,8 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.event.EventItemActivity
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -150,7 +152,7 @@ class BoardFragment : BaseFragment() {
             if (resultCode == Activity.RESULT_OK) {
                 try {
                     data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
-                        viewModel.editItem(it)
+                        viewModel.saveItemChanges(it)
                     }
                 }
                 catch (ex: Exception) {

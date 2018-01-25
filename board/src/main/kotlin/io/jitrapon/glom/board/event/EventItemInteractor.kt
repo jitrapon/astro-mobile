@@ -1,7 +1,9 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import io.jitrapon.glom.base.component.LocalEventNameAutocompleter
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.board.BoardItem
+import io.jitrapon.glom.board.BoardItemRepository
 
 /**
  * Controller that handles all interactions for editing, saving, and updating

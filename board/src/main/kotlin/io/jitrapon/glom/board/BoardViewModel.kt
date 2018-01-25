@@ -13,6 +13,9 @@ import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
+import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.event.EventItemUiModel
+import io.jitrapon.glom.board.event.EventLocation
 import java.util.*
 import kotlin.math.absoluteValue
 
@@ -71,7 +74,7 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
-    //region view actions
+    //region board actions
 
     /**
      * Loads board data and items asynchronously
@@ -139,10 +142,8 @@ class BoardViewModel : BaseViewModel() {
                             items?.let {
                                 it.forEachIndexed { index, item ->
                                     if (map.containsKey(item.itemId)) {
-                                        itemsChangedIndices?.add(index to arrayListOf(EventItemUiModel.LOCATION))
-                                        if (item is EventItemUiModel) {
-                                            item.location = AndroidString(text = map[item.itemId]?.name.toString())
-                                        }
+                                        val changePayload = item.updateLocationText(map[item.itemId])
+                                        itemsChangedIndices?.add(index to arrayListOf(changePayload))
                                     }
                                 }
                             }
@@ -162,7 +163,7 @@ class BoardViewModel : BaseViewModel() {
      * @param position The position of the item to view in the RecyclerView
      * @param transitionViews The shared views to allow smooth transition animation between activities
      */
-    fun selectItem(position: Int, transitionViews: List<android.support.v4.util.Pair<View, String>>? = null) {
+    fun viewItemDetail(position: Int, transitionViews: List<android.support.v4.util.Pair<View, String>>? = null) {
         boardUiModel.items?.getOrNull(position)?.let {
             interactor.getBoardItem(it.itemId)?.let {
                 observableSelectedBoardItem.value = it to transitionViews
@@ -173,16 +174,23 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Edits this board item with a new info
      */
-    fun editItem(boardItem: BoardItem) {
+    fun saveItemChanges(boardItem: BoardItem) {
         boardUiModel.items?.let { items ->
-            val index = items.indexOfFirst { boardItem.itemId == it.itemId }
+            var index = items.indexOfFirst { boardItem.itemId == it.itemId }
+
+            // if item is found
             if (index != -1) {
+
+                // show the user visually that this item is syncing
                 items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
                 observableBoard.value = boardUiModel.apply {
                     shouldLoadPlaceInfo = true
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
                         add(index to null)
+
+                        // for pre-Nougat, LiveData are not triggered to observers when the
+                        // observers go inactive. Therefore, we need to undispatch any pending LiveData here
                         undispatchedItemIndices.let {
                             if (!it.isNullOrEmpty()) {
                                 addAll(it)
@@ -191,44 +199,50 @@ class BoardViewModel : BaseViewModel() {
                         }
                     }
                 }
+
+                // start syncing data to server and local database
+                interactor.editBoardItemInfo(boardItem, {
+                    boardUiModel.items?.let { items ->
+                        index = items.indexOfFirst { boardItem.itemId == it.itemId }
+                        if (index != -1) {
+                            when (it) {
+                                is AsyncSuccessResult -> {
+                                    items[index].status = UiModel.Status.SUCCESS
+                                    observableBoard.value = boardUiModel.apply {
+                                        shouldLoadPlaceInfo = false
+                                        diffResult = null
+                                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                            add(index to arrayListOf(items[index].getStatusChangePayload()))
+                                        }
+                                    }
+                                    observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
+                                }
+                                is AsyncErrorResult -> {
+                                    handleError(it.error)
+                                    items[index].status = UiModel.Status.ERROR
+                                    observableBoard.value = boardUiModel.apply {
+                                        shouldLoadPlaceInfo = false
+                                        diffResult = null
+                                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                            add(index to arrayListOf(items[index].getStatusChangePayload()))
+                                        }
+                                    }
+                                }
+                            }
+
+                            // make sure to dispatch these indices when we set the observableBoard value again
+                            if (!observableBoard.hasActiveObservers()) {
+                                undispatchedItemIndices.add(index to arrayListOf(items[index].getStatusChangePayload()))
+                            }
+                        }
+                    }
+                })
             }
         }
-        interactor.editBoardItemInfo(boardItem, {
-            boardUiModel.items?.let { items ->
-                val index = items.indexOfFirst { boardItem.itemId == it.itemId }
-                if (index != -1) {
-                    when (it) {
-                        is AsyncSuccessResult -> {
-                            items[index].status = UiModel.Status.SUCCESS
-                            observableBoard.value = boardUiModel.apply {
-                                shouldLoadPlaceInfo = false
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to arrayListOf(EventItemUiModel.STATUS)) }
-                            }
-                            observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
-                        }
-                        is AsyncErrorResult -> {
-                            handleError(it.error)
-                            items[index].status = UiModel.Status.ERROR
-                            observableBoard.value = boardUiModel.apply {
-                                shouldLoadPlaceInfo = false
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(index to arrayListOf(EventItemUiModel.STATUS)) }
-                            }
-                        }
-                    }
-
-                    // make sure to dispatch these indices when we set the observableBoard value again
-                    if (!observableBoard.hasActiveObservers()) {
-                        undispatchedItemIndices.add(index to arrayListOf(EventItemUiModel.STATUS))
-                    }
-                }
-            }
-        })
     }
 
     //endregion
-    //region util functions
+    //region utility functions
 
     /**
      * Converts the BoardItem domain model to a list of BoardItemUIModel

@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 /**
  * Created by Jitrapon

@@ -1,13 +1,14 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
+import io.jitrapon.glom.board.BoardItem
 
 /**
- * Manages all view states in the Event detail screen
+ * Manages all view states for event board items and detail screen
  *
  * Created by Jitrapon
  */
@@ -24,6 +25,14 @@ class EventItemViewModel : BaseViewModel() {
     init {
         interactor = EventItemInteractor()
     }
+
+    //region event board item
+
+
+
+    //endregion
+
+    //region event detail item
 
     fun setPlaceProvider(placeProvider: PlaceProvider) {
         interactor.initializeNameAutocompleter(placeProvider)
@@ -74,6 +83,7 @@ class EventItemViewModel : BaseViewModel() {
         }
     }
 
+    //endregion
     //region view states
 
     /**
