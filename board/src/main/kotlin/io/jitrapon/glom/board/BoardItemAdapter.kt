@@ -28,7 +28,9 @@ import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoratio
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.event.AttendeeAdapter
+import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventItemUiModel
+import io.jitrapon.glom.board.event.EventItemViewModel
 
 /**
  * RecyclerView's Adapter for the board items
@@ -251,8 +253,10 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             }
             attendStatus.setOnClickListener {
                 itemId?.let {
-                    val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
-                    viewModel.setEventAttendStatus(adapterPosition, newStatus)
+                    BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java)?.let {
+                        val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
+                        (it as? EventItemViewModel)?.setEventAttendStatus(viewModel, adapterPosition, newStatus)
+                    }
                 }
             }
             itemView.setOnClickListener {

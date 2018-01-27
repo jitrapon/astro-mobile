@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository : Repository<Board>() {
+object BoardRepository : Repository<Board>() {
 
     /*
      * Cached board state. Will be updated whenever loadBoard() function

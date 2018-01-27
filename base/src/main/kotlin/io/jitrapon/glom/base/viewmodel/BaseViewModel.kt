@@ -4,9 +4,11 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
 import android.os.Build
+import android.os.Looper
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.Format
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
@@ -20,15 +22,20 @@ abstract class BaseViewModel : ViewModel() {
     /* Subclass of this class should set appropriate UiActionModel to this variable to emit action to the view
         this can be done by setting its value directly, or calling the run() function to run
         a series of actions */
-    protected val observableViewAction = LiveEvent<UiActionModel>()
+    val observableViewAction = LiveEvent<UiActionModel>()
 
     /* List that caches LiveData instances that have not been dispatched to the observer because
        there are no active observers
      */
     private val undispatchedLiveDataList = ArrayList<LiveData<*>>()
 
+    /* date time formatter */
+    val format: Format = Format()
+
     init {
-        observableViewAction.value = EmptyLoading(false)
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            observableViewAction.value = EmptyLoading(false)
+        }
     }
 
     /**

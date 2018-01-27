@@ -96,7 +96,13 @@ class BoardFragment : BaseFragment() {
                         board_status_viewswitcher.reset()
 
                         // loads additional place information for items that have them
-                        if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider)
+                        it.requestPlaceInfoItemIds.let {
+                            when {
+                                it == null -> { /* do nothing */ }
+                                it.isEmpty() -> viewModel.loadPlaceInfo(placeProvider, null)
+                                else -> viewModel.loadPlaceInfo(placeProvider, it)
+                            }
+                        }
 
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {

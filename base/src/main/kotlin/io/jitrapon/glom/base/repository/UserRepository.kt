@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-class UserRepository : Repository<User>() {
+object UserRepository : Repository<User>() {
 
     private var users: List<User>? = null
     private var userMap: ArrayMap<String, User>? = null

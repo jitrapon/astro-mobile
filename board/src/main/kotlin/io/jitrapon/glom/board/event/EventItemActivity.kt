@@ -7,10 +7,10 @@ import android.text.TextWatcher
 import android.widget.EditText
 import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.util.hide
-import io.jitrapon.glom.base.util.obtainViewModel
 import io.jitrapon.glom.base.util.show
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
+import io.jitrapon.glom.board.BoardItemViewModelStore
 import io.jitrapon.glom.board.R
 import kotlinx.android.synthetic.main.event_item_activity.*
 
@@ -31,7 +31,7 @@ class EventItemActivity : BoardItemActivity() {
     override fun getLayout(): Int = R.layout.event_item_activity
 
     override fun onCreateViewModel() {
-        viewModel = obtainViewModel(EventItemViewModel::class.java)
+        viewModel = BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java) as EventItemViewModel
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,9 +1,20 @@
 package io.jitrapon.glom.board.event
 
+import android.text.TextUtils
 import io.jitrapon.glom.base.component.LocalEventNameAutocompleter
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.User
+import io.jitrapon.glom.base.repository.UserRepository
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
+import io.jitrapon.glom.board.BoardRepository
+import io.reactivex.Flowable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import java.util.*
 
 /**
  * Controller that handles all interactions for editing, saving, and updating
@@ -12,12 +23,6 @@ import io.jitrapon.glom.board.BoardItemRepository
  * Created by Jitrapon
  */
 class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
-
-    private lateinit var repository: BoardItemRepository
-
-    init {
-        repository = BoardItemRepository()
-    }
 
     /**
      * TODO this will be an API instead of doing it client-side
@@ -29,14 +34,14 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
      * Initialize board item to work with
      */
     fun setItem(item: BoardItem) {
-        repository.setCache(item)
+        BoardItemRepository.setCache(item)
     }
 
     /**
      * Returns the cached board item
      */
     fun getItem(): BoardItem? {
-        return repository.getCache()
+        return BoardItemRepository.getCache()
     }
 
     /**
@@ -65,6 +70,60 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
      * Saves the current state
      */
     fun saveItem(info: EventInfo) {
-        repository.save(info)
+        BoardItemRepository.save(info)
+    }
+
+    /**
+     * Returns list of loaded users, if available from specified IDs
+     */
+    fun getUsers(userIds: List<String>): List<User?>? {
+        return ArrayList<User?>().apply {
+            userIds.forEach {
+                add(UserRepository.getById(it))
+            }
+        }
+    }
+
+    /**
+     * Returns the currently signed in User object
+     */
+    fun getCurrentUser(): User? {
+        return UserRepository.getCurrentUser()
+    }
+
+    /**
+     * Joins the current user to an event
+     *
+     * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
+     */
+    fun markEventAttendStatusForCurrentUser(itemId: String?, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+        if (itemId == null) {
+            onComplete(AsyncErrorResult(Exception("ItemId cannot be NULL")))
+            return
+        }
+        val userId = UserRepository.getCurrentUser()?.userId
+        if (TextUtils.isEmpty(userId)) {
+            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
+            return
+        }
+
+        BoardRepository.getCache()?.let {
+            Flowable.fromCallable {
+                it.items.find { it.itemId == itemId && it is EventItem }
+            }.flatMap {
+                        when (statusCode) {
+                            2 -> BoardRepository.joinEvent(userId!!, it.itemId)
+                            else -> BoardRepository.declineEvent(userId!!, it.itemId)
+                        }
+                    }.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.attendees))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
     }
 }
