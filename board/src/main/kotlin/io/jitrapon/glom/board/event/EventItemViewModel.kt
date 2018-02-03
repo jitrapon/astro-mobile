@@ -25,6 +25,9 @@ class EventItemViewModel : BoardItemViewModel() {
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
 
+    /* auto-suggestions to be displayed to the user as they type the event name */
+    private val observableAutoSuggestions = MutableLiveData<List<String>>()
+
     init {
         interactor = EventItemInteractor()
     }
@@ -175,11 +178,17 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     //endregion
-
     //region event detail item
 
-    fun setPlaceProvider(placeProvider: PlaceProvider) {
-        interactor.initializeNameAutocompleter(placeProvider)
+    fun initializeAutoCompleter(placeProvider: PlaceProvider) {
+        interactor.apply {
+            initializeNameAutocompleter(placeProvider)
+            setAutoCompleteCallback {
+                observableAutoSuggestions.value = it.map {
+                    it.toString()
+                }
+            }
+        }
     }
 
     /**
@@ -250,4 +259,10 @@ class EventItemViewModel : BoardItemViewModel() {
     override fun cleanUp() {
         //nothing yet
     }
+
+    //region get observables
+
+    fun getObservableAutoSuggestions(): LiveData<List<String>> = observableAutoSuggestions
+
+    //endregion
 }

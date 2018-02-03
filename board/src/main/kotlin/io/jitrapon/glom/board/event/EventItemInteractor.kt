@@ -28,7 +28,12 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
      * TODO this will be an API instead of doing it client-side
      * Handles the logic to display useful suggestions to user to autocomplete the event name
      */
-    private var autocompleter: LocalEventNameAutocompleter? = null
+    private var autoCompleter: LocalEventNameAutocompleter? = null
+
+    /**
+     * Callback for when auto-complete is available
+     */
+    private var autoCompleteCallback: ((List<Any>) -> Unit)? = null
 
     /**
      * Initialize board item to work with
@@ -48,22 +53,14 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
      * Must be called to initialize autocomplete feature
      */
     fun initializeNameAutocompleter(placeProvider: PlaceProvider) {
-        autocompleter = LocalEventNameAutocompleter(this, placeProvider)
+        autoCompleter = LocalEventNameAutocompleter(this, placeProvider)
     }
 
     /**
      * Call this method to update name letter-by-letter for autocompletion analysis
      */
     fun onNameChanged(text: String) {
-        autocompleter?.updateText(text)
-    }
-
-    override fun onSuggestionsAvailable(results: List<Any>) {
-        StringBuilder().apply {
-            results.forEach {
-                append("$it, ")
-            }
-        }
+        autoCompleter?.updateText(text)
     }
 
     /**
@@ -126,4 +123,19 @@ class EventItemInteractor : LocalEventNameAutocompleter.Callbacks {
                     })
         }
     }
+
+    //region auto suggestions callbacks
+
+    fun setAutoCompleteCallback(callback: (List<Any>) -> Unit) {
+        autoCompleteCallback = callback
+    }
+
+    /**
+     * Callback when suggestions are available
+     */
+    override fun onSuggestionsAvailable(results: List<Any>) {
+        autoCompleteCallback?.invoke(results)
+    }
+
+    //endregion
 }

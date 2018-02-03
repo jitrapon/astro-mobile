@@ -4,7 +4,8 @@ import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.widget.EditText
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.show
@@ -26,6 +27,13 @@ class EventItemActivity : BoardItemActivity() {
     /* animation delay time in ms before content of this view appears */
     private val SHOW_ANIM_DELAY = 700L
 
+    /* auto-suggest array adapter */
+    private val autoCompleteAdapter: ArrayAdapter<String> by lazy {
+        ArrayAdapter<String>(this, R.layout.auto_suggest_item).apply {
+            setNotifyOnChange(false)
+        }
+    }
+
     //region lifecycle
 
     override fun getLayout(): Int = R.layout.event_item_activity
@@ -42,7 +50,7 @@ class EventItemActivity : BoardItemActivity() {
         // setup all views
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {
-                it.setPlaceProvider(GooglePlaceProvider(lifecycle, activity = this))
+                it.initializeAutoCompleter(GooglePlaceProvider(lifecycle, activity = this))
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
@@ -63,17 +71,35 @@ class EventItemActivity : BoardItemActivity() {
      * TextWatcher for smart auto-complete suggestions when the user
      * begins to type event name
      */
-    private fun addAutocompleteCallbacks(editText: EditText) {
-        editText.addTextChangedListener(object : TextWatcher {
+    private fun addAutocompleteCallbacks(textView: AutoCompleteTextView) {
+        textView.apply {
+            // add text watcher to forward typing events to ViewModel
+            addTextChangedListener(object : TextWatcher {
 
-            override fun afterTextChanged(s: Editable) {
-                viewModel.onNameChanged(s.toString())
-            }
+                override fun afterTextChanged(s: Editable) {
+                    viewModel.onNameChanged(s.toString())
+                }
 
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
 
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-        })
+                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            })
+
+            // start auto-suggesting from first character
+            threshold = 1
+
+            // update the auto-complete list on change callback
+            setAdapter(autoCompleteAdapter)
+            viewModel.getObservableAutoSuggestions().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    autoCompleteAdapter.apply {
+                        clear()
+                        addAll(it)
+                        notifyDataSetChanged()
+                    }
+                }
+            })
+        }
     }
 
     //endregion
