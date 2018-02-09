@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.repository.Repository
+import io.jitrapon.glom.board.event.*
 import io.reactivex.Flowable
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -10,7 +11,7 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository : Repository<Board>() {
+object BoardRepository : Repository<Board>() {
 
     /*
      * Cached board state. Will be updated whenever loadBoard() function

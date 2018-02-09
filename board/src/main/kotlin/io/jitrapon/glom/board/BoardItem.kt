@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import android.os.Parcel
 import android.os.Parcelable
 import io.jitrapon.glom.base.model.DataModel
+import io.jitrapon.glom.board.event.EventItem
 
 /**
  * A DataModel class representing a single board item
@@ -49,5 +50,8 @@ interface BoardItem : DataModel {
         }
     }
 
+    /**
+     * Updates this item info
+     */
     fun setInfo(info: BoardItemInfo)
 }

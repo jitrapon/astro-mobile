@@ -8,7 +8,7 @@ import io.reactivex.Flowable
  *
  * Created by Jitrapon
  */
-class BoardItemRepository : Repository<BoardItem>() {
+object BoardItemRepository : Repository<BoardItem>() {
 
     private var item: BoardItem? = null
 

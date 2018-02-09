@@ -1,8 +1,10 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
+import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.board.BoardItemUiModel
 import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
 
 /**
@@ -17,6 +19,13 @@ data class EventItemUiModel(override val itemId: String?,
                             var attendStatus: AttendStatus,
                             override val itemType: Int = TYPE_EVENT,
                             override var status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
+
+    /**
+     * Status of attending the event of this current user
+     */
+    enum class AttendStatus {
+        DECLINED, MAYBE, GOING;
+    }
 
     companion object {
 
@@ -44,10 +53,10 @@ data class EventItemUiModel(override val itemId: String?,
         }
     }
 
-    /**
-     * Status of attending the event of this current user
-     */
-    enum class AttendStatus {
-        DECLINED, MAYBE, GOING;
+    override fun updateLocationText(place: Place?): Int {
+        location = AndroidString(text = place?.name.toString())
+        return LOCATION
     }
+
+    override fun getStatusChangePayload(): Int = STATUS
 }

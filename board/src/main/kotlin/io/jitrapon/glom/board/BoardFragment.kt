@@ -14,6 +14,8 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.event.EventItemActivity
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -94,12 +96,17 @@ class BoardFragment : BaseFragment() {
                         board_status_viewswitcher.reset()
 
                         // loads additional place information for items that have them
-                        if (it.shouldLoadPlaceInfo) viewModel.loadPlaceInfo(placeProvider)
+                        it.requestPlaceInfoItemIds.let {
+                            when {
+                                it == null -> { /* do nothing */ }
+                                it.isEmpty() -> viewModel.loadPlaceInfo(placeProvider, null)
+                                else -> viewModel.loadPlaceInfo(placeProvider, it)
+                            }
+                        }
 
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
-                                AppLogger.i("Observer triggered for notifyItemChanged at index ${it.first}")
                                 board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
                             }
                         }
@@ -136,9 +143,9 @@ class BoardFragment : BaseFragment() {
                     is EventItem -> EventItemActivity::class.java to pair.first
                     else -> null
                 }
-                launchOption?.let { option ->
-                    startActivity(option.first, Const.EDIT_ITEM_RESULT_CODE, {
-                        putExtra(Const.EXTRA_BOARD_ITEM, option.second)
+                launchOption?.let { (activity, boardItem) ->
+                    startActivity(activity, Const.EDIT_ITEM_RESULT_CODE, {
+                        putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
                     }, sharedElements)
                 }
             }
@@ -150,7 +157,7 @@ class BoardFragment : BaseFragment() {
             if (resultCode == Activity.RESULT_OK) {
                 try {
                     data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
-                        viewModel.editItem(it)
+                        viewModel.saveItemChanges(it)
                     }
                 }
                 catch (ex: Exception) {

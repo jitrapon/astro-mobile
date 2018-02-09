@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import android.support.v4.app.Fragment
 import android.support.v7.widget.RecyclerView
@@ -11,6 +11,7 @@ import io.jitrapon.glom.base.ui.widget.recyclerview.PartialRecyclerViewAdapter
 import io.jitrapon.glom.base.util.Transformation
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.loadFromUrl
+import io.jitrapon.glom.board.R
 
 /**
  * Recyclerview Adapter that displays the list of event attendees

@@ -1,7 +1,9 @@
-package io.jitrapon.glom.board
+package io.jitrapon.glom.board.event
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.jitrapon.glom.board.BoardItem
+import io.jitrapon.glom.board.BoardItemInfo
 import java.util.*
 
 /**

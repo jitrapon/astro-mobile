@@ -8,7 +8,6 @@ import android.support.annotation.ColorRes
 import android.support.v4.app.ActivityOptionsCompat
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
-import android.support.v4.util.Pair
 import android.view.View
 import io.jitrapon.glom.base.model.AndroidString
 
@@ -63,7 +62,9 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                     action?.invoke(this)
                 }, sharedElements.let { elements ->
                     if (elements.isNullOrEmpty()) null
-                    else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.toTypedArray())).toBundle()
+                    else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.map {
+                        android.support.v4.util.Pair.create(it.first, it.second)
+                    }.toTypedArray())).toBundle()
                 })
             }
             else {
@@ -71,7 +72,9 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                     action?.invoke(this)
                 }, resultCode, sharedElements.let { elements ->
                     if (elements.isNullOrEmpty()) null
-                    else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.toTypedArray())).toBundle()
+                    else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.map {
+                        android.support.v4.util.Pair.create(it.first, it.second)
+                    }.toTypedArray())).toBundle()
                 })
             }
         }

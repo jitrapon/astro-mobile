@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.model.UiModel
 
 /**
@@ -23,9 +24,22 @@ interface BoardItemUiModel : UiModel {
     }
 
     /**
+     * Returns the status change payload for this UiModel
+     */
+    fun getStatusChangePayload(): Int
+
+    /**
      * Returns the list of Integer defining which field of the UiModel has changed.
      * Used by the RecyclerView adapter's onBindViewHolder. An empty list represents a full update
      * of all fields.
      */
     fun getChangePayload(other: BoardItemUiModel?): List<Int>
+
+    /**
+     * Updates location text for this ItemUiModel when the Place object
+     * is available
+     *
+     * @return The payload that indicates the field change
+     */
+    fun updateLocationText(place: Place?): Int
 }

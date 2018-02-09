@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-class UserRepository : Repository<User>() {
+object UserRepository : Repository<User>() {
 
     private var users: List<User>? = null
     private var userMap: ArrayMap<String, User>? = null
@@ -34,6 +34,8 @@ class UserRepository : Repository<User>() {
     }
 
     fun getById(userId: String): User? = userMap?.get(userId)
+
+    fun getAll(): List<User>? = users
 
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {

@@ -4,7 +4,6 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.support.v4.app.Fragment
-import android.support.v4.util.Pair
 import android.support.v7.widget.CardView
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -27,6 +26,10 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.event.AttendeeAdapter
+import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.event.EventItemUiModel
+import io.jitrapon.glom.board.event.EventItemViewModel
 
 /**
  * RecyclerView's Adapter for the board items
@@ -182,7 +185,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::selectItem)
+                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::viewItemDetail)
             BoardItemUiModel.TYPE_HEADER -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_header, parent, false))
             else -> null
@@ -217,7 +220,9 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * This ensures that the map is initialised with the latest data that it should display.
      */
     inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
-                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) : RecyclerView.ViewHolder(itemView), OnMapReadyCallback {
+                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) :
+            RecyclerView.ViewHolder(itemView),
+            OnMapReadyCallback {
 
         var itemId: String? = null
         val title: TextView = itemView.findViewById(R.id.event_card_title)
@@ -242,22 +247,24 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 (layoutManager as LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
                 adapter = AttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
                 fragment.context?.let {
-                    addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(R.dimen.avatar_spacing)))
+                    addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
                 }
             }
             attendStatus.setOnClickListener {
                 itemId?.let {
-                    val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
-                    viewModel.setEventAttendStatus(adapterPosition, newStatus)
+                    BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java)?.let {
+                        val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
+                        (it as? EventItemViewModel)?.setEventAttendStatus(viewModel, adapterPosition, newStatus)
+                    }
                 }
             }
             itemView.setOnClickListener {
                 onEventItemClicked(adapterPosition,
-                        listOf(Pair.create(cardView as View, itemView.context.getString(R.string.event_card_background_transition))
-                ))
+                        listOf(cardView as View to itemView.context.getString(R.string.event_card_background_transition))
+                )
             }
             syncStatus.apply {
-                loadFromResource(R.drawable.ic_sync)
+                loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
                 hide()
             }
         }
