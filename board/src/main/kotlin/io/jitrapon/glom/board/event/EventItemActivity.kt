@@ -2,17 +2,18 @@ package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.Observer
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import io.jitrapon.glom.base.component.GooglePlaceProvider
+import android.text.Selection
+import android.view.WindowManager
+import android.widget.AdapterView
+import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.show
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
 import io.jitrapon.glom.board.BoardItemViewModelStore
 import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.event.autocomplete.EventAutoCompleteAdapter
+import io.jitrapon.glom.board.event.autocomplete.Suggestion
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
@@ -27,12 +28,8 @@ class EventItemActivity : BoardItemActivity() {
     /* animation delay time in ms before content of this view appears */
     private val SHOW_ANIM_DELAY = 700L
 
-    /* auto-suggest array adapter */
-    private val autoCompleteAdapter: ArrayAdapter<String> by lazy {
-        ArrayAdapter<String>(this, R.layout.auto_suggest_item).apply {
-            setNotifyOnChange(false)
-        }
-    }
+    /* adapter for event autocomplete */
+    private var autocompleteAdapter: EventAutoCompleteAdapter? = null
 
     //region lifecycle
 
@@ -50,7 +47,6 @@ class EventItemActivity : BoardItemActivity() {
         // setup all views
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {
-                it.initializeAutoCompleter(GooglePlaceProvider(lifecycle, activity = this))
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
@@ -61,8 +57,17 @@ class EventItemActivity : BoardItemActivity() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
         viewModel.getObservableName().observe(this, Observer {
-            it?.let {
-                event_item_title.setText(it)
+            it?.let { (query, filter) ->
+                event_item_title.apply {
+                    //TODO differentiate between append vs replace
+                    setText(query, filter)
+                    Selection.setSelection(text, text.length)
+                    if (filter) {
+                        delayRun(100L) {
+                            showDropDown()
+                        }
+                    }
+                }
             }
         })
     }
@@ -71,34 +76,28 @@ class EventItemActivity : BoardItemActivity() {
      * TextWatcher for smart auto-complete suggestions when the user
      * begins to type event name
      */
-    private fun addAutocompleteCallbacks(textView: AutoCompleteTextView) {
+    private fun addAutocompleteCallbacks(textView: GlomAutoCompleteTextView) {
         textView.apply {
-            // add text watcher to forward typing events to ViewModel
-            addTextChangedListener(object : TextWatcher {
 
-                override fun afterTextChanged(s: Editable) {
-                    viewModel.onNameChanged(s.toString())
-                }
+            // disable this textview to replace the entire text with autocomplete item
+            shouldReplaceTextOnSelected = false
 
-                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-            })
+            // make suggestion dropdown to fit the screen while allowing keyboard to not overlap it
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
             // start auto-suggesting from first character
             threshold = 1
 
             // update the auto-complete list on change callback
-            setAdapter(autoCompleteAdapter)
-            viewModel.getObservableAutoSuggestions().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    autoCompleteAdapter.apply {
-                        clear()
-                        addAll(it)
-                        notifyDataSetChanged()
-                    }
-                }
+            setAdapter(EventAutoCompleteAdapter(viewModel,this@EventItemActivity,
+                    android.R.layout.simple_dropdown_item_1line).apply {
+                autocompleteAdapter = this
             })
+
+            // on item click listener
+            onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _->
+                viewModel.selectSuggestion(event_item_title.text.toString(), parent.getItemAtPosition(position) as Suggestion)
+            }
         }
     }
 
@@ -134,7 +133,7 @@ class EventItemActivity : BoardItemActivity() {
     }
 
     override fun onFinishTransitionAnimationStart() {
-        event_item_title.setText(viewModel.getPreviousName())
+        event_item_title.setText(viewModel.getPreviousName(), false)
         event_item_root_layout.requestFocus()
         event_item_clock_icon.hide()
         event_item_start_time.hide()

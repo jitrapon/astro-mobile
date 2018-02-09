@@ -22,6 +22,5 @@ fun <T> List<T>?.get(position: Int, defaultValue: T?): T? {
  */
 fun <T> List<T>?.isNullOrEmpty(): Boolean {
     this ?: return true
-    if (isEmpty()) return true
-    return false
+    return isEmpty()
 }

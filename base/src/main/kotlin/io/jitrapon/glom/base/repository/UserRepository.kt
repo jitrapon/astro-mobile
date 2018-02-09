@@ -35,6 +35,8 @@ object UserRepository : Repository<User>() {
 
     fun getById(userId: String): User? = userMap?.get(userId)
 
+    fun getAll(): List<User>? = users
+
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {
             add(User(User.TYPE_USER, "yoshi3003", "boat", "https://media.licdn.com/mpr/mpr/shrinknp_200_200/AAEAAQAAAAAAAAUbAAAAJDY5ZDhhMDhhLTFkNDEtNDU5Ni1hNzEzLTVlNDhlZTlkNzg3ZA.jpg"))

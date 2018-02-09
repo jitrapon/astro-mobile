@@ -2,12 +2,16 @@ package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
+import androidx.text.bold
+import androidx.text.buildSpannedString
+import androidx.text.italic
+import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
-import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.Format
 import io.jitrapon.glom.board.*
+import io.jitrapon.glom.board.event.autocomplete.Suggestion
 import java.util.*
 
 /**
@@ -20,13 +24,10 @@ class EventItemViewModel : BoardItemViewModel() {
     private lateinit var interactor: EventItemInteractor
 
     private var prevName: String? = null
-    private val observableName = MutableLiveData<String>()
+    private val observableName = MutableLiveData<Pair<CharSequence, Boolean>>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
-
-    /* auto-suggestions to be displayed to the user as they type the event name */
-    private val observableAutoSuggestions = MutableLiveData<List<String>>()
 
     init {
         interactor = EventItemInteractor()
@@ -180,17 +181,6 @@ class EventItemViewModel : BoardItemViewModel() {
     //endregion
     //region event detail item
 
-    fun initializeAutoCompleter(placeProvider: PlaceProvider) {
-        interactor.apply {
-            initializeNameAutocompleter(placeProvider)
-            setAutoCompleteCallback {
-                observableAutoSuggestions.value = it.map {
-                    it.toString()
-                }
-            }
-        }
-    }
-
     /**
      * Initializes this ViewModel with the event item to display
      */
@@ -203,7 +193,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 if (item is EventItem) {
                     interactor.setItem(item)
                     prevName = item.itemInfo.eventName
-                    observableName.value = item.itemInfo.eventName
+                    observableName.value = item.itemInfo.eventName to false
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -218,13 +208,6 @@ class EventItemViewModel : BoardItemViewModel() {
     fun shouldShowNameAutocomplete(): Boolean = shouldShowNameAutocomplete
 
     /**
-     * Updates the current even name, should be called after each character update
-     */
-    fun onNameChanged(string: String) {
-        interactor.onNameChanged(string)
-    }
-
-    /**
      * Saves the current state and returns a model object with the state
      */
     fun saveAndGetItem(name: String): BoardItem? {
@@ -235,6 +218,75 @@ class EventItemViewModel : BoardItemViewModel() {
             item
         }
     }
+
+    //region autocomplete
+
+    /**
+     * Converts the suggestion as a text to be displayed in the drop-down
+     */
+    fun getSuggestionText(suggestion: Suggestion): String {
+        return suggestion.displayText ?: suggestion.selectData.let {
+            when (it) {
+                is Date -> "Date"
+                is Place -> it.name.toString()
+                else -> it.toString()
+            }
+        }
+    }
+
+    /**
+     * Converts the suggestion as a text to be displayed in the autocomplete textview
+     */
+    fun getSelectText(suggestion: Suggestion): String {
+        return suggestion.selectData.let {
+            when (it) {
+                is Date -> "selected date"
+                is Place -> it.name.toString()
+                else -> it.toString()
+            }
+        }
+    }
+
+    /**
+     * Synchronously filter suggestions to display based on the specified query
+     */
+    fun filterSuggestions(text: String): List<Suggestion> {
+        return interactor.filterSuggestions(text)
+    }
+
+    /**
+     * Apply the current suggestion
+     */
+    fun selectSuggestion(currentText: String, suggestion: Suggestion) {
+        interactor.applySuggestion(currentText, suggestion)
+        val selectText = getSelectText(suggestion)
+        observableName.value = buildSpannedString {
+            when (suggestion.selectData) {
+                is String -> {
+                    if (suggestion.isConjunction) append(currentText.trim()).append(" ").append(selectText)
+                    else append(selectText)
+                }
+                is Date -> {
+                    append(currentText.trim()).append(" ")
+                    italic { append(selectText) }
+                }
+                is Place -> {
+                    append(currentText.trim()).append(" ")
+                    bold { append(selectText) }
+                }
+                else -> { /* do nothing */ }
+            }
+        } to true
+    }
+
+    /**
+     * Remove the suggestion
+     */
+    fun removeSuggestion(suggestion: Suggestion) {
+        interactor.removeSuggestion(suggestion)
+    }
+
+    //endregion
 
     //endregion
     //region view states
@@ -252,17 +304,13 @@ class EventItemViewModel : BoardItemViewModel() {
     //endregion
     //region observables
 
-    fun getObservableName(): LiveData<String> = observableName
+    fun getObservableName(): LiveData<Pair<CharSequence, Boolean>> = observableName
 
     //endregion
 
     override fun cleanUp() {
         //nothing yet
     }
-
-    //region get observables
-
-    fun getObservableAutoSuggestions(): LiveData<List<String>> = observableAutoSuggestions
 
     //endregion
 }

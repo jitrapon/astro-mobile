@@ -30,8 +30,7 @@ class BoardViewModel : BaseViewModel() {
     internal val observableAnimation = LiveEvent<AnimationItem>()
 
     /* live data for selected board item and list of shared views for transition */
-    private val observableSelectedBoardItem = LiveEvent<Pair<BoardItem,
-            List<android.support.v4.util.Pair<View, String>>?>>()
+    private val observableSelectedBoardItem = LiveEvent<Pair<BoardItem, List<Pair<View, String>>?>>()
 
     /* interactor for the observable board */
     private lateinit var interactor: BoardInteractor
@@ -154,7 +153,7 @@ class BoardViewModel : BaseViewModel() {
      * @param position The position of the item to view in the RecyclerView
      * @param transitionViews The shared views to allow smooth transition animation between activities
      */
-    fun viewItemDetail(position: Int, transitionViews: List<android.support.v4.util.Pair<View, String>>? = null) {
+    fun viewItemDetail(position: Int, transitionViews: List<Pair<View, String>>? = null) {
         boardUiModel.items?.getOrNull(position)?.let {
             interactor.getBoardItem(it.itemId)?.let {
                 observableSelectedBoardItem.value = it to transitionViews
@@ -308,8 +307,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns an observable that if set, becomes the currently selected item
      */
-    fun getObservableSelectedBoardItem(): LiveEvent<Pair<BoardItem,
-            List<android.support.v4.util.Pair<View, String>>?>> = observableSelectedBoardItem
+    fun getObservableSelectedBoardItem(): LiveEvent<Pair<BoardItem, List<Pair<View, String>>?>> = observableSelectedBoardItem
 
     //endregion
     //region view states

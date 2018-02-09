@@ -107,7 +107,6 @@ class BoardFragment : BaseFragment() {
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
-                                AppLogger.i("Observer triggered for notifyItemChanged at index ${it.first}")
                                 board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
                             }
                         }
@@ -144,9 +143,9 @@ class BoardFragment : BaseFragment() {
                     is EventItem -> EventItemActivity::class.java to pair.first
                     else -> null
                 }
-                launchOption?.let { option ->
-                    startActivity(option.first, Const.EDIT_ITEM_RESULT_CODE, {
-                        putExtra(Const.EXTRA_BOARD_ITEM, option.second)
+                launchOption?.let { (activity, boardItem) ->
+                    startActivity(activity, Const.EDIT_ITEM_RESULT_CODE, {
+                        putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
                     }, sharedElements)
                 }
             }

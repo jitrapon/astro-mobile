@@ -39,7 +39,6 @@ fun LottieAnimationView.animate(animation: AnimationItem, shouldRestartIfPlaying
 var LottieAnimationView.animatorListener: Animator.AnimatorListener
     get() = object : Animator.AnimatorListener {
         override fun onAnimationRepeat(p0: Animator?) {
-            AppLogger.i("Animation is repeated")
         }
 
         override fun onAnimationEnd(p0: Animator?) {
@@ -48,17 +47,14 @@ var LottieAnimationView.animatorListener: Animator.AnimatorListener
                 removeAnimatorListener(this)
                 hide(500L)
             }
-            AppLogger.i("Animation has ended")
         }
 
         override fun onAnimationCancel(p0: Animator?) {
-            AppLogger.i("Animation is cancelled")
         }
 
         override fun onAnimationStart(p0: Animator?) {
             show()
             if (AnimationState.useHardWareAcceleration) useHardwareAcceleration()
-            AppLogger.i("Animation has started")
         }
     }
 

@@ -14,6 +14,8 @@ import android.widget.AutoCompleteTextView
  */
 class GlomAutoCompleteTextView : AutoCompleteTextView {
 
+    var shouldReplaceTextOnSelected: Boolean = true
+
     constructor(context: Context): super(context)
 
     constructor(context: Context, attrs: AttributeSet): super(context, attrs)
@@ -22,4 +24,11 @@ class GlomAutoCompleteTextView : AutoCompleteTextView {
 
     @TargetApi(Build.VERSION_CODES.O)
     override fun getAutofillType() = View.AUTOFILL_TYPE_NONE
+
+    /**
+     * Called when an autocomplete suggestion is selected
+     */
+    override fun replaceText(text: CharSequence?) {
+        if (shouldReplaceTextOnSelected) super.replaceText(text)
+    }
 }

@@ -73,6 +73,7 @@ dependencies {
 
     // kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
+    api "androidx.core:core-ktx:$rootProject.androidktxVersion"
 
     // support library
     api("com.android.support:design:$rootProject.supportLibVersion") {
@@ -96,22 +97,28 @@ dependencies {
     }
 
     // architecture components
+    // ViewModel and LiveData
     api "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
+    kapt "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
+    // Java8 support for Lifecycles
     implementation "android.arch.lifecycle:common-java8:$rootProject.archLifecycleVersion"
+    // Test helpers for LiveData
     testImplementation "android.arch.core:core-testing:$rootProject.archLifecycleVersion"
 
     // room
-    implementation "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
-    annotationProcessor "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
+    api "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
+    kapt "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
     testImplementation "android.arch.persistence.room:testing:$rootProject.archRoomVersion"
-    implementation "android.arch.paging:runtime:$rootProject.archPagingVersion"
+
+    // paging
+    api "android.arch.paging:runtime:$rootProject.archPagingVersion"
 
     // dagger
     implementation "com.google.dagger:dagger:$rootProject.daggerVersion"
-    annotationProcessor "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
+    kapt "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
     implementation "com.google.dagger:dagger-android:$rootProject.daggerVersion"
     implementation "com.google.dagger:dagger-android-support:$rootProject.daggerVersion"
-    annotationProcessor "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
+    kapt "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
 
     // facebook
     implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {

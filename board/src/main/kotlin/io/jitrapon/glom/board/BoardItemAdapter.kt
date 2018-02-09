@@ -4,7 +4,6 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.support.v4.app.Fragment
-import android.support.v4.util.Pair
 import android.support.v7.widget.CardView
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -261,8 +260,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             }
             itemView.setOnClickListener {
                 onEventItemClicked(adapterPosition,
-                        listOf(Pair.create(cardView as View, itemView.context.getString(R.string.event_card_background_transition))
-                ))
+                        listOf(cardView as View to itemView.context.getString(R.string.event_card_background_transition))
+                )
             }
             syncStatus.apply {
                 loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
