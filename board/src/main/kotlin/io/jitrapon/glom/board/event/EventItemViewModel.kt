@@ -77,7 +77,7 @@ class EventItemViewModel : BoardItemViewModel() {
         // show 20 Jun, 2017 (10:30 AM) - 21 Jun, 2017 (10:30 AM)
         val endDate = Calendar.getInstance().apply { time = Date(end) }
         val startYearLessThanEndYear = startDate[Calendar.YEAR] < endDate[Calendar.YEAR]
-        return if (startYearLessThanEndYear || startDate[Calendar.DAY_OF_YEAR] < endDate[Calendar.DAY_OF_YEAR]) {
+        return if (startYearLessThanEndYear || startDate[Calendar.DAY_OF_YEAR] != endDate[Calendar.DAY_OF_YEAR]) {
             showYear = showYear || startYearLessThanEndYear
             StringBuilder().apply {
                 append(Date(start).let {
@@ -246,7 +246,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns a formatted date in event detail
      */
     private fun getEventDetailDate(dateAsEpochMs: Long?): String? {
-        dateAsEpochMs ?: return null
+        dateAsEpochMs ?: return "Add time"
         return StringBuilder().apply {
             val date = Date(dateAsEpochMs)
             val thisDate = Calendar.getInstance().apply { time = date }
@@ -298,11 +298,12 @@ class EventItemViewModel : BoardItemViewModel() {
     fun selectSuggestion(currentText: Editable, suggestion: Suggestion) {
         val selectText = getDisplayText(suggestion)
         interactor.applySuggestion(currentText.toString(), suggestion, selectText)
+        val delimiter = " "
 
         val builder = SpannableStringBuilder(currentText.trim())
         when (suggestion.selectData) {
             is String -> {
-                if (suggestion.isConjunction) builder.append(" ").append(selectText)
+                if (suggestion.isConjunction) builder.append(delimiter).append(selectText)
                 else builder.apply {
                     clear()
                     append(selectText)
@@ -310,12 +311,12 @@ class EventItemViewModel : BoardItemViewModel() {
             }
             is Date -> {
                 observableStartDate.value = getEventDetailDate(suggestion.selectData.time)
-                builder.append(" ").append(buildSpannedString {
+                builder.append(delimiter).append(buildSpannedString {
                     bold { append(selectText) }
                 })
             }
             is Place -> {
-                builder.append(" ").append(buildSpannedString {
+                builder.append(delimiter).append(buildSpannedString {
                     bold { append(selectText) }
                 })
             }
