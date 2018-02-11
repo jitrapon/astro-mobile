@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.event.autocomplete
+package io.jitrapon.glom.board.event
 
 /**
  * Autocomplete suggestions to be used in conjunction with autocomplete

@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.event.autocomplete
+package io.jitrapon.glom.board.event
 
 import android.content.Context
 import android.support.annotation.LayoutRes
@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
-import io.jitrapon.glom.board.event.EventItemViewModel
 import java.util.*
 
 /**

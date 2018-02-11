@@ -12,8 +12,6 @@ import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
 import io.jitrapon.glom.board.BoardItemViewModelStore
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.event.autocomplete.EventAutoCompleteAdapter
-import io.jitrapon.glom.board.event.autocomplete.Suggestion
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
@@ -50,26 +48,38 @@ class EventItemActivity : BoardItemActivity() {
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
+            event_item_start_time.setOnClickListener {
+
+            }
         }
     }
 
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
-        viewModel.getObservableName().observe(this, Observer {
-            it?.let { (query, filter) ->
-                event_item_title.apply {
-                    //TODO differentiate between append vs replace
-                    setText(query, filter)
-                    Selection.setSelection(text, text.length)
-                    if (filter) {
-                        delayRun(100L) {
-                            showDropDown()
+        viewModel.apply {
+            getObservableName().observe(this@EventItemActivity, Observer {
+                it?.let { (query, filter) ->
+                    event_item_title.apply {
+                        setText(query, filter)
+                        Selection.setSelection(text, text.length)
+                        if (filter) {
+                            delayRun(100L) {
+                                showDropDown()
+                            }
                         }
                     }
                 }
-            }
-        })
+            })
+
+            getObservableStartDate().observe(this@EventItemActivity, Observer {
+                event_item_start_time.text = it
+            })
+
+            getObservableEndDate().observe(this@EventItemActivity, Observer {
+                event_item_end_time.text = it
+            })
+        }
     }
 
     /*
@@ -89,14 +99,14 @@ class EventItemActivity : BoardItemActivity() {
             threshold = 1
 
             // update the auto-complete list on change callback
-            setAdapter(EventAutoCompleteAdapter(viewModel,this@EventItemActivity,
+            setAdapter(EventAutoCompleteAdapter(viewModel, this@EventItemActivity,
                     android.R.layout.simple_dropdown_item_1line).apply {
                 autocompleteAdapter = this
             })
 
             // on item click listener
             onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _->
-                viewModel.selectSuggestion(event_item_title.text.toString(), parent.getItemAtPosition(position) as Suggestion)
+                viewModel.selectSuggestion(event_item_title.text, parent.getItemAtPosition(position) as Suggestion)
             }
         }
     }
@@ -104,8 +114,10 @@ class EventItemActivity : BoardItemActivity() {
     //endregion
     //region other view callbacks
 
-    override fun onSaveItem(): BoardItem? {
-        return viewModel.saveAndGetItem(event_item_title.text.toString())
+    override fun onSaveItem(callback: (BoardItem?) -> Unit) {
+        viewModel.saveItem {
+            callback(it)
+        }
     }
 
     /**

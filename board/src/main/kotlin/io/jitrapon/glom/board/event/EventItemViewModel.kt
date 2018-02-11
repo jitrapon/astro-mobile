@@ -2,16 +2,18 @@ package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
+import android.text.Editable
+import android.text.SpannableStringBuilder
+import android.text.SpannedString
 import androidx.text.bold
 import androidx.text.buildSpannedString
-import androidx.text.italic
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.Format
+import io.jitrapon.glom.base.util.toDateString
+import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.board.*
-import io.jitrapon.glom.board.event.autocomplete.Suggestion
 import java.util.*
 
 /**
@@ -24,7 +26,12 @@ class EventItemViewModel : BoardItemViewModel() {
     private lateinit var interactor: EventItemInteractor
 
     private var prevName: String? = null
-    private val observableName = MutableLiveData<Pair<CharSequence, Boolean>>()
+
+    private val observableName = MutableLiveData<Pair<CharSequence, Boolean>>() //TODO add append vs replace
+
+    private val observableStartDate = MutableLiveData<String>()
+
+    private val observableEndDate = MutableLiveData<String>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -40,7 +47,7 @@ class EventItemViewModel : BoardItemViewModel() {
             EventItemUiModel(
                     it.itemId,
                     it.itemInfo.eventName,
-                    getEventDateRange(it.itemInfo.startTime, it.itemInfo.endTime),
+                    getEventDate(it.itemInfo.startTime, it.itemInfo.endTime),
                     getEventLocation(it.itemInfo.location),
                     getEventLatLng(it.itemInfo.location),
                     getEventAttendees(it.itemInfo.attendees),
@@ -53,25 +60,39 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns a formatted date range
      */
-    private fun getEventDateRange(start: Long?, end: Long?): String? {
+    private fun getEventDate(start: Long?, end: Long?): String? {
         start ?: return null
+        val startDate = Calendar.getInstance().apply { time = Date(start) }
+        val currentDate = Calendar.getInstance()
+        var showYear = startDate[Calendar.YEAR] < currentDate[Calendar.YEAR]
 
-        // if end datetime is not present, only show start time (i.e. 20 Jun, 2017 (10:30 AM))
-        if (end == null) return "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)})"
+        // if end datetime is not present, only show start time
+        if (end == null) return Date(start).let {
+            "${it.toDateString(showYear)} (${it.toTimeString()})"
+        }
 
         // if end datetime is present
         // show one date with time range if end datetime is within the same day
         // (i.e. 20 Jun, 2017 (10:30 AM - 3:00 PM), otherwise
         // show 20 Jun, 2017 (10:30 AM) - 21 Jun, 2017 (10:30 AM)
-        val startDate = Calendar.getInstance().apply { time = Date(start) }
         val endDate = Calendar.getInstance().apply { time = Date(end) }
-        return if (startDate[Calendar.YEAR] < endDate[Calendar.YEAR] ||
-                startDate[Calendar.DAY_OF_YEAR] < endDate[Calendar.DAY_OF_YEAR]) {
-            "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)}) " +
-                    "- ${format.date(end, Format.DEFAULT_DATE_FORMAT)} (${format.time(end)})"
+        val startYearLessThanEndYear = startDate[Calendar.YEAR] < endDate[Calendar.YEAR]
+        return if (startYearLessThanEndYear || startDate[Calendar.DAY_OF_YEAR] < endDate[Calendar.DAY_OF_YEAR]) {
+            showYear = showYear || startYearLessThanEndYear
+            StringBuilder().apply {
+                append(Date(start).let {
+                    "${it.toDateString(showYear)} (${it.toTimeString()})"
+                })
+                append(" - ")
+                append(Date(end).let {
+                    "${it.toDateString(showYear)} (${it.toTimeString()})"
+                })
+            }.toString()
         }
         else {
-            "${format.date(start, Format.DEFAULT_DATE_FORMAT)} (${format.time(start)} - ${format.time(end)})"
+            Date(start).let {
+                "${it.toDateString(showYear)} (${it.toTimeString()} - ${Date(end).toTimeString()})"
+            }
         }
     }
 
@@ -194,6 +215,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     interactor.setItem(item)
                     prevName = item.itemInfo.eventName
                     observableName.value = item.itemInfo.eventName to false
+                    observableStartDate.value = getEventDetailDate(item.itemInfo.startTime)
+                    observableEndDate.value = getEventDetailDate(item.itemInfo.endTime)
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -210,13 +233,28 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveAndGetItem(name: String): BoardItem? {
-        val item = interactor.getItem()
-        return (item?.itemInfo as? EventInfo)?.let {
-            it.eventName = name
-            interactor.saveItem(it)
-            item
+    fun saveItem(onSuccess: (BoardItem?) -> Unit) {
+        interactor.saveItem {
+            when (it) {
+                is AsyncSuccessResult -> onSuccess(it.result)
+                is AsyncErrorResult -> handleError(it.error)
+            }
         }
+    }
+
+    /**
+     * Returns a formatted date in event detail
+     */
+    private fun getEventDetailDate(dateAsEpochMs: Long?): String? {
+        dateAsEpochMs ?: return null
+        return StringBuilder().apply {
+            val date = Date(dateAsEpochMs)
+            val thisDate = Calendar.getInstance().apply { time = date }
+            val currentDate = Calendar.getInstance()
+            val showYear = thisDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
+            append(date.toDateString(showYear)).append("\n")
+            append(date.toTimeString())
+        }.toString()
     }
 
     //region autocomplete
@@ -227,7 +265,7 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getSuggestionText(suggestion: Suggestion): String {
         return suggestion.displayText ?: suggestion.selectData.let {
             when (it) {
-                is Date -> "Date"
+                is Date -> getEventDetailDate(it.time)!!
                 is Place -> it.name.toString()
                 else -> it.toString()
             }
@@ -237,10 +275,10 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Converts the suggestion as a text to be displayed in the autocomplete textview
      */
-    fun getSelectText(suggestion: Suggestion): String {
+    fun getDisplayText(suggestion: Suggestion): String {
         return suggestion.selectData.let {
             when (it) {
-                is Date -> "selected date"
+                is Date -> it.toString()
                 is Place -> it.name.toString()
                 else -> it.toString()
             }
@@ -257,26 +295,32 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Apply the current suggestion
      */
-    fun selectSuggestion(currentText: String, suggestion: Suggestion) {
-        interactor.applySuggestion(currentText, suggestion)
-        val selectText = getSelectText(suggestion)
-        observableName.value = buildSpannedString {
-            when (suggestion.selectData) {
-                is String -> {
-                    if (suggestion.isConjunction) append(currentText.trim()).append(" ").append(selectText)
-                    else append(selectText)
+    fun selectSuggestion(currentText: Editable, suggestion: Suggestion) {
+        val selectText = getDisplayText(suggestion)
+        interactor.applySuggestion(currentText.toString(), suggestion, selectText)
+
+        val builder = SpannableStringBuilder(currentText.trim())
+        when (suggestion.selectData) {
+            is String -> {
+                if (suggestion.isConjunction) builder.append(" ").append(selectText)
+                else builder.apply {
+                    clear()
+                    append(selectText)
                 }
-                is Date -> {
-                    append(currentText.trim()).append(" ")
-                    italic { append(selectText) }
-                }
-                is Place -> {
-                    append(currentText.trim()).append(" ")
-                    bold { append(selectText) }
-                }
-                else -> { /* do nothing */ }
             }
-        } to true
+            is Date -> {
+                observableStartDate.value = getEventDetailDate(suggestion.selectData.time)
+                builder.append(" ").append(buildSpannedString {
+                    bold { append(selectText) }
+                })
+            }
+            is Place -> {
+                builder.append(" ").append(buildSpannedString {
+                    bold { append(selectText) }
+                })
+            }
+        }
+        observableName.value = SpannedString(builder) to true
     }
 
     /**
@@ -305,6 +349,10 @@ class EventItemViewModel : BoardItemViewModel() {
     //region observables
 
     fun getObservableName(): LiveData<Pair<CharSequence, Boolean>> = observableName
+
+    fun getObservableStartDate(): LiveData<String> = observableStartDate
+
+    fun getObservableEndDate(): LiveData<String> = observableEndDate
 
     //endregion
 

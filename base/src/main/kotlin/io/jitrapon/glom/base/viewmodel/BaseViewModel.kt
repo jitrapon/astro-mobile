@@ -8,7 +8,6 @@ import android.os.Looper
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.Format
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
@@ -28,9 +27,6 @@ abstract class BaseViewModel : ViewModel() {
        there are no active observers
      */
     private val undispatchedLiveDataList = ArrayList<LiveData<*>>()
-
-    /* date time formatter */
-    val format: Format = Format()
 
     init {
         if (Looper.myLooper() == Looper.getMainLooper()) {

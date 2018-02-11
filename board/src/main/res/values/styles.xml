@@ -11,7 +11,7 @@
     </style>
 
     <style name="CardView.BoardItem" parent="CardView">
-        <item name="cardBackgroundColor">@color/white</item>
+        <item name="cardBackgroundColor">@color/card_background</item>
         <item name="cardElevation">@dimen/card_elevation</item>
         <item name="cardCornerRadius">@dimen/card_corner_radius</item>
         <item name="cardUseCompatPadding">true</item>
@@ -23,8 +23,16 @@
     </style>
 
     <style name="Theme.Glom.EditText.Title" parent="Theme.Glom">
-        <item name="colorControlNormal">@color/white</item>
+        <item name="colorControlNormal">@color/card_background</item>
         <item name="colorControlActivated">@color/lightish_red</item>
+    </style>
+
+    <style name="CardView.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.H4.Light</item>
+        <item name="android:lineSpacingMultiplier">1.3</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">@drawable/ripple</item>
     </style>
 
 </resources>

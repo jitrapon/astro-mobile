@@ -14,7 +14,6 @@
         <android.support.v7.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/white"
             android:layout_marginTop="@dimen/card_expand_vertical_margin"
             android:layout_marginStart="@dimen/card_expand_horizontal_margin"
             android:layout_marginEnd="@dimen/card_expand_horizontal_margin"
@@ -75,40 +74,38 @@
                     android:layout_marginTop="0dp" />
 
                 <TextView
+                    style="@style/CardView.TextView"
                     android:id="@+id/event_item_start_time"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.H4.Light"
-                    android:text="Sat, Jan 18\n9:30 PM"
-                    android:lineSpacingMultiplier="1.3"
-                    app:layout_constraintTop_toTopOf="@+id/event_item_clock_icon"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_clock_icon"
+                    android:layout_marginStart="8dp"
                     android:layout_marginTop="1dp"
-                    android:layout_marginStart="@dimen/card_content_padding"
-                    android:paddingEnd="@dimen/card_content_padding" />
+                    android:lines="2"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_clock_icon"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_clock_icon"
+                    app:layout_constraintEnd_toStartOf="@+id/event_item_right_icon" />
 
                 <ImageView
                     android:id="@+id/event_item_right_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    app:srcCompat="@drawable/ic_right"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/event_item_start_time"
-                    android:layout_marginTop="12dp" />
+                    app:srcCompat="@drawable/ic_right"
+                    app:layout_constraintHorizontal_bias="0.535" />
 
                 <TextView
+                    style="@style/CardView.TextView"
                     android:id="@+id/event_item_end_time"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.H4.Light"
-                    android:text="Sat, Jan 18\n9:30 PM"
-                    android:lineSpacingMultiplier="1.3"
+                    android:lines="2"
                     app:layout_constraintTop_toTopOf="@+id/event_item_clock_icon"
                     app:layout_constraintStart_toEndOf="@+id/event_item_right_icon"
+                    app:layout_constraintEnd_toEndOf="parent"
                     android:layout_marginTop="1dp"
-                    android:layout_marginStart="38dp"
-                    android:paddingEnd="@dimen/card_content_padding" />
+                    android:layout_marginStart="@dimen/card_content_padding" />
 
                 <ImageView
                     android:id="@+id/event_card_location_icon"
@@ -118,20 +115,22 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
                     app:layout_constraintStart_toStartOf="parent"
                     android:layout_marginStart="@dimen/card_content_padding"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
 
                 <TextView
+                    style="@style/CardView.TextView"
                     android:id="@+id/event_card_location"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.H4.Light"
-                    android:text="123 Geneva Avenue"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
                     app:layout_constraintStart_toEndOf="@+id/event_card_location_icon"
                     app:layout_constraintEnd_toEndOf="parent"
                     android:layout_marginTop="8dp"
-                    android:layout_marginStart="@dimen/card_content_padding"
-                    android:paddingEnd="@dimen/card_content_padding" />
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:lines="2" />
 
             </android.support.constraint.ConstraintLayout>
 

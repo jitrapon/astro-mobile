@@ -130,7 +130,7 @@
         android:id="@+id/event_card_join_status_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="?android:selectableItemBackground"
+        android:background="?android:selectableItemBackgroundBorderless"
         app:srcCompat="@drawable/ic_emoticon_neutral"
         android:layout_gravity="bottom|end"
         android:paddingStart="@dimen/card_content_padding"

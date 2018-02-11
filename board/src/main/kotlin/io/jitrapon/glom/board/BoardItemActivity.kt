@@ -65,11 +65,12 @@ abstract class BoardItemActivity : BaseActivity() {
      * We want to make sure to save user's changes before finishing this activity
      */
     override fun onBackPressed() {
-        setResult(RESULT_OK, Intent().apply {
-            putExtra(Const.EXTRA_BOARD_ITEM, onSaveItem())
-        })
-
-        supportFinishAfterTransition()
+        onSaveItem { item ->
+            setResult(RESULT_OK, Intent().apply {
+                putExtra(Const.EXTRA_BOARD_ITEM, item)
+            })
+            supportFinishAfterTransition()
+        }
     }
 
     //endregion
@@ -84,7 +85,7 @@ abstract class BoardItemActivity : BaseActivity() {
      * Returns the current board item after user has edited or filled
      * This will be executed in a background thread
      */
-    abstract fun onSaveItem(): BoardItem?
+    abstract fun onSaveItem(callback: (BoardItem?) -> Unit)
 
     /**
      * Returns the layout ID of this activity to be inflated

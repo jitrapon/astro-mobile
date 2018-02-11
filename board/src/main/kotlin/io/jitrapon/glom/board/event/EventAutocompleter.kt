@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.event.autocomplete
+package io.jitrapon.glom.board.event
 
 import android.text.TextUtils
 import android.util.SparseArray
@@ -83,7 +83,7 @@ class EventAutocompleter(private val callback: Callbacks, private val placeProvi
                         if (emptyFields.any { it == DATE }) add(Suggestion("on", "When..?"))
                         if (emptyFields.any { it == PLACE }) add(Suggestion("at", "Where..?"))
                         if (emptyFields.any { it == INVITEES }) add(Suggestion("with", "With..?"))
-                        fields[Field.NAME] = trimmed
+                        fields[NAME] = trimmed
                     }
 
                     // otherwise, add all the name suggestions if any of them matches the text so far
@@ -92,7 +92,7 @@ class EventAutocompleter(private val callback: Callbacks, private val placeProvi
                                 nameSuggestions.filter {
                                     it.startsWith(text, ignoreCase = true) && !it.equals(text, ignoreCase = true)
                                 }.map {
-                                    Suggestion(it)
+                                            Suggestion(it)
                                 })
                     }
                 }

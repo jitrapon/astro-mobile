@@ -81,6 +81,17 @@ object BoardRepository : Repository<Board>() {
         add(EventItem(BoardItem.TYPE_EVENT, "10", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("2018 new year party", 1514725200000L, 1514746800000L, condoLocation, null, "Asia/Bangkok",
                         false, null, false, false, arrayListOf("yoshi3003"))))
+
+        var startTime = Calendar.getInstance().let {
+            it.time = Date()
+            it.add(Calendar.DAY_OF_YEAR, 3)
+            it.set(Calendar.HOUR_OF_DAY, 21)
+            it.set(Calendar.MINUTE, 15)
+            it.time.time
+        }
+        add(EventItem(BoardItem.TYPE_EVENT, "11", createdTime, createdTime, listOf("yoshi3003"),
+                EventInfo("play game", startTime, null, null, null, "Asia/Bangkok", false,
+                        null, false, false, arrayListOf("yoshi3003"))))
     }
 
     fun joinEvent(userId: String, itemId: String?): Flowable<EditAttendeeResponse> {

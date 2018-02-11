@@ -14,8 +14,6 @@ import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
 import io.jitrapon.glom.board.BoardRepository
-import io.jitrapon.glom.board.event.autocomplete.EventAutocompleter
-import io.jitrapon.glom.board.event.autocomplete.Suggestion
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -66,10 +64,16 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     /**
      * Saves the current state
      */
-    fun saveItem(info: EventInfo) {
-        BoardItemRepository.save(info)
-        // TODO get the field values from FIELD[NAME], FIELD[START_DATE], FIELD[PLACE]
-        clearSuggestionCache()
+    fun saveItem(onComplete: (AsyncResult<BoardItem>) -> Unit) {
+        BoardItemRepository.getCache()?.let {
+            val info = (it.itemInfo as EventInfo).apply {
+                fields[NAME]?.let { if (it is String) eventName = it }
+                fields[START_DATE]?.let { if (it is Date) startTime = it.time }
+            }
+            BoardItemRepository.save(info)
+            clearSuggestionCache()
+            onComplete(AsyncSuccessResult(it))
+        }
     }
 
     /**
@@ -150,6 +154,8 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     private val peopleConjunctions = listOf("with", "for")
     private val nameSuggestions = listOf("Haircut", "Lunch", "Email", "Dinner", "Party", "Pick up package",
             "Pick up", "Pick up prescription", " Pick up dry cleaning", "Pick up cake", "Pick up kids")
+
+    private var ignoreElements = ArrayList<String>()
 
     companion object {
 
@@ -245,7 +251,12 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
                 }
             }
 
-            fields[EventAutocompleter.NAME] = text.trim()
+            // ignore certain keywords and suggestions in the name
+            var temp = text
+            ignoreElements.forEach {
+                temp = temp.replace(it, "", true).trim()
+            }
+            fields[EventAutocompleter.NAME] = temp.trim()
             debugLog()
 
             return ArrayList<Suggestion>().apply {
@@ -260,22 +271,45 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     /**
      * Apply the current suggestion and update field
      */
-    fun applySuggestion(currentText: String, selected: Suggestion) {
+    fun applySuggestion(currentText: String, selected: Suggestion, displayText: String) {
+        val delimiter = ' '
         selected.selectData.let {
             when (it) {
                 is Date -> {
                     fields[START_DATE] = it
                     timeConjunctions.forEach {
-                        fields[NAME] = currentText.replace(it, "", true).trim()
+                        val (newText, found) = currentText.replaceLast(it, "", true)
+                        if (found) {
+                            fields[NAME] = newText.trim()
+                           ignoreElements.add(it + delimiter + displayText)
+                        }
                     }
                 }
                 is Place -> {
                     fields[PLACE] = it
+                    placeConjunctions.forEach {
+                        val (newText, found) = currentText.replaceLast(it, "", true)
+                        if (found) {
+                            fields[NAME] = newText.trim()
+                            ignoreElements.add(it + delimiter + displayText)
+                        }
+                    }
                 }
                 else -> { /* do nothing */ }
             }
         }
         debugLog()
+    }
+
+    private fun String.replaceLast(toReplace: String, replacement: String, ignoreCase: Boolean = false): Pair<String, Boolean> {
+        val start = lastIndexOf(toReplace, ignoreCase = ignoreCase)
+        if (start == -1) return this to false
+        return StringBuilder().let {
+            it.append(substring(0, start))
+            it.append(replacement)
+            it.append(substring(start + toReplace.length))
+            it.toString() to true
+        }
     }
 
     fun removeSuggestion(removed: Suggestion) {
