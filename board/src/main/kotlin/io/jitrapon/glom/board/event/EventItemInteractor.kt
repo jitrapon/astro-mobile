@@ -10,7 +10,8 @@ import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.UserRepository
 import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.addDays
+import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.getLastWord
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
 import io.jitrapon.glom.board.BoardRepository
@@ -105,8 +106,19 @@ class EventItemInteractor {
     //endregion
     //region autocomplete
     
+    companion object {
+        private const val FIELD_COUNT       = 7 // this changes according to how many fields we have below
+        private const val NAME              = 0 // stores object of type String
+        private const val START_DAY         = 1 // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(true), Date>
+        private const val START_HOUR        = 2 // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(true), Date>
+        private const val END_DAY           = 3 // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(false), Date>
+        private const val END_HOUR          = 4 // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(false), Date>
+        private const val LOCATION          = 5 // stores object of type EventLocation
+        private const val INVITEES          = 6 // stores object of type List<User>
+    }
+    
     /* saved event fields */
-    private val fields = SparseArray<Any?>(5)
+    private val fields = SparseArray<Any?>(FIELD_COUNT)
 
     /* current locale supported */
     private var locale = Locale.ENGLISH
@@ -120,34 +132,7 @@ class EventItemInteractor {
 
     private var ignoreElements = ArrayList<String>()
 
-    companion object {
-
-        const val FIELD_COUNT = 7       // this changes according to how many fields we have below
-        const val NAME = 0              // stores object of type String
-        const val START_DAY = 1         // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(true), Date>
-        const val START_HOUR = 2        // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(true), Date>
-        const val END_DAY = 3           // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(false), Date>
-        const val END_HOUR = 4          // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(false), Date>
-        const val PLACE = 3             // stores object of type
-        const val INVITEES = 4
-    }
     
-    /**
-     * Returns the last typed word
-     */
-    private fun getLastWord(text: String, delimiter: Char): String {
-        return if (text.last() == delimiter) {
-            text.dropLast(1).let {
-                val lastSpaceIndex = it.lastIndexOf(delimiter)
-                if (lastSpaceIndex != -1) it.substring(lastSpaceIndex, it.length).trim() else it
-            }
-        }
-        else {
-            val lastSpaceIndex = text.lastIndexOf(delimiter)
-            if (lastSpaceIndex != -1) text.substring(lastSpaceIndex, text.length).trim() else text
-        }
-    }
-
     /**
      * Returns fields the user has not completely entered based on the input string so far
      */
@@ -170,7 +155,7 @@ class EventItemInteractor {
 
             // attempt to extract the last word in this text, see if it matches any of the conjunctions
             // in this locale
-            val lastWord = getLastWord(text, ' ')
+            val lastWord = text.getLastWord(' ')
 
             // if the last word matches any of the conjunction, show suggestions based on that conjunction
             val suggestions = ArrayList<Suggestion>()
@@ -178,13 +163,13 @@ class EventItemInteractor {
                 val now = Date()
                 timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
                     for (dayOffset in 0..10) {
-                        suggestions.add(Suggestion(now.addDays(dayOffset) to ))
+                        suggestions.add(Suggestion(Triple(Calendar.DAY_OF_MONTH, true, now.addDay(dayOffset))))
                     }
                 }
             }
+            // TODO CHECK IF fields[START_DAY] != null && lastWord is timeConjunction
 
-
-            if (fields[PLACE] == null) {
+            if (fields[LOCATION] == null) {
                 placeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
                     return ArrayList()
                 }
@@ -208,12 +193,12 @@ class EventItemInteractor {
                     // other fields to enter
                     if (nameSuggestions.any { it.equals(trimmed, ignoreCase = true) }) {
                         if (emptyFields.any { it == START_DAY }) add(Suggestion("on", "When..?", true))
-                        if (emptyFields.any { it == PLACE }) add(Suggestion("at", "Where..?", true))
+                        if (emptyFields.any { it == LOCATION }) add(Suggestion("at", "Where..?", true))
                         if (emptyFields.any { it == INVITEES }) add(Suggestion("with", "With..?", true))
                     }
 
                     // otherwise, if we have not set any dates or places yet, show name suggestions that might fit with the query so far
-                    if (emptyFields.any { it == START_DAY } && emptyFields.any {  it == PLACE }) {
+                    if (emptyFields.any { it == START_DAY } && emptyFields.any {  it == LOCATION }) {
                         addAll(nameSuggestions
                                 .filter { it.startsWith(text, ignoreCase = true) && !it.equals(text, ignoreCase = true) }
                                 .map { Suggestion(it) })
@@ -256,7 +241,7 @@ class EventItemInteractor {
                     }
                 }
                 is Place -> {
-                    fields[PLACE] = it
+                    fields[LOCATION] = it
                     placeConjunctions.forEach {
                         val (newText, found) = currentText.replaceLast(it, "", true)
                         if (found) {
@@ -296,7 +281,7 @@ class EventItemInteractor {
                 "startHour=${fields[START_HOUR]}, " +
                 "endDay=${fields[END_DAY]}, " +
                 "endHour=${fields[END_HOUR]}, "+
-                "place=${fields[PLACE]}, " +
+                "place=${fields[LOCATION]}, " +
                 "invitees=${fields[INVITEES]}")
     }
     

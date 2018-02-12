@@ -12,6 +12,7 @@ data class EventLocation(val latitude: Double?,
                          val longitude: Double?,
                          val googlePlaceId: String?,
                          val placeId: String?,
+                         val name: String? = null,
                          override val retrievedTime: Date? = null,
                          override val error: Throwable? = null) : DataModel {
 

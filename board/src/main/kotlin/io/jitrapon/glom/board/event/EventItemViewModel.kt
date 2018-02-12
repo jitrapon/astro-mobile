@@ -268,7 +268,12 @@ class EventItemViewModel : BoardItemViewModel() {
         return if (!TextUtils.isEmpty(suggestion.displayText)) AndroidString(text = suggestion.displayText) else 
             suggestion.selectData.let {
             when (it) {
-                is Date -> AndroidString(text = "Test debug")
+                is Triple<*,*,*> -> {
+                    if (it.first == Calendar.DAY_OF_MONTH) {
+                        AndroidString(text = "Date")
+                    }
+                    else AndroidString(text = "Unknown date")
+                }
                 is Place -> AndroidString(text = it.name.toString())
                 else -> AndroidString(text = it.toString())
             }
