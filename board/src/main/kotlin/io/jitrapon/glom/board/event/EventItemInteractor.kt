@@ -4,13 +4,13 @@ import android.text.TextUtils
 import android.util.SparseArray
 import androidx.util.set
 import com.google.android.gms.location.places.Place
-import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.UserRepository
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.addDays
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
 import io.jitrapon.glom.board.BoardRepository
@@ -18,7 +18,6 @@ import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 /**
  * Controller that handles all interactions for editing, saving, and updating
@@ -26,18 +25,7 @@ import java.util.concurrent.TimeUnit
  *
  * Created by Jitrapon
  */
-class EventItemInteractor : EventAutocompleter.Callbacks {
-
-    /**
-     * TODO this will be an API instead of doing it client-side
-     * Handles the logic to display useful suggestions to user to autocomplete the event name
-     */
-    private var autoCompleter: EventAutocompleter? = null
-
-    /**
-     * Callback for when auto-complete is available
-     */
-    private var autoCompleteCallback: ((List<Any>) -> Unit)? = null
+class EventItemInteractor {
 
     /**
      * Initialize board item to work with
@@ -47,28 +35,12 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     }
 
     /**
-     * Returns the cached board item
-     */
-    fun getItem(): BoardItem? {
-        return BoardItemRepository.getCache()
-    }
-
-    /**
-     * Must be called to initialize autocomplete feature with a callback
-     */
-    fun initializeNameAutocompleter(placeProvider: PlaceProvider, callback: (List<Any>) -> Unit) {
-        autoCompleter = EventAutocompleter(this, placeProvider)
-        autoCompleteCallback = callback
-    }
-
-    /**
      * Saves the current state
      */
     fun saveItem(onComplete: (AsyncResult<BoardItem>) -> Unit) {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
-                fields[START_DATE]?.let { if (it is Date) startTime = it.time }
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
@@ -130,15 +102,6 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
         }
     }
 
-    //region auto suggestions callbacks
-
-    /**
-     * Callback when suggestions are available
-     */
-    override fun onSuggestionsAvailable(results: List<Any>) {
-        autoCompleteCallback?.invoke(results)
-    }
-
     //endregion
     //region autocomplete
     
@@ -159,10 +122,13 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
     companion object {
 
-        const val NAME = 0
-        const val START_DATE = 1
-        const val END_DATE = 2
-        const val PLACE = 3
+        const val FIELD_COUNT = 7       // this changes according to how many fields we have below
+        const val NAME = 0              // stores object of type String
+        const val START_DAY = 1         // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(true), Date>
+        const val START_HOUR = 2        // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(true), Date>
+        const val END_DAY = 3           // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(false), Date>
+        const val END_HOUR = 4          // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(false), Date>
+        const val PLACE = 3             // stores object of type
         const val INVITEES = 4
     }
     
@@ -187,7 +153,7 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
      */
     private fun getIncompleteFields(): List<Int> {
         return ArrayList<Int>().apply {
-            (0 until 5)
+            (0 until FIELD_COUNT)
                     .filter { fields.valueAt(it) == null }
                     .forEach { add(it) }
         }
@@ -208,17 +174,15 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
             // if the last word matches any of the conjunction, show suggestions based on that conjunction
             val suggestions = ArrayList<Suggestion>()
-            if (fields[START_DATE] == null) {
+            if (fields[START_DAY] == null) {
+                val now = Date()
                 timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
-                    suggestions.addAll(listOf(
-                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1))),
-                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(3))),
-                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(8))),
-                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(24))),
-                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3)))
-                    ))
+                    for (dayOffset in 0..10) {
+                        suggestions.add(Suggestion(now.addDays(dayOffset) to ))
+                    }
                 }
             }
+
 
             if (fields[PLACE] == null) {
                 placeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
@@ -243,13 +207,13 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
                     // if the entire text so far matches any of the name suggestions, we can proceed to suggest
                     // other fields to enter
                     if (nameSuggestions.any { it.equals(trimmed, ignoreCase = true) }) {
-                        if (emptyFields.any { it == START_DATE }) add(Suggestion("on", "When..?", true))
+                        if (emptyFields.any { it == START_DAY }) add(Suggestion("on", "When..?", true))
                         if (emptyFields.any { it == PLACE }) add(Suggestion("at", "Where..?", true))
                         if (emptyFields.any { it == INVITEES }) add(Suggestion("with", "With..?", true))
                     }
 
                     // otherwise, if we have not set any dates or places yet, show name suggestions that might fit with the query so far
-                    if (emptyFields.any { it == START_DATE } && emptyFields.any {  it == PLACE }) {
+                    if (emptyFields.any { it == START_DAY } && emptyFields.any {  it == PLACE }) {
                         addAll(nameSuggestions
                                 .filter { it.startsWith(text, ignoreCase = true) && !it.equals(text, ignoreCase = true) }
                                 .map { Suggestion(it) })
@@ -282,7 +246,7 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
         selected.selectData.let {
             when (it) {
                 is Date -> {
-                    fields[START_DATE] = it
+                    fields[START_DAY] = it
                     timeConjunctions.forEach {
                         val (newText, found) = currentText.replaceLast(it, "", true)
                         if (found) {
@@ -319,9 +283,6 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     }
 
     fun removeSuggestion(removed: Suggestion) {
-        if (fields[START_DATE] == removed) fields[START_DATE] = null
-        if (fields[NAME] == removed) fields[NAME] = null
-        if (fields[PLACE] == removed) fields[PLACE] = null
         debugLog()
     }
 
@@ -331,7 +292,10 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
     private fun debugLog() {
         AppLogger.i("name=${fields[NAME]}, " +
-                "date=${fields[START_DATE]}, " +
+                "startDay=${fields[START_DAY]}, " +
+                "startHour=${fields[START_HOUR]}, " +
+                "endDay=${fields[END_DAY]}, " +
+                "endHour=${fields[END_HOUR]}, "+
                 "place=${fields[PLACE]}, " +
                 "invitees=${fields[INVITEES]}")
     }

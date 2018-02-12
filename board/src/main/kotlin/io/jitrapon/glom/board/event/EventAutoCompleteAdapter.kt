@@ -50,7 +50,7 @@ class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, contex
                 return FilterResults().apply {
                     constraint.let {
                         if (it != null && it.isNotEmpty()) {
-                            viewModel.filterSuggestions(it.toString()).let {
+                            viewModel.filterSuggestions(it).let {
                                 values = it
                                 count = it.size
                             }
