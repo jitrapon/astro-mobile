@@ -11,8 +11,8 @@ import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
  * @author Jitrapon Tiachunpun
  */
 data class EventItemUiModel(override val itemId: String?,
-                            var title: String,
-                            var dateTime: String?,
+                            var title: AndroidString,
+                            var dateTime: AndroidString?,
                             var location: AndroidString?,
                             var mapLatLng: LatLng?,     // if not null, will show mini map at the specified lat lng
                             var attendeesAvatars: MutableList<String?>?,

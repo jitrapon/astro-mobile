@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
+import io.jitrapon.glom.base.util.getString
 import java.util.*
 
 /**
@@ -27,7 +28,7 @@ class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, contex
         val view = convertView ?: LayoutInflater.from(parent.context)
                 .inflate(android.R.layout.simple_dropdown_item_1line, parent, false)
         val textView: TextView = view.findViewById(android.R.id.text1)
-        textView.text = viewModel.getSuggestionText(suggestions[position])
+        textView.text = view.context.getString(viewModel.getSuggestionText(suggestions[position]))
         return view
     }
 

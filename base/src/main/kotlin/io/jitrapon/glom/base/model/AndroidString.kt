@@ -10,8 +10,8 @@ import java.util.*
  * @author Jitrapon Tiachunpun
  */
 data class AndroidString(@StringRes val resId: Int? = null,
-                    val formatArgs: Array<String>? = null,
-                    val text: String? = null,
+                    val formatArgs: Array<out CharSequence>? = null,
+                    val text: CharSequence? = null,
                     override var status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel {
 
     override fun equals(other: Any?): Boolean {

@@ -143,7 +143,7 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
     //region autocomplete
     
     /* saved event fields */
-    private val fields = SparseArray<Any?>(4)
+    private val fields = SparseArray<Any?>(5)
 
     /* current locale supported */
     private var locale = Locale.ENGLISH
@@ -161,8 +161,9 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
         const val NAME = 0
         const val START_DATE = 1
-        const val PLACE = 2
-        const val INVITEES = 3
+        const val END_DATE = 2
+        const val PLACE = 3
+        const val INVITEES = 4
     }
     
     /**
@@ -186,7 +187,7 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
      */
     private fun getIncompleteFields(): List<Int> {
         return ArrayList<Int>().apply {
-            (0 until 4)
+            (0 until 5)
                     .filter { fields.valueAt(it) == null }
                     .forEach { add(it) }
         }
@@ -207,21 +208,29 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
             // if the last word matches any of the conjunction, show suggestions based on that conjunction
             val suggestions = ArrayList<Suggestion>()
-            timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
-                suggestions.addAll(listOf(
-                        Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1))),
-                        Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(3))),
-                        Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(8))),
-                        Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(24))),
-                        Suggestion(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3)))
-                ))
+            if (fields[START_DATE] == null) {
+                timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
+                    suggestions.addAll(listOf(
+                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1))),
+                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(3))),
+                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(8))),
+                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(24))),
+                            Suggestion(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3)))
+                    ))
+                }
             }
-            placeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
-                return ArrayList()
+
+            if (fields[PLACE] == null) {
+                placeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
+                    return ArrayList()
+                }
             }
-            peopleConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
-                UserRepository.getAll()?.let {
-                    suggestions.addAll(it.map { Suggestion(it) })
+
+            if (fields[INVITEES] == null) {
+                peopleConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
+                    UserRepository.getAll()?.let {
+                        suggestions.addAll(it.map { Suggestion(it) })
+                    }
                 }
             }
 
@@ -241,12 +250,9 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
 
                     // otherwise, if we have not set any dates or places yet, show name suggestions that might fit with the query so far
                     if (emptyFields.any { it == START_DATE } && emptyFields.any {  it == PLACE }) {
-                        addAll(
-                                nameSuggestions.filter {
-                                    it.startsWith(text, ignoreCase = true) && !it.equals(text, ignoreCase = true)
-                                }.map {
-                                            Suggestion(it)
-                                        })
+                        addAll(nameSuggestions
+                                .filter { it.startsWith(text, ignoreCase = true) && !it.equals(text, ignoreCase = true) }
+                                .map { Suggestion(it) })
                     }
                 }
             }
@@ -256,7 +262,7 @@ class EventItemInteractor : EventAutocompleter.Callbacks {
             ignoreElements.forEach {
                 temp = temp.replace(it, "", true).trim()
             }
-            fields[EventAutocompleter.NAME] = temp.trim()
+            fields[NAME] = temp.trim()
             debugLog()
 
             return ArrayList<Suggestion>().apply {

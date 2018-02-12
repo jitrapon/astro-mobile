@@ -55,9 +55,15 @@ fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, posit
     }.setCancelable(isCancelable).show()
 }
 
+/**
+ * Convenience wrapper to retrieve @ColorInt integer from Color ID
+ */
 fun Context.color(@ColorRes colorId: Int) = ContextCompat.getColor(this, colorId)
 
-fun Context.getString(string: AndroidString?): String? {
+/**
+ * Converts an AndroidString object into a CharSequence, ready for display
+ */
+fun Context.getString(string: AndroidString?): CharSequence? {
     string ?: return null
     return if (!TextUtils.isEmpty(string.text)) string.text else {
         if (string.resId != null) {
@@ -68,4 +74,7 @@ fun Context.getString(string: AndroidString?): String? {
     }
 }
 
+/**
+ * Convenience wrapper to retrieve Integer in Pixel from @DimenRes
+ */
 fun Context.dimen(@DimenRes dimenId: Int): Int = resources.getDimensionPixelSize(dimenId)

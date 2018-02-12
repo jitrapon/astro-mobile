@@ -317,7 +317,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         }
 
         fun updateTitle(item: EventItemUiModel) {
-            title.text = item.title
+            title.text = title.context.getString(item.title)
         }
 
         fun updateDateTime(item: EventItemUiModel) {
@@ -328,7 +328,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             else {
                 dateTimeIcon.show()
                 dateTime.show()
-                dateTime.text = item.dateTime
+                dateTime.text = title.context.getString((item.dateTime))
             }
         }
 

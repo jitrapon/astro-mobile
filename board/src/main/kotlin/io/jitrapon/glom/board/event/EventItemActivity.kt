@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.text.Selection
 import android.view.WindowManager
 import android.widget.AdapterView
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
+import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.showToast
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
 import io.jitrapon.glom.board.BoardItemViewModelStore
@@ -49,7 +52,7 @@ class EventItemActivity : BoardItemActivity() {
             }
             it.setItem(getBoardItemFromIntent())
             event_item_start_time.setOnClickListener {
-
+                showToast(AndroidString(text = "Setting start time"))
             }
         }
     }
@@ -61,7 +64,7 @@ class EventItemActivity : BoardItemActivity() {
             getObservableName().observe(this@EventItemActivity, Observer {
                 it?.let { (query, filter) ->
                     event_item_title.apply {
-                        setText(query, filter)
+                        setText(getString(query), filter)
                         Selection.setSelection(text, text.length)
                         if (filter) {
                             delayRun(100L) {
@@ -73,11 +76,11 @@ class EventItemActivity : BoardItemActivity() {
             })
 
             getObservableStartDate().observe(this@EventItemActivity, Observer {
-                event_item_start_time.text = it
+                event_item_start_time.text = getString(it)
             })
 
             getObservableEndDate().observe(this@EventItemActivity, Observer {
-                event_item_end_time.text = it
+                event_item_end_time.text = getString(it)
             })
         }
     }
