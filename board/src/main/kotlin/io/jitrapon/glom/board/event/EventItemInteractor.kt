@@ -40,18 +40,7 @@ class EventItemInteractor {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
-                fields[START_DAY]?.let {
-                    startTime = Calendar.getInstance().run {
-                        time = it as Date
-                        if (fields[START_TIME] != null) {
-                            val cal = Calendar.getInstance()
-                            cal.time = (fields[START_TIME] as Date)
-                            set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY))
-                            set(Calendar.MINUTE, cal.get(Calendar.MINUTE))
-                        }
-                        time.time
-                    }
-                }
+                startTime = getSelectedDate()?.time ?: startTime
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
@@ -206,9 +195,10 @@ class EventItemInteractor {
                 if (suggestions.isEmpty()) {
                     val trimmed = text.trim()
 
-                    // if the entire text so far matches any of the name suggestions, we can proceed to suggest
-                    // other fields to enter
-                    if (nameSuggestions.any { it.equals(trimmed, ignoreCase = true) }) {
+                    // if the entire text so far matches any of the name suggestions, or one of the fields are already filled
+                    // we can proceed to suggest other fields to enter
+                    if (nameSuggestions.any { it.equals(trimmed, ignoreCase = true) } ||
+                            fields.size() > 1) {
                         if (emptyFields.any { it == START_DAY }) add(Suggestion("on", "When..?", true))
                         if (emptyFields.any { it == LOCATION }) add(Suggestion("at", "Where..?", true))
                         if (emptyFields.any { it == INVITEES }) add(Suggestion("with", "With..?", true))
@@ -238,6 +228,21 @@ class EventItemInteractor {
         }
 
         return ArrayList()
+    }
+
+    fun getSelectedDate(): Date? {
+        return fields[START_DAY]?.let {
+            Calendar.getInstance().run {
+                time = it as Date
+                if (fields[START_TIME] != null) {
+                    val cal = Calendar.getInstance()
+                    cal.time = (fields[START_TIME] as Date)
+                    set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY))
+                    set(Calendar.MINUTE, cal.get(Calendar.MINUTE))
+                }
+                time
+            }
+        }
     }
 
     /**

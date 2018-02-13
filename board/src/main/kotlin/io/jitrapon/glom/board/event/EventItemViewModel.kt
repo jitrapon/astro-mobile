@@ -312,7 +312,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     bold { append(displayText) }
                 })
                 if (suggestion.selectData.second == true) {
-                    observableStartDate.value = AndroidString(text = (suggestion.selectData.third as Date).toDateString())
+                    observableStartDate.value = getEventDetailDate(interactor.getSelectedDate()?.time,
+                            suggestion.selectData.second as Boolean)
                 }
             }
             is Place -> {
