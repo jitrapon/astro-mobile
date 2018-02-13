@@ -58,7 +58,6 @@
                         android:id="@+id/event_item_title"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:maxLines="2"
                         android:hint="@string/event_item_name_hint" />
 
                 </android.support.design.widget.TextInputLayout>

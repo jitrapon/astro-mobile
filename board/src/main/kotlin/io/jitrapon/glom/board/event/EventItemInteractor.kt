@@ -9,9 +9,7 @@ import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.UserRepository
-import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.addDay
-import io.jitrapon.glom.base.util.getLastWord
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
 import io.jitrapon.glom.board.BoardRepository
@@ -42,6 +40,18 @@ class EventItemInteractor {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
+                fields[START_DAY]?.let {
+                    startTime = Calendar.getInstance().run {
+                        time = it as Date
+                        if (fields[START_TIME] != null) {
+                            val cal = Calendar.getInstance()
+                            cal.time = (fields[START_TIME] as Date)
+                            set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY))
+                            set(Calendar.MINUTE, cal.get(Calendar.MINUTE))
+                        }
+                        time.time
+                    }
+                }
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
@@ -107,14 +117,12 @@ class EventItemInteractor {
     //region autocomplete
     
     companion object {
-        private const val FIELD_COUNT       = 7 // this changes according to how many fields we have below
+        private const val FIELD_COUNT       = 5 // this changes according to how many fields we have below
         private const val NAME              = 0 // stores object of type String
         private const val START_DAY         = 1 // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(true), Date>
-        private const val START_HOUR        = 2 // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(true), Date>
-        private const val END_DAY           = 3 // stores object of type Triple<Calendar.DAY_OF_MONTH, Boolean(false), Date>
-        private const val END_HOUR          = 4 // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(false), Date>
-        private const val LOCATION          = 5 // stores object of type EventLocation
-        private const val INVITEES          = 6 // stores object of type List<User>
+        private const val START_TIME        = 2 // stores object of type Triple<Calendar.HOUR_OF_DAY, Boolean(true), Date>
+        private const val LOCATION          = 3 // stores object of type EventLocation
+        private const val INVITEES          = 4 // stores object of type List<User>
     }
     
     /* saved event fields */
@@ -131,7 +139,6 @@ class EventItemInteractor {
             "Pick up", "Pick up prescription", " Pick up dry cleaning", "Pick up cake", "Pick up kids")
 
     private var ignoreElements = ArrayList<String>()
-
     
     /**
      * Returns fields the user has not completely entered based on the input string so far
@@ -151,30 +158,40 @@ class EventItemInteractor {
     fun filterSuggestions(text: String): List<Suggestion> {
         if (TextUtils.isEmpty(text)) return ArrayList()
 
+        val now = Date()
+        val suggestions = ArrayList<Suggestion>()
+        
         if (locale == Locale.ENGLISH) {
 
             // attempt to extract the last word in this text, see if it matches any of the conjunctions
             // in this locale
             val lastWord = text.getLastWord(' ')
-
+            
             // if the last word matches any of the conjunction, show suggestions based on that conjunction
-            val suggestions = ArrayList<Suggestion>()
-            if (fields[START_DAY] == null) {
-                val now = Date()
-                timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
+            timeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
+                if (fields[START_DAY] == null) {
                     for (dayOffset in 0..10) {
-                        suggestions.add(Suggestion(Triple(Calendar.DAY_OF_MONTH, true, now.addDay(dayOffset))))
+                        suggestions.add(Suggestion(Triple(
+                                Calendar.DAY_OF_MONTH, true, now.addDay(dayOffset)))
+                        )
+                }}
+            }
+            if (fields[START_DAY] != null) {
+                val startDay = fields[START_DAY] as Date
+                val startingTime: Date = if (startDay.isToday()) startDay.roundToNextHalfHour() else startDay.setTime(7, 0)
+                when {
+                    fields[START_TIME] == null -> (0..300 step 30).mapTo(suggestions) {
+                        Suggestion(Triple(
+                                Calendar.HOUR_OF_DAY, true, startingTime.addMinute(it)
+                        ))
                     }
                 }
             }
-            // TODO CHECK IF fields[START_DAY] != null && lastWord is timeConjunction
-
             if (fields[LOCATION] == null) {
                 placeConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
                     return ArrayList()
                 }
             }
-
             if (fields[INVITEES] == null) {
                 peopleConjunctions.find { it.equals(lastWord, ignoreCase = true) }?.let {
                     UserRepository.getAll()?.let {
@@ -227,28 +244,33 @@ class EventItemInteractor {
      * Apply the current suggestion and update field
      */
     fun applySuggestion(currentText: String, selected: Suggestion, displayText: String) {
-        val delimiter = ' '
         selected.selectData.let {
             when (it) {
-                is Date -> {
-                    fields[START_DAY] = it
-                    timeConjunctions.forEach {
-                        val (newText, found) = currentText.replaceLast(it, "", true)
-                        if (found) {
-                            fields[NAME] = newText.trim()
-                           ignoreElements.add(it + delimiter + displayText)
+                is Triple<*,*,*> -> {
+                    if (it.first == Calendar.DAY_OF_MONTH) {
+                        if (it.second == true) {
+                            fields[START_DAY] = it.third
                         }
                     }
+                    else {
+                        if (it.second == true) {
+                            fields[START_TIME] = it.third
+                        }
+                    }
+
+                    var newText = currentText
+                    ignoreElements.forEach {
+                        newText = newText.replace(it, "", true)
+                    }
+                    timeConjunctions.forEach {
+                        newText = newText.replaceLast(it, "", true)
+                        ignoreElements.add(it)
+                    }
+                    ignoreElements.add(displayText)
+                    fields[NAME] = newText.trim()
                 }
                 is Place -> {
-                    fields[LOCATION] = it
-                    placeConjunctions.forEach {
-                        val (newText, found) = currentText.replaceLast(it, "", true)
-                        if (found) {
-                            fields[NAME] = newText.trim()
-                            ignoreElements.add(it + delimiter + displayText)
-                        }
-                    }
+
                 }
                 else -> { /* do nothing */ }
             }
@@ -256,14 +278,14 @@ class EventItemInteractor {
         debugLog()
     }
 
-    private fun String.replaceLast(toReplace: String, replacement: String, ignoreCase: Boolean = false): Pair<String, Boolean> {
+    private fun String.replaceLast(toReplace: String, replacement: String, ignoreCase: Boolean = false): String {
         val start = lastIndexOf(toReplace, ignoreCase = ignoreCase)
-        if (start == -1) return this to false
+        if (start == -1) return this
         return StringBuilder().let {
             it.append(substring(0, start))
             it.append(replacement)
             it.append(substring(start + toReplace.length))
-            it.toString() to true
+            it.toString()
         }
     }
 
@@ -273,14 +295,13 @@ class EventItemInteractor {
 
     private fun clearSuggestionCache() {
         fields.clear()
+        ignoreElements.clear()
     }
 
     private fun debugLog() {
         AppLogger.i("name=${fields[NAME]}, " +
                 "startDay=${fields[START_DAY]}, " +
-                "startHour=${fields[START_HOUR]}, " +
-                "endDay=${fields[END_DAY]}, " +
-                "endHour=${fields[END_HOUR]}, "+
+                "startHour=${fields[START_TIME]}, " +
                 "place=${fields[LOCATION]}, " +
                 "invitees=${fields[INVITEES]}")
     }

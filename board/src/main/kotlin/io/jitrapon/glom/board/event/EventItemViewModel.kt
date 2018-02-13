@@ -13,6 +13,7 @@ import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.toDateString
+import io.jitrapon.glom.base.util.toRelativeDayString
 import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.board.*
 import java.util.*
@@ -270,9 +271,11 @@ class EventItemViewModel : BoardItemViewModel() {
             when (it) {
                 is Triple<*,*,*> -> {
                     if (it.first == Calendar.DAY_OF_MONTH) {
-                        AndroidString(text = "Date")
+                        AndroidString(text = (it.third as Date).toRelativeDayString())
                     }
-                    else AndroidString(text = "Unknown date")
+                    else {
+                        AndroidString(text = (it.third as Date).toTimeString())
+                    }
                 }
                 is Place -> AndroidString(text = it.name.toString())
                 else -> AndroidString(text = it.toString())
@@ -304,10 +307,13 @@ class EventItemViewModel : BoardItemViewModel() {
                     append(displayText)
                 }
             }
-            is Date -> {
+            is Triple<*,*,*> -> {
                 builder.append(delimiter).append(buildSpannedString {
                     bold { append(displayText) }
                 })
+                if (suggestion.selectData.second == true) {
+                    observableStartDate.value = AndroidString(text = (suggestion.selectData.third as Date).toDateString())
+                }
             }
             is Place -> {
                 builder.append(delimiter).append(buildSpannedString {
