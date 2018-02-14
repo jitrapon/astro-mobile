@@ -210,7 +210,8 @@ class BoardViewModel : BaseViewModel() {
                                     observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
 
                                     // refresh the board item ordering
-                                    loadBoard(false)
+                                    //TODO
+//                                    loadBoard(false)
                                 }
                                 is AsyncErrorResult -> {
                                     handleError(it.error)

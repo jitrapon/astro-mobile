@@ -96,8 +96,7 @@
             android:layout_marginStart="8dp"
             android:paddingEnd="@dimen/card_content_padding" />
 
-        <com.google.android.gms.maps.MapView
-            android:visibility="gone"
+        <ImageView
             android:id="@+id/event_card_map"
             android:layout_width="0dp"
             android:layout_height="115dp"
@@ -105,9 +104,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:contentDescription="@string/event_card_location_content_description"
-            android:layout_marginTop="@dimen/card_content_padding"
-            map:liteMode="true"
-            map:mapType="none" />
+            android:layout_marginTop="@dimen/card_content_padding" />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/event_card_attendees"
