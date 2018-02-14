@@ -227,6 +227,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 if (latLng != null) {
                     mapView.apply {
                         show()
+                        loadFromUrl(fragment, latLng.toUri(context, 650, 193), transformation = Transformation.FIT_CENTER)
                     }
                 }
                 else {

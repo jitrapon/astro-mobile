@@ -1,7 +1,6 @@
 package io.jitrapon.glom.base.util
 
 import android.content.Context
-import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.MapStyle.styleEncodedUri
@@ -34,10 +33,9 @@ fun LatLng.toUri(context: Context, width: Int, height: Int, zoomLevel: Int = 16)
         append("https://maps.googleapis.com/maps/api/staticmap?")
         append("zoom=$zoomLevel&")
         append("size=${width}x$height&")
+//        append("scale=2&")
         append("markers=$latitude,$longitude&")
         append("$styleEncodedUri&")
         append("key=${context.getString(R.string.google_geo_api_key)}")
-    }.toString().apply {
-        Log.i("DEBUG", this)
-    }
+    }.toString()
 }

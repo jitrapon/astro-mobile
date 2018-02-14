@@ -248,13 +248,11 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns a formatted date in event detail
      */
     private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean): AndroidString? {
-        dateAsEpochMs ?: return null
+        dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_card_start_date_placeholder
+                                                        else R.string.event_card_end_date_placeholder)
         return AndroidString(text = StringBuilder().apply {
             val date = Date(dateAsEpochMs)
-            val thisDate = Calendar.getInstance().apply { time = date }
-            val currentDate = Calendar.getInstance()
-            val showYear = thisDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
-            append(date.toDateString(showYear))
+            append(date.toDateString(true))
             append("\n")
             append(date.toTimeString())
         }.toString())
