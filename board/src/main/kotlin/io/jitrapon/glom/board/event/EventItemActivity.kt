@@ -5,12 +5,10 @@ import android.os.Bundle
 import android.text.Selection
 import android.view.WindowManager
 import android.widget.AdapterView
-import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.show
-import io.jitrapon.glom.base.util.showToast
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
 import io.jitrapon.glom.board.BoardItemViewModelStore
@@ -25,9 +23,6 @@ import kotlinx.android.synthetic.main.event_item_activity.*
 class EventItemActivity : BoardItemActivity() {
 
     private lateinit var viewModel: EventItemViewModel
-
-    /* animation delay time in ms before content of this view appears */
-    private val SHOW_ANIM_DELAY = 700L
 
     /* adapter for event autocomplete */
     private var autocompleteAdapter: EventAutoCompleteAdapter? = null
@@ -46,13 +41,27 @@ class EventItemActivity : BoardItemActivity() {
         tag = "board_item_event"
 
         // setup all views
+        event_item_title.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                event_item_title_til.apply {
+                    setHelperTextEnabled(true)
+                    setHelperText(getString(R.string.event_card_name_helper))
+                }
+            }
+            else {
+                event_item_title_til.apply {
+                    setHelperTextEnabled(false)
+                }
+            }
+        }
+
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
             event_item_start_time.setOnClickListener {
-                showToast(AndroidString(text = "Setting start time"))
+                event_item_title.clearFocus()
             }
         }
     }

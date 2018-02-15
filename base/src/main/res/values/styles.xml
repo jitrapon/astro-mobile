@@ -87,4 +87,9 @@
         <item name="android:textColor">@color/reddish</item>
     </style>
 
+    <!-- style for helper text underneath TextInputLayout -->
+    <style name="Widget.Glom.TextInputLayout.HelperTextAppearance" parent="TextAppearance.Design.Error">
+        <item name="android:textColor">@color/warm_grey</item>
+    </style>
+
 </resources>

@@ -40,7 +40,7 @@
                     app:layout_constraintVertical_chainStyle="packed"
                     android:contentDescription="@string/event_card_image_content_description" />
 
-                <android.support.design.widget.TextInputLayout
+                <io.jitrapon.glom.base.ui.widget.GlomTextInputLayout
                     style="@style/Widget.Glom.TextInputLayout"
                     app:hintTextAppearance="@style/Widget.Glom.TextInputLayout.HintTextAppearance"
                     android:id="@+id/event_item_title_til"
@@ -60,7 +60,7 @@
                         android:layout_height="wrap_content"
                         android:hint="@string/event_item_name_hint" />
 
-                </android.support.design.widget.TextInputLayout>
+                </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
                 <ImageView
                     android:id="@+id/event_item_clock_icon"

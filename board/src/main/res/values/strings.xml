@@ -25,4 +25,5 @@
     <string name="board_item_edited">Item updated</string>
     <string name="event_card_start_date_placeholder">Start time</string>
     <string name="event_card_end_date_placeholder">End time</string>
+    <string name="event_card_name_helper">e.g. Play tennis tomorrow at 9</string>
 </resources>

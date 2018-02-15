@@ -6,6 +6,7 @@ import android.support.annotation.ColorRes
 import android.support.design.widget.Snackbar
 import android.text.TextUtils
 import android.view.View
+import android.view.ViewPropertyAnimator
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.MessageLevel
@@ -61,8 +62,24 @@ fun View.show(animateDuration: Long? = null) {
             if (alpha != 1.0f) alpha = 1.0f else {}
         }
         else {
+            alpha = 0.0f
             animate().alpha(1.0f)
                     .setDuration(it)
+        }
+    }
+}
+
+inline fun View.animate(duration: Long, block:(ViewPropertyAnimator.() -> Unit), noinline onAnimationEnd: ((View, Animator) -> Unit)? = null) {
+    animate().apply {
+        block()
+        this.duration = duration
+        onAnimationEnd?.let {
+            setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    super.onAnimationEnd(animation)
+                    it.invoke(this@animate, animation)
+                }
+            })
         }
     }
 }

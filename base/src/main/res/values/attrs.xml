@@ -5,4 +5,9 @@
         <attr name="badgeColor" format="color"/>
         <attr name="badgeRadius" format="dimension"/>
     </declare-styleable>
+
+    <declare-styleable name="GlomTextInputLayout">
+        <attr name="helperText" format="string"/>
+        <attr name="helperTextColor" format="color|reference"/>
+    </declare-styleable>
 </resources>

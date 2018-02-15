@@ -12,6 +12,12 @@ import io.jitrapon.glom.base.ui.BaseActivity
  */
 abstract class BoardItemActivity : BaseActivity() {
 
+    companion object {
+
+        /* animation delay time in ms before content of this view appears */
+        const val SHOW_ANIM_DELAY = 300L
+    }
+
     /*
      * Indicates whether or not this activity has been started yet
      */
