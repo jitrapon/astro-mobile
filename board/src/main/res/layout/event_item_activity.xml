@@ -50,7 +50,8 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     android:layout_marginStart="13dp"
-                    android:layout_marginEnd="@dimen/card_content_padding" >
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    app:errorTextAppearance="@style/Widget.Glom.TextInputLayout.ErrorTextAppearance" >
 
                     <io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
                         style="@style/TextAppearance.H1"

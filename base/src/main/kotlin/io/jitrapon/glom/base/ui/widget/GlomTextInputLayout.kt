@@ -2,7 +2,7 @@ package io.jitrapon.glom.base.ui.widget
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.support.annotation.IdRes
+import android.support.annotation.StyleRes
 import android.support.design.widget.TextInputLayout
 import android.support.v4.view.ViewCompat
 import android.support.v4.view.animation.FastOutSlowInInterpolator
@@ -57,7 +57,7 @@ class GlomTextInputLayout : TextInputLayout {
         return mHelperTextAppearance
     }
 
-    fun setHelperTextAppearance(@IdRes resId: Int) {
+    fun setHelperTextAppearance(@StyleRes resId: Int) {
         mHelperTextAppearance = resId
     }
 

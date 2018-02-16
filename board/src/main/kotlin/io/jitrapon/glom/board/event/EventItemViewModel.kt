@@ -11,10 +11,7 @@ import androidx.text.buildSpannedString
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.toDateString
-import io.jitrapon.glom.base.util.toRelativeDayString
-import io.jitrapon.glom.base.util.toTimeString
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import java.util.*
 
@@ -30,10 +27,9 @@ class EventItemViewModel : BoardItemViewModel() {
     private var prevName: String? = null
 
     private val observableName = MutableLiveData<Pair<AndroidString, Boolean>>() //TODO add append vs replace
-
     private val observableStartDate = MutableLiveData<AndroidString>()
-
     private val observableEndDate = MutableLiveData<AndroidString>()
+    private val observableNameError = MutableLiveData<AndroidString>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -330,6 +326,18 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.removeSuggestion(suggestion)
     }
 
+    /**
+     * Validates event name
+     */
+    fun validateName(input: String) {
+        if (!InputValidator.validateNotEmpty(input)) {
+            observableNameError.value = AndroidString(resId = R.string.event_card_name_error)
+        }
+        else {
+            observableNameError.value = null
+        }
+    }
+
     //endregion
 
     //endregion
@@ -353,6 +361,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableStartDate(): LiveData<AndroidString> = observableStartDate
 
     fun getObservableEndDate(): LiveData<AndroidString> = observableEndDate
+
+    fun getObservableNameError(): LiveData<AndroidString> = observableNameError
 
     //endregion
 

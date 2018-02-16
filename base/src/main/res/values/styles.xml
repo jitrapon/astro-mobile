@@ -92,4 +92,6 @@
         <item name="android:textColor">@color/warm_grey</item>
     </style>
 
+    <style name="Widget.Glom.TextInputLayout.ErrorTextAppearance" parent="TextAppearance.Design.Error" />
+
 </resources>

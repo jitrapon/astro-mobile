@@ -50,9 +50,12 @@ class EventItemActivity : BoardItemActivity() {
             }
             else {
                 event_item_title_til.apply {
-                    setHelperTextEnabled(false)
+                    viewModel.validateName(event_item_title.text.toString())
                 }
             }
+        }
+        event_item_start_time.setOnClickListener {
+            event_item_title.clearFocus()
         }
 
         viewModel.let {
@@ -60,9 +63,6 @@ class EventItemActivity : BoardItemActivity() {
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
-            event_item_start_time.setOnClickListener {
-                event_item_title.clearFocus()
-            }
         }
     }
 
@@ -70,6 +70,8 @@ class EventItemActivity : BoardItemActivity() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
         viewModel.apply {
+
+            // observe on the name text change
             getObservableName().observe(this@EventItemActivity, Observer {
                 it?.let { (query, filter) ->
                     event_item_title.apply {
@@ -84,10 +86,27 @@ class EventItemActivity : BoardItemActivity() {
                 }
             })
 
+            // observe on the name error
+            getObservableNameError().observe(this@EventItemActivity, Observer {
+                if (it == null) {
+                    event_item_title_til.apply {
+                        setHelperTextEnabled(false)
+                    }
+                }
+                else {
+                    event_item_title_til.apply {
+                        isErrorEnabled = true
+                        error = getString(it)
+                    }
+                }
+            })
+
+            // observe on the start date
             getObservableStartDate().observe(this@EventItemActivity, Observer {
                 event_item_start_time.text = getString(it)
             })
 
+            // observe on the end date
             getObservableEndDate().observe(this@EventItemActivity, Observer {
                 event_item_end_time.text = getString(it)
             })
