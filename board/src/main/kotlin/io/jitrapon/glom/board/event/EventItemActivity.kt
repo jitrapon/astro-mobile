@@ -6,8 +6,9 @@ import android.text.Selection
 import android.view.WindowManager
 import android.widget.AdapterView
 import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
+import io.jitrapon.glom.base.ui.widget.datetimepicker.DateTimePicker
+import io.jitrapon.glom.base.util.clearFocusAndHideKeyboard
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.show
@@ -61,8 +62,12 @@ class EventItemActivity : BoardItemActivity() {
             }
         }
         event_item_start_time.setOnClickListener {
-            event_item_title.clearFocus()
+            event_item_title.clearFocusAndHideKeyboard()
             viewModel.showDateTimePicker(true)
+        }
+        event_item_end_time.setOnClickListener {
+            event_item_title.clearFocusAndHideKeyboard()
+            viewModel.showDateTimePicker(false)
         }
 
         viewModel.let {
@@ -121,10 +126,11 @@ class EventItemActivity : BoardItemActivity() {
             getObservableDateTimePicker().observe(this@EventItemActivity, Observer {
                 it?.let { (picker, isStartDate) ->
                     dateTimePicker.apply {
-                        setDateTimeCallback {
-                            viewModel.setSelectedDate(it, isStartDate)
-                        }
-                        show(picker)
+                        show(picker, onDateTimeSet = {
+                            viewModel.setDate(it, isStartDate)
+                        }, onCancel = {
+                            viewModel.setDate(null, isStartDate)
+                        })
                     }
                 }
             })

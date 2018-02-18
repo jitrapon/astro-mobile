@@ -2,11 +2,13 @@ package io.jitrapon.glom.base.util
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.content.Context
 import android.support.annotation.ColorRes
 import android.support.design.widget.Snackbar
 import android.text.TextUtils
 import android.view.View
 import android.view.ViewPropertyAnimator
+import android.view.inputmethod.InputMethodManager
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.MessageLevel
@@ -106,4 +108,10 @@ fun View.hide(animateDuration: Long? = null) {
                     )
         }
     }
+}
+
+fun View.clearFocusAndHideKeyboard() {
+    clearFocus()
+    val imm: InputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(windowToken, 0)
 }

@@ -48,10 +48,18 @@ class EventItemInteractor {
         }
     }
 
-    fun setStartTime(date: Date) {
+    /**
+     * Updates this cached event's date
+     */
+    fun setDate(date: Date, isStartDate: Boolean) {
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
-               it.startTime = date.time
+                if (isStartDate) {
+                    it.startTime = date.time
+                }
+                else {
+                    it.endTime = date.time
+                }
             }
         }
     }

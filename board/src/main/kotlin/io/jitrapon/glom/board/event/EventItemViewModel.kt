@@ -350,13 +350,20 @@ class EventItemViewModel : BoardItemViewModel() {
      * Displays the datetime picker
      */
     fun showDateTimePicker(startDate: Boolean) {
-        observableDateTimePicker.value = DateTimePickerUiModel() to startDate
+        observableDateTimePicker.value = DateTimePickerUiModel(
+                defaultDate = if (startDate) Date().roundToNextHalfHour() else Date().roundToNextHalfHour().addHour(1)) to startDate
     }
 
-    fun setSelectedDate(date: Date, isStartDate: Boolean) {
+    /**
+     * Updates the date of the event
+     */
+    fun setDate(date: Date?, isStartDate: Boolean) {
         observableDateTimePicker.value = null
-        observableStartDate.value = getEventDetailDate(date.time, isStartDate)
-        interactor.setStartTime(date)
+        date?.let {
+            if (isStartDate) observableStartDate.value = getEventDetailDate(it.time, isStartDate)
+            else observableEndDate.value = getEventDetailDate(it.time, isStartDate)
+            interactor.setDate(it, isStartDate)
+        }
     }
 
     //endregion
