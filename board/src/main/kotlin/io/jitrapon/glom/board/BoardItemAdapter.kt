@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import android.content.res.Configuration
 import android.support.v4.app.Fragment
 import android.support.v7.widget.CardView
 import android.support.v7.widget.LinearLayoutManager
@@ -26,7 +27,7 @@ import io.jitrapon.glom.board.event.EventItemViewModel
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment, private val orientation: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         StickyHeaders, StickyHeaders.ViewSetup {
 
     /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
@@ -227,7 +228,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 if (latLng != null) {
                     mapView.apply {
                         show()
-                        loadFromUrl(fragment, latLng.toUri(context, 650, 193), transformation = Transformation.FIT_CENTER)
+                        val width = if (orientation == Configuration.ORIENTATION_PORTRAIT) 481 else 650
+                        loadFromUrl(fragment, latLng.toUri(context, width, 153), transformation = Transformation.FIT_CENTER)
                     }
                 }
                 else {

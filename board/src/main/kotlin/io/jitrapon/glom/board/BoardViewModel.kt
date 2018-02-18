@@ -258,8 +258,12 @@ class BoardViewModel : BaseViewModel() {
                 if (keyIndex == map.size - 1) lastKeyGroup = key
                 add(HeaderItemUiModel(AndroidString(
                         resId = when {
-                            (key is Int && key < -1) -> { R.string.event_card_header_last_n_weeks }
-                            (key is Int && key == -1) -> { R.string.event_card_header_last_week }
+                            (key is Int && key < -1) -> {
+                                R.string.event_card_header_last_n_weeks
+                            }
+                            (key is Int && key == -1) -> {
+                                R.string.event_card_header_last_week
+                            }
                             key == null -> R.string.board_item_header_no_date
                             (key is Int && key == 0) -> R.string.board_item_header_this_week
                             (key is Int && key == 1) -> R.string.board_item_header_next_week
@@ -269,8 +273,7 @@ class BoardViewModel : BaseViewModel() {
                         formatArgs = if (key == null) null else {
                             if (key is Int) {
                                 if (key > 1 || key < -1) arrayOf(key.absoluteValue.toString()) else null
-                            }
-                            else null
+                            } else null
                         }
                 )))
                 map[key]?.let { items ->

@@ -48,6 +48,14 @@ class EventItemInteractor {
         }
     }
 
+    fun setStartTime(date: Date) {
+        BoardItemRepository.getCache()?.itemInfo?.let {
+            if (it is EventInfo) {
+               it.startTime = date.time
+            }
+        }
+    }
+
     /**
      * Returns list of loaded users, if available from specified IDs
      */

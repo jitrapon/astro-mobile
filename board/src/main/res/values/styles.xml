@@ -18,6 +18,9 @@
         <item name="cardPreventCornerOverlap">false</item>
         <item name="android:layout_marginStart">@dimen/card_side_margin</item>
         <item name="android:layout_marginEnd">@dimen/card_side_margin</item>
+    </style>
+
+    <style name="CardView.BoardItem.Selectable" parent="CardView.BoardItem">
         <item name="android:foreground">?android:attr/selectableItemBackground</item>
         <item name="android:clickable">true</item>
     </style>
@@ -27,12 +30,9 @@
         <item name="colorControlActivated">@color/lightish_red</item>
     </style>
 
-    <style name="CardView.TextView">
+    <style name="CardView.TextView" parent="ThemeOverlay.AppCompat.Light">
         <item name="android:textAppearance">@style/TextAppearance.H4.Light</item>
         <item name="android:lineSpacingMultiplier">1.3</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="android:background">@drawable/ripple</item>
     </style>
 
 </resources>

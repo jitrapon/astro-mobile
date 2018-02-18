@@ -22,14 +22,24 @@ import java.util.*
  */
 class EventItemViewModel : BoardItemViewModel() {
 
+    /* main controller for this viewmodel */
     private lateinit var interactor: EventItemInteractor
 
+    /* cache copy of the unmodified event name, used for displaying during the transition end animation */
     private var prevName: String? = null
 
-    private val observableName = MutableLiveData<Pair<AndroidString, Boolean>>() //TODO add append vs replace
+    /* observable event name, containing values for the text to display
+        and a Boolean for whether or not to filter autocomplete after text change */
+    private val observableName = MutableLiveData<Pair<AndroidString, Boolean>>()
+
+    /* observable start date */
     private val observableStartDate = MutableLiveData<AndroidString>()
+
+    /* observable end date */
     private val observableEndDate = MutableLiveData<AndroidString>()
-    private val observableNameError = MutableLiveData<AndroidString>()
+
+    /* observable model for the DateTime picker. When set if not null, show dialog */
+    private val observableDateTimePicker = MutableLiveData<Pair<DateTimePickerUiModel, Boolean>>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -330,12 +340,23 @@ class EventItemViewModel : BoardItemViewModel() {
      * Validates event name
      */
     fun validateName(input: String) {
-        if (!InputValidator.validateNotEmpty(input)) {
-            observableNameError.value = AndroidString(resId = R.string.event_card_name_error)
-        }
-        else {
-            observableNameError.value = null
-        }
+        if (!InputValidator.validateNotEmpty(input))
+            observableName.value = AndroidString(resId = R.string.event_card_name_error, status = UiModel.Status.ERROR) to false
+        else
+            observableName.value = AndroidString(status = UiModel.Status.EMPTY) to false
+    }
+
+    /**
+     * Displays the datetime picker
+     */
+    fun showDateTimePicker(startDate: Boolean) {
+        observableDateTimePicker.value = DateTimePickerUiModel() to startDate
+    }
+
+    fun setSelectedDate(date: Date, isStartDate: Boolean) {
+        observableDateTimePicker.value = null
+        observableStartDate.value = getEventDetailDate(date.time, isStartDate)
+        interactor.setStartTime(date)
     }
 
     //endregion
@@ -362,7 +383,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableEndDate(): LiveData<AndroidString> = observableEndDate
 
-    fun getObservableNameError(): LiveData<AndroidString> = observableNameError
+    fun getObservableDateTimePicker(): LiveData<Pair<DateTimePickerUiModel, Boolean>> = observableDateTimePicker
 
     //endregion
 

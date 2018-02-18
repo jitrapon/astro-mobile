@@ -202,7 +202,7 @@ class BoardInteractor {
         val parcel = Parcel.obtain()
         board.writeToParcel(parcel, 0)
         parcel.setDataPosition(0)
-        val parceledBoard = Board.CREATOR.createFromParcel(parcel)
+        val parceledBoard = Board.createFromParcel(parcel)
         for (i in board.items.indices) {
             val item = board.items[i]
             val parceledItem = parceledBoard.items[i]

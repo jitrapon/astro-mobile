@@ -133,3 +133,10 @@ fun Date.addMinute(minutes: Int): Date {
 fun Date.addSecond(seconds: Int): Date {
     return add(Calendar.SECOND, seconds)
 }
+
+fun Date.toDayMonthYear(): Triple<Int, Int, Int> {
+    return Calendar.getInstance().let {
+        it.time = this
+        Triple(it[Calendar.DAY_OF_MONTH], it[Calendar.MONTH], it[Calendar.YEAR])
+    }
+}

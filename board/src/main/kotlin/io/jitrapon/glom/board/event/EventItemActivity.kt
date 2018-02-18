@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.text.Selection
 import android.view.WindowManager
 import android.widget.AdapterView
+import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
@@ -26,6 +28,10 @@ class EventItemActivity : BoardItemActivity() {
 
     /* adapter for event autocomplete */
     private var autocompleteAdapter: EventAutoCompleteAdapter? = null
+
+    private val dateTimePicker: DateTimePicker by lazy {
+        DateTimePicker(this)
+    }
 
     //region lifecycle
 
@@ -56,6 +62,7 @@ class EventItemActivity : BoardItemActivity() {
         }
         event_item_start_time.setOnClickListener {
             event_item_title.clearFocus()
+            viewModel.showDateTimePicker(true)
         }
 
         viewModel.let {
@@ -74,29 +81,28 @@ class EventItemActivity : BoardItemActivity() {
             // observe on the name text change
             getObservableName().observe(this@EventItemActivity, Observer {
                 it?.let { (query, filter) ->
-                    event_item_title.apply {
-                        setText(getString(query), filter)
-                        Selection.setSelection(text, text.length)
-                        if (filter) {
-                            delayRun(100L) {
-                                showDropDown()
+                    when (query.status) {
+                        UiModel.Status.SUCCESS -> {
+                            event_item_title.apply {
+                                setText(getString(query), filter)
+                                Selection.setSelection(text, text.length)
+                                if (filter) {
+                                    delayRun(100L) {
+                                        showDropDown()
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            })
-
-            // observe on the name error
-            getObservableNameError().observe(this@EventItemActivity, Observer {
-                if (it == null) {
-                    event_item_title_til.apply {
-                        setHelperTextEnabled(false)
-                    }
-                }
-                else {
-                    event_item_title_til.apply {
-                        isErrorEnabled = true
-                        error = getString(it)
+                        UiModel.Status.ERROR -> {
+                            event_item_title_til.apply {
+                                isErrorEnabled = true
+                                error = getString(query)
+                            }
+                        }
+                        UiModel.Status.EMPTY -> {
+                            event_item_title_til.setHelperTextEnabled(false)
+                        }
+                        else -> { /* do nothing */ }
                     }
                 }
             })
@@ -109,6 +115,18 @@ class EventItemActivity : BoardItemActivity() {
             // observe on the end date
             getObservableEndDate().observe(this@EventItemActivity, Observer {
                 event_item_end_time.text = getString(it)
+            })
+
+            // open a datetime picker
+            getObservableDateTimePicker().observe(this@EventItemActivity, Observer {
+                it?.let { (picker, isStartDate) ->
+                    dateTimePicker.apply {
+                        setDateTimeCallback {
+                            viewModel.setSelectedDate(it, isStartDate)
+                        }
+                        show(picker)
+                    }
+                }
             })
         }
     }
