@@ -110,6 +110,9 @@ fun View.hide(animateDuration: Long? = null) {
     }
 }
 
+/**
+ * Clears the focus on this View and hides the keyboard if shown
+ */
 fun View.clearFocusAndHideKeyboard() {
     clearFocus()
     val imm: InputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager

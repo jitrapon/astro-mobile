@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.ui.widget.datetimepicker
+package io.jitrapon.glom.base.ui.widget
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog

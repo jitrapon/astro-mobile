@@ -6,8 +6,8 @@ import android.text.Selection
 import android.view.WindowManager
 import android.widget.AdapterView
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
-import io.jitrapon.glom.base.ui.widget.datetimepicker.DateTimePicker
 import io.jitrapon.glom.base.util.clearFocusAndHideKeyboard
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide

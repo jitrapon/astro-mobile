@@ -3,7 +3,7 @@ package io.jitrapon.glom.board
 import android.os.Bundle
 import io.jitrapon.glom.base.BaseMainActivity
 import io.jitrapon.glom.base.navigation.NavigationItem
-import io.jitrapon.glom.base.ui.widget.bottomnav.BadgedBottomNavigationView
+import io.jitrapon.glom.base.ui.widget.BadgedBottomNavigationView
 import io.jitrapon.glom.base.util.addFragment
 import kotlinx.android.synthetic.main.board_activity.*
 

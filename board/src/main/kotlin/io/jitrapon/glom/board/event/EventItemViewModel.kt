@@ -350,8 +350,9 @@ class EventItemViewModel : BoardItemViewModel() {
      * Displays the datetime picker
      */
     fun showDateTimePicker(startDate: Boolean) {
+        val defaultDate = Date().roundToNextHalfHour()
         observableDateTimePicker.value = DateTimePickerUiModel(
-                defaultDate = if (startDate) Date().roundToNextHalfHour() else Date().roundToNextHalfHour().addHour(1)) to startDate
+                defaultDate = if (startDate) defaultDate else defaultDate.addHour(1)) to startDate
     }
 
     /**
