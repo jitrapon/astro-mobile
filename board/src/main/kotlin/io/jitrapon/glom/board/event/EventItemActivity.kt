@@ -52,7 +52,7 @@ class EventItemActivity : BoardItemActivity() {
             if (hasFocus) {
                 event_item_title_til.apply {
                     setHelperTextEnabled(true)
-                    setHelperText(getString(R.string.event_card_name_helper))
+                    setHelperText(getString(R.string.event_item_name_helper))
                 }
             }
             else {
@@ -68,6 +68,9 @@ class EventItemActivity : BoardItemActivity() {
         event_item_end_time.setOnClickListener {
             event_item_title.clearFocusAndHideKeyboard()
             viewModel.showDateTimePicker(false)
+        }
+        event_item_location.setOnClickListener {
+
         }
 
         viewModel.let {
@@ -134,6 +137,13 @@ class EventItemActivity : BoardItemActivity() {
                     }
                 }
             })
+
+            // observe on location text
+            getObservableLocation().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    event_item_location.text = getString(it)
+                }
+            })
         }
     }
 
@@ -184,19 +194,21 @@ class EventItemActivity : BoardItemActivity() {
         event_item_title.clearFocus()
         event_item_clock_icon.hide()
         event_item_start_time.hide()
-        event_item_right_icon.hide()
+        event_item_time_separator.hide()
         event_item_end_time.hide()
-        event_card_location_icon.hide()
-        event_card_location.hide()
+        event_item_location_icon.hide()
+        event_item_location.hide()
+        event_item_location_separator.hide()
     }
 
     override fun onBeginTransitionAnimationEnd() {
         event_item_clock_icon.show(SHOW_ANIM_DELAY)
         event_item_start_time.show(SHOW_ANIM_DELAY)
-        event_item_right_icon.show(SHOW_ANIM_DELAY)
+        event_item_time_separator.show(SHOW_ANIM_DELAY)
         event_item_end_time.show(SHOW_ANIM_DELAY)
-        event_card_location_icon.show(SHOW_ANIM_DELAY)
-        event_card_location.show(SHOW_ANIM_DELAY)
+        event_item_location_icon.show(SHOW_ANIM_DELAY)
+        event_item_location.show(SHOW_ANIM_DELAY)
+        event_item_location_separator.show(SHOW_ANIM_DELAY)
     }
 
     override fun onFinishTransitionAnimationStart() {
@@ -204,10 +216,11 @@ class EventItemActivity : BoardItemActivity() {
         event_item_root_layout.requestFocus()
         event_item_clock_icon.hide()
         event_item_start_time.hide()
-        event_item_right_icon.hide()
+        event_item_time_separator.hide()
         event_item_end_time.hide()
-        event_card_location_icon.hide()
-        event_card_location.hide()
+        event_item_location_icon.hide()
+        event_item_location.hide()
+        event_item_location_separator.hide()
     }
 
     override fun onFinishTransitionAnimationEnd() {

@@ -44,6 +44,9 @@ class EventItemViewModel : BoardItemViewModel() {
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
 
+    /* observable event location */
+    private var observableLocation = MutableLiveData<AndroidString>()
+
     init {
         interactor = EventItemInteractor()
     }
@@ -59,7 +62,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     location = getEventLocation(it.itemInfo.location),
                     mapLatLng = getEventLatLng(it.itemInfo.location),
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
-                    attendStatus =getEventAttendStatus(it.itemInfo.attendees),
+                    attendStatus = getEventAttendStatus(it.itemInfo.attendees),
                     status = status
             )
         }
@@ -225,6 +228,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     observableName.value = AndroidString(text = item.itemInfo.eventName) to false
                     observableStartDate.value = getEventDetailDate(item.itemInfo.startTime, true)
                     observableEndDate.value = getEventDetailDate(item.itemInfo.endTime, false)
+                    observableLocation.value = getEventDetailLocation(item.itemInfo.location)
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -254,14 +258,26 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns a formatted date in event detail
      */
     private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean): AndroidString? {
-        dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_card_start_date_placeholder
-                                                        else R.string.event_card_end_date_placeholder)
+        dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
+                                                        else R.string.event_item_end_date_placeholder)
         return AndroidString(text = StringBuilder().apply {
             val date = Date(dateAsEpochMs)
             append(date.toDateString(true))
             append("\n")
             append(date.toTimeString())
         }.toString())
+    }
+
+    /**
+     * Returns an event location in detail
+     */
+    private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
+        location ?: return AndroidString(resId = R.string.event_item_location_hint)
+        if (location.placeId == null && location.googlePlaceId == null) {
+            return AndroidString(resId = R.string.event_card_location_latlng,
+                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+        }
+        return AndroidString(R.string.event_card_location_placeholder)
     }
 
     //region autocomplete
@@ -341,7 +357,7 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     fun validateName(input: String) {
         if (!InputValidator.validateNotEmpty(input))
-            observableName.value = AndroidString(resId = R.string.event_card_name_error, status = UiModel.Status.ERROR) to false
+            observableName.value = AndroidString(resId = R.string.event_item_name_error, status = UiModel.Status.ERROR) to false
         else
             observableName.value = AndroidString(status = UiModel.Status.EMPTY) to false
     }
@@ -392,6 +408,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableEndDate(): LiveData<AndroidString> = observableEndDate
 
     fun getObservableDateTimePicker(): LiveData<Pair<DateTimePickerUiModel, Boolean>> = observableDateTimePicker
+
+    fun getObservableLocation(): LiveData<AndroidString> = observableLocation
 
     //endregion
 

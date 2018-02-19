@@ -12,6 +12,7 @@
     <color name="lighter_grey">#f6f6f6</color>
     <color name="blue_grey">#475F77</color>
     <color name="greyish_brown">#424242</color>
+    <color name="dark_grey">#22000000</color>
     <color name="grey">#ffafbdc4</color>
     <color name="warm_grey">#9b9b9b</color>
     <color name="background">#F4F8FA</color>
