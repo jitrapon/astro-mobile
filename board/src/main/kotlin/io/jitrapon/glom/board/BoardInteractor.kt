@@ -20,7 +20,7 @@ import io.reactivex.schedulers.Schedulers
 import java.util.*
 
 /**
- * Interactor for dealing with Board logic
+ * Interactor for dealing with Board business logic
  *
  * @author Jitrapon Tiachunpun
  */
@@ -210,6 +210,4 @@ class BoardInteractor {
         }
         parcel.recycle()
     }
-
-    fun getCachedBoard(): Board? = BoardRepository.getCache()
 }

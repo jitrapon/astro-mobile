@@ -8,7 +8,6 @@ import android.text.SpannedString
 import android.text.TextUtils
 import androidx.text.bold
 import androidx.text.buildSpannedString
-import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -117,6 +116,9 @@ class EventItemViewModel : BoardItemViewModel() {
         if (location.placeId == null && location.googlePlaceId == null) {
             return AndroidString(resId = R.string.event_card_location_latlng,
                     formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+        }
+        else if (!TextUtils.isEmpty(location.name)) {
+            return AndroidString(text = location.name)
         }
         return AndroidString(R.string.event_card_location_placeholder)
     }
@@ -277,6 +279,9 @@ class EventItemViewModel : BoardItemViewModel() {
             return AndroidString(resId = R.string.event_card_location_latlng,
                     formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
         }
+        else if (!TextUtils.isEmpty(location.name)) {
+            return AndroidString(text = location.name)
+        }
         return AndroidString(R.string.event_card_location_placeholder)
     }
 
@@ -297,7 +302,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         AndroidString(text = (it.third as Date).toTimeString())
                     }
                 }
-                is Place -> AndroidString(text = it.name.toString())
+                is PlaceInfo -> AndroidString(text = it.name)
                 else -> AndroidString(text = it.toString())
             }
         }
@@ -318,7 +323,8 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.applySuggestion(currentText.toString(), suggestion, displayText)
         val delimiter = " "
 
-        val builder = SpannableStringBuilder(currentText.trim())
+        val text = currentText.trim()
+        val builder = SpannableStringBuilder(text)
         when (suggestion.selectData) {
             is String -> {
                 if (suggestion.isConjunction) builder.append(delimiter).append(displayText)
@@ -336,10 +342,14 @@ class EventItemViewModel : BoardItemViewModel() {
                             suggestion.selectData.second as Boolean)
                 }
             }
-            is Place -> {
+            is PlaceInfo -> {
+                builder.replace(text.lastIndexOf(delimiter), text.length, "")
                 builder.append(delimiter).append(buildSpannedString {
                     bold { append(displayText) }
                 })
+                val place = suggestion.selectData
+                observableLocation.value =
+                        getEventDetailLocation(EventLocation(place.latitude, place.longitude, place.googlePlaceId, place.placeId, place.name))
             }
         }
         observableName.value = AndroidString(text = SpannedString(builder)) to true

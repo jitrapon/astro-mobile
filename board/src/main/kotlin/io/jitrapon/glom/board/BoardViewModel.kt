@@ -6,6 +6,7 @@ import android.support.v4.util.ArrayMap
 import android.support.v7.util.DiffUtil
 import android.view.View
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.interactor.CircleInteractor
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
@@ -33,7 +34,10 @@ class BoardViewModel : BaseViewModel() {
     private val observableSelectedBoardItem = LiveEvent<Pair<BoardItem, List<Pair<View, String>>?>>()
 
     /* interactor for the observable board */
-    private lateinit var interactor: BoardInteractor
+    private lateinit var boardInteractor: BoardInteractor
+
+    /* interactor for the observable circle */
+    private lateinit var circleInteractor: CircleInteractor
 
     /* whether or not first load function has been called */
     private var firstLoadCalled: Boolean = false
@@ -61,9 +65,10 @@ class BoardViewModel : BaseViewModel() {
     }
 
     init {
-        interactor = BoardInteractor().apply {
+        boardInteractor = BoardInteractor().apply {
             setFilteringType(itemFilterType)
         }
+        circleInteractor = CircleInteractor()
     }
 
     //region board actions
@@ -78,7 +83,7 @@ class BoardViewModel : BaseViewModel() {
             status = UiModel.Status.LOADING
         }
 
-        runBlockingIO(interactor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
+        runBlockingIO(boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
                 is AsyncSuccessResult -> {
                     runAsync({
@@ -120,7 +125,7 @@ class BoardViewModel : BaseViewModel() {
      * @param placeProvider Subclass of PlaceProvider that implements get place info
      */
     fun loadPlaceInfo(placeProvider: PlaceProvider?, itemIds: List<String>?) {
-        interactor.loadItemPlaceInfo(placeProvider, itemIds) {
+        boardInteractor.loadItemPlaceInfo(placeProvider, itemIds) {
             when (it) {
                 is AsyncSuccessResult -> {
                     if (!it.result.isEmpty) {
@@ -155,7 +160,7 @@ class BoardViewModel : BaseViewModel() {
      */
     fun viewItemDetail(position: Int, transitionViews: List<Pair<View, String>>? = null) {
         boardUiModel.items?.getOrNull(position)?.let {
-            interactor.getBoardItem(it.itemId)?.let {
+            boardInteractor.getBoardItem(it.itemId)?.let {
                 observableSelectedBoardItem.value = it to transitionViews
             }
         }
@@ -193,7 +198,7 @@ class BoardViewModel : BaseViewModel() {
                 }
 
                 // start syncing data to server and local database
-                interactor.editBoardItemInfo(boardItem, {
+                boardInteractor.editBoardItemInfo(boardItem, {
                     boardUiModel.items?.let { items ->
                         index = items.indexOfFirst { boardItem.itemId == it.itemId }
                         if (index != -1) {
@@ -233,6 +238,25 @@ class BoardViewModel : BaseViewModel() {
                         }
                     }
                 })
+            }
+        }
+    }
+
+    //endregion
+    //region circle actions
+
+    /**
+     * Loads information about this circle, specifically name, avatar, and places
+     */
+    fun loadCircleInfo() {
+        circleInteractor.loadCircle("name", "avatar", "places") {
+            when (it) {
+                is AsyncSuccessResult -> {
+
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
+                }
             }
         }
     }

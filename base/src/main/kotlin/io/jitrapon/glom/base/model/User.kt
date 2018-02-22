@@ -11,8 +11,8 @@ import java.util.*
  */
 data class User(val userType: Int,
                 val userId: String,
-                val userName: String,
-                val avatar: String?,
+                var userName: String,
+                var avatar: String?,
                 override val retrievedTime: Date? = Date(),
                 override val error: Throwable? = null) : DataModel {
 

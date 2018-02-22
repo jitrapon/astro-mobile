@@ -1,8 +1,7 @@
-package io.jitrapon.glom.board.event
+package io.jitrapon.glom.base.model
 
 import android.os.Parcel
 import android.os.Parcelable
-import io.jitrapon.glom.base.model.DataModel
 import java.util.*
 
 /**

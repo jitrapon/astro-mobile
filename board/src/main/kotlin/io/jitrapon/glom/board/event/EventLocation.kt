@@ -24,6 +24,7 @@ data class EventLocation(val latitude: Double?,
                 if (it == -1.0) null else it
             },
             parcel.readString(),
+            parcel.readString(),
             parcel.readString())
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -31,6 +32,7 @@ data class EventLocation(val latitude: Double?,
         parcel.writeDouble(longitude ?: -1.0)
         parcel.writeString(googlePlaceId)
         parcel.writeString(placeId)
+        parcel.writeString(name)
     }
 
     override fun describeContents(): Int = 0

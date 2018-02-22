@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.event
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.board.BoardItemInfo
 import java.util.*
 

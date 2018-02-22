@@ -73,7 +73,10 @@ class BoardFragment : BaseFragment() {
         // start loading data
         // we don't force-refresh data because when configuration changes occur,
         // we can reuse the same loaded data
-        viewModel.loadBoard(false)
+        viewModel.apply {
+            loadBoard(false)
+            loadCircleInfo()
+        }
     }
 
     /**
