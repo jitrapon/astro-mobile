@@ -4,9 +4,10 @@ import android.app.Activity
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Context
-import com.google.android.gms.location.places.GeoDataClient
-import com.google.android.gms.location.places.Place
-import com.google.android.gms.location.places.Places
+import android.text.TextUtils
+import com.google.android.gms.location.places.*
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import io.reactivex.Single
 
 /**
@@ -40,6 +41,19 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         else Places.getGeoDataClient(activity!!, null)
     }
 
+    /**
+     * Search LatLng boundary
+     */
+    private val bounds: LatLngBounds = LatLngBounds(LatLng(13.7244409, 100.3522243), LatLng(13.736717, 100.523186))
+
+    /**
+     * Search filter
+     */
+    private val filter: AutocompleteFilter = AutocompleteFilter.Builder()
+            .setCountry("th")
+            .setTypeFilter(AutocompleteFilter.TYPE_FILTER_NONE)
+            .build()
+
     //endregion
     //region lifecycle
 
@@ -48,7 +62,7 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         lifeCycle.removeObserver(this)
     }
 
-    override fun retrievePlaces(placeIds: Array<String>): Single<Array<Place>> {
+    override fun getPlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
             if (lifeCycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
                 if (placeIds.isEmpty()) {
@@ -78,7 +92,43 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         }
     }
 
+    override fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>> {
+        return getAutocompletePrediction(query, bounds, filter)
+    }
 
+    private fun getAutocompletePrediction(query: String, bounds: LatLngBounds, filter: AutocompleteFilter): Single<Array<AutocompletePrediction>> {
+        return Single.create { single ->
+            if (lifeCycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                if (TextUtils.isEmpty(query)) {
+                    single.onSuccess(emptyArray())
+                }
+                else {
+                    client.getAutocompletePredictions(query, bounds, filter).let {
+                        it.addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                if (it.result != null && it.result.count > 0) {
+                                    val result = ArrayList<AutocompletePrediction>()
+                                    it.result.filter { it.isDataValid }
+                                            .forEach { result.add(it.freeze()) }
+                                    it.result.release()
+                                    single.onSuccess(result.toTypedArray())
+                                }
+                                else {
+                                    single.onSuccess(emptyArray())
+                                }
+                            }
+                            else {
+                                it.exception?.let {
+                                    single.onError(it)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else single.onError(Exception("Attempting to get autocomplete predictions while lifecycle is not at least STARTED"))
+        }
+    }
 
     //endregion
 }

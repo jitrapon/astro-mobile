@@ -40,6 +40,7 @@ class EventItemActivity : BoardItemActivity() {
 
     override fun onCreateViewModel() {
         viewModel = BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java) as EventItemViewModel
+        viewModel.setPlaceProvider(placeProvider)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

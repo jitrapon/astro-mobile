@@ -9,6 +9,7 @@ import android.text.TextUtils
 import androidx.text.bold
 import androidx.text.buildSpannedString
 import com.google.android.gms.maps.model.LatLng
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
@@ -113,14 +114,14 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventLocation(location: EventLocation?): AndroidString? {
         location ?: return null
-        if (location.placeId == null && location.googlePlaceId == null) {
-            return AndroidString(resId = R.string.event_card_location_latlng,
+        return if (location.placeId == null && location.googlePlaceId == null) {
+            AndroidString(resId = R.string.event_card_location_latlng,
                     formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
         }
-        else if (!TextUtils.isEmpty(location.name)) {
-            return AndroidString(text = location.name)
+        else if (!TextUtils.isEmpty(location.googlePlaceId)) {
+            AndroidString(R.string.event_card_location_placeholder)
         }
-        return AndroidString(R.string.event_card_location_placeholder)
+        else AndroidString(text = location.name)
     }
 
     /**
@@ -215,6 +216,10 @@ class EventItemViewModel : BoardItemViewModel() {
     //endregion
     //region event detail item
 
+    fun setPlaceProvider(placeProvider: PlaceProvider) {
+        interactor.setPlaceProvider(placeProvider)
+    }
+
     /**
      * Initializes this ViewModel with the event item to display
      */
@@ -275,14 +280,7 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
         location ?: return AndroidString(resId = R.string.event_item_location_hint)
-        if (location.placeId == null && location.googlePlaceId == null) {
-            return AndroidString(resId = R.string.event_card_location_latlng,
-                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
-        }
-        else if (!TextUtils.isEmpty(location.name)) {
-            return AndroidString(text = location.name)
-        }
-        return AndroidString(R.string.event_card_location_placeholder)
+        return getEventLocation(location)
     }
 
     //region autocomplete
@@ -320,8 +318,8 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     fun selectSuggestion(currentText: Editable, suggestion: Suggestion) {
         val displayText = suggestion.selectData as? String ?: getSuggestionText(suggestion).text.toString()
-        interactor.applySuggestion(currentText.toString(), suggestion, displayText)
         val delimiter = " "
+        interactor.applySuggestion(currentText.toString(), suggestion, displayText, delimiter)
 
         val text = currentText.trim()
         val builder = SpannableStringBuilder(text)

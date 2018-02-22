@@ -153,7 +153,7 @@ class BoardInteractor {
                 .map { (it.itemInfo as EventInfo).location?.googlePlaceId!! }
                 .toTypedArray()
             }.flatMap {
-                placeProvider.retrievePlaces(it)
+                placeProvider.getPlaces(it)
             }.subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({

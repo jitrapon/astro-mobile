@@ -3,6 +3,7 @@ package io.jitrapon.glom.board.event
 import android.text.TextUtils
 import android.util.SparseArray
 import androidx.util.set
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.repository.CircleRepository
@@ -23,6 +24,15 @@ import java.util.*
  * Created by Jitrapon
  */
 class EventItemInteractor {
+
+    private var placeProvider: PlaceProvider? = null
+
+    /**
+     * Initializes the PlaceProvider class
+     */
+    fun setPlaceProvider(placeProvider: PlaceProvider) {
+        this.placeProvider = placeProvider
+    }
 
     /**
      * Initialize board item to work with
@@ -166,7 +176,6 @@ class EventItemInteractor {
     fun filterSuggestions(text: String): List<Suggestion> {
         if (TextUtils.isEmpty(text)) return ArrayList()
 
-        val now = Date()
         val suggestions = ArrayList<Suggestion>()
         
         if (locale == Locale.ENGLISH) {
@@ -192,57 +201,16 @@ class EventItemInteractor {
             filterConditions[INVITEES] = if (!filterConditions[INVITEES])
                 peopleConjunctions.any { it.equals(lastWord, ignoreCase = true) }  && fields[INVITEES] == null else true
 
-            AppLogger.i("$filterConditions")
-
+            //TODO mark the current index of lastWord, use use substring of that index to end of text
             when {
-                filterConditions[START_DAY] -> {
-                    for (dayOffset in 0..10) {
-                        suggestions.add(Suggestion(Triple(
-                                Calendar.DAY_OF_MONTH, true, now.addDay(dayOffset)))
-                        )
-                    }
-                    return suggestions
-                }
-                filterConditions[START_TIME] -> {
-                    val startDay = fields[START_DAY] as Date
-                    val startingTime: Date = if (startDay.isToday()) startDay.roundToNextHalfHour() else startDay.setTime(7, 0)
-                    when {
-                        fields[START_TIME] == null -> (0..300 step 30).mapTo(suggestions) {
-                            Suggestion(Triple(
-                                    Calendar.HOUR_OF_DAY, true, startingTime.addMinute(it)
-                            ))
-                        }
-                    }
-                    return suggestions
-                }
-                filterConditions[LOCATION] -> CircleRepository.getCache()?.let {
-                    suggestions.addAll(
-                            it.places.filter {
-                                !TextUtils.isEmpty(it.name) && it.name!!.startsWith(lastWord, true)
-                            }.map {
-                                        Suggestion(it)
-                                    }
-                    )
-                    return suggestions
-                }
-                filterConditions[INVITEES] -> {
-                    UserRepository.getAll()?.let {
-                        suggestions.addAll(it.map { Suggestion(it) })
-                    }
-                    return suggestions
-                }
+                filterConditions[START_DAY] -> return getDaySuggestions(lastWord)
+                filterConditions[START_TIME] -> return getTimeSuggestions(lastWord)
+                filterConditions[LOCATION] -> return getPlaceSuggestions(lastWord)
+                filterConditions[INVITEES] -> return getInviteeSuggestions(lastWord)
             }
 
             // suggest for event names if it's not yet saved
             val emptyFields = getIncompleteFields()
-            emptyFields.forEach {
-                when (it) {
-                    NAME -> AppLogger.i("NAME is NULL")
-                    START_DAY -> AppLogger.i("START_DAY is NULL")
-                    LOCATION -> AppLogger.i("LOCATION is NULL")
-                    INVITEES -> AppLogger.i("INVITEES is NULL")
-                }
-            }
             val names = ArrayList<Suggestion>().apply {
                 if (suggestions.isEmpty()) {
                     val trimmed = text.trim()
@@ -274,6 +242,75 @@ class EventItemInteractor {
         return ArrayList()
     }
 
+    private fun getDaySuggestions(query: String): List<Suggestion> {
+        val now = Date()
+        return ArrayList<Suggestion>().apply {
+            for (dayOffset in 0..10) {
+                add(Suggestion(Triple(
+                        Calendar.DAY_OF_MONTH, true, now.addDay(dayOffset)))
+                )
+            }
+        }
+    }
+
+    private fun getTimeSuggestions(query: String): List<Suggestion> {
+        return ArrayList<Suggestion>().apply {
+            val startDay = fields[START_DAY] as Date
+            val startingTime: Date = if (startDay.isToday()) startDay.roundToNextHalfHour() else startDay.setTime(7, 0)
+            when {
+                fields[START_TIME] == null -> (0..300 step 30).mapTo(this) {
+                    Suggestion(Triple(
+                            Calendar.HOUR_OF_DAY, true, startingTime.addMinute(it)
+                    ))
+                }
+            }
+        }
+    }
+
+    private fun getPlaceSuggestions(query: String): List<Suggestion> {
+        return ArrayList<Suggestion>().apply {
+            CircleRepository.getCache()?.let {
+
+                val shouldNotFilter = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
+
+                // add all places saved in this circle
+                val places = if (shouldNotFilter) it.places else it.places.filter {
+                    !TextUtils.isEmpty(it.name) && it.name!!.startsWith(query, true)
+                }
+                addAll(places.map { Suggestion(it) })
+
+                // add places from Google Place API
+                if (!shouldNotFilter) {
+                    try {
+                        placeProvider?.getAutocompletePrediction(query)
+                                ?.blockingGet()
+                                ?.map {
+                                    Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
+                                            null, null, null, it.placeId, "g_place_id"))
+                                }
+                                ?.let {
+                                    addAll(it)
+                                }
+                    }
+                    catch (ex: Exception) {
+                        AppLogger.e(ex)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getInviteeSuggestions(query: String): List<Suggestion> {
+        return ArrayList<Suggestion>().apply {
+            UserRepository.getAll()?.let {
+                val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
+                    !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
+                }
+                addAll(users.map { Suggestion(it) })
+            }
+        }
+    }
+
     fun getSelectedDate(): Date? {
         return fields[START_DAY]?.let {
             Calendar.getInstance().run {
@@ -292,7 +329,7 @@ class EventItemInteractor {
     /**
      * Apply the current suggestion and update field
      */
-    fun applySuggestion(currentText: String, selected: Suggestion, displayText: String) {
+    fun applySuggestion(currentText: String, selected: Suggestion, displayText: String, delimiter: String) {
         selected.selectData.let {
             when (it) {
                 is Triple<*,*,*> -> {
@@ -314,8 +351,8 @@ class EventItemInteractor {
                         newText = newText.replace(it, "", true)
                     }
                     timeConjunctions.forEach {
-                        newText = newText.replaceLast(it, "", true)
-                        ignoreElements.add(it)
+                        newText = newText.replaceLast(it + delimiter, "", true)
+                        ignoreElements.add(it + delimiter)
                     }
                     ignoreElements.add(displayText)
                     fields[NAME] = newText.trim()
@@ -329,8 +366,8 @@ class EventItemInteractor {
                         newText = newText.replace(it, "", true)
                     }
                     placeConjunctions.forEach {
-                        newText = newText.replaceLast(it, "", true)
-                        ignoreElements.add(it)
+                        newText = newText.replaceLast(it + delimiter, "", true)
+                        ignoreElements.add(it + delimiter)
                     }
                     ignoreElements.add(displayText)
                     fields[NAME] = newText.trim()

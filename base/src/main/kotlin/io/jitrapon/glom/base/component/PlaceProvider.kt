@@ -1,6 +1,7 @@
 package io.jitrapon.glom.base.component
 
 import android.arch.lifecycle.LifecycleObserver
+import com.google.android.gms.location.places.AutocompletePrediction
 import com.google.android.gms.location.places.Place
 import io.reactivex.Single
 
@@ -12,5 +13,7 @@ import io.reactivex.Single
  */
 interface PlaceProvider : LifecycleObserver {
 
-    fun retrievePlaces(placeIds: Array<String>): Single<Array<Place>>
+    fun getPlaces(placeIds: Array<String>): Single<Array<Place>>
+
+    fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>>
 }
