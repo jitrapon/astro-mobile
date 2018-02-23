@@ -133,7 +133,7 @@ class EventItemActivity : BoardItemActivity() {
                         show(picker, onDateTimeSet = {
                             viewModel.setDate(it, isStartDate)
                         }, onCancel = {
-                            viewModel.setDate(null, isStartDate)
+                            viewModel.cancelSetDate()
                         })
                     }
                 }

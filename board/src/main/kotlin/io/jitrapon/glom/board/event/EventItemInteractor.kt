@@ -61,19 +61,55 @@ class EventItemInteractor {
     }
 
     /**
-     * Updates this cached event's date
+     * Updates this cached event's date, processing whether the start and end dates are set correctly
+     *
+     * @return true iff the dates are correctly provided and set successfully
      */
-    fun setDate(date: Date, isStartDate: Boolean) {
+    fun setDate(date: Date?, isStartDate: Boolean) {
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
                 if (isStartDate) {
-                    it.startTime = date.time
+                    it.startTime = date?.time
+
+                    // if the new start date surpasses end date, reset the end date
+                    if (it.startTime != null && it.endTime != null) {
+                        if (it.startTime!! > it.endTime!!) {
+                            it.endTime = null
+                        }
+                    }
+
+                    // if the new start date is null, also reset the end date
+                    if (it.startTime == null) {
+                        it.endTime = null
+                    }
                 }
                 else {
-                    it.endTime = date.time
+                    it.endTime = date?.time
+                    if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
+                        it.startTime = Date(it.endTime!!).addHour(-1).time
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Gets the cached event's date
+     */
+    fun getDate(startDate: Boolean): Date? {
+        BoardItemRepository.getCache()?.itemInfo?.let {
+            if (it is EventInfo) {
+                return if (startDate) it.startTime.let {
+                    if (it == null) null else Date(it)
+                }
+                else {
+                    it.endTime.let {
+                        if (it == null) null else Date(it)
+                    }
+                }
+            }
+        }
+        return null
     }
 
     /**

@@ -384,22 +384,34 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Displays the datetime picker
      */
-    fun showDateTimePicker(startDate: Boolean) {
-        val defaultDate = Date().roundToNextHalfHour()
-        observableDateTimePicker.value = DateTimePickerUiModel(
-                defaultDate = if (startDate) defaultDate else defaultDate.addHour(1)) to startDate
+    fun showDateTimePicker(isStartDate: Boolean) {
+        val startDate = interactor.getDate(true)
+        val endDate = interactor.getDate(false)
+        val defaultDate: Date =
+        if (isStartDate) {
+            startDate ?: Date().roundToNextHalfHour()
+        }
+        else {
+            endDate ?: startDate?.addHour(1) ?: Date().roundToNextHalfHour().addHour(1)
+        }
+        observableDateTimePicker.value = DateTimePickerUiModel(defaultDate) to isStartDate
     }
 
     /**
      * Updates the date of the event
      */
     fun setDate(date: Date?, isStartDate: Boolean) {
-        observableDateTimePicker.value = null
-        date?.let {
-            if (isStartDate) observableStartDate.value = getEventDetailDate(it.time, isStartDate)
-            else observableEndDate.value = getEventDetailDate(it.time, isStartDate)
-            interactor.setDate(it, isStartDate)
+        interactor.let {
+            it.setDate(date, isStartDate)
+
+            observableStartDate.value = getEventDetailDate(it.getDate(true)?.time, true)
+            observableEndDate.value = getEventDetailDate(it.getDate(false)?.time, false)
+            observableDateTimePicker.value = null
         }
+    }
+
+    fun cancelSetDate() {
+        observableDateTimePicker.value = null
     }
 
     //endregion
