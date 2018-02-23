@@ -20,6 +20,11 @@ class LimitedBooleanArray(initialCapacity: Int = 10, private var maxPositive: In
      */
     private val positiveQueue: BlockingQueue<Int> = LinkedBlockingDeque()
 
+    /*
+     * Last key index whose value has just been set to true
+     */
+    private var lastModifiedIndex: Int = -1
+
     override fun put(key: Int, value: Boolean) {
         super.put(key, value)
 
@@ -30,6 +35,7 @@ class LimitedBooleanArray(initialCapacity: Int = 10, private var maxPositive: In
                 for (i in 0 until numItemsToPop) {
                     this[positiveQueue.remove()] = false
                 }
+                lastModifiedIndex = key
             }
         }
         else {
@@ -37,11 +43,20 @@ class LimitedBooleanArray(initialCapacity: Int = 10, private var maxPositive: In
         }
     }
 
+    fun getLastModifiedIndex(): Int = lastModifiedIndex
+
     override fun toString(): String {
         return StringBuilder().apply {
             this@LimitedBooleanArray.forEach { key, value ->
                 append("key=$key, value=$value\n")
             }
         }.toString()
+    }
+
+    override fun clear() {
+        super.clear()
+
+        positiveQueue.clear()
+        lastModifiedIndex = -1
     }
 }

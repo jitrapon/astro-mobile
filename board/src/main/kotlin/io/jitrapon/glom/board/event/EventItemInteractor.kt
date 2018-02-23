@@ -157,6 +157,8 @@ class EventItemInteractor {
 
     private var ignoreElements = ArrayList<String>()
     private val filterConditions = LimitedBooleanArray(FIELD_COUNT, 1)
+    private var lastModifiedField: Int = -1
+    private var subQueryStartIndex: Int = -1
 
     /**
      * Returns fields the user has not completely entered based on the input string so far
@@ -182,6 +184,7 @@ class EventItemInteractor {
 
             // ignore certain keywords and suggestions in the name
             var temp = text
+            val delimiter = ' '
             ignoreElements.forEach {
                 temp = temp.replace(it, "", true).trim()
             }
@@ -190,23 +193,31 @@ class EventItemInteractor {
 
             // attempt to extract the last word in this text, see if it matches any of the conjunctions
             // in this locale
-            val lastWord = text.getLastWord(' ')
-            
+            val lastWord = text.getLastWord(delimiter)
+
             // if the last word matches any of the conjunction, cache that word and filters suggestions based on that word
-            filterConditions[START_DAY] = if (!filterConditions[START_DAY])
-                timeConjunctions.any { it.equals(lastWord, ignoreCase = true) } && fields[START_DAY] == null else true
+            filterConditions[START_DAY] = if (!filterConditions[START_DAY]) {
+                timeConjunctions.any { it.equals(lastWord, ignoreCase = true) } && fields[START_DAY] == null } else true
             filterConditions[START_TIME] = if (!filterConditions[START_TIME]) fields[START_DAY] != null && fields[START_TIME] == null else true
             filterConditions[LOCATION] = if (!filterConditions[LOCATION])
                 placeConjunctions.any { it.equals(lastWord, ignoreCase = true) } && fields[LOCATION] == null else true
             filterConditions[INVITEES] = if (!filterConditions[INVITEES])
                 peopleConjunctions.any { it.equals(lastWord, ignoreCase = true) }  && fields[INVITEES] == null else true
 
-            //TODO mark the current index of lastWord, use use substring of that index to end of text
+            // check if the filter condition field has changed, if so, cache the index of the conjunction
+            if (lastModifiedField != filterConditions.getLastModifiedIndex()) {
+                lastModifiedField = filterConditions.getLastModifiedIndex()
+                subQueryStartIndex = text.trim().lastIndex + 1
+            }
+            val query = if (subQueryStartIndex >= 0 && subQueryStartIndex < text.trim().length)
+                text.trim().substring(subQueryStartIndex, text.trim().length).trim() else ""
+            AppLogger.i("query='$query'")
+
             when {
-                filterConditions[START_DAY] -> return getDaySuggestions(lastWord)
-                filterConditions[START_TIME] -> return getTimeSuggestions(lastWord)
-                filterConditions[LOCATION] -> return getPlaceSuggestions(lastWord)
-                filterConditions[INVITEES] -> return getInviteeSuggestions(lastWord)
+                filterConditions[START_DAY] -> return getDaySuggestions(query)
+                filterConditions[START_TIME] -> return getTimeSuggestions(query)
+                filterConditions[LOCATION] -> return getPlaceSuggestions(query)
+                filterConditions[INVITEES] -> return getInviteeSuggestions(query)
             }
 
             // suggest for event names if it's not yet saved
@@ -242,6 +253,8 @@ class EventItemInteractor {
         return ArrayList()
     }
 
+    fun getSubQueryStartIndex(): Int = subQueryStartIndex
+
     private fun getDaySuggestions(query: String): List<Suggestion> {
         val now = Date()
         return ArrayList<Suggestion>().apply {
@@ -271,16 +284,16 @@ class EventItemInteractor {
         return ArrayList<Suggestion>().apply {
             CircleRepository.getCache()?.let {
 
-                val shouldNotFilter = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
+                val showAllCustomPlaces = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
 
                 // add all places saved in this circle
-                val places = if (shouldNotFilter) it.places else it.places.filter {
+                val places = if (showAllCustomPlaces) it.places else it.places.filter {
                     !TextUtils.isEmpty(it.name) && it.name!!.startsWith(query, true)
                 }
                 addAll(places.map { Suggestion(it) })
 
                 // add places from Google Place API
-                if (!shouldNotFilter) {
+                if (!showAllCustomPlaces) {
                     try {
                         placeProvider?.getAutocompletePrediction(query)
                                 ?.blockingGet()
@@ -397,6 +410,8 @@ class EventItemInteractor {
         fields.clear()
         ignoreElements.clear()
         filterConditions.clear()
+        lastModifiedField = -1
+        subQueryStartIndex = -1
     }
 
     private fun debugLog() {

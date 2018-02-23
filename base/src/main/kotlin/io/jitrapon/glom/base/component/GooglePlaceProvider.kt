@@ -80,10 +80,10 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                                 places.release()
                                 single.onSuccess(result.toTypedArray())
                             }
-                            else single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
-                        }
-                        it.addOnFailureListener {
-                            // api exception is thrown automatically, we don't need to call onError
+                            else {
+                                it.result.release()
+                                single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
+                            }
                         }
                     }
                 }
@@ -114,10 +114,12 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                                     single.onSuccess(result.toTypedArray())
                                 }
                                 else {
+                                    it.result.release()
                                     single.onSuccess(emptyArray())
                                 }
                             }
                             else {
+                                it.result.release()
                                 it.exception?.let {
                                     single.onError(it)
                                 }

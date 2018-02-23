@@ -280,7 +280,14 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
         location ?: return AndroidString(resId = R.string.event_item_location_hint)
-        return getEventLocation(location)
+        if (location.placeId == null && location.googlePlaceId == null) {
+            return AndroidString(resId = R.string.event_card_location_latlng,
+                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+        }
+        else if (!TextUtils.isEmpty(location.name)) {
+            return AndroidString(text = location.name)
+        }
+        return AndroidString(R.string.event_card_location_placeholder)
     }
 
     //region autocomplete
@@ -341,8 +348,12 @@ class EventItemViewModel : BoardItemViewModel() {
                 }
             }
             is PlaceInfo -> {
-                builder.replace(text.lastIndexOf(delimiter), text.length, "")
-                builder.append(delimiter).append(buildSpannedString {
+                val index = interactor.getSubQueryStartIndex()
+                if (index >= 0 && index < currentText.trim().length) {
+                    builder.replace(index, text.length, "")
+                }
+                builder.append(delimiter)
+                builder.append(buildSpannedString {
                     bold { append(displayText) }
                 })
                 val place = suggestion.selectData
