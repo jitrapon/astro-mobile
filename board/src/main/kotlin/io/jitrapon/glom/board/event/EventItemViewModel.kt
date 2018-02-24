@@ -314,6 +314,13 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     /**
+     * Synchronously filter place suggestions to display based on the specified query
+     */
+    fun filterLocationSuggestions(text: CharSequence): List<Suggestion> {
+        return interactor.filterLocationSuggestions(text.toString())
+    }
+
+    /**
      * Synchronously filter suggestions to display based on the specified query
      */
     fun filterSuggestions(text: CharSequence): List<Suggestion> {
@@ -362,6 +369,20 @@ class EventItemViewModel : BoardItemViewModel() {
             }
         }
         observableName.value = AndroidString(text = SpannedString(builder)) to true
+    }
+
+    /**
+     * Apply the current place suggestion
+     */
+    fun selectPlace(suggestion: Suggestion) {
+        suggestion.selectData.let {
+            if (it is PlaceInfo) {
+                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name).apply {
+                    interactor.setLocation(this)
+                    observableLocation.value = getEventDetailLocation(this)
+                }
+            }
+        }
     }
 
     /**

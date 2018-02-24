@@ -79,6 +79,7 @@ class EventItemActivity : BoardItemActivity() {
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
+            addLocationAutocompleteCallbacks(event_item_location)
         }
     }
 
@@ -142,7 +143,7 @@ class EventItemActivity : BoardItemActivity() {
             // observe on location text
             getObservableLocation().observe(this@EventItemActivity, Observer {
                 it?.let {
-                    event_item_location.text = getString(it)
+                    event_item_location.setText(getString(it), false)
                 }
             })
         }
@@ -173,6 +174,31 @@ class EventItemActivity : BoardItemActivity() {
             // on item click listener
             onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _->
                 viewModel.selectSuggestion(event_item_title.text, parent.getItemAtPosition(position) as Suggestion)
+            }
+        }
+    }
+
+    private fun addLocationAutocompleteCallbacks(textView: GlomAutoCompleteTextView) {
+        textView.apply {
+
+            // disable this textview to replace the entire text with autocomplete item
+            shouldReplaceTextOnSelected = false
+
+            // make suggestion dropdown to fit the screen while allowing keyboard to not overlap it
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+            // start auto-suggesting from first character
+            threshold = 1
+
+            // update the auto-complete list on change callback
+            setAdapter(EventAutoCompleteAdapter(viewModel, this@EventItemActivity,
+                    android.R.layout.simple_dropdown_item_1line, true).apply {
+                autocompleteAdapter = this
+            })
+
+            // on item click listener
+            onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _->
+                viewModel.selectPlace(parent.getItemAtPosition(position) as Suggestion)
             }
         }
     }

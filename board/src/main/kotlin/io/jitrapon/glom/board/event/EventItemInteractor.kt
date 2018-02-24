@@ -113,6 +113,17 @@ class EventItemInteractor {
     }
 
     /**
+     * Updates this cache event's location
+     */
+    fun setLocation(location: EventLocation?) {
+        BoardItemRepository.getCache()?.itemInfo?.let {
+            if (it is EventInfo) {
+                it.location = location
+            }
+        }
+    }
+
+    /**
      * Returns list of loaded users, if available from specified IDs
      */
     fun getUsers(userIds: List<String>): List<User?>? {
@@ -208,6 +219,14 @@ class EventItemInteractor {
     }
 
     /**
+     * Process the query string and return the list of place suggestions based on the query. This function
+     * should be called in a background thread
+     */
+    fun filterLocationSuggestions(text: String): List<Suggestion> {
+        return getPlaceSuggestions(text)
+    }
+
+    /**
      * Process the query string and return the list of suggestions based on the query. This function
      * should be called in a background thread
      */
@@ -247,7 +266,6 @@ class EventItemInteractor {
             }
             val query = if (subQueryStartIndex >= 0 && subQueryStartIndex < text.trim().length)
                 text.trim().substring(subQueryStartIndex, text.trim().length).trim() else ""
-            AppLogger.i("query='$query'")
 
             when {
                 filterConditions[START_DAY] -> return getDaySuggestions(query)

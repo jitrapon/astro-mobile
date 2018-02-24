@@ -120,8 +120,8 @@
                     android:clickable="true"
                     android:focusable="true" />
 
-                <TextView
-                    style="@style/CardView.TextView"
+                <io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
+                    style="@style/CardView.EditText"
                     android:id="@+id/event_item_location"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

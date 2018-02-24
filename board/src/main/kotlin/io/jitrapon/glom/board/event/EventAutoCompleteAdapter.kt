@@ -18,7 +18,8 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, context: Context, @LayoutRes resId: Int) :
+class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, context: Context, @LayoutRes resId: Int,
+                               private val filterLocation: Boolean = false) :
         ArrayAdapter<Suggestion>(context, resId), Filterable {
 
     /* results object payloads to display */
@@ -41,7 +42,6 @@ class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, contex
     override fun getFilter(): Filter {
         return object : Filter() {
             private val lock = Any()
-            private val lockTwo = Any()
 
             /**
              * Invoked in a worker thread.
@@ -50,9 +50,17 @@ class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, contex
                 return FilterResults().apply {
                     constraint.let {
                         if (it != null && it.isNotEmpty()) {
-                            viewModel.filterSuggestions(it).let {
-                                values = it
-                                count = it.size
+                            if (filterLocation) {
+                                viewModel.filterLocationSuggestions(it).let {
+                                    values = it
+                                    count = it.size
+                                }
+                            }
+                            else {
+                                viewModel.filterSuggestions(it).let {
+                                    values = it
+                                    count = it.size
+                                }
                             }
                         }
                         else {
