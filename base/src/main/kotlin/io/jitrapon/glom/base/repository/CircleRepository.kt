@@ -30,10 +30,12 @@ object CircleRepository : Repository<Circle>() {
 
     private fun getPlaces(): MutableList<PlaceInfo> {
         return ArrayList<PlaceInfo>().apply {
-            add(PlaceInfo("Home", null, null,
+            add(PlaceInfo("Home", "Home sweet home at pattanakarn 56", null,
                     13.732756, 100.643237, null, "1"))
             add(PlaceInfo("Condo", null, null,
                     13.722591, 100.580225, null, "2"))
+            add(PlaceInfo("Office", null, null, null,
+                    null, "ChIJf0arHuOe4jARtaepvwrv7Zs", "3"))
         }
     }
 

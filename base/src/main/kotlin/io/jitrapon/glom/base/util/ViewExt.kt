@@ -7,6 +7,7 @@ import android.support.annotation.ColorRes
 import android.support.design.widget.Snackbar
 import android.text.TextUtils
 import android.view.View
+import android.view.View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION
 import android.view.ViewPropertyAnimator
 import android.view.inputmethod.InputMethodManager
 import io.jitrapon.glom.R
@@ -117,4 +118,14 @@ fun View.clearFocusAndHideKeyboard() {
     clearFocus()
     val imm: InputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     imm.hideSoftInputFromWindow(windowToken, 0)
+}
+
+/**
+ * Finds all views in this View that contains the matching content description
+ */
+inline fun View.findViewsWithContentDescription(description: CharSequence, applyFunction: ArrayList<View>.() -> Unit) {
+    ArrayList<View>().apply {
+        findViewsWithText(this, description, FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
+        applyFunction(this)
+    }
 }

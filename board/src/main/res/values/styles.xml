@@ -30,15 +30,17 @@
         <item name="colorControlActivated">@color/lightish_red</item>
     </style>
 
-    <style name="CardView.TextView" parent="ThemeOverlay.AppCompat.Light">
-        <item name="android:textAppearance">@style/TextAppearance.H4.Light</item>
+    <style name="CardView.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.H4</item>
         <item name="android:lineSpacingMultiplier">1.3</item>
     </style>
 
+    <style name="CardView.TextView.Secondary" parent="CardView.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.H4.Light</item>
+    </style>
+
     <style name="CardView.EditText" parent="CardView.TextView">
-        <item name="android:textColor">@color/warm_grey</item>
         <item name="android:background">@color/white</item>
-        <item name="android:lineSpacingMultiplier">1.3</item>
     </style>
 
 </resources>

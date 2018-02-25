@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.os.Parcel
 import android.support.v4.util.ArrayMap
+import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.AsyncErrorResult
@@ -145,7 +146,8 @@ class BoardInteractor {
                 val items = if (itemIdsWithPlace.isNullOrEmpty()) it.items.takeLast(itemsLoaded)        // only load place info for items that are loaded in the last page
                 else itemIdsWithPlace!!.map { id -> it.items.find { it.itemId == id }!! }
                 items.filter { item ->
-                    (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null).let {
+                    (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null
+                            && TextUtils.isEmpty((item.itemInfo as? EventInfo)?.location?.name)).let {
                         if (it) itemIds.add(item.itemId)
                         it
                     }

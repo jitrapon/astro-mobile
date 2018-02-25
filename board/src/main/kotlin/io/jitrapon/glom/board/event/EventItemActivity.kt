@@ -3,15 +3,20 @@ package io.jitrapon.glom.board.event
 import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.text.Selection
+import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
-import io.jitrapon.glom.base.util.clearFocusAndHideKeyboard
-import io.jitrapon.glom.base.util.getString
-import io.jitrapon.glom.base.util.hide
-import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemActivity
 import io.jitrapon.glom.board.BoardItemViewModelStore
@@ -23,7 +28,7 @@ import kotlinx.android.synthetic.main.event_item_activity.*
  *
  * @author Jitrapon Tiachunpun
  */
-class EventItemActivity : BoardItemActivity() {
+class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     private lateinit var viewModel: EventItemViewModel
 
@@ -32,6 +37,46 @@ class EventItemActivity : BoardItemActivity() {
 
     private val dateTimePicker: DateTimePicker by lazy {
         DateTimePicker(this)
+    }
+
+    /* views that will be hidden/shown when transition element is active */
+    private var untransitionedViews: ArrayList<View>? = null
+
+    /* Google Map object */
+    private var map: GoogleMap? = null
+
+    companion object {
+
+        private const val CAMERA_ZOOM_LEVEL = 15f
+
+        /**
+         * Displays a LatLng location on a
+         * {@link com.google.android.gms.maps.GoogleMap}.
+         * Adds a marker and centers the camera on the location with the normal map type.
+         */
+        private fun showMap(mapView: MapView, map: GoogleMap, data: LatLng) {
+            mapView.show()
+
+            // Add a marker for this item and set the camera
+            map.apply {
+                // Add a marker for this item and set the camera
+                moveCamera(CameraUpdateFactory.newLatLngZoom(data, CAMERA_ZOOM_LEVEL))
+                addMarker(MarkerOptions().position(data))
+
+                // Set the map type back to normal.
+                mapType = GoogleMap.MAP_TYPE_NORMAL
+            }
+        }
+
+        private fun clearMap(mapView: MapView, map: GoogleMap?) {
+            // clear the map and free up resources by changing the map type to none
+            mapView.hide()
+            map?.apply {
+                // clear the map and free up resources by changing the map type to none
+                clear()
+                mapType = GoogleMap.MAP_TYPE_NONE
+            }
+        }
     }
 
     //region lifecycle
@@ -70,8 +115,9 @@ class EventItemActivity : BoardItemActivity() {
             event_item_title.clearFocusAndHideKeyboard()
             viewModel.showDateTimePicker(false)
         }
-        event_item_location.setOnClickListener {
-
+        event_item_map.apply {
+            onCreate(null)
+            getMapAsync(this@EventItemActivity)
         }
 
         viewModel.let {
@@ -79,7 +125,57 @@ class EventItemActivity : BoardItemActivity() {
                 addAutocompleteCallbacks(event_item_title)
             }
             it.setItem(getBoardItemFromIntent())
-            addLocationAutocompleteCallbacks(event_item_location)
+            addLocationAutocompleteCallbacks(event_item_location_primary)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        event_item_map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        event_item_map.onPause()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        event_item_map.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        event_item_map.onStop()
+    }
+
+    override fun onDestroy() {
+        event_item_map.onDestroy()
+
+        super.onDestroy()
+    }
+
+    override fun onMapReady(map: GoogleMap) {
+        this.map = map
+        this.map?.let {
+            try {
+                map.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style)).let {
+                    if (!it) AppLogger.w("Google Maps custom style parsing failed")
+                }
+            }
+            catch (ex: Exception) {
+                AppLogger.w(ex)
+            }
+
+            map.uiSettings.isMapToolbarEnabled = false
+
+            event_item_map.tag?.let {
+                showMap(event_item_map, map, it as LatLng)
+            }
         }
     }
 
@@ -143,7 +239,45 @@ class EventItemActivity : BoardItemActivity() {
             // observe on location text
             getObservableLocation().observe(this@EventItemActivity, Observer {
                 it?.let {
-                    event_item_location.setText(getString(it), false)
+                    event_item_location_primary.apply {
+                        setText(getString(it), false)
+                        Selection.setSelection(text, text.length)
+                    }
+                }
+            })
+
+            // observe on location description
+            getObservableLocationDescription().observe(this@EventItemActivity, Observer {
+                it.let {
+                    if (it == null) {
+                        event_item_location_secondary.hide()
+                    }
+                    else {
+                        event_item_location_secondary.apply {
+                            show()
+                            text = getString(it)
+                        }
+                    }
+                }
+            })
+
+            // observe on location latlng
+            getObservableLocationLatLng().observe(this@EventItemActivity, Observer { latlng ->
+                latlng.let { latlng ->
+                    if (latlng == null) {
+                        clearMap(event_item_map, map)
+                    }
+                    else {
+                        map.let {
+                            // if map is not ready, set the tag, and onMapReady() will receive the latlng in the tag
+                            if (it == null) {
+                                event_item_map.tag = latlng
+                            }
+                            else {
+                                showMap(event_item_map, it, latlng)
+                            }
+                        }
+                    }
                 }
             })
         }
@@ -219,35 +353,26 @@ class EventItemActivity : BoardItemActivity() {
     override fun onBeginTransitionAnimationStart() {
         event_item_title_til.hint = " "         // hide the hint above the text
         event_item_title.clearFocus()
-        event_item_clock_icon.hide()
-        event_item_start_time.hide()
-        event_item_time_separator.hide()
-        event_item_end_time.hide()
-        event_item_location_icon.hide()
-        event_item_location.hide()
-        event_item_location_separator.hide()
+        event_item_root_layout.findViewsWithContentDescription(getString(R.string.event_item_transition_view)) {
+            forEach {
+                it.hide()
+            }
+            untransitionedViews = this
+        }
     }
 
     override fun onBeginTransitionAnimationEnd() {
-        event_item_clock_icon.show(SHOW_ANIM_DELAY)
-        event_item_start_time.show(SHOW_ANIM_DELAY)
-        event_item_time_separator.show(SHOW_ANIM_DELAY)
-        event_item_end_time.show(SHOW_ANIM_DELAY)
-        event_item_location_icon.show(SHOW_ANIM_DELAY)
-        event_item_location.show(SHOW_ANIM_DELAY)
-        event_item_location_separator.show(SHOW_ANIM_DELAY)
+        untransitionedViews?.forEach {
+            it.show(SHOW_ANIM_DELAY)
+        }
     }
 
     override fun onFinishTransitionAnimationStart() {
         event_item_title.setText(viewModel.getPreviousName(), false)
         event_item_root_layout.requestFocus()
-        event_item_clock_icon.hide()
-        event_item_start_time.hide()
-        event_item_time_separator.hide()
-        event_item_end_time.hide()
-        event_item_location_icon.hide()
-        event_item_location.hide()
-        event_item_location_separator.hide()
+        untransitionedViews?.forEach {
+            it.hide()
+        }
     }
 
     override fun onFinishTransitionAnimationEnd() {

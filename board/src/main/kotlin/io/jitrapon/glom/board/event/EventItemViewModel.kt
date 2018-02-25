@@ -47,6 +47,12 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable event location */
     private var observableLocation = MutableLiveData<AndroidString>()
 
+    /* observable event location description */
+    private var observableLocationDescription = MutableLiveData<AndroidString>()
+
+    /* observable event location latlng */
+    private var observableLocationLatLng = MutableLiveData<LatLng>()
+
     init {
         interactor = EventItemInteractor()
     }
@@ -114,14 +120,17 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventLocation(location: EventLocation?): AndroidString? {
         location ?: return null
-        return if (location.placeId == null && location.googlePlaceId == null) {
+        return if (!TextUtils.isEmpty(location.name)) {
+            AndroidString(text = location.name)
+        }
+        else if (location.placeId == null && location.googlePlaceId == null) {
             AndroidString(resId = R.string.event_card_location_latlng,
                     formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
         }
         else if (!TextUtils.isEmpty(location.googlePlaceId)) {
             AndroidString(R.string.event_card_location_placeholder)
         }
-        else AndroidString(text = location.name)
+        else null
     }
 
     /**
@@ -236,6 +245,9 @@ class EventItemViewModel : BoardItemViewModel() {
                     observableStartDate.value = getEventDetailDate(item.itemInfo.startTime, true)
                     observableEndDate.value = getEventDetailDate(item.itemInfo.endTime, false)
                     observableLocation.value = getEventDetailLocation(item.itemInfo.location)
+                    observableLocationDescription.value = getEventDetailLocationDescription(item.itemInfo.location)
+                    loadPlaceInfoIfRequired(item.itemInfo.location?.name, item.itemInfo.location?.googlePlaceId)
+                    observableLocationLatLng.value = getEventDetailLocationLatLng(item.itemInfo.location)
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -280,14 +292,26 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
         location ?: return AndroidString(resId = R.string.event_item_location_hint)
-        if (location.placeId == null && location.googlePlaceId == null) {
-            return AndroidString(resId = R.string.event_card_location_latlng,
-                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+        return getEventLocation(location)
+    }
+
+    /**
+     * Returns an event location secondary text
+     */
+    private fun getEventDetailLocationDescription(location: EventLocation?): AndroidString? {
+        location ?: return null
+        return if (TextUtils.isEmpty(location.description)) null else AndroidString(text = location.description)
+    }
+
+    /**
+     * Returns an event location latlng
+     */
+    private fun getEventDetailLocationLatLng(location: EventLocation?): LatLng? {
+        location ?: return null
+        return if (location.latitude != null && location.longitude != null) {
+            LatLng(location.latitude, location.longitude)
         }
-        else if (!TextUtils.isEmpty(location.name)) {
-            return AndroidString(text = location.name)
-        }
-        return AndroidString(R.string.event_card_location_placeholder)
+        else null
     }
 
     //region autocomplete
@@ -363,9 +387,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 builder.append(buildSpannedString {
                     bold { append(displayText) }
                 })
-                val place = suggestion.selectData
-                observableLocation.value =
-                        getEventDetailLocation(EventLocation(place.latitude, place.longitude, place.googlePlaceId, place.placeId, place.name))
+                selectPlace(suggestion)
             }
         }
         observableName.value = AndroidString(text = SpannedString(builder)) to true
@@ -377,9 +399,29 @@ class EventItemViewModel : BoardItemViewModel() {
     fun selectPlace(suggestion: Suggestion) {
         suggestion.selectData.let {
             if (it is PlaceInfo) {
-                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name).apply {
+                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description).apply {
                     interactor.setLocation(this)
                     observableLocation.value = getEventDetailLocation(this)
+                    observableLocationDescription.value = getEventDetailLocationDescription(this)
+                    observableLocationLatLng.value = getEventDetailLocationLatLng(this)
+                    loadPlaceInfoIfRequired(it.name, it.googlePlaceId)
+                }
+            }
+        }
+    }
+
+    private fun loadPlaceInfoIfRequired(customName: String?, googlePlaceId: String?) {
+        if (!TextUtils.isEmpty(googlePlaceId)) {
+            interactor.loadPlaceInfo(customName) { result ->
+                when (result) {
+                    is AsyncSuccessResult -> {
+                        result.result.let {
+                            observableLocation.value = getEventDetailLocation(it)
+                            observableLocationDescription.value = getEventDetailLocationDescription(it)
+                            observableLocationLatLng.value = getEventDetailLocationLatLng(it)
+                        }
+                    }
+                    is AsyncErrorResult -> handleError(result.error)
                 }
             }
         }
@@ -462,6 +504,10 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableDateTimePicker(): LiveData<Pair<DateTimePickerUiModel, Boolean>> = observableDateTimePicker
 
     fun getObservableLocation(): LiveData<AndroidString> = observableLocation
+
+    fun getObservableLocationDescription(): LiveData<AndroidString> = observableLocationDescription
+
+    fun getObservableLocationLatLng(): LiveData<LatLng> = observableLocationLatLng
 
     //endregion
 

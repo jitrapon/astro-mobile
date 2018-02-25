@@ -13,6 +13,7 @@ data class EventLocation(val latitude: Double?,
                          val googlePlaceId: String?,
                          val placeId: String?,
                          val name: String? = null,
+                         val description: String? = null,
                          override val retrievedTime: Date? = null,
                          override val error: Throwable? = null) : DataModel {
 
@@ -25,6 +26,7 @@ data class EventLocation(val latitude: Double?,
             },
             parcel.readString(),
             parcel.readString(),
+            parcel.readString(),
             parcel.readString())
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -33,6 +35,7 @@ data class EventLocation(val latitude: Double?,
         parcel.writeString(googlePlaceId)
         parcel.writeString(placeId)
         parcel.writeString(name)
+        parcel.writeString(description)
     }
 
     override fun describeContents(): Int = 0

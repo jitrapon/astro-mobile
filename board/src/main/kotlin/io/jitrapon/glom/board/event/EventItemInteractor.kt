@@ -89,6 +89,9 @@ class EventItemInteractor {
                         it.startTime = Date(it.endTime!!).addHour(-1).time
                     }
                 }
+
+                fields[START_DAY] = null
+                fields[START_TIME] = null
             }
         }
     }
@@ -119,6 +122,7 @@ class EventItemInteractor {
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
                 it.location = location
+                fields[LOCATION] = null
             }
         }
     }
@@ -174,6 +178,43 @@ class EventItemInteractor {
                     }, {
                         //nothing yet
                     })
+        }
+    }
+
+    /**
+     * Retrieves place information
+     */
+    fun loadPlaceInfo(customName: String?, onComplete: (AsyncResult<EventLocation>) -> Unit) {
+        BoardItemRepository.getCache()?.itemInfo?.let {
+            if (it is EventInfo) {
+                val placeId = it.location?.googlePlaceId
+                if (!TextUtils.isEmpty(placeId)) {
+                    placeProvider?.let {
+                        it.getPlaces(arrayOf(placeId!!))
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe({
+                                    if (it.isNotEmpty()) {
+                                        it.first().let {
+                                            onComplete(AsyncSuccessResult(
+                                                    EventLocation(
+                                                            it.latLng.latitude,
+                                                            it.latLng.longitude,
+                                                            it.id,
+                                                            "g-place_id",
+                                                            if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
+                                                            it.address.toString())))
+                                        }
+                                    }
+                                    else {
+                                        onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
+                                    }
+                                }, {
+                                    onComplete(AsyncErrorResult(it))
+                                })
+                    }
+                }
+            }
         }
     }
 
