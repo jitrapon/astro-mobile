@@ -71,6 +71,7 @@ abstract class BaseActivity : AppCompatActivity() {
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is EmptyLoading -> showEmptyLoading(it.show)
+                is Navigation -> navigate(it.action, it.payload)
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -135,6 +136,11 @@ abstract class BaseActivity : AppCompatActivity() {
             }
         }
     }
+
+    /**
+     * Overrides this function to allow handling of navigation events
+     */
+    open fun navigate(action: String, payload: Any?) {}
 
     /**
      * Wrapper around Android's handler to delay run a Runnable on the main thread

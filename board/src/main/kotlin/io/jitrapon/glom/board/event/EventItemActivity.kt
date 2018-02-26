@@ -1,8 +1,10 @@
 package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.Observer
+import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
+import android.text.TextUtils
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
@@ -17,10 +19,7 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.util.*
-import io.jitrapon.glom.board.BoardItem
-import io.jitrapon.glom.board.BoardItemActivity
-import io.jitrapon.glom.board.BoardItemViewModelStore
-import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.*
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
@@ -171,8 +170,15 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 AppLogger.w(ex)
             }
 
+            // disable ui
             map.uiSettings.isMapToolbarEnabled = false
 
+            // on click listener
+            it.setOnMapClickListener {
+                viewModel.navigateToMap()
+            }
+
+            // if there is a tag previously, set the location now
             event_item_map.tag?.let {
                 showMap(event_item_map, map, it as LatLng)
             }
@@ -262,8 +268,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             })
 
             // observe on location latlng
-            getObservableLocationLatLng().observe(this@EventItemActivity, Observer { latlng ->
-                latlng.let { latlng ->
+            getObservableLocationLatLng().observe(this@EventItemActivity, Observer {
+                it.let { latlng ->
                     if (latlng == null) {
                         clearMap(event_item_map, map)
                     }
@@ -344,6 +350,36 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         viewModel.saveItem {
             callback(it)
         }
+    }
+
+    override fun navigate(action: String, payload: Any?) {
+        if (Const.NAVIGATE_TO_MAP_SEARCH == action) {
+            (payload as? Triple<*,*,*>).let {
+                launchMap(it?.first as? LatLng, it?.second as? String, it?.third as? String)
+            }
+        }
+    }
+
+    private fun launchMap(latLng: LatLng?, query: String?, placeId: String?) {
+        var url = Uri.Builder().apply {
+            scheme("https")
+            authority("www.google.com")
+            appendPath("maps")
+            appendPath("search")
+            appendQueryParameter("api", "1")
+            if (latLng != null) {
+                appendQueryParameter("query", "${latLng.latitude},${latLng.longitude}")
+            }
+            else {
+                appendQueryParameter("query", if (TextUtils.isEmpty(query)) "place" else query)
+            }
+            if (!TextUtils.isEmpty(placeId)) {
+                appendQueryParameter("query_place_id", placeId)
+            }
+        }.toString()
+        val indexOfQueryStart = url.indexOf('?')
+        url = StringBuilder(url).insert(indexOfQueryStart, "/").toString()
+        startActivity(url)
     }
 
     /**

@@ -10,4 +10,5 @@ object Const {
 
     const val EXTRA_BOARD_ITEM = "android.intent.EXTRA_BOARD_ITEM"
     const val EDIT_ITEM_RESULT_CODE = 1001
+    const val NAVIGATE_TO_MAP_SEARCH = "action.navigate.map.search"
 }

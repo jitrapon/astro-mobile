@@ -4,6 +4,8 @@ import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.Intent.ACTION_VIEW
+import android.net.Uri
 import android.support.annotation.ColorRes
 import android.support.v4.app.ActivityOptionsCompat
 import android.support.v4.app.Fragment
@@ -78,5 +80,16 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                 })
             }
         }
+    }
+}
+
+/**
+ * Start an activity that can handle view intent with a specified URL
+ */
+fun Fragment.startActivity(url: String) {
+    activity?.let {
+        startActivity(Intent(ACTION_VIEW).apply {
+            data = Uri.parse(url)
+        })
     }
 }

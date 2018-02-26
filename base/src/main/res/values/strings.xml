@@ -10,6 +10,7 @@
     <string name="main_nav_item_map_title">Map</string>
     <string name="main_nav_item_explore_title">Explore</string>
     <string name="main_nav_item_profile_title">Profile</string>
+    <string name="main_nav_item_location_map_title">Map</string>
 
     <!-- dialog buttons -->
     <string name="date_picker_set_time_button">set time</string>

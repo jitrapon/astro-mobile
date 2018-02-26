@@ -11,7 +11,7 @@ import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.finish
 
 /**
- * Helper class to wrap around navigation logic for Instant App in different modules
+ * Helper class to wrap around all navigation logic
  *
  * @author Jitrapon Tiachunpun
  */

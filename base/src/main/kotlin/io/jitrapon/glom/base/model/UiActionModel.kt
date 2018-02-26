@@ -21,6 +21,8 @@ class Loading(val show: Boolean): UiActionModel
 
 class EmptyLoading(val show: Boolean): UiActionModel
 
+class Navigation(val action: String, val payload: Any?) : UiActionModel
+
 object MessageLevel {
 
     const val INFO = 0

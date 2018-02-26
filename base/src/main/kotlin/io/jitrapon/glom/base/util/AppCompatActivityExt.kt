@@ -3,6 +3,8 @@ package io.jitrapon.glom.base.util
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
+import android.net.Uri
 import android.support.annotation.IdRes
 import android.support.annotation.Size
 import android.support.v4.app.Fragment
@@ -69,4 +71,14 @@ fun AppCompatActivity.showToast(message: AndroidString) {
 fun AppCompatActivity.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString? = null,
                                    actionCallback: (() -> Unit)? = null) {
     window.decorView.rootView.showSnackbar(level, message, actionMessage, actionCallback = actionCallback)
+}
+
+
+/**
+ * Start an activity that can handle view intent with a specified URL
+ */
+fun AppCompatActivity.startActivity(url: String) {
+    startActivity(Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse(url)
+    })
 }

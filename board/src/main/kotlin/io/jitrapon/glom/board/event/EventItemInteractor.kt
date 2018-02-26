@@ -49,15 +49,15 @@ class EventItemInteractor {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
                 startTime = getSelectedDate()?.time ?: startTime
-                fields[LOCATION]?.let {
-                    if (it is PlaceInfo) location =
-                            EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name)
-                }
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
             onComplete(AsyncSuccessResult(it))
         }
+    }
+
+    private fun PlaceInfo.toEventLocation(): EventLocation {
+        return EventLocation(latitude, longitude, googlePlaceId, placeId, name)
     }
 
     /**
@@ -115,6 +115,15 @@ class EventItemInteractor {
         return null
     }
 
+    fun getLocation(): EventLocation? {
+        return BoardItemRepository.getCache()?.itemInfo?.let {
+            if (it is EventInfo) {
+                it.location
+            }
+            else null
+        }
+    }
+
     /**
      * Updates this cache event's location
      */
@@ -122,7 +131,7 @@ class EventItemInteractor {
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
                 it.location = location
-                fields[LOCATION] = null
+                fields[LOCATION] = location
             }
         }
     }

@@ -45,13 +45,13 @@ class EventItemViewModel : BoardItemViewModel() {
     private var shouldShowNameAutocomplete: Boolean = true
 
     /* observable event location */
-    private var observableLocation = MutableLiveData<AndroidString>()
+    private val observableLocation = MutableLiveData<AndroidString>()
 
     /* observable event location description */
-    private var observableLocationDescription = MutableLiveData<AndroidString>()
+    private val observableLocationDescription = MutableLiveData<AndroidString>()
 
     /* observable event location latlng */
-    private var observableLocationLatLng = MutableLiveData<LatLng>()
+    private val observableLocationLatLng = MutableLiveData<LatLng>()
 
     init {
         interactor = EventItemInteractor()
@@ -477,7 +477,17 @@ class EventItemViewModel : BoardItemViewModel() {
         observableDateTimePicker.value = null
     }
 
-    //endregion
+    /**
+     * Navigates to a third-party map application
+     */
+    fun navigateToMap() {
+        observableViewAction.value = interactor.getLocation()?.let {
+            val latLng = if (it.latitude != null && it.longitude != null) {
+                LatLng(it.latitude, it.longitude)
+            } else null
+            Navigation(Const.NAVIGATE_TO_MAP_SEARCH, Triple(latLng, it.name, it.googlePlaceId))
+        }
+    }
 
     //endregion
     //region view states

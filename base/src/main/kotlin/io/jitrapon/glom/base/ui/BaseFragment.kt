@@ -86,6 +86,7 @@ abstract class BaseFragment : Fragment() {
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
+                is Navigation -> navigate(it.action, it.payload)
             }
         }
     }
@@ -177,6 +178,11 @@ abstract class BaseFragment : Fragment() {
      * Returns a loading progress bar shown when the view is empty and is about to load a data
      */
     open fun getEmptyLoadingView(): ProgressBar? = null
+
+    /**
+     * Overrides this function to allow handling of navigation events
+     */
+    open fun navigate(action: String, payload: Any?) {}
 
     /**
      * Wrapper around Android's handler to delay run a Runnable on the main thread
