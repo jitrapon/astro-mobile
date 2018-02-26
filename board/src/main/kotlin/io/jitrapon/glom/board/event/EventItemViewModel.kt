@@ -291,7 +291,6 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns an event location in detail
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
-        location ?: return AndroidString(resId = R.string.event_item_location_hint)
         return getEventLocation(location)
     }
 

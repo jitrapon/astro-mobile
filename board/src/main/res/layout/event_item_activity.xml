@@ -149,7 +149,8 @@
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:layout_marginEnd="@dimen/card_content_padding"
-                    android:contentDescription="@string/event_item_transition_view" />
+                    android:contentDescription="@string/event_item_transition_view"
+                    android:hint="@string/event_item_location_hint" />
 
                 <TextView
                     style="@style/CardView.TextView.Secondary"
