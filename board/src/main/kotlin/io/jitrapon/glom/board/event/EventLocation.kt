@@ -29,6 +29,8 @@ data class EventLocation(val latitude: Double?,
             parcel.readString(),
             parcel.readString())
 
+    constructor(name: String?) : this(null, null, null, null, name, null)
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeDouble(latitude ?: -1.0)
         parcel.writeDouble(longitude ?: -1.0)

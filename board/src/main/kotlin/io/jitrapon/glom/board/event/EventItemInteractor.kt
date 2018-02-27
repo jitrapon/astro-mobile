@@ -49,12 +49,24 @@ class EventItemInteractor {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
                 startTime = getSelectedDate()?.time ?: startTime
-                location = location ?: EventLocation(null, null, null, null,
-                        locationText?.toString(), null)
+                location = getSelectedLocation(locationText?.toString(), location)
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
             onComplete(AsyncSuccessResult(it))
+        }
+    }
+
+    private fun getSelectedLocation(newText: String?, location: EventLocation?): EventLocation? {
+        return if (location == null) {
+            if (!TextUtils.isEmpty(newText)) EventLocation(newText) else null
+        }
+        else {
+            when {
+                TextUtils.isEmpty(newText) -> null
+                newText != location.name -> EventLocation(newText)
+                else -> location
+            }
         }
     }
 
