@@ -10,4 +10,8 @@
         <attr name="helperText" format="string"/>
         <attr name="helperTextColor" format="color|reference"/>
     </declare-styleable>
+
+    <declare-styleable name="TitledLineSeperator">
+        <attr name="title" format="string"/>
+    </declare-styleable>
 </resources>

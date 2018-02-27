@@ -177,14 +177,14 @@
                     map:liteMode="true"
                     android:contentDescription="@string/event_item_transition_view" />
 
-                <View
+                <io.jitrapon.glom.base.ui.widget.TitledLineSeperator
                     android:id="@+id/event_item_location_separator"
+                    app:title="20 going"
                     android:layout_width="0dp"
-                    android:layout_height="1dip"
+                    android:layout_height="wrap_content"
                     app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_map"
-                    android:background="@color/dark_grey"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view" />
