@@ -264,8 +264,8 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveItem(onSuccess: (BoardItem?) -> Unit) {
-        interactor.saveItem {
+    fun saveItem(locationText: CharSequence?, onSuccess: (BoardItem?) -> Unit) {
+        interactor.saveItem(locationText) {
             when (it) {
                 is AsyncSuccessResult -> onSuccess(it.result)
                 is AsyncErrorResult -> handleError(it.error)

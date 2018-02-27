@@ -44,20 +44,18 @@ class EventItemInteractor {
     /**
      * Saves the current state
      */
-    fun saveItem(onComplete: (AsyncResult<BoardItem>) -> Unit) {
+    fun saveItem(locationText: CharSequence?, onComplete: (AsyncResult<BoardItem>) -> Unit) {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
                 startTime = getSelectedDate()?.time ?: startTime
+                location = location ?: EventLocation(null, null, null, null,
+                        locationText?.toString(), null)
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
             onComplete(AsyncSuccessResult(it))
         }
-    }
-
-    private fun PlaceInfo.toEventLocation(): EventLocation {
-        return EventLocation(latitude, longitude, googlePlaceId, placeId, name)
     }
 
     /**
@@ -90,8 +88,8 @@ class EventItemInteractor {
                     }
                 }
 
-                fields[START_DAY] = null
-                fields[START_TIME] = null
+                fields[START_DAY] = date
+                fields[START_TIME] = date
             }
         }
     }

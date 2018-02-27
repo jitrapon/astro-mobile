@@ -347,7 +347,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     //region other view callbacks
 
     override fun onSaveItem(callback: (BoardItem?) -> Unit) {
-        viewModel.saveItem {
+        viewModel.saveItem(locationText = event_item_location_primary.text) {
             callback(it)
         }
     }
