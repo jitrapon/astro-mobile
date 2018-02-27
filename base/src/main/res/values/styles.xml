@@ -102,6 +102,25 @@
         <item name="android:textColor">@color/warm_grey</item>
     </style>
 
+    <!-- style for error text -->
     <style name="Widget.Glom.TextInputLayout.ErrorTextAppearance" parent="TextAppearance.Design.Error" />
+
+    <!-- all flat button style -->
+    <style name="Widget.Glom.Button.Flat" parent="@style/Widget.AppCompat.Button.Borderless" >
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Button</item>
+        <item name="android:textColor">?colorPrimary</item>
+    </style>
+
+    <!-- style for all raised button -->
+    <style name="Widget.Glom.Button.Raised.Colored" parent="@style/Widget.AppCompat.Button.Colored" >
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Button</item>
+    </style>
+
+    <!-- theme for all raised colored button -->
+    <style name="Theme.Glom.Button.Raised.Colored" parent="ThemeOverlay.AppCompat.Light" >
+        <item name="colorAccent">?colorPrimary</item>
+        <item name="colorControlNormal">@color/blue_grey</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
 
 </resources>

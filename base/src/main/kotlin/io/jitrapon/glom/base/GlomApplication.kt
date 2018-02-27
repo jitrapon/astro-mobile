@@ -21,6 +21,9 @@ class GlomApplication : Application() {
         // initialize logging behaviors
         AppLogger.initialize(this)
 
+        // set global error handler
+        ErrorHandler.init()
+
         // initialize Google Play Services
         MapsInitializer.initialize(this)
     }

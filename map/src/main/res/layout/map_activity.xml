@@ -8,6 +8,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
+        android:id="@+id/map_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="TODO Map"
@@ -16,6 +17,28 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
+
+    <Button
+        style="@style/Widget.Glom.Button.Flat"
+        android:id="@+id/map_button1"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="30dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="flat"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <Button
+        style="@style/Widget.Glom.Button.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Raised.Colored"
+        android:id="@+id/map_button2"
+        app:layout_constraintTop_toBottomOf="@+id/map_button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="raised normal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
 
     <include
         android:id="@+id/map_bottom_navigation"

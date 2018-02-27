@@ -70,8 +70,8 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
             else {
                 client.getPlaceById(*placeIds).let {
                     it.addOnCompleteListener {
+                        val places = it.result
                         if (it.isSuccessful) {
-                            val places = it.result
                             val result = ArrayList<Place>()
                             places
                                     .filter { it.isDataValid }
@@ -80,9 +80,13 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                             single.onSuccess(result.toTypedArray())
                         }
                         else {
-                            it.result.release()
-                            single.onError(Exception("Failed to retrieve places with exception ${it.exception}"))
+                            it.exception?.let {
+                                single.onError(it)
+                            }
                         }
+                    }
+                    it.addOnFailureListener {
+                        single.onError(it)
                     }
                 }
             }
@@ -102,25 +106,26 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                 else {
                     client.getAutocompletePredictions(query, bounds, filter).let {
                         it.addOnCompleteListener {
+                            val result = ArrayList<AutocompletePrediction>()
                             if (it.isSuccessful) {
                                 if (it.result != null && it.result.count > 0) {
-                                    val result = ArrayList<AutocompletePrediction>()
                                     it.result.filter { it.isDataValid }
                                             .forEach { result.add(it.freeze()) }
                                     it.result.release()
                                     single.onSuccess(result.toTypedArray())
                                 }
                                 else {
-                                    it.result.release()
                                     single.onSuccess(emptyArray())
                                 }
                             }
                             else {
-                                it.result.release()
                                 it.exception?.let {
                                     single.onError(it)
                                 }
                             }
+                        }
+                        it.addOnFailureListener {
+                            single.onError(it)
                         }
                     }
                 }

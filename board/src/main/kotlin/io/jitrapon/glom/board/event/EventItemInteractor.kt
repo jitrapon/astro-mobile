@@ -398,19 +398,11 @@ class EventItemInteractor {
 
                 // add places from Google Place API
                 if (!showAllCustomPlaces) {
-                    try {
-                        placeProvider?.getAutocompletePrediction(query)
-                                ?.blockingGet()
-                                ?.map {
-                                    Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
-                                            null, null, null, it.placeId, "g_place_id"))
-                                }
-                                ?.let {
-                                    addAll(it)
-                                }
-                    }
-                    catch (ex: Exception) {
-                        AppLogger.e(ex)
+                    placeProvider?.getAutocompletePrediction(query)?.blockingGet()?.let {
+                        it.map {
+                            Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
+                                    null, null, null, it.placeId, "g_place_id"))
+                        }.let { addAll(it) }
                     }
                 }
             }
