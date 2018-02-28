@@ -42,14 +42,14 @@ class EventItemInteractor {
     }
 
     /**
-     * Saves the current state
+     * Saves the current state of the item
      */
-    fun saveItem(locationText: CharSequence?, onComplete: (AsyncResult<BoardItem>) -> Unit) {
+    fun saveItem(onComplete: (AsyncResult<BoardItem>) -> Unit) {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
                 startTime = getSelectedDate()?.time ?: startTime
-                location = getSelectedLocation(locationText?.toString(), location)
+                location = getSelectedLocation()
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
@@ -57,15 +57,22 @@ class EventItemInteractor {
         }
     }
 
-    private fun getSelectedLocation(newText: String?, location: EventLocation?): EventLocation? {
-        return if (location == null) {
-            if (!TextUtils.isEmpty(newText)) EventLocation(newText) else null
-        }
-        else {
-            when {
-                TextUtils.isEmpty(newText) -> null
-                newText != location.name -> EventLocation(newText)
-                else -> location
+    /**
+     * Updates the location text
+     */
+    fun updateLocationText(locationText: CharSequence) {
+        fields[LOCATION] = locationText
+    }
+
+    private fun getSelectedLocation(): EventLocation? {
+        return fields[LOCATION].let {
+            when (it) {
+                is CharSequence -> {
+                    if (TextUtils.isEmpty(it)) null
+                    else EventLocation(it.toString())
+                }
+                is EventLocation -> it
+                else -> getLocation()
             }
         }
     }

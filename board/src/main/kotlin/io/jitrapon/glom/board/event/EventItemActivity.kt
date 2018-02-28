@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
@@ -40,6 +41,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     /* views that will be hidden/shown when transition element is active */
     private var untransitionedViews: ArrayList<View>? = null
+
+    /* TextWatcher for location */
+    private var locationTextWatcher: TextWatcher? = null
 
     /* Google Map object */
     private var map: GoogleMap? = null
@@ -117,6 +121,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_map.apply {
             onCreate(null)
             getMapAsync(this@EventItemActivity)
+        }
+        locationTextWatcher = event_item_location_primary.doOnTextChanged { s, _, _, _ ->
+            viewModel.onLocationTextChanged(s)
         }
 
         viewModel.let {
@@ -246,8 +253,14 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             getObservableLocation().observe(this@EventItemActivity, Observer {
                 it?.let {
                     event_item_location_primary.apply {
+                        locationTextWatcher?.let {
+                            removeTextChangedListener(it)
+                        }
                         setText(getString(it), false)
                         Selection.setSelection(text, text.length)
+                        locationTextWatcher?.let {
+                            addTextChangedListener(it)
+                        }
                     }
                 }
             })
@@ -347,7 +360,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     //region other view callbacks
 
     override fun onSaveItem(callback: (BoardItem?) -> Unit) {
-        viewModel.saveItem(locationText = event_item_location_primary.text) {
+        viewModel.saveItem {
             callback(it)
         }
     }

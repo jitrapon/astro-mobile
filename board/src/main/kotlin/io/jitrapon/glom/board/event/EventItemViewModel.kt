@@ -264,8 +264,8 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveItem(locationText: CharSequence?, onSuccess: (BoardItem?) -> Unit) {
-        interactor.saveItem(locationText) {
+    fun saveItem(onSuccess: (BoardItem?) -> Unit) {
+        interactor.saveItem {
             when (it) {
                 is AsyncSuccessResult -> onSuccess(it.result)
                 is AsyncErrorResult -> handleError(it.error)
@@ -486,6 +486,13 @@ class EventItemViewModel : BoardItemViewModel() {
             } else null
             Navigation(Const.NAVIGATE_TO_MAP_SEARCH, Triple(latLng, it.name, it.googlePlaceId))
         }
+    }
+
+    /**
+     * Update the location text
+     */
+    fun onLocationTextChanged(s: CharSequence) {
+        interactor.updateLocationText(s)
     }
 
     //endregion
