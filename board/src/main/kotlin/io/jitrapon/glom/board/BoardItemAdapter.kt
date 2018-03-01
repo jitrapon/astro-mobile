@@ -17,7 +17,7 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
-import io.jitrapon.glom.board.event.AttendeeAdapter
+import io.jitrapon.glom.board.event.EventCardAttendeeAdapter
 import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventItemUiModel
 import io.jitrapon.glom.board.event.EventItemViewModel
@@ -171,7 +171,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             attendees.apply {
                 recycledViewPool = attendeesPool
                 (layoutManager as LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
-                adapter = AttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
+                adapter = EventCardAttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
                 }
@@ -249,7 +249,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                     else {
                         show()
                         adapter?.let {
-                            (it as AttendeeAdapter).setItems(item.attendeesAvatars)
+                            (it as EventCardAttendeeAdapter).setItems(item.attendeesAvatars)
                         }
                     }
                 }

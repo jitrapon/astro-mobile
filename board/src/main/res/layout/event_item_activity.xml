@@ -179,7 +179,6 @@
 
                 <io.jitrapon.glom.base.ui.widget.TitledLineSeperator
                     android:id="@+id/event_item_location_separator"
-                    app:title="20 going"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
@@ -187,6 +186,20 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_map"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:layout_marginEnd="@dimen/card_content_padding"
+                    android:contentDescription="@string/event_item_transition_view" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/event_item_attendees"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="50dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator"
+                    app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view" />
 
             </android.support.constraint.ConstraintLayout>

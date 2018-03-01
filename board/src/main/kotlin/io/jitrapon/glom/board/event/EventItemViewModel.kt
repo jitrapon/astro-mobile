@@ -53,6 +53,12 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable event location latlng */
     private val observableLocationLatLng = MutableLiveData<LatLng>()
 
+    /* observabe title for attendee */
+    private val observableAttendeeTitle = MutableLiveData<AndroidString>()
+
+    /* observable list of event attendees */
+    private val observableAttendees = MutableLiveData<List<UserUiModel>>()
+
     init {
         interactor = EventItemInteractor()
     }
@@ -240,14 +246,18 @@ class EventItemViewModel : BoardItemViewModel() {
             else {
                 if (item is EventItem) {
                     interactor.setItem(item)
-                    prevName = item.itemInfo.eventName
-                    observableName.value = AndroidString(text = item.itemInfo.eventName) to false
-                    observableStartDate.value = getEventDetailDate(item.itemInfo.startTime, true)
-                    observableEndDate.value = getEventDetailDate(item.itemInfo.endTime, false)
-                    observableLocation.value = getEventDetailLocation(item.itemInfo.location)
-                    observableLocationDescription.value = getEventDetailLocationDescription(item.itemInfo.location)
-                    loadPlaceInfoIfRequired(item.itemInfo.location?.name, item.itemInfo.location?.googlePlaceId)
-                    observableLocationLatLng.value = getEventDetailLocationLatLng(item.itemInfo.location)
+                    item.itemInfo.let {
+                        prevName = it.eventName
+                        observableName.value = AndroidString(text = it.eventName) to false
+                        observableStartDate.value = getEventDetailDate(it.startTime, true)
+                        observableEndDate.value = getEventDetailDate(it.endTime, false)
+                        observableLocation.value = getEventDetailLocation(it.location)
+                        observableLocationDescription.value = getEventDetailLocationDescription(it.location)
+                        loadPlaceInfoIfRequired(it.location?.name, it.location?.googlePlaceId)
+                        observableLocationLatLng.value = getEventDetailLocationLatLng(it.location)
+                        observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
+                        observableAttendees.value = getEventDetailAttendees(it.attendees)
+                    }
                 }
                 else {
                     AppLogger.w("Cannot set item because item is not an instance of EventItem")
@@ -311,6 +321,29 @@ class EventItemViewModel : BoardItemViewModel() {
             LatLng(location.latitude, location.longitude)
         }
         else null
+    }
+
+    /**
+     * Returns the title in the line separator on top of the event attendees
+     */
+    private fun getEventDetailAttendeeTitle(attendees: List<String>): AndroidString? {
+        return AndroidString(resId = R.string.event_item_attendee_title, formatArgs = arrayOf(attendees.size.toString()))
+    }
+
+    /**
+     * Returns UiModel for user avatars showing list of this event's attendees
+     */
+    private fun getEventDetailAttendees(attendees: List<String>): List<UserUiModel> {
+        return interactor.getUsers(attendees).let {
+            if (it.isNullOrEmpty()) ArrayList()
+            else return ArrayList<UserUiModel>().apply {
+                it!!.forEach {
+                    it?.let { user ->
+                        add(UserUiModel(user.avatar, user.userName))
+                    }
+                }
+            }
+        }
     }
 
     //region autocomplete
@@ -525,7 +558,9 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableLocationLatLng(): LiveData<LatLng> = observableLocationLatLng
 
-    //endregion
+    fun getObservableAttendeeTitle(): LiveData<AndroidString> = observableAttendeeTitle
+
+    fun getObservableAttendees(): LiveData<List<UserUiModel>> = observableAttendees
 
     override fun cleanUp() {
         //nothing yet

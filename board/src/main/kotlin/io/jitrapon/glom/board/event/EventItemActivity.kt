@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
+import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import kotlinx.android.synthetic.main.event_item_activity.*
@@ -124,6 +125,12 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         }
         locationTextWatcher = event_item_location_primary.doOnTextChanged { s, _, _, _ ->
             viewModel.onLocationTextChanged(s)
+        }
+        event_item_attendees.apply {
+            adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 3)
+            context?.let {
+                addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
+            }
         }
 
         viewModel.let {
@@ -253,14 +260,10 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             getObservableLocation().observe(this@EventItemActivity, Observer {
                 it?.let {
                     event_item_location_primary.apply {
-                        locationTextWatcher?.let {
-                            removeTextChangedListener(it)
-                        }
+                        locationTextWatcher?.let (::removeTextChangedListener)
                         setText(getString(it), false)
                         Selection.setSelection(text, text.length)
-                        locationTextWatcher?.let {
-                            addTextChangedListener(it)
-                        }
+                        locationTextWatcher?.let (::addTextChangedListener)
                     }
                 }
             })
@@ -297,6 +300,20 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                             }
                         }
                     }
+                }
+            })
+
+            // observe on title showing number of attendees
+            getObservableAttendeeTitle().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    event_item_location_separator.setTitle(getString(it))
+                }
+            })
+
+            // observe on list of attendees
+            getObservableAttendees().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    (event_item_attendees.adapter as EventItemAttendeeAdapter).setItems(it)
                 }
             })
         }

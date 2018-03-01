@@ -2,6 +2,7 @@
 <resources>
 
     <dimen name="spacing_normal">8dp</dimen>
+    <dimen name="spacing_micro">4dp</dimen>
 
     <!-- app bar -->
     <dimen name="app_bar_elevation">4dp</dimen>
@@ -22,6 +23,8 @@
     <!-- avatar sizes -->
     <dimen name="avatar_small">30dp</dimen>
     <dimen name="avatar_normal">40dp</dimen>
+    <dimen name="avatar_large">56dp</dimen>
+    <dimen name="avatar_large_width">63dp</dimen>
     <dimen name="avatar_spacing">7dp</dimen>
 
     <!-- line seperator text -->

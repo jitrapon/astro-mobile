@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board.event
 
-import android.support.v4.app.Fragment
+import android.app.Activity
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -9,18 +9,18 @@ import android.widget.ImageView
 import android.widget.TextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.PartialRecyclerViewAdapter
 import io.jitrapon.glom.base.util.Transformation
-import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.loadFromUrl
 import io.jitrapon.glom.board.R
 
 /**
- * Recyclerview Adapter that displays the list of event attendees
+ * Recyclerview Adapter that displays the list of event attendees in the event detail
  *
  * Created by Jitrapon
  */
-class AttendeeAdapter(private val fragment: Fragment,
-                      private var attendees: List<String?>? = null,
-                      private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+class EventItemAttendeeAdapter(private val activity: Activity,
+                               private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+
+    private lateinit var users: List<UserUiModel>
 
     companion object {
 
@@ -28,8 +28,8 @@ class AttendeeAdapter(private val fragment: Fragment,
         private const val TYPE_MORE = 1
     }
 
-    fun setItems(attendees: List<String?>?) {
-        this.attendees = attendees
+    fun setItems(attendees: List<UserUiModel>) {
+        users = attendees
         notifyDataSetChanged()
     }
 
@@ -37,15 +37,15 @@ class AttendeeAdapter(private val fragment: Fragment,
 
     override fun getVisibleItemCount(): Int = visibleItemCount
 
-    override fun getAllItemCount(): Int = attendees.let {
-        if (it.isNullOrEmpty()) 0 else it!!.size
+    override fun getAllItemCount(): Int = users.let {
+        if (it.isEmpty()) 0 else it.size
     }
 
     override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder =
-            MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.avatar_remaining_item, parent, false))
+            MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.remaining_indicator_large, parent, false))
 
     override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-            AvatarViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.avatar_item, parent, false))
+            AvatarViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_avatar_with_name, parent, false))
 
     override fun getOtherItemViewType(position: Int): Int = TYPE_AVATAR
 
@@ -54,9 +54,7 @@ class AttendeeAdapter(private val fragment: Fragment,
     }
 
     override fun onBindOtherItemViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        attendees?.let {
-            (holder as AvatarViewHolder).setAvatar(it[position])
-        }
+        (holder as AvatarViewHolder).setUser(users[position])
     }
 
     inner class MoreItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -64,7 +62,7 @@ class AttendeeAdapter(private val fragment: Fragment,
         val text: TextView = itemView.findViewById(R.id.remaining_count_text)
 
         fun updateCount(count: Int) {
-            fragment.context?.let {
+            activity.let {
                 text.text = String.format(it.getString(R.string.event_attendee_remaining_count), count)
             }
         }
@@ -72,10 +70,12 @@ class AttendeeAdapter(private val fragment: Fragment,
 
     inner class AvatarViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
-        val image: ImageView = itemView.findViewById(R.id.avatar_image)
+        val image: ImageView = itemView.findViewById(R.id.user_avatar_image)
+        val username: TextView = itemView.findViewById(R.id.user_avatar_text)
 
-        fun setAvatar(imageUrl: String?) {
-            image.loadFromUrl(fragment, imageUrl, transformation = Transformation.CIRCLE_CROP)
+        fun setUser(user: UserUiModel) {
+            image.loadFromUrl(activity, user.avatar, transformation = Transformation.CIRCLE_CROP)
+            username.text = user.username
         }
     }
 }

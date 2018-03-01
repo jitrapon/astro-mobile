@@ -41,4 +41,8 @@ class TitledLineSeperator : ConstraintLayout {
             typedArray.recycle()
         }
     }
+
+    fun setTitle(text: CharSequence?) {
+        textView.text = text
+    }
 }

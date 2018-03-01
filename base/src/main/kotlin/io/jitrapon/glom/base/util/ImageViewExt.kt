@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.util
 
+import android.app.Activity
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -29,6 +30,28 @@ enum class Transformation {
 fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeholder: Int? = null,
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
+            .load(url)
+            .apply {
+                placeholder?.let (this::placeholder)
+                error?.let (this::error)
+                fallback?.let (this::fallback)
+                when (transformation) {
+                    Transformation.FIT_CENTER -> fitCenter()
+                    Transformation.CENTER_INSIDE -> centerInside()
+                    Transformation.CENTER_CROP -> centerCrop()
+                    Transformation.CIRCLE_CROP -> circleCrop()
+                    else -> { /* do nothing */ }
+                }
+            }
+            .into(this)
+}
+
+/**
+ * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
+ */
+fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeholder: Int? = null,
+                          @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
+    GlideApp.with(activity)
             .load(url)
             .apply {
                 placeholder?.let (this::placeholder)
