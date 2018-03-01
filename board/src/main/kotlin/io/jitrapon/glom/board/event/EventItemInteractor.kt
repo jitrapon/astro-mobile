@@ -87,6 +87,8 @@ class EventItemInteractor {
             if (it is EventInfo) {
                 if (isStartDate) {
                     it.startTime = date?.time
+                    fields[START_DAY] = date
+                    fields[START_TIME] = date
 
                     // if the new start date surpasses end date, reset the end date
                     if (it.startTime != null && it.endTime != null) {
@@ -103,12 +105,12 @@ class EventItemInteractor {
                 else {
                     it.endTime = date?.time
                     if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
-                        it.startTime = Date(it.endTime!!).addHour(-1).time
+                        val newStartDate = Date(it.endTime!!).addHour(-1)
+                        it.startTime = newStartDate.time
+                        fields[START_DAY] = newStartDate
+                        fields[START_TIME] = newStartDate
                     }
                 }
-
-                fields[START_DAY] = date
-                fields[START_TIME] = date
             }
         }
     }

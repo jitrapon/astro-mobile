@@ -146,8 +146,7 @@ class BoardInteractor {
                 val items = if (itemIdsWithPlace.isNullOrEmpty()) it.items.takeLast(itemsLoaded)        // only load place info for items that are loaded in the last page
                 else itemIdsWithPlace!!.map { id -> it.items.find { it.itemId == id }!! }
                 items.filter { item ->
-                    (item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null
-                            && TextUtils.isEmpty((item.itemInfo as? EventInfo)?.location?.name)).let {
+                    (hasPlaceInfo(item)).let {
                         if (it) itemIds.add(item.itemId)
                         it
                     }
@@ -174,6 +173,11 @@ class BoardInteractor {
                         onComplete(AsyncErrorResult(it))
                     })
         }
+    }
+
+    fun hasPlaceInfo(item: BoardItem): Boolean {
+        return item.itemInfo is EventInfo && (item.itemInfo as? EventInfo)?.location?.googlePlaceId != null
+                && TextUtils.isEmpty((item.itemInfo as? EventInfo)?.location?.name)
     }
 
     /**
