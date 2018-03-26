@@ -17,6 +17,13 @@ class MapActivity : BaseMainActivity() {
         setContentView(R.layout.map_activity)
 
         tag = "map"
+
+        map_button1.setOnClickListener {
+            map_button1.disable()
+        }
+        map_button2.setOnClickListener {
+            map_button2.disable()
+        }
     }
 
     override fun getBottomNavBar() = map_bottom_navigation as BadgedBottomNavigationView

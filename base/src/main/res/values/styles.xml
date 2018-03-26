@@ -87,7 +87,7 @@
     <!-- all flat button style -->
     <style name="Widget.Glom.Button.Flat" parent="@style/Widget.AppCompat.Button.Borderless" >
         <item name="android:textAppearance">@style/TextAppearance.AppCompat.Button</item>
-        <item name="android:textColor">?colorPrimary</item>
+        <item name="android:textColor">@drawable/flat_button_text_color</item>
     </style>
 
     <!-- style for all raised button -->
@@ -97,9 +97,11 @@
 
     <!-- theme for all raised colored button -->
     <style name="Theme.Glom.Button.Raised.Colored" parent="ThemeOverlay.AppCompat.Light" >
+        <!-- colorAccent will affect the default color -->
         <item name="colorAccent">?colorPrimary</item>
-        <item name="colorControlNormal">@color/blue_grey</item>
-        <item name="android:textColor">@color/white</item>
+        <!-- colorButtonNormal will affect the disabled color -->
+        <item name="colorButtonNormal">@color/warm_grey</item>
+        <item name="android:textColor">@drawable/raised_button_text_color</item>
     </style>
 
 </resources>

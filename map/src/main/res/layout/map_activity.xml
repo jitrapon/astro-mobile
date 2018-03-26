@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <Button
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Flat"
         android:id="@+id/map_button1"
         app:layout_constraintTop_toTopOf="parent"
@@ -29,7 +29,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
-    <Button
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.Colored"
         android:id="@+id/map_button2"
