@@ -51,7 +51,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     /**
      * Bind view holder without payloads containing individual payloads
      */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -65,7 +65,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * @param payloads A non-null list of merged payloads. Can be empty list if requires full
      *                 update.
      */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder?, position: Int, payloads: List<Any>) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -115,13 +115,12 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     override fun getItemCount(): Int = viewModel.getBoardItemCount()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::viewItemDetail)
-            BoardItemUiModel.TYPE_HEADER -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
+            else -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_header, parent, false))
-            else -> null
         }
     }
 

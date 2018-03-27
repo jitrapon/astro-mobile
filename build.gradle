@@ -13,13 +13,13 @@ buildscript {
         targetSdkVersion = 27
         minSdkVersion = 23
         minSdkInstantVersion = 21
-        supportLibVersion = '27.0.2'
-        constraintLayoutVersion = '1.1.0-beta4'
+        supportLibVersion = '27.1.0'
+        constraintLayoutVersion = '1.1.0-beta6'
         runnerVersion = '1.0.1'
         rulesVersion = '1.0.1'
-        archLifecycleVersion = '1.1.0'
-        archRoomVersion = '1.1.0-alpha1'
-        archPagingVersion = '1.0.0-alpha5'
+        archLifecycleVersion = '1.1.1'
+        archRoomVersion = '1.1.0-beta1'
+        archPagingVersion = '1.0.0-alpha7'
         daggerVersion = '2.13'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'
@@ -31,12 +31,12 @@ buildscript {
         instantAppVersion = '1.1.0'
         rxJavaVersion = '2.1.6'
         rxAndroidVersion = '2.0.1'
-        playServicesVersion = '11.8.0'
+        playServicesVersion = '12.0.0'
         retrofitVersion = '2.3.0'
         okhttp3Version = '3.9.1'
         timberVersion = '4.6.0'
         lottieVersion = '2.5.0-beta1'
-        androidktxVersion = '0.1'
+        androidktxVersion = '0.2'
     }
 
     repositories {
@@ -45,7 +45,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.android.tools.build:gradle:3.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
