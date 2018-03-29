@@ -47,7 +47,6 @@ android {
 dependencies {
     implementation project(':board')
     implementation project(':base')
-
     implementation project(':map')
     implementation project(':explore')
     implementation project(':profile')

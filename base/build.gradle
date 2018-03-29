@@ -73,7 +73,9 @@ dependencies {
 
     // kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
-    api "androidx.core:core-ktx:$rootProject.androidktxVersion"
+    api ("androidx.core:core-ktx:$rootProject.androidktxVersion") {
+        exclude group: 'org.jetbrains.kotlin'
+    }
 
     // support library
     api("com.android.support:design:$rootProject.supportLibVersion") {

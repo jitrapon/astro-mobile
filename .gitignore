@@ -46,6 +46,8 @@
 .idea/scopes/scope_settings.xml
 .idea/vcs.xml
 .idea/dictionaries
+.idea/caches
+.idea/codeStyles
 
 # OS-specific files
 .DS_Store
