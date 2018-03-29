@@ -132,6 +132,11 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
             }
         }
+        event_item_join_button.apply {
+            setOnClickListener {
+                
+            }
+        }
 
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {

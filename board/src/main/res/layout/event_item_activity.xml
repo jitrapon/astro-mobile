@@ -210,11 +210,36 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="join"
+                    android:text="@string/event_item_join"
                     app:layout_constraintStart_toStartOf="parent"
                     android:layout_marginStart="45dp"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view" />
+
+                <View
+                    android:id="@+id/event_item_note_separator"
+                    android:layout_width="0dp"
+                    android:layout_height="1dip"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:background="@color/dark_grey"
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_join_button" />
+
+                <ImageView
+                    android:id="@+id/event_item_attendees_icon"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:clickable="true"
+                    android:contentDescription="@string/event_item_transition_view"
+                    android:focusable="true"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator"
+                    app:srcCompat="@drawable/ic_group" />
 
             </android.support.constraint.ConstraintLayout>
 

@@ -528,6 +528,10 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.updateLocationText(s)
     }
 
+    fun joinEvent() {
+
+    }
+
     //endregion
     //region view states
 
