@@ -127,15 +127,13 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             viewModel.onLocationTextChanged(s)
         }
         event_item_attendees.apply {
-            adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 3)
+            adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 20)
             context?.let {
                 addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
             }
         }
-        event_item_join_button.apply {
-            setOnClickListener {
-                
-            }
+        event_item_join_button.setOnClickListener {
+            viewModel.setEventDetailAttendStatus()
         }
 
         viewModel.let {
@@ -319,6 +317,18 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             getObservableAttendees().observe(this@EventItemActivity, Observer {
                 it?.let {
                     (event_item_attendees.adapter as EventItemAttendeeAdapter).setItems(it)
+                }
+            })
+
+            // observe on attend status
+            getObservableAttendStatus().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    event_item_join_button.apply {
+                        isEnabled = it.status == UiModel.Status.SUCCESS || it.status == UiModel.Status.ERROR
+                        it.text?.let {
+                            text = context.getString(it)
+                        }
+                    }
                 }
             })
         }

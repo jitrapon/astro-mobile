@@ -203,7 +203,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator" />
 
-                <Button
+                <io.jitrapon.glom.base.ui.widget.GlomButton
                     style="@style/Widget.Glom.Button.Raised.Colored"
                     android:theme="@style/Theme.Glom.Button.Raised.Colored"
                     android:id="@+id/event_item_join_button"

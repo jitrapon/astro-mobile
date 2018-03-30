@@ -59,6 +59,12 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable list of event attendees */
     private val observableAttendees = MutableLiveData<List<UserUiModel>>()
 
+    /* observable button model for attend status */
+    private val observableAttendStatus = MutableLiveData<ButtonUiModel>()
+
+    /* cached attend status */
+    private var attendStatus: EventItemUiModel.AttendStatus = EventItemUiModel.AttendStatus.MAYBE
+
     init {
         interactor = EventItemInteractor()
     }
@@ -205,7 +211,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 animationItem?.let {
                     boardViewModel.observableAnimation.value = it
                 }
-                interactor.markEventAttendStatusForCurrentUser(item.itemId, statusCode) {
+                interactor.markEventAttendStatus(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {
                             item.apply {
@@ -257,6 +263,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         observableLocationLatLng.value = getEventDetailLocationLatLng(it.location)
                         observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
                         observableAttendees.value = getEventDetailAttendees(it.attendees)
+                        observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
                     }
                 }
                 else {
@@ -343,6 +350,66 @@ class EventItemViewModel : BoardItemViewModel() {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Update the attend status for the current user
+     */
+    fun setEventDetailAttendStatus() {
+        val buttonText: AndroidString
+        val newStatus = when (attendStatus) {
+            EventItemUiModel.AttendStatus.GOING -> {
+                buttonText = AndroidString(R.string.event_item_join)
+                EventItemUiModel.AttendStatus.MAYBE
+            }
+            EventItemUiModel.AttendStatus.MAYBE -> {
+                buttonText = AndroidString(R.string.event_item_leave)
+                EventItemUiModel.AttendStatus.GOING
+            }
+            EventItemUiModel.AttendStatus.DECLINED -> {
+                buttonText = AndroidString(R.string.event_item_leave)
+                EventItemUiModel.AttendStatus.GOING
+            }
+        }
+        val statusCode = when (newStatus) {
+            EventItemUiModel.AttendStatus.GOING -> 2
+            EventItemUiModel.AttendStatus.MAYBE -> 1
+            EventItemUiModel.AttendStatus.DECLINED -> 0
+        }
+        observableAttendStatus.value = observableAttendStatus.value!!.apply {
+            text = null
+            status = UiModel.Status.LOADING
+        }
+        interactor.markEventDetailAttendStatus(statusCode, {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    it.result?.let {
+                        observableAttendees.value = getEventDetailAttendees(it)
+                    }
+                    attendStatus = newStatus
+                    observableAttendStatus.value = observableAttendStatus.value!!.apply {
+                        text = buttonText
+                        status = UiModel.Status.SUCCESS
+                    }
+                }
+                is AsyncErrorResult -> {
+                    observableAttendStatus.value = observableAttendStatus.value!!.apply {
+                        text = null
+                        status = UiModel.Status.SUCCESS
+                    }
+                    handleError(it.error)
+                }
+            }
+        })
+    }
+
+    private fun getEventDetailAttendStatus(attendees: List<String>): ButtonUiModel {
+        attendStatus = getEventAttendStatus(attendees)
+        return when (attendStatus) {
+            EventItemUiModel.AttendStatus.GOING -> ButtonUiModel(AndroidString(R.string.event_item_leave))
+            EventItemUiModel.AttendStatus.MAYBE -> ButtonUiModel(AndroidString(R.string.event_item_join))
+            EventItemUiModel.AttendStatus.DECLINED -> ButtonUiModel(AndroidString(R.string.event_item_join))
         }
     }
 
@@ -528,10 +595,6 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.updateLocationText(s)
     }
 
-    fun joinEvent() {
-
-    }
-
     //endregion
     //region view states
 
@@ -565,6 +628,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableAttendeeTitle(): LiveData<AndroidString> = observableAttendeeTitle
 
     fun getObservableAttendees(): LiveData<List<UserUiModel>> = observableAttendees
+
+    fun getObservableAttendStatus(): LiveData<ButtonUiModel> = observableAttendStatus
 
     override fun cleanUp() {
         //nothing yet

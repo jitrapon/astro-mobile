@@ -178,7 +178,7 @@ class EventItemInteractor {
      *
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
-    fun markEventAttendStatusForCurrentUser(itemId: String?, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+    fun markEventAttendStatus(itemId: String?, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
         if (itemId == null) {
             onComplete(AsyncErrorResult(Exception("ItemId cannot be NULL")))
             return
@@ -198,6 +198,30 @@ class EventItemInteractor {
                             else -> BoardRepository.declineEvent(userId!!, it.itemId)
                         }
                     }.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.attendees))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
+    }
+
+    fun markEventDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+        val userId = UserRepository.getCurrentUser()?.userId
+        if (TextUtils.isEmpty(userId)) {
+            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
+            return
+        }
+
+        BoardRepository.getCache()?.let {
+            when (statusCode) {
+                2 -> BoardItemRepository.joinEvent(userId!!)
+                else -> BoardItemRepository.declineEvent(userId!!)
+            }
+            .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
                         onComplete(AsyncSuccessResult(it.attendees))

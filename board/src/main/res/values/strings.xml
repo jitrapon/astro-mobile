@@ -30,4 +30,5 @@
     <string name="event_item_transition_view">event_item_transition_view</string>
     <string name="event_item_attendee_title">%1$s joining</string>
     <string name="event_item_join">join</string>
+    <string name="event_item_leave">leave</string>
 </resources>
