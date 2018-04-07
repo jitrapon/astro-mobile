@@ -70,6 +70,11 @@ class BoardFragment : BaseFragment() {
         }
         board_animation_view.hide()
 
+        // main fab click listener
+        board_fab.setOnClickListener {
+            viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
+        }
+
         // start loading data
         // we don't force-refresh data because when configuration changes occur,
         // we can reuse the same loaded data
@@ -124,6 +129,11 @@ class BoardFragment : BaseFragment() {
                                 }
                             }
                         }
+
+                        // perform sync to a specific item
+                        it.saveItem?.let {
+                            viewModel.syncItem(it, true)
+                        }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
                 }
@@ -138,17 +148,19 @@ class BoardFragment : BaseFragment() {
         })
 
         // observes new selected board item
-        viewModel.getObservableSelectedBoardItem().observe(this, Observer {
-            it?.let { pair ->
-                val boardItem = pair.first
-                val sharedElements = pair.second
+        viewModel.getObservableBoardItem().observe(this, Observer {
+            it?.let { arg ->
+                val boardItem = arg.first
+                val sharedElements = arg.second
+                val isNewItem = arg.third
                 val launchOption = when (boardItem) {
-                    is EventItem -> EventItemActivity::class.java to pair.first
+                    is EventItem -> EventItemActivity::class.java to arg.first
                     else -> null
                 }
                 launchOption?.let { (activity, boardItem) ->
                     startActivity(activity, Const.EDIT_ITEM_RESULT_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
+                        putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem)
                     }, sharedElements)
                 }
             }
@@ -160,7 +172,12 @@ class BoardFragment : BaseFragment() {
             if (resultCode == Activity.RESULT_OK) {
                 try {
                     data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
-                        viewModel.saveItemChanges(it)
+                        if (data.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, false)) {
+                            viewModel.addNewItem(it)
+                        }
+                        else if (data.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_MODIFIED, false)) {
+                            viewModel.syncItem(it, false)
+                        }
                     }
                 }
                 catch (ex: Exception) {

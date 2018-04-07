@@ -46,6 +46,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     /* TextWatcher for location */
     private var locationTextWatcher: TextWatcher? = null
 
+    /* TextWatcher for note */
+    private var noteTextWatcher: TextWatcher? = null
+
     /* Google Map object */
     private var map: GoogleMap? = null
 
@@ -135,12 +138,15 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_join_button.setOnClickListener {
             viewModel.setEventDetailAttendStatus()
         }
+        noteTextWatcher = event_item_note.doOnTextChanged { s, _, _, _ ->
+            viewModel.onNoteTextChanged(s)
+        }
 
         viewModel.let {
             if (it.shouldShowNameAutocomplete()) {
                 addAutocompleteCallbacks(event_item_title)
             }
-            it.setItem(getBoardItemFromIntent())
+            it.setItem(getBoardItemFromIntent(), isNewItem())
             addLocationAutocompleteCallbacks(event_item_location_primary)
         }
     }
@@ -331,6 +337,15 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                     }
                 }
             })
+
+            // observe on event note
+            getObservableNote().observe(this@EventItemActivity, Observer {
+                event_item_note.apply {
+                    noteTextWatcher?.let (::removeTextChangedListener)
+                    setText(context.getString(it))
+                    noteTextWatcher?.let (::addTextChangedListener)
+                }
+            })
         }
     }
 
@@ -391,7 +406,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     //endregion
     //region other view callbacks
 
-    override fun onSaveItem(callback: (BoardItem?) -> Unit) {
+    override fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
         viewModel.saveItem {
             callback(it)
         }

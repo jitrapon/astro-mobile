@@ -18,6 +18,8 @@ import io.reactivex.Single
  * (i.e. Activity or Fragment), and be passed onto the domain classes afterwards. This is
  * because those classes contain the Lifecycle and context necessary to construct this class.
  *
+ * TODO results should be cached for 1 day
+ *
  * Created by Jitrapon on 11/30/2017.
  */
 class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activity: Activity? = null) : PlaceProvider {

@@ -14,6 +14,7 @@ import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.event.EventItemUiModel
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.absoluteValue
 
 /**
@@ -31,7 +32,7 @@ class BoardViewModel : BaseViewModel() {
     internal val observableAnimation = LiveEvent<AnimationItem>()
 
     /* live data for selected board item and list of shared views for transition */
-    private val observableSelectedBoardItem = LiveEvent<Pair<BoardItem, List<Pair<View, String>>?>>()
+    private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<View, String>>?, Boolean>>()
 
     /* interactor for the observable board */
     private lateinit var boardInteractor: BoardInteractor
@@ -57,6 +58,11 @@ class BoardViewModel : BaseViewModel() {
         ArrayList<Pair<Int, Any?>>()
     }
 
+    /*
+     * Keeps track of currently syncing items and their statuses
+     */
+    private val syncItemIds = HashMap<String, UiModel.Status>()
+
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
@@ -81,42 +87,50 @@ class BoardViewModel : BaseViewModel() {
     fun loadBoard(refresh: Boolean) {
         observableBoard.value = boardUiModel.apply {
             status = UiModel.Status.LOADING
+            saveItem = null
         }
 
         runBlockingIO(boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
-                is AsyncSuccessResult -> {
-                    runAsync({
-                        it.result.toUiModel().let {
-                            it to if (boardUiModel.items.isNullOrEmpty()) null else
-                                DiffUtil.calculateDiff(BoardItemDiffCallback(boardUiModel.items, it), true)
-                        }
-                    }, onComplete = { (uiModel, diff) ->
-                        observableBoard.value = boardUiModel.apply {
-                            itemsChangedIndices = null
-                            status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
-                            items = uiModel.toMutableList()
-                            diffResult = diff
-                            requestPlaceInfoItemIds = listOf()
-                        }
-                    }, onError = {
-                        handleError(it)
-                        observableBoard.value = boardUiModel.apply {
-                            status = UiModel.Status.ERROR
-                            items = null
-                        }
-                    })
-                }
+                is AsyncSuccessResult -> onBoardItemChanges(it, listOf())
                 is AsyncErrorResult -> {
                     handleError(it.error)
                     observableBoard.value = boardUiModel.apply {
-                        status = UiModel.Status.ERROR
+                        saveItem = null
                         items = null
                     }
                 }
             }
         }
         firstLoadCalled = true
+    }
+
+    /**
+     * Handle changes to board item list, applying DiffUtil if necessary
+     */
+    private fun onBoardItemChanges(it: AsyncSuccessResult<ArrayMap<*, List<BoardItem>>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
+        runAsync({
+            it.result.toUiModel().let {
+                it to if (boardUiModel.items.isNullOrEmpty()) null else
+                    DiffUtil.calculateDiff(BoardItemDiffCallback(boardUiModel.items, it), true)
+            }
+        }, onComplete = { (uiModel, diff) ->
+            observableBoard.value = boardUiModel.apply {
+                itemsChangedIndices = null
+                status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+                items = uiModel.toMutableList()
+                diffResult = diff
+                requestPlaceInfoItemIds = requiredPlaceitemIds
+                saveItem = newItem
+            }
+        }, onError = {
+            handleError(it)
+            observableBoard.value = boardUiModel.apply {
+                saveItem = null
+                status = UiModel.Status.ERROR
+                items = null
+            }
+        })
     }
 
     /**
@@ -130,6 +144,7 @@ class BoardViewModel : BaseViewModel() {
                 is AsyncSuccessResult -> {
                     if (!it.result.isEmpty) {
                         observableBoard.value = boardUiModel.apply {
+                            saveItem = null
                             requestPlaceInfoItemIds = null
                             itemsChangedIndices = ArrayList()
                             diffResult = null
@@ -153,6 +168,13 @@ class BoardViewModel : BaseViewModel() {
     }
 
     /**
+     * Displays new board item view
+     */
+    fun showEmptyNewItem(itemType: Int) {
+        observableBoardItem.value = Triple(boardInteractor.createItem(itemType), null, true)
+    }
+
+    /**
      * Expands current board item (specified by position in the recyclerview)
      *
      * @param position The position of the item to view in the RecyclerView
@@ -161,7 +183,16 @@ class BoardViewModel : BaseViewModel() {
     fun viewItemDetail(position: Int, transitionViews: List<Pair<View, String>>? = null) {
         boardUiModel.items?.getOrNull(position)?.let {
             boardInteractor.getBoardItem(it.itemId)?.let {
-                observableSelectedBoardItem.value = it to transitionViews
+                observableBoardItem.value = Triple(it, transitionViews, false)
+            }
+        }
+    }
+
+    fun addNewItem(item: BoardItem) {
+        boardInteractor.addItem(item) {
+            when (it) {
+                is AsyncSuccessResult -> onBoardItemChanges(it, listOf(), item)
+                is AsyncErrorResult -> handleError(it.error)
             }
         }
     }
@@ -169,15 +200,17 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Persists the changes in board item with a new info
      */
-    fun saveItemChanges(boardItem: BoardItem) {
+    fun syncItem(boardItem: BoardItem, createNew: Boolean) {
         boardUiModel.items?.let { items ->
-            var index = items.indexOfFirst { boardItem.itemId == it.itemId }
+            val index = items.indexOfFirst { boardItem.itemId == it.itemId }
 
             // if item is found
             if (index != -1) {
 
                 // show the user visually that this item is syncing
                 items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
+                syncItemIds[items[index].itemId!!] = UiModel.Status.LOADING
+
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
                         requestPlaceInfoItemIds = if (it != null && boardInteractor.hasPlaceInfo(boardItem)) listOf(it) else null
@@ -195,51 +228,69 @@ class BoardViewModel : BaseViewModel() {
                             }
                         }
                     }
+                    saveItem = null
                 }
 
                 // start syncing data to server and local database
-                boardInteractor.editBoardItemInfo(boardItem, {
-                    boardUiModel.items?.let { items ->
-                        index = items.indexOfFirst { boardItem.itemId == it.itemId }
-                        if (index != -1) {
-                            when (it) {
-                                is AsyncSuccessResult -> {
-                                    items[index].status = UiModel.Status.SUCCESS
-                                    observableBoard.value = boardUiModel.apply {
-                                        requestPlaceInfoItemIds = null
-                                        diffResult = null
-                                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
-                                            add(index to arrayListOf(items[index].getStatusChangePayload()))
-                                        }
-                                    }
-                                    observableViewAction.value = Snackbar(AndroidString(R.string.board_item_edited), level = MessageLevel.SUCCESS)
+                if (createNew) {
+                    syncItem(boardInteractor::createItem, boardItem, AndroidString(R.string.board_item_created))
+                }
+                else {
+                    syncItem(boardInteractor::editItem, boardItem, AndroidString(R.string.board_item_edited))
+                }
+            }
+        }
+    }
 
-                                    // refresh the board item ordering
-                                    //TODO
-//                                    loadBoard(false)
-                                }
-                                is AsyncErrorResult -> {
-                                    handleError(it.error)
-                                    items[index].status = UiModel.Status.ERROR
-                                    observableBoard.value = boardUiModel.apply {
-                                        requestPlaceInfoItemIds = null
-                                        diffResult = null
-                                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
-                                            add(index to arrayListOf(items[index].getStatusChangePayload()))
-                                        }
-                                    }
+    private fun syncItem(operation: (BoardItem, ((AsyncResult<BoardItem>) -> Unit)) -> Unit, boardItem: BoardItem, successMessage: AndroidString) {
+        var index: Int
+        operation(boardItem, {
+            boardUiModel.items?.let { items ->
+                index = items.indexOfFirst { boardItem.itemId == it.itemId }
+                if (index != -1) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            items[index].status = UiModel.Status.SUCCESS
+                            syncItemIds.remove(items[index].itemId!!)
+
+                            observableBoard.value = boardUiModel.apply {
+                                saveItem = null
+                                requestPlaceInfoItemIds = null
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                    add(index to arrayListOf(items[index].getStatusChangePayload()))
                                 }
                             }
+                            observableViewAction.value = Snackbar(successMessage, level = MessageLevel.SUCCESS)
 
-                            // make sure to dispatch these indices when we set the observableBoard value again
-                            if (!observableBoard.hasActiveObservers()) {
-                                undispatchedItemIndices.add(index to arrayListOf(items[index].getStatusChangePayload()))
+                            // refresh the board item ordering
+                            //TODO
+//                                    loadBoard(false)
+                        }
+                        is AsyncErrorResult -> {
+                            handleError(it.error)
+
+                            items[index].status = UiModel.Status.ERROR
+                            syncItemIds[items[index].itemId!!] = UiModel.Status.ERROR
+
+                            observableBoard.value = boardUiModel.apply {
+                                saveItem = null
+                                requestPlaceInfoItemIds = null
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                    add(index to arrayListOf(items[index].getStatusChangePayload()))
+                                }
                             }
                         }
                     }
-                })
+
+                    // make sure to dispatch these indices when we set the observableBoard value again
+                    if (!observableBoard.hasActiveObservers()) {
+                        undispatchedItemIndices.add(index to arrayListOf(items[index].getStatusChangePayload()))
+                    }
+                }
             }
-        }
+        })
     }
 
     //endregion
@@ -302,7 +353,7 @@ class BoardViewModel : BaseViewModel() {
                 )))
                 map[key]?.let { items ->
                     items.forEach { item ->
-                        add(item.toUiModel())
+                        add(item.toUiModel(if (syncItemIds.contains(item.itemId)) syncItemIds[item.itemId]!! else UiModel.Status.SUCCESS))
                     }
                 }
             }
@@ -333,12 +384,12 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns an observable animation item
      */
-    fun getObservableAnimation(): LiveEvent<AnimationItem> = observableAnimation
+    fun getObservableAnimation(): LiveData<AnimationItem> = observableAnimation
 
     /**
      * Returns an observable that if set, becomes the currently selected item
      */
-    fun getObservableSelectedBoardItem(): LiveEvent<Pair<BoardItem, List<Pair<View, String>>?>> = observableSelectedBoardItem
+    fun getObservableBoardItem(): LiveData<Triple<BoardItem, List<Pair<View, String>>?, Boolean>> = observableBoardItem
 
     //endregion
     //region view states

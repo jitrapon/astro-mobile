@@ -85,7 +85,7 @@
         android:layout_gravity="bottom|end"
         android:layout_marginBottom="@dimen/fab_margin"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:src="@android:drawable/ic_dialog_alert"
+        android:src="@drawable/avatar_bot"
         app:fabSize="normal"
         app:backgroundTint="@color/reddish" />
 

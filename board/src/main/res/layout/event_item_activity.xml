@@ -241,6 +241,36 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator"
                     app:srcCompat="@drawable/ic_group" />
 
+                <ImageView
+                    android:id="@+id/event_item_note_icon"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:clickable="true"
+                    android:contentDescription="@string/event_item_transition_view"
+                    android:focusable="true"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_note_separator"
+                    app:srcCompat="@drawable/ic_info" />
+
+                <EditText
+                    style="@style/TextAppearance.H4"
+                    android:id="@+id/event_item_note"
+                    android:layout_width="0dp"
+                    android:background="@color/transparent"
+                    android:textColorHint="@color/warm_grey"
+                    android:minLines="2"
+                    android:gravity="top"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:hint="@string/event_item_note_hint"
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_note_icon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_note_icon" />
+
             </android.support.constraint.ConstraintLayout>
 
         </android.support.v7.widget.CardView>

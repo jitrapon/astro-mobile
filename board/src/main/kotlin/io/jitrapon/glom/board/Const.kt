@@ -9,6 +9,8 @@ package io.jitrapon.glom.board
 object Const {
 
     const val EXTRA_BOARD_ITEM = "android.intent.EXTRA_BOARD_ITEM"
+    const val EXTRA_IS_BOARD_ITEM_MODIFIED = "android.intent.EXTRA_IS_BOARD_ITEM_MODIFIED"
+    const val EXTRA_IS_BOARD_ITEM_NEW = "android.intent.EXTRA_IS_BOARD_ITEM_NEW"
     const val EDIT_ITEM_RESULT_CODE = 1001
     const val NAVIGATE_TO_MAP_SEARCH = "action.navigate.map.search"
 }

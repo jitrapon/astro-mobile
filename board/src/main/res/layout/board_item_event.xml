@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     style="@style/CardView.BoardItem.Selectable"
     android:id="@+id/event_card_root_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
     android:transitionName="@string/event_card_background_transition" >
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="@dimen/card_content_padding" >
+        android:paddingBottom="@dimen/card_content_padding">
 
         <ImageView
             android:visibility="gone"
