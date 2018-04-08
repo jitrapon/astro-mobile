@@ -77,23 +77,12 @@ class BoardFragment : BaseFragment() {
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
 
             hide()
-
-            // uncomment lines below to pre-create recyclerview viewholders
-//            createRecycledPool(this, 15)
         }
         board_animation_view.hide()
 
         // main fab click listener
         board_fab.setOnClickListener {
             viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
-        }
-
-        // start loading data
-        // we don't force-refresh data because when configuration changes occur,
-        // we can reuse the same loaded data
-        viewModel.apply {
-            loadBoard(false)
-            loadCircleInfo()
         }
     }
 

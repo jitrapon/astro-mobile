@@ -81,6 +81,9 @@ class BoardViewModel : BaseViewModel() {
             setFilteringType(itemFilterType)
         }
         circleInteractor = CircleInteractor()
+
+        loadBoard(false)
+        loadCircleInfo()
     }
 
     //region board actions
