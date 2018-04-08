@@ -6,6 +6,7 @@ import io.jitrapon.glom.board.event.EditAttendeeResponse
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventLocation
+import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -150,6 +151,15 @@ object BoardRepository : Repository<Board>() {
         }
     }
 
+    fun deleteItem(itemId: String): Completable {
+        return Completable.fromCallable {
+            board?.items?.let {
+                val index = it.indexOfFirst { it.itemId == itemId }
+                it.removeAt(index)
+            }
+        }
+    }
+
     /**
      * Edits the board item's specific item info using the specified new board item
      */
@@ -171,11 +181,6 @@ object BoardRepository : Repository<Board>() {
      * Edits the board item's specific item info using the specified new board item
      */
     fun createItem(item: BoardItem): Flowable<BoardItem> {
-        return Flowable.just(item)
-                .delay(5000L, TimeUnit.MILLISECONDS)
-    }
-
-    fun deleteItem(item: BoardItem): Flowable<BoardItem> {
         return Flowable.just(item)
                 .delay(5000L, TimeUnit.MILLISECONDS)
     }

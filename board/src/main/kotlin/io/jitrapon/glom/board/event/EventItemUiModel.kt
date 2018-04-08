@@ -10,7 +10,7 @@ import io.jitrapon.glom.board.BoardItemUiModel.Companion.TYPE_EVENT
 /**
  * @author Jitrapon Tiachunpun
  */
-data class EventItemUiModel(override val itemId: String?,
+data class EventItemUiModel(override val itemId: String,
                             var title: AndroidString,
                             var dateTime: AndroidString?,
                             var location: AndroidString?,

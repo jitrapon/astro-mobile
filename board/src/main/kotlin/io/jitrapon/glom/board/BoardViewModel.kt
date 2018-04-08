@@ -14,6 +14,7 @@ import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.event.EventItemUiModel
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.HashMap
 import kotlin.math.absoluteValue
 
@@ -57,6 +58,11 @@ class BoardViewModel : BaseViewModel() {
     private val undispatchedItemIndices: ArrayList<Pair<Int, Any?>> by lazy {
         ArrayList<Pair<Int, Any?>>()
     }
+
+    /*
+     * ID counter for error ui model
+     */
+    private val errorIdCounter = AtomicInteger(0)
 
     /*
      * Keeps track of currently syncing items and their statuses
@@ -109,6 +115,8 @@ class BoardViewModel : BaseViewModel() {
      * Handle changes to board item list, applying DiffUtil if necessary
      */
     private fun onBoardItemChanges(it: AsyncSuccessResult<ArrayMap<*, List<BoardItem>>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
+        errorIdCounter.set(0)
+
         runAsync({
             it.result.toUiModel().let {
                 it to if (boardUiModel.items.isNullOrEmpty()) null else
@@ -209,11 +217,11 @@ class BoardViewModel : BaseViewModel() {
 
                 // show the user visually that this item is syncing
                 items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
-                syncItemIds[items[index].itemId!!] = UiModel.Status.LOADING
+                syncItemIds[items[index].itemId] = UiModel.Status.LOADING
 
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
-                        requestPlaceInfoItemIds = if (it != null && boardInteractor.hasPlaceInfo(boardItem)) listOf(it) else null
+                        requestPlaceInfoItemIds = if (boardInteractor.hasPlaceInfo(boardItem)) listOf(it) else null
                     }
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
@@ -251,7 +259,7 @@ class BoardViewModel : BaseViewModel() {
                     when (it) {
                         is AsyncSuccessResult -> {
                             items[index].status = UiModel.Status.SUCCESS
-                            syncItemIds.remove(items[index].itemId!!)
+                            syncItemIds.remove(items[index].itemId)
 
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
@@ -271,7 +279,7 @@ class BoardViewModel : BaseViewModel() {
                             handleError(it.error)
 
                             items[index].status = UiModel.Status.ERROR
-                            syncItemIds[items[index].itemId!!] = UiModel.Status.ERROR
+                            syncItemIds[items[index].itemId] = UiModel.Status.ERROR
 
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
@@ -291,6 +299,26 @@ class BoardViewModel : BaseViewModel() {
                 }
             }
         })
+    }
+
+    fun deleteItem(position: Int) {
+        boardUiModel.items?.let { items ->
+            items.getOrNull(position)?.let { item ->
+                if (item.itemType != BoardItemUiModel.TYPE_HEADER) {
+                    boardInteractor.deleteItem(item.itemId) {
+                        when (it) {
+                            is AsyncSuccessResult -> {
+                                syncItemIds.remove(item.itemId)
+
+                                onBoardItemChanges(it, listOf(), null)
+                                observableViewAction.value = Snackbar(AndroidString(R.string.board_item_deleted), level = MessageLevel.SUCCESS)
+                            }
+                            is AsyncErrorResult -> handleError(it.error)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     //endregion
@@ -319,13 +347,7 @@ class BoardViewModel : BaseViewModel() {
      * Converts the BoardItem domain model to a list of BoardItemUIModel
      */
     private fun ArrayMap<*, List<BoardItem>>.toUiModel(): List<BoardItemUiModel> {
-        if (isEmpty) return ArrayList()
-
-        // every key in this map represents an information about a group's heading
-        // however if there is only one key, we don't have to group any items
-        if (keys.size == 1) {
-            return this[keyAt(0)]!!.map { it.toUiModel() }
-        }
+        if (isEmpty || (keys.size == 1 && this[keyAt(0)]!!.isEmpty())) return ArrayList()
 
         val map = this
         return ArrayList<BoardItemUiModel>().apply {
@@ -362,7 +384,7 @@ class BoardViewModel : BaseViewModel() {
 
     private fun BoardItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): BoardItemUiModel {
         return BoardItemViewModelStore.obtainViewModelForItem(this::class.java).let {
-            it?.toUiModel(this, status) ?: ErrorItemUiModel()
+            it?.toUiModel(this, status) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
         }
     }
 

@@ -8,10 +8,12 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SimpleItemAnimator
+import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.event.EventItem
@@ -31,6 +33,9 @@ class BoardFragment : BaseFragment() {
     companion object {
 
         fun newInstance(): BoardFragment = BoardFragment()
+
+        /* first-time list reveal animation delay */
+        private const val REVEAL_ANIM_DELAY = 300L
     }
 
     /**
@@ -60,10 +65,18 @@ class BoardFragment : BaseFragment() {
      */
     override fun onSetupView(view: View) {
         board_recycler_view.apply {
-            adapter = BoardItemAdapter(viewModel, this@BoardFragment, activity!!.resources.configuration.orientation)
+            val recyclerView = this
+            adapter = BoardItemAdapter(viewModel, this@BoardFragment, activity!!.resources.configuration.orientation).apply {
+
+                // add swipe functionality
+                val touchHelper = ItemTouchHelper(ItemTouchHelperCallback(this, false))
+                touchHelper.attachToRecyclerView(recyclerView)
+            }
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
+            hide()
 
             // uncomment lines below to pre-create recyclerview viewholders
 //            createRecycledPool(this, 15)
@@ -94,14 +107,21 @@ class BoardFragment : BaseFragment() {
         viewModel.getObservableBoard().observe(this, Observer {
             it?.let {
                 when (it.status) {
-                    UiModel.Status.EMPTY -> board_status_viewswitcher.apply {
-                        displayedChild = 0
+                    UiModel.Status.EMPTY -> {
+                        board_recycler_view.hide()
+                        board_status_viewswitcher.apply {
+                            displayedChild = 0
+                        }
                     }
-                    UiModel.Status.ERROR -> board_status_viewswitcher.apply {
-                        displayedChild = 1
+                    UiModel.Status.ERROR -> {
+                        board_recycler_view.hide()
+                        board_status_viewswitcher.apply {
+                            displayedChild = 1
+                        }
                     }
                     UiModel.Status.SUCCESS -> {
                         board_status_viewswitcher.reset()
+                        board_recycler_view.show(REVEAL_ANIM_DELAY)
 
                         // loads additional place information for items that have them
                         it.requestPlaceInfoItemIds.let {

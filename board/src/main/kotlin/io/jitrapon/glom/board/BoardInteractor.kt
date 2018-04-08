@@ -85,9 +85,39 @@ class BoardInteractor {
     fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
         BoardRepository.getCache()?.let { board ->
             BoardRepository.addItem(item)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
                     .flatMap {
                         processItems(board)
                     }
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        itemsLoaded = it.first.items.size
+                    }
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.second))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
+    }
+
+    /**
+     * Deletes the specified board item to the list
+     */
+    fun deleteItem(itemId: String, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+        BoardRepository.getCache()?.let { board ->
+            BoardRepository.deleteItem(itemId)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
+                    .andThen (
+                        // we need to wait until the Completable completes
+                        Flowable.defer {
+                            processItems(board)
+                        }
+                    )
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnNext {
                         itemsLoaded = it.first.items.size
@@ -187,22 +217,22 @@ class BoardInteractor {
             }.flatMap {
                 placeProvider.getPlaces(it)
             }.subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        if (itemIds.size == it.size) {
-                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
-                                for (i in itemIds.indices) {
-                                    put(itemIds[i], it[i])
-                                }
-                            }))
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                if (itemIds.size == it.size) {
+                    onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                        for (i in itemIds.indices) {
+                            put(itemIds[i], it[i])
                         }
-                        else {
-                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                    " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
-                        }
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
+                    }))
+                }
+                else {
+                    onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                            " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
+                }
+            }, {
+                onComplete(AsyncErrorResult(it))
+            })
         }
     }
 
