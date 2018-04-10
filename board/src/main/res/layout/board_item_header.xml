@@ -10,6 +10,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:layout_marginStart="@dimen/card_header_item_text_margin"
+        android:layout_marginEnd="@dimen/card_header_item_text_margin"
         android:textAppearance="@style/TextAppearance.H3"
         android:text="Header"
         android:textColor="?android:textColorSecondary"

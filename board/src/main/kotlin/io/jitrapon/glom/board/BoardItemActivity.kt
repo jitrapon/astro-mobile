@@ -73,7 +73,9 @@ abstract class BoardItemActivity : BaseActivity() {
     override fun onBackPressed() {
         onSaveItem { item ->
             setResult(RESULT_OK, Intent().apply {
-                putExtra(Const.EXTRA_BOARD_ITEM, item)
+                putExtra(Const.EXTRA_BOARD_ITEM, item.first)
+                putExtra(Const.EXTRA_IS_BOARD_ITEM_MODIFIED, item.second)
+                putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, item.third)
             })
             supportFinishAfterTransition()
         }
@@ -88,10 +90,15 @@ abstract class BoardItemActivity : BaseActivity() {
     protected fun getBoardItemFromIntent() = intent?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)
 
     /**
+     * Returns whether or not this item is new
+     */
+    protected fun isNewItem(): Boolean = intent?.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, false) ?: false
+
+    /**
      * Returns the current board item after user has edited or filled
      * This will be executed in a background thread
      */
-    abstract fun onSaveItem(callback: (BoardItem?) -> Unit)
+    abstract fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit)
 
     /**
      * Returns the layout ID of this activity to be inflated

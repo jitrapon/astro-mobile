@@ -27,6 +27,10 @@ class EventItemInteractor {
 
     private var placeProvider: PlaceProvider? = null
 
+    private var note: String? = null
+
+    private var isInfoChanged: Boolean = false
+
     /**
      * Initializes the PlaceProvider class
      */
@@ -38,22 +42,27 @@ class EventItemInteractor {
      * Initialize board item to work with
      */
     fun setItem(item: BoardItem) {
+        isInfoChanged = false
+
         BoardItemRepository.setCache(item)
     }
 
     /**
      * Saves the current state of the item
+     *
+     * @return The new board item and whether or not info has changed
      */
-    fun saveItem(onComplete: (AsyncResult<BoardItem>) -> Unit) {
+    fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         BoardItemRepository.getCache()?.let {
             val info = (it.itemInfo as EventInfo).apply {
                 fields[NAME]?.let { if (it is String) eventName = it }
                 startTime = getSelectedDate()?.time ?: startTime
                 location = getSelectedLocation()
+                note = this@EventItemInteractor.note
             }
             BoardItemRepository.save(info)
             clearSuggestionCache()
-            onComplete(AsyncSuccessResult(it))
+            onComplete(AsyncSuccessResult(it to isInfoChanged))
         }
     }
 
@@ -61,6 +70,8 @@ class EventItemInteractor {
      * Updates the location text
      */
     fun updateLocationText(locationText: CharSequence) {
+        isInfoChanged = true
+
         fields[LOCATION] = locationText
     }
 
@@ -83,6 +94,8 @@ class EventItemInteractor {
      * @return true iff the dates are correctly provided and set successfully
      */
     fun setDate(date: Date?, isStartDate: Boolean) {
+        isInfoChanged = true
+
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
                 if (isStartDate) {
@@ -147,6 +160,8 @@ class EventItemInteractor {
      * Updates this cache event's location
      */
     fun setLocation(location: EventLocation?) {
+        isInfoChanged = true
+
         BoardItemRepository.getCache()?.itemInfo?.let {
             if (it is EventInfo) {
                 it.location = location
@@ -216,6 +231,8 @@ class EventItemInteractor {
             return
         }
 
+        isInfoChanged = true
+
         BoardRepository.getCache()?.let {
             when (statusCode) {
                 2 -> BoardItemRepository.joinEvent(userId!!)
@@ -268,6 +285,12 @@ class EventItemInteractor {
                 }
             }
         }
+    }
+
+    fun updateNoteText(s: String) {
+        isInfoChanged = true
+
+        note = s
     }
 
     //endregion
@@ -324,6 +347,8 @@ class EventItemInteractor {
      * should be called in a background thread
      */
     fun filterSuggestions(text: String): List<Suggestion> {
+        isInfoChanged = true
+
         if (TextUtils.isEmpty(text)) return ArrayList()
 
         val suggestions = ArrayList<Suggestion>()

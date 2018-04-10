@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- empty states -->
+    <dimen name="empty_state_size">120dp</dimen>
+</resources>

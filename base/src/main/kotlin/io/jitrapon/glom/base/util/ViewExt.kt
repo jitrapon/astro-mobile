@@ -59,6 +59,8 @@ private fun View.showStyledSnackbar(message: AndroidString, actionMessage: Andro
  * @param animateDuration The duration in milliseconds until this view fades in completely
  */
 fun View.show(animateDuration: Long? = null) {
+    if (visibility == View.VISIBLE) return
+
     animateDuration.let {
         if (visibility != View.VISIBLE) visibility = View.VISIBLE
         if (it == null) {

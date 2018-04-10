@@ -31,4 +31,7 @@
     <string name="event_item_attendee_title">%1$s joining</string>
     <string name="event_item_join">join</string>
     <string name="event_item_leave">leave</string>
+    <string name="event_item_note_hint">Add more info</string>
+    <string name="board_item_created">Item added</string>
+    <string name="board_item_deleted">Item deleted</string>
 </resources>

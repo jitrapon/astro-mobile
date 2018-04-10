@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
+import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.event.EventCardAttendeeAdapter
@@ -27,8 +28,11 @@ import io.jitrapon.glom.board.event.EventItemViewModel
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment, private val orientation: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-        StickyHeaders, StickyHeaders.ViewSetup {
+class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment, private val orientation: Int) :
+        RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+        StickyHeaders,
+        StickyHeaders.ViewSetup,
+        ItemTouchHelperCallback.OnItemChangedListener {
 
     /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
     private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool = RecyclerView.RecycledViewPool()
@@ -136,6 +140,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     override fun teardownStickyHeaderView(stickyHeader: View) {
         stickyHeader.translationZ = 0f
+    }
+
+    override fun onMove(fromPosition: Int, toPosition: Int) {
+        //not applicable
+    }
+
+    override fun onSwipe(position: Int, isStartDir: Boolean) {
+        viewModel.deleteItem(position)
     }
 
     //endregion

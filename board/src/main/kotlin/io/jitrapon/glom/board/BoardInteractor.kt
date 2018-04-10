@@ -80,6 +80,59 @@ class BoardInteractor {
     }
 
     /**
+     * Adds a new board item to the list, and process it to be grouped appropriately
+     */
+    fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+        BoardRepository.getCache()?.let { board ->
+            BoardRepository.addItem(item)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
+                    .flatMap {
+                        processItems(board)
+                    }
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        itemsLoaded = it.first.items.size
+                    }
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.second))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
+    }
+
+    /**
+     * Deletes the specified board item to the list
+     */
+    fun deleteItem(itemId: String, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+        BoardRepository.getCache()?.let { board ->
+            BoardRepository.deleteItem(itemId)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
+                    .andThen (
+                        // we need to wait until the Completable completes
+                        Flowable.defer {
+                            processItems(board)
+                        }
+                    )
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        itemsLoaded = it.first.items.size
+                    }
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(it.second))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    }, {
+                        //nothing yet
+                    })
+        }
+    }
+
+    /**
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.
      * This function call should be run in a background thread.
      */
@@ -99,8 +152,15 @@ class BoardInteractor {
                                         it.time = Date(startTime)
                                         when {
                                             now[Calendar.YEAR] > it[Calendar.YEAR] -> {
-                                                (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
-                                                        * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+
+                                                // special case where year difference is 1
+                                                if (now[Calendar.YEAR] - it[Calendar.YEAR] == 1 && it[Calendar.WEEK_OF_YEAR] == 1) {
+                                                    (now[Calendar.WEEK_OF_YEAR] - 1) * -1
+                                                }
+                                                else {
+                                                    (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
+                                                            * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+                                                }
                                             }
                                             now[Calendar.YEAR] < it[Calendar.YEAR] -> {
                                                 ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
@@ -110,8 +170,9 @@ class BoardInteractor {
 
                                                 // for special case where the day falls in the first week of next year
                                                 if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
-                                                    (BoardViewModel.NUM_WEEK_IN_YEAR + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
+                                                    (BoardViewModel.NUM_WEEK_IN_YEAR + 1) - now[Calendar.WEEK_OF_YEAR]
                                                 }
+
                                                 else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
                                             }
                                         }
@@ -156,22 +217,22 @@ class BoardInteractor {
             }.flatMap {
                 placeProvider.getPlaces(it)
             }.subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        if (itemIds.size == it.size) {
-                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
-                                for (i in itemIds.indices) {
-                                    put(itemIds[i], it[i])
-                                }
-                            }))
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                if (itemIds.size == it.size) {
+                    onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                        for (i in itemIds.indices) {
+                            put(itemIds[i], it[i])
                         }
-                        else {
-                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                    " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
-                        }
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
+                    }))
+                }
+                else {
+                    onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                            " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
+                }
+            }, {
+                onComplete(AsyncErrorResult(it))
+            })
         }
     }
 
@@ -191,8 +252,8 @@ class BoardInteractor {
     /**
      * Edits this board item with a new info
      */
-    fun editBoardItemInfo(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        BoardRepository.editBoardItemInfo(item)
+    fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
+        BoardRepository.editItem(item)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -202,6 +263,35 @@ class BoardInteractor {
                 }, {
                     //nothing yet
                 })
+    }
+
+    fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
+        BoardRepository.createItem(item)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
+    }
+
+    fun createItem(itemType: Int): BoardItem {
+        val now = Date()
+        val owners = Arrays.asList(UserRepository.getCurrentUser()!!.userId)
+        return when (itemType) {
+            BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
+                    EventInfo("", null, null, null, null,
+                            "Asia/Bangkok", false, null, false, false, owners),
+                    now)
+            else -> TODO()
+        }
+    }
+
+    private fun generateItemId(): String {
+        return UUID.randomUUID().toString()
     }
 
     private fun testParcelable(board: Board) {

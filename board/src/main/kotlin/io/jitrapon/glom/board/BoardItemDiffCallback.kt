@@ -17,7 +17,7 @@ class BoardItemDiffCallback(private val oldItems: List<BoardItemUiModel>?, priva
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
         return (oldItems?.getOrNull(oldItemPosition)?.itemType == newItems?.getOrNull(newItemPosition)?.itemType) &&
-                (oldItems?.getOrNull(newItemPosition)?.itemId == newItems?.getOrNull(newItemPosition)?.itemId)
+                (oldItems?.getOrNull(oldItemPosition)?.itemId == newItems?.getOrNull(newItemPosition)?.itemId)
     }
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- cardview -->
+    <dimen name="card_side_margin">102dp</dimen>
+    <dimen name="card_header_item_text_margin">120dp</dimen>
+</resources>

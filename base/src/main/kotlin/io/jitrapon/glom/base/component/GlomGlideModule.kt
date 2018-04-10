@@ -26,7 +26,8 @@ class GlomGlideModule : AppGlideModule() {
     override fun isManifestParsingEnabled() = false
 
     override fun applyOptions(context: Context, builder: GlideBuilder) {
-        builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_ARGB_8888))
+        builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_ARGB_8888)
+                .disallowHardwareConfig())
                 .setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_NAME, DISK_CACHE_SIZE))
                 .setLogLevel(Log.ERROR)
     }

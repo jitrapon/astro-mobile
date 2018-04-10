@@ -8,10 +8,12 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SimpleItemAnimator
+import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.View
 import android.widget.ProgressBar
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.event.EventItem
@@ -31,6 +33,9 @@ class BoardFragment : BaseFragment() {
     companion object {
 
         fun newInstance(): BoardFragment = BoardFragment()
+
+        /* first-time list reveal animation delay */
+        private const val REVEAL_ANIM_DELAY = 300L
     }
 
     /**
@@ -60,22 +65,24 @@ class BoardFragment : BaseFragment() {
      */
     override fun onSetupView(view: View) {
         board_recycler_view.apply {
-            adapter = BoardItemAdapter(viewModel, this@BoardFragment, activity!!.resources.configuration.orientation)
+            val recyclerView = this
+            adapter = BoardItemAdapter(viewModel, this@BoardFragment, activity!!.resources.configuration.orientation).apply {
+
+                // add swipe functionality
+                val touchHelper = ItemTouchHelper(ItemTouchHelperCallback(this, false))
+                touchHelper.attachToRecyclerView(recyclerView)
+            }
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
 
-            // uncomment lines below to pre-create recyclerview viewholders
-//            createRecycledPool(this, 15)
+            hide()
         }
         board_animation_view.hide()
 
-        // start loading data
-        // we don't force-refresh data because when configuration changes occur,
-        // we can reuse the same loaded data
-        viewModel.apply {
-            loadBoard(false)
-            loadCircleInfo()
+        // main fab click listener
+        board_fab.setOnClickListener {
+            viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
         }
     }
 
@@ -89,14 +96,21 @@ class BoardFragment : BaseFragment() {
         viewModel.getObservableBoard().observe(this, Observer {
             it?.let {
                 when (it.status) {
-                    UiModel.Status.EMPTY -> board_status_viewswitcher.apply {
-                        displayedChild = 0
+                    UiModel.Status.EMPTY -> {
+                        board_recycler_view.hide()
+                        board_status_viewswitcher.apply {
+                            displayedChild = 0
+                        }
                     }
-                    UiModel.Status.ERROR -> board_status_viewswitcher.apply {
-                        displayedChild = 1
+                    UiModel.Status.ERROR -> {
+                        board_recycler_view.hide()
+                        board_status_viewswitcher.apply {
+                            displayedChild = 1
+                        }
                     }
                     UiModel.Status.SUCCESS -> {
                         board_status_viewswitcher.reset()
+                        board_recycler_view.show(REVEAL_ANIM_DELAY)
 
                         // loads additional place information for items that have them
                         it.requestPlaceInfoItemIds.let {
@@ -124,6 +138,11 @@ class BoardFragment : BaseFragment() {
                                 }
                             }
                         }
+
+                        // perform sync to a specific item
+                        it.saveItem?.let {
+                            viewModel.syncItem(it, true)
+                        }
                     }
                     UiModel.Status.LOADING -> board_status_viewswitcher.reset()
                 }
@@ -138,17 +157,19 @@ class BoardFragment : BaseFragment() {
         })
 
         // observes new selected board item
-        viewModel.getObservableSelectedBoardItem().observe(this, Observer {
-            it?.let { pair ->
-                val boardItem = pair.first
-                val sharedElements = pair.second
+        viewModel.getObservableBoardItem().observe(this, Observer {
+            it?.let { arg ->
+                val boardItem = arg.first
+                val sharedElements = arg.second
+                val isNewItem = arg.third
                 val launchOption = when (boardItem) {
-                    is EventItem -> EventItemActivity::class.java to pair.first
+                    is EventItem -> EventItemActivity::class.java to arg.first
                     else -> null
                 }
                 launchOption?.let { (activity, boardItem) ->
                     startActivity(activity, Const.EDIT_ITEM_RESULT_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
+                        putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem)
                     }, sharedElements)
                 }
             }
@@ -160,7 +181,12 @@ class BoardFragment : BaseFragment() {
             if (resultCode == Activity.RESULT_OK) {
                 try {
                     data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
-                        viewModel.saveItemChanges(it)
+                        if (data.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, false)) {
+                            viewModel.addNewItem(it)
+                        }
+                        else if (data.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_MODIFIED, false)) {
+                            viewModel.syncItem(it, false)
+                        }
                     }
                 }
                 catch (ex: Exception) {

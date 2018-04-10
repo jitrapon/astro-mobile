@@ -8,7 +8,7 @@ import io.jitrapon.glom.base.model.UiModel
  */
 interface BoardItemUiModel : UiModel {
 
-    val itemId: String?
+    val itemId: String
     val itemType: Int
 
     companion object {

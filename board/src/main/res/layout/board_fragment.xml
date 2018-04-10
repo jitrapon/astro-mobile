@@ -36,7 +36,7 @@
 
         <ViewSwitcher
             android:id="@+id/board_status_viewswitcher"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -85,7 +85,7 @@
         android:layout_gravity="bottom|end"
         android:layout_marginBottom="@dimen/fab_margin"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:src="@android:drawable/ic_dialog_alert"
+        android:src="@drawable/avatar_bot"
         app:fabSize="normal"
         app:backgroundTint="@color/reddish" />
 

@@ -65,6 +65,12 @@ class EventItemViewModel : BoardItemViewModel() {
     /* cached attend status */
     private var attendStatus: EventItemUiModel.AttendStatus = EventItemUiModel.AttendStatus.MAYBE
 
+    /* observable event note */
+    private val observableNote = MutableLiveData<AndroidString?>()
+
+    /* whether or not this is a new item to add */
+    private var isNewItem: Boolean = false
+
     init {
         interactor = EventItemInteractor()
     }
@@ -244,7 +250,7 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Initializes this ViewModel with the event item to display
      */
-    fun setItem(item: BoardItem?) {
+    fun setItem(item: BoardItem?, new: Boolean) {
         item.let {
             if (it == null) {
                 AppLogger.w("Cannot set item because item is NULL")
@@ -254,6 +260,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     interactor.setItem(item)
                     item.itemInfo.let {
                         prevName = it.eventName
+                        isNewItem = new
                         observableName.value = AndroidString(text = it.eventName) to false
                         observableStartDate.value = getEventDetailDate(it.startTime, true)
                         observableEndDate.value = getEventDetailDate(it.endTime, false)
@@ -264,6 +271,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
                         observableAttendees.value = getEventDetailAttendees(it.attendees)
                         observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
+                        observableNote.value = getEventDetailNote(it.note)
                     }
                 }
                 else {
@@ -281,10 +289,10 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveItem(onSuccess: (BoardItem?) -> Unit) {
+    fun saveItem(onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
         interactor.saveItem {
             when (it) {
-                is AsyncSuccessResult -> onSuccess(it.result)
+                is AsyncSuccessResult -> onSuccess(Triple(it.result.first, it.result.second, isNewItem))
                 is AsyncErrorResult -> handleError(it.error)
             }
         }
@@ -411,6 +419,16 @@ class EventItemViewModel : BoardItemViewModel() {
             EventItemUiModel.AttendStatus.MAYBE -> ButtonUiModel(AndroidString(R.string.event_item_join))
             EventItemUiModel.AttendStatus.DECLINED -> ButtonUiModel(AndroidString(R.string.event_item_join))
         }
+    }
+
+    private fun getEventDetailNote(note: String?): AndroidString? {
+        note ?: return null
+        return AndroidString(text = note)
+    }
+
+    fun onNoteTextChanged(s: CharSequence) {
+        // may need to convert from markdown text to String
+        interactor.updateNoteText(s.toString())
     }
 
     //region autocomplete
@@ -630,6 +648,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableAttendees(): LiveData<List<UserUiModel>> = observableAttendees
 
     fun getObservableAttendStatus(): LiveData<ButtonUiModel> = observableAttendStatus
+
+    fun getObservableNote(): LiveData<AndroidString?> = observableNote
 
     override fun cleanUp() {
         //nothing yet
