@@ -1,7 +1,8 @@
-package io.jitrapon.glom.base.repository
+package io.jitrapon.glom.base.domain
 
 import io.jitrapon.glom.base.model.Circle
 import io.jitrapon.glom.base.model.PlaceInfo
+import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import java.util.concurrent.TimeUnit
 
@@ -13,14 +14,6 @@ import java.util.concurrent.TimeUnit
 object CircleRepository : Repository<Circle>() {
 
     private var circle: Circle? = null
-
-    override fun load(): Flowable<Circle> {
-        TODO()
-    }
-
-    override fun loadList(): Flowable<List<Circle>> {
-        TODO()
-    }
 
     fun load(vararg param: String): Flowable<Circle> {
         circle = circle ?: Circle("abcd1234", "my circle", null, null,

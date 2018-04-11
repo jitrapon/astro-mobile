@@ -1,7 +1,8 @@
-package io.jitrapon.glom.base.repository
+package io.jitrapon.glom.base.domain
 
 import android.support.v4.util.ArrayMap
 import io.jitrapon.glom.base.model.User
+import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import java.util.concurrent.TimeUnit
 
@@ -10,17 +11,15 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-object UserRepository : Repository<User>() {
+class UserRepository : Repository<User>(), UserDataSource {
 
+    /* in-memory cache of the list of users */
     private var users: List<User>? = null
+    
+    /* needed so that we can retrieve a User object by their ID in O(1) time */
     private var userMap: ArrayMap<String, User>? = null
 
-    override fun load(): Flowable<User> {
-        //not applicable
-        throw NotImplementedError()
-    }
-
-    override fun loadList(): Flowable<List<User>> {
+    override fun getUsers(circleId: String): Flowable<List<User>> {
         users = users ?: getItems()
         return Flowable.just(users!!)
                 .doOnEach {
@@ -33,9 +32,7 @@ object UserRepository : Repository<User>() {
                 .delay(500L, TimeUnit.MILLISECONDS)
     }
 
-    fun getById(userId: String): User? = userMap?.get(userId)
-
-    fun getAll(): List<User>? = users
+    override fun getUser(userId: String): Flowable<User?> = Flowable.just(userMap?.get(userId))
 
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {
@@ -46,5 +43,5 @@ object UserRepository : Repository<User>() {
         }
     }
 
-    fun getCurrentUser(): User? = getById("yoshi3003")
+    override fun getCurrentUser(): Flowable<User?> = getUser("yoshi3003")
 }

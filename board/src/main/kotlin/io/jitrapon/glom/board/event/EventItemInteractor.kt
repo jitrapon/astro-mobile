@@ -6,8 +6,8 @@ import androidx.util.set
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.repository.CircleRepository
-import io.jitrapon.glom.base.repository.UserRepository
+import io.jitrapon.glom.base.domain.CircleRepository
+import io.jitrapon.glom.base.domain.UserRepository
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository

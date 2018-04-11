@@ -1,10 +1,9 @@
-package io.jitrapon.glom.base.interactor
+package io.jitrapon.glom.base.domain
 
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.Circle
-import io.jitrapon.glom.base.repository.CircleRepository
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 

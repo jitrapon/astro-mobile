@@ -6,7 +6,7 @@ import android.support.v4.util.ArrayMap
 import android.support.v7.util.DiffUtil
 import android.view.View
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.interactor.CircleInteractor
+import io.jitrapon.glom.base.domain.CircleInteractor
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty

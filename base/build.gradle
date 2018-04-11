@@ -63,9 +63,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    // constraint layout
-    api 'com.android.support.constraint:constraint-layout:1.0.2'
-
     // instant app
     implementation ("com.google.android.instantapps:instantapps:$rootProject.instantAppVersion") {
         exclude group: 'com.android.support'
@@ -116,11 +113,8 @@ dependencies {
     api "android.arch.paging:runtime:$rootProject.archPagingVersion"
 
     // dagger
-    implementation "com.google.dagger:dagger:$rootProject.daggerVersion"
+    api "com.google.dagger:dagger:$rootProject.daggerVersion"
     kapt "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
-    implementation "com.google.dagger:dagger-android:$rootProject.daggerVersion"
-    implementation "com.google.dagger:dagger-android-support:$rootProject.daggerVersion"
-    kapt "com.google.dagger:dagger-android-processor:$rootProject.daggerVersion"
 
     // facebook
     implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {

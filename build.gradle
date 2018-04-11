@@ -20,7 +20,7 @@ buildscript {
         archLifecycleVersion = '1.1.1'
         archRoomVersion = '1.1.0-beta1'
         archPagingVersion = '1.0.0-alpha7'
-        daggerVersion = '2.13'
+        daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'
         retrofitVersion = '2.3.0'
@@ -45,7 +45,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.1'
+        classpath 'com.android.tools.build:gradle:3.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
