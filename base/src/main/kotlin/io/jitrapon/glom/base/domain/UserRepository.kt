@@ -4,6 +4,7 @@ import android.support.v4.util.ArrayMap
 import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
+import io.reactivex.Single
 import java.util.concurrent.TimeUnit
 
 /**
@@ -32,7 +33,11 @@ class UserRepository : Repository<User>(), UserDataSource {
                 .delay(500L, TimeUnit.MILLISECONDS)
     }
 
-    override fun getUser(userId: String): Flowable<User?> = Flowable.just(userMap?.get(userId))
+    override fun getUser(userId: String): Single<User> = Single.fromCallable {
+        userMap!![userId]
+    }
+
+    override fun getCurrentUser(): Single<User> = getUser("yoshi3003")
 
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {
@@ -42,6 +47,4 @@ class UserRepository : Repository<User>(), UserDataSource {
             add(User(User.TYPE_USER, "panda", "panda", null))
         }
     }
-
-    override fun getCurrentUser(): Flowable<User?> = getUser("yoshi3003")
 }

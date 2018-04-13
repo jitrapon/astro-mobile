@@ -1,6 +1,7 @@
 apply plugin: 'com.android.feature'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion rootProject.compileSdkVersion
@@ -50,4 +51,7 @@ android {
 dependencies {
     implementation project(':base')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
+
+    // dagger compiler needs to be here too otherwise, no generated classes!
+    kapt "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
 }

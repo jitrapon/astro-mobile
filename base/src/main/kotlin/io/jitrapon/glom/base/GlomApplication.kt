@@ -29,6 +29,6 @@ class GlomApplication : Application() {
         MapsInitializer.initialize(this)
 
         // initialize object dependency graph
-        ObjectGraph.init()
+        ObjectGraph.init(this)
     }
 }

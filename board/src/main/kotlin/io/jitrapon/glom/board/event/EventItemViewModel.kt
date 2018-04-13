@@ -14,6 +14,7 @@ import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import java.util.*
+import javax.inject.Inject
 
 /**
  * Manages all view states for event board items and detail screen
@@ -22,8 +23,8 @@ import java.util.*
  */
 class EventItemViewModel : BoardItemViewModel() {
 
-    /* main controller for this viewmodel */
-    private lateinit var interactor: EventItemInteractor
+    @Inject
+    lateinit var interactor: EventItemInteractor
 
     /* cache copy of the unmodified event name, used for displaying during the transition end animation */
     private var prevName: String? = null
@@ -72,7 +73,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private var isNewItem: Boolean = false
 
     init {
-        interactor = EventItemInteractor()
+        Injector.getComponent().inject(this)
     }
 
     //region event board item

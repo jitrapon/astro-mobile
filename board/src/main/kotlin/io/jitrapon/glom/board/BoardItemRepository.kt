@@ -15,14 +15,6 @@ object BoardItemRepository : Repository<BoardItem>() {
 
     private var item: BoardItem? = null
 
-    override fun load(): Flowable<BoardItem> {
-        throw NotImplementedError()
-    }
-
-    override fun loadList(): Flowable<List<BoardItem>> {
-        throw NotImplementedError()
-    }
-
     fun setCache(boardItem: BoardItem) {
         item = boardItem
     }

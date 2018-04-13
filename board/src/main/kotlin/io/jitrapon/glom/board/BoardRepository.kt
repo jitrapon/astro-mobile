@@ -24,17 +24,12 @@ object BoardRepository : Repository<Board>() {
      */
     private var board: Board? = null
 
-    override fun load(): Flowable<Board> {
+    fun load(): Flowable<Board> {
         board = board ?: Board("abcd1234", getItems())
         return Flowable.just(board!!).delay(1000L, TimeUnit.MILLISECONDS)
     }
 
     fun getCache(): Board? = board
-
-    override fun loadList(): Flowable<List<Board>> {
-        //not applicable
-        throw NotImplementedError()
-    }
 
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)

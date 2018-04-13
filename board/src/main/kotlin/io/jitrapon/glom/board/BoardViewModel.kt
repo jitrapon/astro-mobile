@@ -8,6 +8,7 @@ import android.view.View
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.CircleInteractor
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
@@ -15,6 +16,7 @@ import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.event.EventItemUiModel
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 import kotlin.collections.HashMap
 import kotlin.math.absoluteValue
 
@@ -25,6 +27,11 @@ import kotlin.math.absoluteValue
  */
 class BoardViewModel : BaseViewModel() {
 
+    @Inject
+    lateinit var boardInteractor: BoardInteractor
+
+    lateinit var circleInteractor: CircleInteractor
+
     /* live data for the board items */
     internal val observableBoard = MutableLiveData<BoardUiModel>()
     internal val boardUiModel = BoardUiModel()
@@ -34,12 +41,6 @@ class BoardViewModel : BaseViewModel() {
 
     /* live data for selected board item and list of shared views for transition */
     private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<View, String>>?, Boolean>>()
-
-    /* interactor for the observable board */
-    private lateinit var boardInteractor: BoardInteractor
-
-    /* interactor for the observable circle */
-    private lateinit var circleInteractor: CircleInteractor
 
     /* whether or not first load function has been called */
     private var firstLoadCalled: Boolean = false
@@ -69,6 +70,8 @@ class BoardViewModel : BaseViewModel() {
      */
     private val syncItemIds = HashMap<String, UiModel.Status>()
 
+    private var counter: Int = 0
+
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
@@ -77,9 +80,9 @@ class BoardViewModel : BaseViewModel() {
     }
 
     init {
-        boardInteractor = BoardInteractor().apply {
-            setFilteringType(itemFilterType)
-        }
+        Injector.getComponent().inject(this)
+
+        boardInteractor.setFilteringType(itemFilterType)
         circleInteractor = CircleInteractor()
 
         loadBoard(false)
@@ -94,6 +97,7 @@ class BoardViewModel : BaseViewModel() {
      * @param refresh If true, old data will be discarded and will be refreshed from the server again
      */
     fun loadBoard(refresh: Boolean) {
+        AppLogger.i("ViewModel counter: ${++counter}")
         observableBoard.value = boardUiModel.apply {
             status = UiModel.Status.LOADING
             saveItem = null
@@ -396,6 +400,7 @@ class BoardViewModel : BaseViewModel() {
      */
     override fun onCleared() {
         BoardItemViewModelStore.clear()
+        Injector.clear()
     }
 
     //endregion

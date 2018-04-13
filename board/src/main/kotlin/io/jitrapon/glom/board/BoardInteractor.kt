@@ -10,7 +10,7 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.User
-import io.jitrapon.glom.base.domain.UserRepository
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
@@ -20,17 +20,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
 import java.util.*
-import javax.inject.Inject
 
 /**
  * Interactor for dealing with Board business logic
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardInteractor {
-
-    @Inject
-    lateinit var userDataSource: UserDataSource
+class BoardInteractor(private val userDataSource: UserDataSource) {
 
     /*
      * The number of items that was loaded
@@ -41,6 +37,8 @@ class BoardInteractor {
      * Filtering type of items
      */
     private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
+
+    private var counter: Int = 0
 
 
     /**
@@ -62,7 +60,8 @@ class BoardInteractor {
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
     fun loadBoard(onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
-        Flowable.zip(BoardRepository.load(), userDataSource.getUsers(),
+        AppLogger.i("Interactor counter: ${++counter}")
+        Flowable.zip(BoardRepository.load(), userDataSource.getUsers("1234"),
                         BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                             board to users
                         })
@@ -283,9 +282,21 @@ class BoardInteractor {
                 })
     }
 
+    private fun getCurrentUser(): User? {
+        try {
+            return userDataSource.getCurrentUser().blockingGet()
+        }
+        catch (ex: Exception) {
+            AppLogger.e(ex)
+        }
+        return null
+    }
+
     fun createItem(itemType: Int): BoardItem {
         val now = Date()
-        val owners = Arrays.asList(userDataSource.getCurrentUser().userId)
+        val owners = ArrayList<String>().apply {
+            getCurrentUser()?.userId?.let (::add)
+        }
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,

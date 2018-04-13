@@ -5,9 +5,9 @@ import android.util.SparseArray
 import androidx.util.set
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
-import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.domain.CircleRepository
-import io.jitrapon.glom.base.domain.UserRepository
+import io.jitrapon.glom.base.domain.UserDataSource
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemRepository
@@ -23,13 +23,15 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemInteractor {
+class EventItemInteractor(private val userDataSource: UserDataSource) {
 
     private var placeProvider: PlaceProvider? = null
 
     private var note: String? = null
 
     private var isInfoChanged: Boolean = false
+
+    private var counter: Int = 0
 
     /**
      * Initializes the PlaceProvider class
@@ -42,6 +44,7 @@ class EventItemInteractor {
      * Initialize board item to work with
      */
     fun setItem(item: BoardItem) {
+        AppLogger.i("EventItemInterator counter: ${++counter}")
         isInfoChanged = false
 
         BoardItemRepository.setCache(item)
@@ -176,7 +179,12 @@ class EventItemInteractor {
     fun getUsers(userIds: List<String>): List<User?>? {
         return ArrayList<User?>().apply {
             userIds.forEach {
-                add(UserRepository.getById(it))
+                try {
+                    add(userDataSource.getUser(it).blockingGet())
+                }
+                catch (ex: Exception) {
+                    AppLogger.e(ex)
+                }
             }
         }
     }
@@ -185,7 +193,13 @@ class EventItemInteractor {
      * Returns the currently signed in User object
      */
     fun getCurrentUser(): User? {
-        return UserRepository.getCurrentUser()
+        try {
+            return userDataSource.getCurrentUser().blockingGet()
+        }
+        catch (ex: Exception) {
+            AppLogger.e(ex)
+        }
+        return null
     }
 
     /**
@@ -198,7 +212,7 @@ class EventItemInteractor {
             onComplete(AsyncErrorResult(Exception("ItemId cannot be NULL")))
             return
         }
-        val userId = UserRepository.getCurrentUser()?.userId
+        val userId = getCurrentUser()?.userId
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return
@@ -225,7 +239,7 @@ class EventItemInteractor {
     }
 
     fun markEventDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        val userId = UserRepository.getCurrentUser()?.userId
+        val userId = getCurrentUser()?.userId
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return
@@ -479,7 +493,7 @@ class EventItemInteractor {
 
     private fun getInviteeSuggestions(query: String): List<Suggestion> {
         return ArrayList<Suggestion>().apply {
-            UserRepository.getAll()?.let {
+            userDataSource.getUsers("1234").blockingFirst()?.let {
                 val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
                     !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
                 }

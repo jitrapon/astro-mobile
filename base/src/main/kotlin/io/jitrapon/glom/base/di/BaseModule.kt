@@ -11,7 +11,7 @@ import javax.inject.Singleton
  * @author Jitrapon Tiachunpun
  */
 @Module
-class AppModule(val application: Application) {
+class BaseModule(val application: Application) {
 
     @Provides
     @Singleton
