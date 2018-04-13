@@ -122,10 +122,6 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             event_item_title.clearFocusAndHideKeyboard()
             viewModel.showDateTimePicker(false)
         }
-        event_item_map.apply {
-            onCreate(null)
-            getMapAsync(this@EventItemActivity)
-        }
         locationTextWatcher = event_item_location_primary.doOnTextChanged { s, _, _, _ ->
             viewModel.onLocationTextChanged(s)
         }
@@ -154,29 +150,39 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
 
-        event_item_map.onResume()
+        map?.let {
+            event_item_map.onResume()
+        }
     }
 
     override fun onPause() {
         super.onPause()
 
-        event_item_map.onPause()
+        map?.let {
+            event_item_map.onPause()
+        }
     }
 
     override fun onStart() {
         super.onStart()
 
-        event_item_map.onStart()
+        map?.let {
+            event_item_map.onStart()
+        }
     }
 
     override fun onStop() {
         super.onStop()
 
-        event_item_map.onStop()
+        map?.let {
+            event_item_map.onStop()
+        }
     }
 
     override fun onDestroy() {
-        event_item_map.onDestroy()
+        map?.let {
+            event_item_map.onDestroy()
+        }
 
         super.onDestroy()
     }
@@ -299,6 +305,12 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         clearMap(event_item_map, map)
                     }
                     else {
+                        if (map == null) {
+                            event_item_map.apply {
+                                onCreate(null)
+                                getMapAsync(this@EventItemActivity)
+                            }
+                        }
                         map.let {
                             // if map is not ready, set the tag, and onMapReady() will receive the latlng in the tag
                             if (it == null) {
