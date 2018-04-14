@@ -3,22 +3,21 @@ package io.jitrapon.glom.base.domain
 import io.jitrapon.glom.base.model.Circle
 import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.repository.Repository
-import io.reactivex.Flowable
-import java.util.concurrent.TimeUnit
+import io.reactivex.Single
 
 /**
  * Repository for retrieving and interacting with Circle
  *
  * @author Jitrapon Tiachunpun
  */
-object CircleRepository : Repository<Circle>() {
+class CircleRepository : Repository<Circle>(), CircleDataSource {
 
     private var circle: Circle? = null
 
-    fun load(vararg param: String): Flowable<Circle> {
-        circle = circle ?: Circle("abcd1234", "my circle", null, null,
+    override fun getCircle(id: String, vararg params: String): Single<Circle> {
+        circle = circle ?: Circle(id, "my circle", null, null,
                 ArrayList(), null, getPlaces())
-        return Flowable.just(circle!!).delay(300L, TimeUnit.MILLISECONDS)
+        return Single.just(circle!!)
     }
 
     private fun getPlaces(): MutableList<PlaceInfo> {
@@ -31,6 +30,4 @@ object CircleRepository : Repository<Circle>() {
                     null, "ChIJf0arHuOe4jARtaepvwrv7Zs", "3"))
         }
     }
-
-    fun getCache(): Circle? = circle
 }

@@ -73,7 +73,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private var isNewItem: Boolean = false
 
     init {
-        Injector.getComponent().inject(this)
+        BoardInjector.getComponent().inject(this)
     }
 
     //region event board item

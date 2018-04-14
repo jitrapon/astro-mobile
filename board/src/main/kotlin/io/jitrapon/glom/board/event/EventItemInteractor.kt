@@ -5,14 +5,14 @@ import android.util.SparseArray
 import androidx.util.set
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
-import io.jitrapon.glom.base.domain.CircleRepository
+import io.jitrapon.glom.base.domain.CircleInteractor
 import io.jitrapon.glom.base.domain.UserDataSource
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.Board
+import io.jitrapon.glom.board.BoardDataSource
 import io.jitrapon.glom.board.BoardItem
-import io.jitrapon.glom.board.BoardItemRepository
-import io.jitrapon.glom.board.BoardRepository
-import io.reactivex.Flowable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -23,15 +23,14 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemInteractor(private val userDataSource: UserDataSource) {
+class EventItemInteractor(private val userDataSource: UserDataSource, private val circleInteractor: CircleInteractor, 
+                          private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
 
     private var placeProvider: PlaceProvider? = null
 
     private var note: String? = null
 
     private var isInfoChanged: Boolean = false
-
-    private var counter: Int = 0
 
     /**
      * Initializes the PlaceProvider class
@@ -44,10 +43,9 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
      * Initialize board item to work with
      */
     fun setItem(item: BoardItem) {
-        AppLogger.i("EventItemInterator counter: ${++counter}")
         isInfoChanged = false
 
-        BoardItemRepository.setCache(item)
+        eventItemDataSource.setItem(item as EventItem)
     }
 
     /**
@@ -56,16 +54,24 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
      * @return The new board item and whether or not info has changed
      */
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
-        BoardItemRepository.getCache()?.let {
-            val info = (it.itemInfo as EventInfo).apply {
-                fields[NAME]?.let { if (it is String) eventName = it }
-                startTime = getSelectedDate()?.time ?: startTime
-                location = getSelectedLocation()
-                note = this@EventItemInteractor.note
-            }
-            BoardItemRepository.save(info)
-            clearSuggestionCache()
-            onComplete(AsyncSuccessResult(it to isInfoChanged))
+        eventItemDataSource.getItem().let {
+            Single.fromCallable {
+                (it.itemInfo).apply {
+                    fields[NAME]?.let { if (it is String) eventName = it }
+                    startTime = getSelectedDate()?.time ?: startTime
+                    location = getSelectedLocation()
+                    note = this@EventItemInteractor.note
+                }
+            }.flatMapCompletable {
+                eventItemDataSource.saveItem(it)
+            }.subscribeOn(Schedulers.computation())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        clearSuggestionCache()
+                        onComplete(AsyncSuccessResult(it to isInfoChanged))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
         }
     }
 
@@ -99,33 +105,31 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
     fun setDate(date: Date?, isStartDate: Boolean) {
         isInfoChanged = true
 
-        BoardItemRepository.getCache()?.itemInfo?.let {
-            if (it is EventInfo) {
-                if (isStartDate) {
-                    it.startTime = date?.time
-                    fields[START_DAY] = date
-                    fields[START_TIME] = date
+        eventItemDataSource.getItem().itemInfo.let {
+            if (isStartDate) {
+                it.startTime = date?.time
+                fields[START_DAY] = date
+                fields[START_TIME] = date
 
-                    // if the new start date surpasses end date, reset the end date
-                    if (it.startTime != null && it.endTime != null) {
-                        if (it.startTime!! > it.endTime!!) {
-                            it.endTime = null
-                        }
-                    }
-
-                    // if the new start date is null, also reset the end date
-                    if (it.startTime == null) {
+                // if the new start date surpasses end date, reset the end date
+                if (it.startTime != null && it.endTime != null) {
+                    if (it.startTime!! > it.endTime!!) {
                         it.endTime = null
                     }
                 }
-                else {
-                    it.endTime = date?.time
-                    if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
-                        val newStartDate = Date(it.endTime!!).addHour(-1)
-                        it.startTime = newStartDate.time
-                        fields[START_DAY] = newStartDate
-                        fields[START_TIME] = newStartDate
-                    }
+
+                // if the new start date is null, also reset the end date
+                if (it.startTime == null) {
+                    it.endTime = null
+                }
+            }
+            else {
+                it.endTime = date?.time
+                if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
+                    val newStartDate = Date(it.endTime!!).addHour(-1)
+                    it.startTime = newStartDate.time
+                    fields[START_DAY] = newStartDate
+                    fields[START_TIME] = newStartDate
                 }
             }
         }
@@ -135,28 +139,20 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
      * Gets the cached event's date
      */
     fun getDate(startDate: Boolean): Date? {
-        BoardItemRepository.getCache()?.itemInfo?.let {
-            if (it is EventInfo) {
-                return if (startDate) it.startTime.let {
+        eventItemDataSource.getItem().itemInfo.let {
+            return if (startDate) it.startTime.let {
+                if (it == null) null else Date(it)
+            }
+            else {
+                it.endTime.let {
                     if (it == null) null else Date(it)
-                }
-                else {
-                    it.endTime.let {
-                        if (it == null) null else Date(it)
-                    }
                 }
             }
         }
-        return null
     }
 
     fun getLocation(): EventLocation? {
-        return BoardItemRepository.getCache()?.itemInfo?.let {
-            if (it is EventInfo) {
-                it.location
-            }
-            else null
-        }
+        return eventItemDataSource.getItem().itemInfo.location
     }
 
     /**
@@ -165,11 +161,9 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
     fun setLocation(location: EventLocation?) {
         isInfoChanged = true
 
-        BoardItemRepository.getCache()?.itemInfo?.let {
-            if (it is EventInfo) {
-                it.location = location
-                fields[LOCATION] = location
-            }
+        eventItemDataSource.getItem().itemInfo.let {
+            it.location = location
+            fields[LOCATION] = location
         }
     }
 
@@ -207,33 +201,27 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
      *
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
-    fun markEventAttendStatus(itemId: String?, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        if (itemId == null) {
-            onComplete(AsyncErrorResult(Exception("ItemId cannot be NULL")))
-            return
-        }
+    fun markEventAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
         val userId = getCurrentUser()?.userId
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return
         }
 
-        BoardRepository.getCache()?.let {
-            Flowable.fromCallable {
-                it.items.find { it.itemId == itemId && it is EventItem }
-            }.flatMap {
+        getCurrentBoard().let {
+            Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } }
+                    .flatMapCompletable {
                         when (statusCode) {
-                            2 -> BoardRepository.joinEvent(userId!!, it.itemId)
-                            else -> BoardRepository.declineEvent(userId!!, it.itemId)
+                            2 -> eventItemDataSource.joinEvent(userId!!, it as EventItem)
+                            else -> eventItemDataSource.leaveEvent(userId!!, it as EventItem)
                         }
-                    }.subscribeOn(Schedulers.io())
+                    }
+                    .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        onComplete(AsyncSuccessResult(it.attendees))
+                        onComplete(AsyncSuccessResult((it.items.find { it.itemId == itemId } as? EventItem)?.itemInfo?.attendees))
                     }, {
                         onComplete(AsyncErrorResult(it))
-                    }, {
-                        //nothing yet
                     })
         }
     }
@@ -247,19 +235,18 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
 
         isInfoChanged = true
 
-        BoardRepository.getCache()?.let {
+        getCurrentBoard().let {
+            val item = eventItemDataSource.getItem()
             when (statusCode) {
-                2 -> BoardItemRepository.joinEvent(userId!!)
-                else -> BoardItemRepository.declineEvent(userId!!)
+                2 -> eventItemDataSource.joinEvent(userId!!, item)
+                else -> eventItemDataSource.leaveEvent(userId!!, item)
             }
             .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        onComplete(AsyncSuccessResult(it.attendees))
+                        onComplete(AsyncSuccessResult(eventItemDataSource.getItem().itemInfo.attendees))
                     }, {
                         onComplete(AsyncErrorResult(it))
-                    }, {
-                        //nothing yet
                     })
         }
     }
@@ -268,34 +255,32 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
      * Retrieves place information
      */
     fun loadPlaceInfo(customName: String?, onComplete: (AsyncResult<EventLocation>) -> Unit) {
-        BoardItemRepository.getCache()?.itemInfo?.let {
-            if (it is EventInfo) {
-                val placeId = it.location?.googlePlaceId
-                if (!TextUtils.isEmpty(placeId)) {
-                    placeProvider?.let {
-                        it.getPlaces(arrayOf(placeId!!))
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe({
-                                    if (it.isNotEmpty()) {
-                                        it.first().let {
-                                            onComplete(AsyncSuccessResult(
-                                                    EventLocation(
-                                                            it.latLng.latitude,
-                                                            it.latLng.longitude,
-                                                            it.id,
-                                                            "g-place_id",
-                                                            if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
-                                                            it.address.toString())))
-                                        }
+        eventItemDataSource.getItem().itemInfo.let {
+            val placeId = it.location?.googlePlaceId
+            if (!TextUtils.isEmpty(placeId)) {
+                placeProvider?.let {
+                    it.getPlaces(arrayOf(placeId!!))
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe({
+                                if (it.isNotEmpty()) {
+                                    it.first().let {
+                                        onComplete(AsyncSuccessResult(
+                                                EventLocation(
+                                                        it.latLng.latitude,
+                                                        it.latLng.longitude,
+                                                        it.id,
+                                                        "g-place_id",
+                                                        if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
+                                                        it.address.toString())))
                                     }
-                                    else {
-                                        onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
-                                    }
-                                }, {
-                                    onComplete(AsyncErrorResult(it))
-                                })
-                    }
+                                }
+                                else {
+                                    onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
+                                }
+                            }, {
+                                onComplete(AsyncErrorResult(it))
+                            })
                 }
             }
         }
@@ -306,6 +291,8 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
 
         note = s
     }
+
+    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getCurrentCircle()!!.circleId).blockingFirst()
 
     //endregion
     //region autocomplete
@@ -468,7 +455,7 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
 
     private fun getPlaceSuggestions(query: String): List<Suggestion> {
         return ArrayList<Suggestion>().apply {
-            CircleRepository.getCache()?.let {
+            circleInteractor.getCurrentCircle()?.let {
 
                 val showAllCustomPlaces = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
 
@@ -493,11 +480,13 @@ class EventItemInteractor(private val userDataSource: UserDataSource) {
 
     private fun getInviteeSuggestions(query: String): List<Suggestion> {
         return ArrayList<Suggestion>().apply {
-            userDataSource.getUsers("1234").blockingFirst()?.let {
-                val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
-                    !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
+            circleInteractor.getCurrentCircle()?.let {
+                userDataSource.getUsers(it.circleId).blockingFirst()?.let {
+                    val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
+                        !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
+                    }
+                    addAll(users.map { Suggestion(it) })
                 }
-                addAll(users.map { Suggestion(it) })
             }
         }
     }

@@ -2,6 +2,8 @@ package io.jitrapon.glom.base.di
 
 import android.app.Application
 import dagger.Component
+import io.jitrapon.glom.base.domain.CircleDataSource
+import io.jitrapon.glom.base.domain.CircleInteractor
 import io.jitrapon.glom.base.domain.UserDataSource
 import javax.inject.Singleton
 
@@ -17,4 +19,6 @@ interface BaseComponent {
 
     fun application(): Application
     fun userDataSource(): UserDataSource
+    fun circleDataSource(): CircleDataSource
+    fun circleInteractor(): CircleInteractor
 }

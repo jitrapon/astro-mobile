@@ -7,7 +7,7 @@ import io.jitrapon.glom.base.di.ObjectGraph
  *
 * Created by Jitrapon
 */
-object Injector {
+object BoardInjector {
 
     private var boardComponent: BoardComponent? = null
 

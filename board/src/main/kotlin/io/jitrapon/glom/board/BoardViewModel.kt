@@ -8,7 +8,6 @@ import android.view.View
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.CircleInteractor
 import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
@@ -30,6 +29,7 @@ class BoardViewModel : BaseViewModel() {
     @Inject
     lateinit var boardInteractor: BoardInteractor
 
+    @Inject
     lateinit var circleInteractor: CircleInteractor
 
     /* live data for the board items */
@@ -70,8 +70,6 @@ class BoardViewModel : BaseViewModel() {
      */
     private val syncItemIds = HashMap<String, UiModel.Status>()
 
-    private var counter: Int = 0
-
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
@@ -80,13 +78,13 @@ class BoardViewModel : BaseViewModel() {
     }
 
     init {
-        Injector.getComponent().inject(this)
+        BoardInjector.getComponent().inject(this)
 
         boardInteractor.setFilteringType(itemFilterType)
-        circleInteractor = CircleInteractor()
 
-        loadBoard(false)
+        // begin loading board and circle info
         loadCircleInfo()
+        loadBoard(false)
     }
 
     //region board actions
@@ -97,7 +95,6 @@ class BoardViewModel : BaseViewModel() {
      * @param refresh If true, old data will be discarded and will be refreshed from the server again
      */
     fun loadBoard(refresh: Boolean) {
-        AppLogger.i("ViewModel counter: ${++counter}")
         observableBoard.value = boardUiModel.apply {
             status = UiModel.Status.LOADING
             saveItem = null
@@ -186,7 +183,7 @@ class BoardViewModel : BaseViewModel() {
      * Displays new board item view
      */
     fun showEmptyNewItem(itemType: Int) {
-        observableBoardItem.value = Triple(boardInteractor.createItem(itemType), null, true)
+        observableBoardItem.value = Triple(boardInteractor.createEmptyItem(itemType), null, true)
     }
 
     /**
@@ -334,11 +331,11 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Loads information about this circle, specifically name, avatar, and places
      */
-    fun loadCircleInfo() {
+    private fun loadCircleInfo() {
         circleInteractor.loadCircle("name", "avatar", "places") {
             when (it) {
                 is AsyncSuccessResult -> {
-
+                    //TODO display circle info in board
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
@@ -400,7 +397,7 @@ class BoardViewModel : BaseViewModel() {
      */
     override fun onCleared() {
         BoardItemViewModelStore.clear()
-        Injector.clear()
+        BoardInjector.clear()
     }
 
     //endregion

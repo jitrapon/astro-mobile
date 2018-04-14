@@ -5,7 +5,6 @@ import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import io.reactivex.Single
-import java.util.concurrent.TimeUnit
 
 /**
  * Repository for retrieving and saving User information
@@ -30,7 +29,6 @@ class UserRepository : Repository<User>(), UserDataSource {
                         }
                     }
                 }
-                .delay(500L, TimeUnit.MILLISECONDS)
     }
 
     override fun getUser(userId: String): Single<User> = Single.fromCallable {

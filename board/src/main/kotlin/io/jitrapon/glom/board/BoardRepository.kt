@@ -2,7 +2,6 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.repository.Repository
-import io.jitrapon.glom.board.event.EditAttendeeResponse
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventLocation
@@ -16,20 +15,49 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-object BoardRepository : Repository<Board>() {
+class BoardRepository : Repository<Board>(), BoardDataSource {
 
-    /*
-     * Cached board state. Will be updated whenever loadBoard() function
-     * is called
-     */
     private var board: Board? = null
 
-    fun load(): Flowable<Board> {
-        board = board ?: Board("abcd1234", getItems())
-        return Flowable.just(board!!).delay(1000L, TimeUnit.MILLISECONDS)
+    override fun getBoard(circleId: String): Flowable<Board> {
+        return if (board == null) {
+            board = Board(circleId, getItems())
+            Flowable.just(board!!).delay(1500L, TimeUnit.MILLISECONDS)
+        }
+        else {
+            Flowable.just(board!!)
+        }
     }
 
-    fun getCache(): Board? = board
+    override fun addItem(item: BoardItem): Completable {
+        return Completable.fromCallable {
+            board?.items?.add(item)
+        }
+    }
+
+    override fun editItem(item: BoardItem): Completable {
+        return Completable.fromCallable {
+            board?.items?.let {
+                val index = it.indexOfFirst { it.itemId == item.itemId }
+                if (index != -1) it[index] = item
+            }
+        }.delay(5000L, TimeUnit.MILLISECONDS)
+    }
+
+    override fun deleteItem(itemId: String): Completable {
+        return Completable.fromCallable {
+            board?.items?.let {
+                val index = it.indexOfFirst { it.itemId == itemId }
+                it.removeAt(index)
+            }
+        }
+    }
+
+    override fun createItem(item: BoardItem): Completable {
+        return Completable.fromCallable {
+
+        }.delay(5000L, TimeUnit.MILLISECONDS)
+    }
 
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)
@@ -103,80 +131,5 @@ object BoardRepository : Repository<Board>() {
         add(EventItem(BoardItem.TYPE_EVENT, "11", createdTime, createdTime, listOf("yoshi3003"),
                 EventInfo("play game", startTime, null, null, null, "Asia/Bangkok", false,
                         null, false, false, arrayListOf("yoshi3003"))))
-    }
-
-    fun joinEvent(userId: String, itemId: String?): Flowable<EditAttendeeResponse> {
-        return Flowable.just(EditAttendeeResponse(userId, 2))
-                .flatMap { response ->
-                    Flowable.fromCallable {
-                        board?.items?.find { it.itemId == itemId }?.let {
-                            if (it is EventItem) {
-                                it.itemInfo.attendees.add(userId)
-                                response.attendees = it.itemInfo.attendees
-                            }
-                        }
-                        response
-                    }
-                }
-                .delay(1000L, TimeUnit.MILLISECONDS)
-    }
-
-    fun declineEvent(userId: String, itemId: String?): Flowable<EditAttendeeResponse> {
-        return Flowable.just(EditAttendeeResponse(userId, 1))
-                .flatMap { response ->
-                    Flowable.fromCallable {
-                        board?.items?.find { it.itemId == itemId }?.let {
-                            if (it is EventItem) {
-                                it.itemInfo.attendees.removeAll {
-                                    it.equals(userId, true)
-                                }
-                                response.attendees = it.itemInfo.attendees
-                            }
-                        }
-                        response
-                    }
-                }
-                .delay(1000L, TimeUnit.MILLISECONDS)
-    }
-
-    fun addItem(item: BoardItem): Flowable<BoardItem> {
-        return Flowable.fromCallable {
-            board?.items?.add(item)
-            item
-        }
-    }
-
-    fun deleteItem(itemId: String): Completable {
-        return Completable.fromCallable {
-            board?.items?.let {
-                val index = it.indexOfFirst { it.itemId == itemId }
-                it.removeAt(index)
-            }
-        }
-    }
-
-    /**
-     * Edits the board item's specific item info using the specified new board item
-     */
-    fun editItem(item: BoardItem): Flowable<BoardItem> {
-        return Flowable.just(EditBoardItemResponse("circleId", "123"))
-                .flatMap { response ->
-                    Flowable.fromCallable {
-                        board?.items?.let {
-                            val index = it.indexOfFirst { it.itemId == item.itemId }
-                            if (index != -1) it[index] = item
-                        }
-                        item
-                    }
-                }
-                .delay(5000L, TimeUnit.MILLISECONDS)
-    }
-
-    /**
-     * Edits the board item's specific item info using the specified new board item
-     */
-    fun createItem(item: BoardItem): Flowable<BoardItem> {
-        return Flowable.just(item)
-                .delay(5000L, TimeUnit.MILLISECONDS)
     }
 }

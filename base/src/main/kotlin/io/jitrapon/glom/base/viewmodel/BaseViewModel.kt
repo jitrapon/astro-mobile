@@ -43,7 +43,8 @@ abstract class BaseViewModel : ViewModel() {
      * Generic load function to execute long running blocking operation.
      * Supports automatically showing loading progressbar for convenience
      */
-    fun <T> runBlockingIO(function: ((AsyncResult<T>) -> Unit) -> Unit, callbackDelay: Long = 150L, onComplete: (AsyncResult<T>) -> Unit) {
+    inline fun <reified T> runBlockingIO(function: ((AsyncResult<T>) -> Unit) -> Unit,
+                                         callbackDelay: Long = 150L, crossinline onComplete: (AsyncResult<T>) -> Unit) {
         if (isViewEmpty()) observableViewAction.value = EmptyLoading(true)
         else observableViewAction.value = Loading(true)
         function {
