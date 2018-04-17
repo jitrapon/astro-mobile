@@ -19,4 +19,6 @@ interface BoardDataSource {
     fun deleteItem(itemId: String): Completable
 
     fun createItem(item: BoardItem): Completable
+
+    fun getData(): Flowable<Int>
 }

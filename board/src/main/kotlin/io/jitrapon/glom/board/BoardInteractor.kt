@@ -255,6 +255,24 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
         return getCurrentBoard().items.find { it.itemId == itemId }
     }
 
+    private var time: Long = Date().time
+
+    fun debugLoad() {
+        boardDataSource.getData()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    time = System.currentTimeMillis()
+                }
+                .subscribe({
+                    AppLogger.i("onNext(): $it [${System.currentTimeMillis() - time} ms] ")
+                }, {
+                    AppLogger.e(it)
+                }, {
+                    AppLogger.i("onComplete()")
+                })
+    }
+
     //endregion
     //region private functions
 

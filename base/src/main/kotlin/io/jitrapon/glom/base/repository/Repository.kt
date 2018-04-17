@@ -1,6 +1,7 @@
 package io.jitrapon.glom.base.repository
 
 import io.jitrapon.glom.base.model.DataModel
+import io.reactivex.Flowable
 
 /**
  * Base class for all repositories. A repository maps one-to-one to a model class implementing
@@ -10,4 +11,9 @@ import io.jitrapon.glom.base.model.DataModel
  *
  * @author Jitrapon Tiachunpun
  */
-abstract class Repository<T> where T : DataModel
+abstract class Repository<T> where T : DataModel {
+
+    fun <T> load(localDataSourceFlowable: Flowable<T>, remoteDataSourceFlowable: Flowable<T>): Flowable<T> {
+        return Flowable.concatArrayEager(localDataSourceFlowable, remoteDataSourceFlowable)
+    }
+}

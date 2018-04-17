@@ -59,6 +59,13 @@ class BoardRepository : Repository<Board>(), BoardDataSource {
         }.delay(5000L, TimeUnit.MILLISECONDS)
     }
 
+    override fun getData(): Flowable<Int> {
+        return load(
+                Flowable.just(1).delay(300L, TimeUnit.MILLISECONDS),
+                Flowable.just(2).delay(500L, TimeUnit.MILLISECONDS)
+        )
+    }
+
     private fun getItems() = ArrayList<BoardItem>().apply {
         val houseLocation = EventLocation(13.732756, 100.643237, null, null)
         val condoLocation = EventLocation(13.722591, 100.580225, null, null)

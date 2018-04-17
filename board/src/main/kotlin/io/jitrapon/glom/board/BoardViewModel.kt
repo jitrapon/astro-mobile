@@ -113,6 +113,8 @@ class BoardViewModel : BaseViewModel() {
             }
         }
         firstLoadCalled = true
+
+        boardInteractor.debugLoad()
     }
 
     /**
