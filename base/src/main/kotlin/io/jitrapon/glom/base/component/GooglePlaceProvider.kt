@@ -8,6 +8,7 @@ import android.text.TextUtils
 import com.google.android.gms.location.places.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.instantapps.InstantApps
 import io.reactivex.Single
 
 /**
@@ -24,6 +25,8 @@ import io.reactivex.Single
  */
 class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activity: Activity? = null) : PlaceProvider {
 
+    private var isInstantApp: Boolean = false
+
     //region constructors
 
     /**
@@ -39,8 +42,14 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
      */
     private val client: GeoDataClient by lazy {
         if (context == null && activity == null) throw IllegalArgumentException("Context and Activity must not be null")
-        if (context != null) Places.getGeoDataClient(context, null)
-        else Places.getGeoDataClient(activity!!, null)
+        if (context != null) {
+            isInstantApp = InstantApps.isInstantApp(context)
+            Places.getGeoDataClient(context, null)
+        }
+        else {
+            isInstantApp = InstantApps.isInstantApp(activity!!)
+            Places.getGeoDataClient(activity, null)
+        }
     }
 
     /**
@@ -66,25 +75,30 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
 
     override fun getPlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
-            if (placeIds.isEmpty()) {
+            // place APIs doesn't work with Instant App yet
+            if (isInstantApp || placeIds.isEmpty()) {
                 single.onSuccess(emptyArray())
             }
             else {
                 client.getPlaceById(*placeIds).let {
                     it.addOnCompleteListener {
-                        val places = it.result
-                        if (it.isSuccessful) {
-                            val result = ArrayList<Place>()
-                            places
-                                    .filter { it.isDataValid }
-                                    .forEach { result.add(it.freeze()) }
-                            places.release()
-                            single.onSuccess(result.toTypedArray())
-                        }
-                        else {
-                            it.exception?.let {
-                                single.onError(it)
+                        try {
+                            val places = it.result
+                            if (it.isSuccessful) {
+                                val result = ArrayList<Place>()
+                                places
+                                        .filter { it.isDataValid }
+                                        .forEach { result.add(it.freeze()) }
+                                places.release()
+                                single.onSuccess(result.toTypedArray())
+                            } else {
+                                it.exception?.let {
+                                    single.onError(it)
+                                }
                             }
+                        }
+                        catch (ex: Exception) {
+                            single.onError(ex)
                         }
                     }
                     it.addOnFailureListener {
