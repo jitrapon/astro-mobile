@@ -13,7 +13,7 @@ data class User(val userType: Int,
                 val userId: String,
                 var userName: String,
                 var avatar: String?,
-                override val retrievedTime: Date? = Date(),
+                override var retrievedTime: Date? = Date(),
                 override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(

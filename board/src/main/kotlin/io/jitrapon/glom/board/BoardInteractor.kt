@@ -60,10 +60,10 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
      * Loading of items will be executed on the IO thread pool, while processing items will be executed
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
-    fun loadBoard(onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+    fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         circleInteractor.getCurrentCircle().let {
             if (it != null) {
-                Flowable.zip(boardDataSource.getBoard(it.circleId), userDataSource.getUsers(it.circleId),
+                Flowable.zip(boardDataSource.getBoard(it.circleId, refresh), userDataSource.getUsers(it.circleId),
                         BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                             board to users
                         })
@@ -77,7 +77,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
                             itemsLoaded = it.first.items.size
                         }
                         .subscribe({
-                            onComplete(AsyncSuccessResult(it.second))
+                            onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
                         }, {
                             onComplete(AsyncErrorResult(it))
                         }, {
@@ -256,22 +256,6 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
     }
 
     private var time: Long = Date().time
-
-    fun debugLoad() {
-        boardDataSource.getData()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe {
-                    time = System.currentTimeMillis()
-                }
-                .subscribe({
-                    AppLogger.i("onNext(): $it [${System.currentTimeMillis() - time} ms] ")
-                }, {
-                    AppLogger.e(it)
-                }, {
-                    AppLogger.i("onComplete()")
-                })
-    }
 
     //endregion
     //region private functions

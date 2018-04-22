@@ -23,6 +23,8 @@ class EmptyLoading(val show: Boolean): UiActionModel
 
 class Navigation(val action: String, val payload: Any?) : UiActionModel
 
+class ReloadData(val delay: Long) : UiActionModel
+
 object MessageLevel {
 
     const val INFO = 0

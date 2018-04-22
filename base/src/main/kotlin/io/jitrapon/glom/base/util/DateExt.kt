@@ -9,6 +9,7 @@ import io.jitrapon.glom.base.util.DateTimeFormat.YESTERDAY
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
 * Created by Jitrapon
@@ -139,4 +140,8 @@ fun Date.toDayMonthYear(): Triple<Int, Int, Int> {
         it.time = this
         Triple(it[Calendar.DAY_OF_MONTH], it[Calendar.MONTH], it[Calendar.YEAR])
     }
+}
+
+fun Date.withinDuration(other: Date, seconds: Int): Boolean {
+    return TimeUnit.SECONDS.convert(Math.abs(time - other.time), TimeUnit.MILLISECONDS) <= seconds
 }

@@ -8,6 +8,8 @@ import android.os.Looper
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.withinDuration
+import java.util.*
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
@@ -43,16 +45,22 @@ abstract class BaseViewModel : ViewModel() {
      * Generic load function to execute long running blocking operation.
      * Supports automatically showing loading progressbar for convenience
      */
-    inline fun <reified T> runBlockingIO(function: ((AsyncResult<T>) -> Unit) -> Unit,
-                                         callbackDelay: Long = 150L, crossinline onComplete: (AsyncResult<T>) -> Unit) {
+    inline fun <reified T> loadData(refresh: Boolean, function: (Boolean, (AsyncResult<Pair<Date, T>>) -> Unit) -> Unit,
+                                    callbackDelay: Long = 150L, crossinline onComplete: (AsyncResult<Pair<Date, T>>) -> Unit) {
         if (isViewEmpty()) observableViewAction.value = EmptyLoading(true)
         else observableViewAction.value = Loading(true)
-        function {
+        function(refresh) {
             arrayOf({
                 if (isViewEmpty()) observableViewAction.value = EmptyLoading(false)
                 else observableViewAction.value = Loading(false)
             }, {
                 onComplete(it)
+
+                // if loading is successful, check if data is stale
+                // if it is, force refresh
+                if (it is AsyncSuccessResult && !it.result.first.withinDuration(Date(), 5)) {
+                    observableViewAction.value = ReloadData(100L)
+                }
             }).run(callbackDelay)
         }
     }

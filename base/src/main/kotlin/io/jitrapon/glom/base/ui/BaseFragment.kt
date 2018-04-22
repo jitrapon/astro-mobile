@@ -87,6 +87,7 @@ abstract class BaseFragment : Fragment() {
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
+                is ReloadData -> onRefresh(it.delay)
             }
         }
     }
@@ -96,7 +97,7 @@ abstract class BaseFragment : Fragment() {
      */
     private val onRefreshListener by lazy {
         SwipeRefreshLayout.OnRefreshListener {
-            onRefresh()
+            onRefresh(0L)
         }
     }
 
@@ -115,7 +116,7 @@ abstract class BaseFragment : Fragment() {
      * Called when a RefreshLayout has been triggered manually by the user. This is a good time
      * to call any necessary ViewModel's function to (re)-load the data
      */
-    open fun onRefresh() {}
+    open fun onRefresh(delayBeforeRefresh: Long) {}
 
     /**
      * Called when a ViewModel needs to be initialized for use later

@@ -10,7 +10,7 @@ import io.reactivex.Flowable
  */
 interface BoardDataSource {
 
-    fun getBoard(circleId: String): Flowable<Board>
+    fun getBoard(circleId: String, refresh: Boolean = false): Flowable<Board>
 
     fun addItem(item: BoardItem): Completable
 
@@ -19,6 +19,4 @@ interface BoardDataSource {
     fun deleteItem(itemId: String): Completable
 
     fun createItem(item: BoardItem): Completable
-
-    fun getData(): Flowable<Int>
 }

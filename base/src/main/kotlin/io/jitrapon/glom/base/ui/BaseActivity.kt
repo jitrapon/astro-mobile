@@ -72,6 +72,7 @@ abstract class BaseActivity : AppCompatActivity() {
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
+                is ReloadData -> onRefresh(it.delay)
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -101,6 +102,12 @@ abstract class BaseActivity : AppCompatActivity() {
     protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
     }
+
+    /**
+     * Called when a RefreshLayout has been triggered manually by the user. This is a good time
+     * to call any necessary ViewModel's function to (re)-load the data
+     */
+    open fun onRefresh(delayBeforeRefresh: Long) {}
 
     /**
      * Indicates that the view has no data and should be showing the main loading progress bar.

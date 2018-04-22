@@ -82,7 +82,6 @@ class BoardViewModel : BaseViewModel() {
 
         boardInteractor.setFilteringType(itemFilterType)
 
-        // begin loading board and circle info
         loadCircleInfo()
         loadBoard(false)
     }
@@ -100,9 +99,9 @@ class BoardViewModel : BaseViewModel() {
             saveItem = null
         }
 
-        runBlockingIO(boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
+        loadData(refresh, boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
-                is AsyncSuccessResult -> onBoardItemChanges(it, listOf())
+                is AsyncSuccessResult -> onBoardItemChanges(it.result.second, listOf())
                 is AsyncErrorResult -> {
                     handleError(it.error)
                     observableBoard.value = boardUiModel.apply {
@@ -113,18 +112,16 @@ class BoardViewModel : BaseViewModel() {
             }
         }
         firstLoadCalled = true
-
-        boardInteractor.debugLoad()
     }
 
     /**
      * Handle changes to board item list, applying DiffUtil if necessary
      */
-    private fun onBoardItemChanges(it: AsyncSuccessResult<ArrayMap<*, List<BoardItem>>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
+    private fun onBoardItemChanges(data: ArrayMap<*, List<BoardItem>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
         errorIdCounter.set(0)
 
         runAsync({
-            it.result.toUiModel().let {
+            data.toUiModel().let {
                 it to if (boardUiModel.items.isNullOrEmpty()) null else
                     DiffUtil.calculateDiff(BoardItemDiffCallback(boardUiModel.items, it), true)
             }
@@ -205,7 +202,7 @@ class BoardViewModel : BaseViewModel() {
     fun addNewItem(item: BoardItem) {
         boardInteractor.addItem(item) {
             when (it) {
-                is AsyncSuccessResult -> onBoardItemChanges(it, listOf(), item)
+                is AsyncSuccessResult -> onBoardItemChanges(it.result, listOf(), item)
                 is AsyncErrorResult -> handleError(it.error)
             }
         }
@@ -316,7 +313,7 @@ class BoardViewModel : BaseViewModel() {
                             is AsyncSuccessResult -> {
                                 syncItemIds.remove(item.itemId)
 
-                                onBoardItemChanges(it, listOf(), null)
+                                onBoardItemChanges(it.result, listOf(), null)
                                 observableViewAction.value = Snackbar(AndroidString(R.string.board_item_deleted), level = MessageLevel.SUCCESS)
                             }
                             is AsyncErrorResult -> handleError(it.error)

@@ -17,7 +17,7 @@ data class EventItem(override val itemType: Int,
                      override var updatedTime: Long?,
                      override val owners: List<String>,
                      override var itemInfo: EventInfo,
-                     override val retrievedTime: Date? = Date(),
+                     override var retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : BoardItem {
 
     override fun setInfo(info: BoardItemInfo) {

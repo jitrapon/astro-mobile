@@ -16,7 +16,7 @@ data class Circle(val circleId: String,
                   val interests: MutableList<String>,
                   var repeatInfo: RepeatInfo?,
                   val places: MutableList<PlaceInfo>,
-                  override val retrievedTime: Date? = Date(),
+                  override var retrievedTime: Date? = Date(),
                   override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(

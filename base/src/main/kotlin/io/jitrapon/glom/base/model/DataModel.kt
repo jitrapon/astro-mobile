@@ -15,7 +15,7 @@ interface DataModel : Parcelable {
     /**
      * Optional field, time at which the model is retrieved by a repository
      */
-    val retrievedTime: Date?
+    var retrievedTime: Date?
 
     /**
      * Represents the error when the model fails to be retrieved. Null if there is no error.

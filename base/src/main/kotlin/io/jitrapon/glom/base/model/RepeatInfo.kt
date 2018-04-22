@@ -13,7 +13,7 @@ data class RepeatInfo(val occurenceId: Int?,
                       val interval: Long,
                       val until: Long,
                       val meta: List<Int>?,
-                      override val retrievedTime: Date? = null,
+                      override var retrievedTime: Date? = null,
                       override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(

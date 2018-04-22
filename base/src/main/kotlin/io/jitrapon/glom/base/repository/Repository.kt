@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.repository
 
 import io.jitrapon.glom.base.model.DataModel
 import io.reactivex.Flowable
+import java.util.*
 
 /**
  * Base class for all repositories. A repository maps one-to-one to a model class implementing
@@ -13,7 +14,19 @@ import io.reactivex.Flowable
  */
 abstract class Repository<T> where T : DataModel {
 
-    fun <T> load(localDataSourceFlowable: Flowable<T>, remoteDataSourceFlowable: Flowable<T>): Flowable<T> {
-        return Flowable.concatArrayEager(localDataSourceFlowable, remoteDataSourceFlowable)
+    fun load(refresh: Boolean, localDataSourceFlowable: Flowable<T>,
+                                remoteDataSourceFlowable: Flowable<T>,
+                                saveToLocalFlowable: (remoteData: T) -> T): Flowable<T> {
+        return if (refresh) {
+            remoteDataSourceFlowable.flatMap {
+                Flowable.fromCallable {
+                    it.retrievedTime = Date()
+                    saveToLocalFlowable(it)
+                }
+            }
+        }
+        else {
+            localDataSourceFlowable
+        }
     }
 }

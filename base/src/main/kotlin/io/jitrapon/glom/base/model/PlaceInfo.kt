@@ -15,7 +15,7 @@ data class PlaceInfo(var name: String? = null,
                      var googlePlaceId: String? = null,
                      var placeId: String,
                      var status: Int = FAVORITED,
-                     override val retrievedTime: Date? = Date(),
+                     override var retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(

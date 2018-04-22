@@ -199,8 +199,15 @@ class BoardFragment : BaseFragment() {
     /**
      * Callback for when the board has been manually refreshed
      */
-    override fun onRefresh() {
-        viewModel.loadBoard(true)
+    override fun onRefresh(delayBeforeRefresh: Long) {
+        if (delayBeforeRefresh > 0L) {
+            delayRun(delayBeforeRefresh) {
+                viewModel.loadBoard(true)
+            }
+        }
+        else {
+            viewModel.loadBoard(true)
+        }
     }
 
     /**

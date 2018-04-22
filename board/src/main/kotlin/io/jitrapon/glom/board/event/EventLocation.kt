@@ -14,7 +14,7 @@ data class EventLocation(val latitude: Double?,
                          val placeId: String?,
                          val name: String? = null,
                          val description: String? = null,
-                         override val retrievedTime: Date? = null,
+                         override var retrievedTime: Date? = null,
                          override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(
