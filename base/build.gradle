@@ -129,9 +129,19 @@ dependencies {
     api "com.google.android.gms:play-services-places:$rootProject.playServicesVersion"
 
     // networking
-    api "com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion"
-    api "com.squareup.retrofit2:adapter-rxjava2:$rootProject.retrofitVersion"
+    api ("com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion") {
+        exclude group: 'com.squareup.okhttp3'
+    }
+    api ("com.squareup.retrofit2:adapter-rxjava2:$rootProject.retrofitVersion") {
+        exclude group: 'com.squareup.retrofit2'
+        exclude group: 'io.reactivex.rxjava2'
+    }
     api "com.squareup.okhttp3:okhttp:$rootProject.okhttp3Version"
+
+    // model serialization and deserialization
+    api ("com.squareup.retrofit2:converter-moshi:$rootProject.retrofitVersion") {
+        exclude group: 'com.squareup.retrofit2'
+    }
 
     // testing
     testImplementation "junit:junit:$rootProject.junitVersion"

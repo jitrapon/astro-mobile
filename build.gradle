@@ -23,7 +23,7 @@ buildscript {
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'
-        retrofitVersion = '2.3.0'
+        retrofitVersion = '2.4.0'
         keystoreProperties = new Properties()
         junitVersion = '4.12'
         espressoVersion = '3.0.1'
@@ -32,8 +32,7 @@ buildscript {
         rxJavaVersion = '2.1.6'
         rxAndroidVersion = '2.0.1'
         playServicesVersion = '12.0.0'
-        retrofitVersion = '2.3.0'
-        okhttp3Version = '3.9.1'
+        okhttp3Version = '3.10.0'
         timberVersion = '4.6.0'
         lottieVersion = '2.5.0-beta1'
         androidktxVersion = '0.2'
@@ -47,6 +46,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.2'
     }
 }
 allprojects {
