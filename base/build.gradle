@@ -137,6 +137,7 @@ dependencies {
         exclude group: 'io.reactivex.rxjava2'
     }
     api "com.squareup.okhttp3:okhttp:$rootProject.okhttp3Version"
+    implementation "com.squareup.okhttp3:logging-interceptor:$rootProject.okhttp3Version"
 
     // model serialization and deserialization
     api ("com.squareup.retrofit2:converter-moshi:$rootProject.retrofitVersion") {

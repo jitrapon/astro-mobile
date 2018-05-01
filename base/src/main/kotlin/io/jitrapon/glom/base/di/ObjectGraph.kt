@@ -18,6 +18,7 @@ object ObjectGraph {
         component = DaggerBaseComponent.builder()
                 .baseModule(BaseModule(application))
                 .baseDomainModule(BaseDomainModule())
+                .netModule(NetModule())
                 .build()
     }
 }

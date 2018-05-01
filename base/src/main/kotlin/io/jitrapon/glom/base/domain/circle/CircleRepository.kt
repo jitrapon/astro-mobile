@@ -1,6 +1,5 @@
-package io.jitrapon.glom.base.domain
+package io.jitrapon.glom.base.domain.circle
 
-import io.jitrapon.glom.base.model.Circle
 import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Single

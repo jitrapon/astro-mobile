@@ -5,12 +5,12 @@ import android.support.v4.util.ArrayMap
 import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.domain.CircleInteractor
-import io.jitrapon.glom.base.domain.UserDataSource
+import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.domain.user.User
+import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.board.event.EventInfo

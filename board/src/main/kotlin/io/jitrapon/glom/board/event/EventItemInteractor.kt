@@ -5,8 +5,9 @@ import android.util.SparseArray
 import androidx.util.set
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
-import io.jitrapon.glom.base.domain.CircleInteractor
-import io.jitrapon.glom.base.domain.UserDataSource
+import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.domain.user.User
+import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Board
@@ -23,7 +24,7 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemInteractor(private val userDataSource: UserDataSource, private val circleInteractor: CircleInteractor, 
+class EventItemInteractor(private val userDataSource: UserDataSource, private val circleInteractor: CircleInteractor,
                           private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
 
     private var placeProvider: PlaceProvider? = null

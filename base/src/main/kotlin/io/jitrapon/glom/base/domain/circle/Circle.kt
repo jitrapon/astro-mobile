@@ -1,7 +1,10 @@
-package io.jitrapon.glom.base.model
+package io.jitrapon.glom.base.domain.circle
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.jitrapon.glom.base.model.DataModel
+import io.jitrapon.glom.base.model.PlaceInfo
+import io.jitrapon.glom.base.model.RepeatInfo
 import java.util.*
 
 /**

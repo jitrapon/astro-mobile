@@ -2,8 +2,8 @@ package io.jitrapon.glom.board
 
 import dagger.Module
 import dagger.Provides
-import io.jitrapon.glom.base.domain.CircleInteractor
-import io.jitrapon.glom.base.domain.UserDataSource
+import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.board.event.EventItemDataSource
 import io.jitrapon.glom.board.event.EventItemInteractor
 import io.jitrapon.glom.board.event.EventItemRepository

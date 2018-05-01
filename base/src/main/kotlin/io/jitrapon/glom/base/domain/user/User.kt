@@ -1,7 +1,8 @@
-package io.jitrapon.glom.base.model
+package io.jitrapon.glom.base.domain.user
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.jitrapon.glom.base.model.DataModel
 import java.util.*
 
 /**

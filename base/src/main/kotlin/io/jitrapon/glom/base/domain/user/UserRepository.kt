@@ -1,7 +1,6 @@
-package io.jitrapon.glom.base.domain
+package io.jitrapon.glom.base.domain.user
 
 import android.support.v4.util.ArrayMap
-import io.jitrapon.glom.base.model.User
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -11,7 +10,7 @@ import io.reactivex.Single
  *
  * @author Jitrapon Tiachunpun
  */
-class UserRepository : Repository<User>(), UserDataSource {
+class UserRepository(private val remoteDataSource: UserDataSource) : Repository<User>(), UserDataSource {
 
     /* in-memory cache of the list of users */
     private var users: List<User>? = null
@@ -36,6 +35,10 @@ class UserRepository : Repository<User>(), UserDataSource {
     }
 
     override fun getCurrentUser(): Single<User> = getUser("yoshi3003")
+
+    override fun getTestUsers(): Flowable<List<User>> {
+        return remoteDataSource.getTestUsers()
+    }
 
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {
