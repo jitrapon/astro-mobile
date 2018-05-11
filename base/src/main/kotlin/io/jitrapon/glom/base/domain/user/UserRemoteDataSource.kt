@@ -3,7 +3,6 @@ package io.jitrapon.glom.base.domain.user
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.reactivex.Flowable
 import io.reactivex.Single
-import java.util.*
 
 class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
 
@@ -20,11 +19,4 @@ class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
     override fun getCurrentUser(): Single<User> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
-
-    override fun getTestUsers(): Flowable<List<User>> {
-        val now = Date()
-        return api.getTestUsers().map { it.map { it.toUser(now) } }
-    }
-
-    private fun UserResponse.toUser(retrievedTime: Date): User = User(1, id, name, null, retrievedTime)
 }

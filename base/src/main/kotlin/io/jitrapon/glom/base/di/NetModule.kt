@@ -28,7 +28,7 @@ class NetModule {
     @Named("apiBaseUrl")
     fun provideBaseUrl(): String {
         // should end with a backslash
-        return "https://jsonplaceholder.typicode.com/"
+        return "http://www.mocky.io/v2/"
     }
 
     @Provides

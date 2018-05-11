@@ -14,7 +14,7 @@ import javax.inject.Inject
 open class RemoteDataSource {
 
     @Inject
-    internal lateinit var retrofit: Retrofit
+    lateinit var retrofit: Retrofit
 
     init {
         ObjectGraph.component.inject(this)

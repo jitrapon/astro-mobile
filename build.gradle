@@ -7,7 +7,7 @@ buildscript {
     ext {
         versionCode = 1
         versionName = '1.0'
-        kotlinVersion = '1.2.31'
+        kotlinVersion = '1.2.41'
         buildToolsVersion = '27.0.3'
         compileSdkVersion = 27
         targetSdkVersion = 27
@@ -18,8 +18,8 @@ buildscript {
         runnerVersion = '1.0.1'
         rulesVersion = '1.0.1'
         archLifecycleVersion = '1.1.1'
-        archRoomVersion = '1.1.0-beta1'
-        archPagingVersion = '1.0.0-alpha7'
+        archRoomVersion = '1.1.0-rc1'
+        archPagingVersion = '1.0.0-rc1'
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'

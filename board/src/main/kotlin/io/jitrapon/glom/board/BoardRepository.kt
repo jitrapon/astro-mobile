@@ -15,16 +15,17 @@ import java.util.concurrent.TimeUnit
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository : Repository<Board>(), BoardDataSource {
+class BoardRepository(private val remoteDataSource: BoardDataSource) : Repository<Board>(), BoardDataSource {
 
     private var board: Board? = null
 
     private var isFirstLoad: Boolean = true
 
     override fun getBoard(circleId: String, refresh: Boolean): Flowable<Board> {
+        board = board ?: Board(circleId, getTestItems(false), Date(10000000L))
         return load(refresh,
-                Flowable.just(if (isFirstLoad) Board(circleId, getTestItems(false), Date(1524247200000L)) else board!!),
-                Flowable.just(Board(circleId, getTestItems(true))).delay(750L, TimeUnit.MILLISECONDS),
+                Flowable.just(board),
+                remoteDataSource.getBoard(circleId),
                 {
                     board = it
                     isFirstLoad = false

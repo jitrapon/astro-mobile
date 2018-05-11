@@ -13,7 +13,7 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideBoardDataSource(): BoardDataSource = BoardRepository()
+    fun provideBoardDataSource(): BoardDataSource = BoardRepository(BoardRemoteDataSource())
 
     @Provides
     @BoardScope
