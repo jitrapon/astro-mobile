@@ -66,11 +66,6 @@ abstract class BaseFragment : Fragment() {
         }
         onCreateViewModel(activity!!)
         onSetupView(view)
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
         onSubscribeToObservables()
     }
 

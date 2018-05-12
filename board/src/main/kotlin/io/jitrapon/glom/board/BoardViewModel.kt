@@ -104,9 +104,13 @@ class BoardViewModel : BaseViewModel() {
                 is AsyncSuccessResult -> onBoardItemChanges(it.result.second, listOf())
                 is AsyncErrorResult -> {
                     handleError(it.error)
+
                     observableBoard.value = boardUiModel.apply {
                         saveItem = null
-                        items = null
+                        itemsChangedIndices = null
+
+                        // if items have been loaded successfully before, show them as it is
+                        status = if (items.isNullOrEmpty()) UiModel.Status.ERROR else UiModel.Status.SUCCESS
                     }
                 }
             }
@@ -136,10 +140,13 @@ class BoardViewModel : BaseViewModel() {
             }
         }, onError = {
             handleError(it)
+
             observableBoard.value = boardUiModel.apply {
                 saveItem = null
-                status = UiModel.Status.ERROR
-                items = null
+                itemsChangedIndices = null
+
+                // if items have been loaded successfully before, show them as it is
+                status = if (items.isNullOrEmpty()) UiModel.Status.ERROR else UiModel.Status.SUCCESS
             }
         })
     }
