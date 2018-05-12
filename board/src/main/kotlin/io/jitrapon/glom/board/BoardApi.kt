@@ -5,6 +5,6 @@ import retrofit2.http.GET
 
 interface BoardApi {
 
-    @GET("5af57b16310000780000248e")
+    @GET("5af6b5cf3100006600002720")
     fun getBoard(): Flowable<BoardResponse>
 }
