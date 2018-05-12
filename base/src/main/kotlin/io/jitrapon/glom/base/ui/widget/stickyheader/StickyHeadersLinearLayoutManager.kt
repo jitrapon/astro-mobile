@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.view.ViewTreeObserver
+import io.jitrapon.glom.base.util.AppLogger
 
 /**
  * Adds sticky headers capabilities to your {@link RecyclerView.Adapter}. It must implement {@link StickyHeaders} to
@@ -129,12 +130,17 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
     }
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
-        detachStickyHeader()
-        super.onLayoutChildren(recycler, state)
-        attachStickyHeader()
+        try {
+            detachStickyHeader()
+            super.onLayoutChildren(recycler, state)
+            attachStickyHeader()
 
-        if (!state.isPreLayout) {
-            updateStickyHeader(recycler, true)
+            if (!state.isPreLayout) {
+                updateStickyHeader(recycler, true)
+            }
+        }
+        catch (ex: Exception) {
+            AppLogger.e(ex)
         }
     }
 
