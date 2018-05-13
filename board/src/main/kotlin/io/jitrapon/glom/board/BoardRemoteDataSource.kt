@@ -1,11 +1,13 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.repository.RemoteDataSource
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.event.EventLocation
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import org.json.JSONArray
 import java.util.*
 
 class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
@@ -36,14 +38,6 @@ class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
 
     //region deserializers
 
-    private fun JSONArray.toIntList(): MutableList<Int> {
-        return Collections.emptyList()
-    }
-
-    private fun JSONArray.toStringList(): MutableList<String> {
-        return Collections.emptyList()
-    }
-
     private fun BoardResponse.deserialize(): Board {
         return Board(boardId = boardId, items = items.deserialize(), retrievedTime = Date())
     }
@@ -53,14 +47,40 @@ class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
         return ArrayList<BoardItem>().apply {
             this@deserialize.forEach {
                 when (it.itemType) {
-                    BoardItem.TYPE_EVENT -> add(EventItem(BoardItem.TYPE_EVENT, it.itemId, it.createdTime,
-                            it.updatedTime, it.owners,
-                            EventInfo("play game", null, null, null, null, "Asia/Bangkok", false,
-                                    null, false, false, arrayListOf("yoshi3003")),
-                            now)
-                    )
+                    BoardItem.TYPE_EVENT -> {
+                        add(EventItem(BoardItem.TYPE_EVENT, it.itemId, it.createdTime, it.updatedTime, it.owners,
+                                it.info.let {
+                                    EventInfo(it["event_name"] as String,
+                                            it["start_time"].asNullableLong(),
+                                            it["end_time"].asNullableLong(),
+                                            (it["location"] as? Map<*, *>)?.let {
+                                                EventLocation(it["lat"].asNullableDouble(),
+                                                        it["long"].asNullableDouble(),
+                                                        it["g_place_id"] as? String?,
+                                                        it["place_id"] as? String?
+                                                )
+                                            },
+                                            it["note"] as? String?,
+                                            it["time_zone"] as? String?,
+                                            it["is_full_day"] as Boolean,
+                                            (it["repeat"] as? Map<*, *>)?.let {
+                                                RepeatInfo(it["occurence_id"].asNullableInt(),
+                                                        it["is_reschedule"] as? Boolean?,
+                                                        it["unit"].asInt(),
+                                                        it["interval"].asLong(),
+                                                        it["until"].asLong(),
+                                                        it["meta"].asNullableIntList()
+                                                )
+                                            },
+                                            it["is_date_poll_opened"] as Boolean,
+                                            it["is_date_poll_opened"] as Boolean,
+                                            ArrayList(it["attendees"] as List<String>))
+                                }, now)
+                        )
+                    }
                 }
             }
+            AppLogger.i("Added item")
         }
     }
 
