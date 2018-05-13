@@ -82,7 +82,7 @@ class BoardViewModel : BaseViewModel() {
 
         boardInteractor.setFilteringType(itemFilterType)
 
-        loadCircleInfo()
+        loadActiveCircleInfo()
         loadBoard(false)
     }
 
@@ -337,8 +337,8 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Loads information about this circle, specifically name, avatar, and places
      */
-    private fun loadCircleInfo() {
-        circleInteractor.loadCircle("name", "avatar", "places") {
+    private fun loadActiveCircleInfo() {
+        circleInteractor.loadCircle(true, "name", "avatar", "places") {
             when (it) {
                 is AsyncSuccessResult -> {
                     //TODO display circle info in board

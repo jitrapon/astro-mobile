@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.domain.circle.CircleRemoteDataSource
 import io.jitrapon.glom.base.domain.circle.CircleRepository
 import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.domain.user.UserRemoteDataSource
@@ -19,7 +20,7 @@ class BaseDomainModule {
 
     @Provides
     @Singleton
-    fun provideCircleRepository(): CircleDataSource = CircleRepository()
+    fun provideCircleRepository(): CircleDataSource = CircleRepository(CircleRemoteDataSource())
 
     @Provides
     @Singleton

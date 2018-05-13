@@ -1,6 +1,6 @@
 package io.jitrapon.glom.base.domain.circle
 
-import io.reactivex.Single
+import io.reactivex.Flowable
 
 /**
  * Main entry point to circle data
@@ -9,5 +9,5 @@ import io.reactivex.Single
  */
 interface CircleDataSource {
 
-    fun getCircle(id: String, vararg params: String): Single<Circle>
+    fun getCircle(refresh: Boolean, id: String, vararg params: String): Flowable<Circle>
 }

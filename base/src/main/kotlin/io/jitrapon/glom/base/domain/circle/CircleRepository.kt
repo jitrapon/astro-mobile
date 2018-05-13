@@ -2,21 +2,21 @@ package io.jitrapon.glom.base.domain.circle
 
 import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.repository.Repository
-import io.reactivex.Single
+import io.reactivex.Flowable
 
 /**
  * Repository for retrieving and interacting with Circle
  *
  * @author Jitrapon Tiachunpun
  */
-class CircleRepository : Repository<Circle>(), CircleDataSource {
+class CircleRepository(private val remoteDataSource: CircleDataSource) : Repository<Circle>(), CircleDataSource {
 
     private var circle: Circle? = null
 
-    override fun getCircle(id: String, vararg params: String): Single<Circle> {
+    override fun getCircle(refresh: Boolean, id: String, vararg params: String): Flowable<Circle> {
         circle = circle ?: Circle(id, "my circle", null, null,
                 ArrayList(), null, getPlaces())
-        return Single.just(circle!!)
+        return Flowable.just(circle!!)
     }
 
     private fun getPlaces(): MutableList<PlaceInfo> {

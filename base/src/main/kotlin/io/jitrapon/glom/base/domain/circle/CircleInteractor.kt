@@ -20,13 +20,13 @@ class CircleInteractor(private val circleDataSource: CircleDataSource) {
     /**
      * Loads a circle from a data source, with an optional specified list of fields
      */
-    fun loadCircle(vararg fields: String, onComplete: (AsyncResult<Circle>) -> Unit) {
+    fun loadCircle(refresh: Boolean, vararg fields: String, onComplete: (AsyncResult<Circle>) -> Unit) {
         getCurrentCircle().let {
             if (it == null) {
                 onComplete(AsyncErrorResult(Exception("Active circle ID is NULL")))
             }
             else {
-                circleDataSource.getCircle(it.circleId, *fields)
+                circleDataSource.getCircle(refresh, it.circleId, *fields)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({
@@ -43,7 +43,7 @@ class CircleInteractor(private val circleDataSource: CircleDataSource) {
      */
     fun getCurrentCircle(): Circle? {
         try {
-            return circleDataSource.getCircle(activeCircleId).blockingGet()
+            return circleDataSource.getCircle(false, activeCircleId).blockingFirst()
         }
         catch (ex: Exception) {
             AppLogger.e(ex)
