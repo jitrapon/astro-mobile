@@ -9,5 +9,5 @@ import io.reactivex.Flowable
  */
 interface CircleDataSource {
 
-    fun getCircle(refresh: Boolean, id: String, vararg params: String): Flowable<Circle>
+    fun getCircle(refresh: Boolean, id: String): Flowable<Circle>
 }

@@ -24,5 +24,6 @@ class BaseDomainModule {
 
     @Provides
     @Singleton
-    fun provideCircleInteractor(dataSource: CircleDataSource): CircleInteractor = CircleInteractor(dataSource)
+    fun provideCircleInteractor(circleDataSource: CircleDataSource, userDataSource: UserDataSource):
+            CircleInteractor = CircleInteractor(circleDataSource, userDataSource)
 }

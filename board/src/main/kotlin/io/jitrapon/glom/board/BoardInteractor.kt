@@ -61,33 +61,27 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
     fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
-        circleInteractor.getCurrentCircle().let {
-            if (it != null) {
-                Flowable.zip(boardDataSource.getBoard(it.circleId, refresh), userDataSource.getUsers(it.circleId),
-                        BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
-                            board to users
-                        })
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(Schedulers.computation())
-                        .flatMap {
-                            processItems(it.first)
-                        }
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext {
-                            itemsLoaded = it.first.items.size
-                        }
-                        .subscribe({
-                            onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
-                        }, {
-                            onComplete(AsyncErrorResult(it))
-                        }, {
-                            //nothing yet
-                        })
-            }
-            else {
-                onComplete(AsyncErrorResult(Exception("Active circle ID is null")))
-            }
-        }
+        val circleId = circleInteractor.getActiveCircleId()
+        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userDataSource.getUsers(circleId),
+                BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
+                    board to users
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .flatMap {
+                    processItems(it.first)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    itemsLoaded = it.first.items.size
+                }
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
     }
 
     /**
@@ -255,8 +249,6 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
         return getCurrentBoard().items.find { it.itemId == itemId }
     }
 
-    private var time: Long = Date().time
-
     //endregion
     //region private functions
 
@@ -270,7 +262,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
         return null
     }
 
-    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getCurrentCircle()!!.circleId).blockingFirst()
+    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
 
     /**
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.

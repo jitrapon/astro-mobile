@@ -8,7 +8,10 @@ import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.domain.user.UserDataSource
-import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
@@ -293,7 +296,7 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
         note = s
     }
 
-    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getCurrentCircle()!!.circleId).blockingFirst()
+    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
 
     //endregion
     //region autocomplete
@@ -456,24 +459,25 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
 
     private fun getPlaceSuggestions(query: String): List<Suggestion> {
         return ArrayList<Suggestion>().apply {
-            circleInteractor.getCurrentCircle()?.let {
+            val showAllCustomPlaces = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
 
-                val showAllCustomPlaces = TextUtils.isEmpty(query) || placeConjunctions.contains(query)
-
-                // add all places saved in this circle
-                val places = if (showAllCustomPlaces) it.places else it.places.filter {
-                    !TextUtils.isEmpty(it.name) && it.name!!.startsWith(query, true)
-                }
-                addAll(places.map { Suggestion(it) })
-
-                // add places from Google Place API
-                if (!showAllCustomPlaces) {
-                    placeProvider?.getAutocompletePrediction(query)?.blockingGet()?.let {
-                        it.map {
-                            Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
-                                    null, null, null, it.placeId, "g_place_id"))
-                        }.let { addAll(it) }
+            // add all places saved in this circle
+            circleInteractor.getActiveCirclePlaces().let {
+                if (it.isNotEmpty()) {
+                    val places = if (showAllCustomPlaces) it else it.filter {
+                        !TextUtils.isEmpty(it.name) && it.name!!.startsWith(query, true)
                     }
+                    addAll(places.map { Suggestion(it) })
+                }
+            }
+
+            // add places from Google Place API
+            if (!showAllCustomPlaces) {
+                placeProvider?.getAutocompletePrediction(query)?.blockingGet()?.let {
+                    it.map {
+                        Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
+                                null, null, null, it.placeId, "g_place_id"))
+                    }.let { addAll(it) }
                 }
             }
         }
@@ -481,13 +485,11 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
 
     private fun getInviteeSuggestions(query: String): List<Suggestion> {
         return ArrayList<Suggestion>().apply {
-            circleInteractor.getCurrentCircle()?.let {
-                userDataSource.getUsers(it.circleId).blockingFirst()?.let {
-                    val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
-                        !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
-                    }
-                    addAll(users.map { Suggestion(it) })
+            circleInteractor.getActiveUsersInCircle().let {
+                val users = if (TextUtils.isEmpty(query) || peopleConjunctions.contains(query)) it else it.filter {
+                    !TextUtils.isEmpty(it.userName) && it.userName.startsWith(query, true)
                 }
+                addAll(users.map { Suggestion(it) })
             }
         }
     }

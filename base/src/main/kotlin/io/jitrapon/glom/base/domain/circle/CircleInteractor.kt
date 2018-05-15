@@ -1,9 +1,11 @@
 package io.jitrapon.glom.base.domain.circle
 
+import io.jitrapon.glom.base.domain.user.User
+import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.model.PlaceInfo
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
@@ -13,41 +15,38 @@ import io.reactivex.schedulers.Schedulers
  *
  * @author Jitrapon Tiachunpun
  */
-class CircleInteractor(private val circleDataSource: CircleDataSource) {
+class CircleInteractor(private val circleDataSource: CircleDataSource, private val userDataSource: UserDataSource) {
 
-    private var activeCircleId: String = "abcd1234"
+    private var activeCircleId: String = "dev-circle-1"
 
     /**
      * Loads a circle from a data source, with an optional specified list of fields
      */
-    fun loadCircle(refresh: Boolean, vararg fields: String, onComplete: (AsyncResult<Circle>) -> Unit) {
-        getCurrentCircle().let {
-            if (it == null) {
-                onComplete(AsyncErrorResult(Exception("Active circle ID is NULL")))
-            }
-            else {
-                circleDataSource.getCircle(refresh, it.circleId, *fields)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({
-                            onComplete(AsyncSuccessResult(it))
-                        }, {
-                            onComplete(AsyncErrorResult(it))
-                        })
-            }
-        }
+    fun loadCircle(refresh: Boolean, onComplete: (AsyncResult<Circle>) -> Unit) {
+        circleDataSource.getCircle(refresh, activeCircleId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
     }
 
     /**
-     * Returns a nullable currently active Circle
+     * Returns the currently active (selected) circle ID
      */
-    fun getCurrentCircle(): Circle? {
-        try {
-            return circleDataSource.getCircle(false, activeCircleId).blockingFirst()
-        }
-        catch (ex: Exception) {
-            AppLogger.e(ex)
-        }
-        return null
-    }
+    fun getActiveCircleId(): String = activeCircleId
+
+    /**
+     * Returns list of custom places in this currently active circle
+     */
+    fun getActiveCirclePlaces(): List<PlaceInfo> = circleDataSource.getCircle(false, activeCircleId).blockingFirst().places
+
+    /**
+     * Returns list of users in the specified circle
+     */
+    fun getActiveUsersInCircle(): List<User> = userDataSource.getUsers(activeCircleId).blockingFirst()
 }

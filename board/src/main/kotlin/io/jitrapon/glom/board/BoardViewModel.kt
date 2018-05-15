@@ -338,7 +338,7 @@ class BoardViewModel : BaseViewModel() {
      * Loads information about this circle, specifically name, avatar, and places
      */
     private fun loadActiveCircleInfo() {
-        circleInteractor.loadCircle(true, "name", "avatar", "places") {
+        circleInteractor.loadCircle(true, {
             when (it) {
                 is AsyncSuccessResult -> {
                     //TODO display circle info in board
@@ -347,7 +347,7 @@ class BoardViewModel : BaseViewModel() {
                     handleError(it.error)
                 }
             }
-        }
+        })
     }
 
     //endregion
