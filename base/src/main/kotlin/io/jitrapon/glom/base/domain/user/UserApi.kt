@@ -5,6 +5,6 @@ import retrofit2.http.GET
 
 interface UserApi {
 
-    @GET("users")
-    fun getTestUsers(): Flowable<List<UserResponse>>
+    @GET("")
+    fun getUsers(): Flowable<UsersResponse>
 }

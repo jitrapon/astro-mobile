@@ -23,7 +23,7 @@ class CircleInteractor(private val circleDataSource: CircleDataSource, private v
      * Loads a circle from a data source, with an optional specified list of fields
      */
     fun loadCircle(refresh: Boolean, onComplete: (AsyncResult<Circle>) -> Unit) {
-        circleDataSource.getCircle(refresh, activeCircleId)
+        circleDataSource.getCircle(activeCircleId, refresh)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -43,7 +43,7 @@ class CircleInteractor(private val circleDataSource: CircleDataSource, private v
     /**
      * Returns list of custom places in this currently active circle
      */
-    fun getActiveCirclePlaces(): List<PlaceInfo> = circleDataSource.getCircle(false, activeCircleId).blockingFirst().places
+    fun getActiveCirclePlaces(): List<PlaceInfo> = circleDataSource.getCircle(activeCircleId).blockingFirst().places
 
     /**
      * Returns list of users in the specified circle

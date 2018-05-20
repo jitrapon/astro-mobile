@@ -10,7 +10,7 @@ import io.reactivex.Single
  */
 interface UserDataSource {
 
-    fun getUsers(circleId: String): Flowable<List<User>>
+    fun getUsers(circleId: String, refresh: Boolean = false): Flowable<List<User>>
 
     fun getUser(userId: String): Single<User>
 

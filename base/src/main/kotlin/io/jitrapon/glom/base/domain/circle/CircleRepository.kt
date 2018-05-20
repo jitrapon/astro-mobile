@@ -12,11 +12,11 @@ class CircleRepository(private val remoteDataSource: CircleDataSource) : Reposit
 
     private var circle: Circle? = null
 
-    override fun getCircle(refresh: Boolean, id: String): Flowable<Circle> {
+    override fun getCircle(id: String, refresh: Boolean): Flowable<Circle> {
         circle = circle ?: Circle(id, "my circle", null, null, ArrayList(), null, ArrayList())
         return load(refresh,
                 Flowable.just(circle),
-                remoteDataSource.getCircle(refresh, id),
+                remoteDataSource.getCircle(id, refresh),
                 {
                     circle = it
                     circle!!

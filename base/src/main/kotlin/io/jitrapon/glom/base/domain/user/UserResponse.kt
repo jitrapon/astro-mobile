@@ -6,5 +6,6 @@ import com.squareup.moshi.Json
  * Json data class does not need to have nullable fields, since Moshi
  * assigns null values to their backing fields using reflection anyway
  */
-data class UserResponse(@field:Json(name = "id") val id: String,
-                        @field:Json(name = "name") val name: String)
+data class UsersResponse(@field:Json(name = "users") val users: List<UserResponse>)
+
+data class UserResponse(@field:Json(name = "user_id") val userId: String)

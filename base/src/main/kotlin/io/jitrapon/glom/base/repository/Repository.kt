@@ -29,4 +29,22 @@ abstract class Repository<T> where T : DataModel {
             localDataSourceFlowable
         }
     }
+
+    fun loadList(refresh: Boolean, localDataSourceFlowable: Flowable<List<T>>,
+                 remoteDataSourceFlowable: Flowable<List<T>>,
+                 saveToLocalFlowable: (remoteData: List<T>) -> List<T>): Flowable<List<T>> {
+        return if (refresh) {
+            remoteDataSourceFlowable.flatMap {
+                Flowable.fromCallable {
+                    it.forEach {
+                        it.retrievedTime = Date()
+                    }
+                    saveToLocalFlowable(it)
+                }
+            }
+        }
+        else {
+            localDataSourceFlowable
+        }
+    }
 }

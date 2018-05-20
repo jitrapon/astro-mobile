@@ -8,15 +8,23 @@ class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
 
     private val api = retrofit.create(UserApi::class.java)
 
-    override fun getUsers(circleId: String): Flowable<List<User>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> {
+        return api.getUsers().deserialize()
     }
 
     override fun getUser(userId: String): Single<User> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw NotImplementedError()
     }
 
     override fun getCurrentUser(): Single<User> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw NotImplementedError()
     }
+
+    //region deserializer
+
+    private fun Flowable<UsersResponse>.deserialize(): Flowable<List<User>> {
+
+    }
+
+    //endregion
 }

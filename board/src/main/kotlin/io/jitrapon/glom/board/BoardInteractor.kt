@@ -11,7 +11,6 @@ import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
@@ -62,7 +61,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
      */
     fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         val circleId = circleInteractor.getActiveCircleId()
-        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userDataSource.getUsers(circleId),
+        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userDataSource.getUsers(circleId, refresh),
                 BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                     board to users
                 })
@@ -152,7 +151,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
     fun createEmptyItem(itemType: Int): BoardItem {
         val now = Date()
         val owners = ArrayList<String>().apply {
-            getCurrentUser()?.userId?.let (::add)
+            userDataSource.getCurrentUser().blockingGet()?.userId?.let (::add)
         }
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
@@ -251,16 +250,6 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
 
     //endregion
     //region private functions
-
-    private fun getCurrentUser(): User? {
-        try {
-            return userDataSource.getCurrentUser().blockingGet()
-        }
-        catch (ex: Exception) {
-            AppLogger.e(ex)
-        }
-        return null
-    }
 
     private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
 

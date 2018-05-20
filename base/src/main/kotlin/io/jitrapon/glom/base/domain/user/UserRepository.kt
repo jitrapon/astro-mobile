@@ -18,16 +18,21 @@ class UserRepository(private val remoteDataSource: UserDataSource) : Repository<
     /* needed so that we can retrieve a User object by their ID in O(1) time */
     private var userMap: ArrayMap<String, User>? = null
 
-    override fun getUsers(circleId: String): Flowable<List<User>> {
+    override fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> {
         users = users ?: getItems()
-        return Flowable.just(users!!)
-                .doOnEach {
-                    it.value?.let { users ->
-                        userMap = ArrayMap<String, User>().apply {
-                            users.forEach { put(it.userId, it) }
+        return loadList(refresh,
+                Flowable.just(users),
+                remoteDataSource.getUsers(circleId, refresh),
+                {
+                    users = it
+                    userMap = ArrayMap<String, User>().apply {
+                        users?.map {
+                            put(it.userId, it)
                         }
                     }
+                    users!!
                 }
+        )
     }
 
     override fun getUser(userId: String): Single<User> = Single.fromCallable {
