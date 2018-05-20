@@ -3,7 +3,7 @@ package io.jitrapon.glom.board
 import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
-import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.board.event.EventItemDataSource
 import io.jitrapon.glom.board.event.EventItemInteractor
 import io.jitrapon.glom.board.event.EventItemRepository
@@ -21,11 +21,11 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideBoardInteractor(userDataSource: UserDataSource, boardDataSource: BoardDataSource, circleInteractor: CircleInteractor): BoardInteractor
-            = BoardInteractor(userDataSource, boardDataSource, circleInteractor)
+    fun provideBoardInteractor(userInteractor: UserInteractor, boardDataSource: BoardDataSource, circleInteractor: CircleInteractor): BoardInteractor
+            = BoardInteractor(userInteractor, boardDataSource, circleInteractor)
 
     @Provides
     @BoardScope
-    fun provideEventItemInteractor(userDataSource: UserDataSource, circleInteractor: CircleInteractor, boardDataSource: BoardDataSource, eventItemDataSource: EventItemDataSource): EventItemInteractor =
-            EventItemInteractor(userDataSource, circleInteractor, boardDataSource, eventItemDataSource)
+    fun provideEventItemInteractor(userInteractor: UserInteractor, circleInteractor: CircleInteractor, boardDataSource: BoardDataSource, eventItemDataSource: EventItemDataSource): EventItemInteractor =
+            EventItemInteractor(userInteractor, circleInteractor, boardDataSource, eventItemDataSource)
 }

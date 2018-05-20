@@ -13,6 +13,4 @@ interface UserDataSource {
     fun getUsers(circleId: String, refresh: Boolean = false): Flowable<List<User>>
 
     fun getUser(userId: String): Single<User>
-
-    fun getCurrentUser(): Single<User>
 }

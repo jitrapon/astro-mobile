@@ -5,6 +5,7 @@ import dagger.Component
 import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import javax.inject.Singleton
 
@@ -20,6 +21,7 @@ interface BaseComponent {
 
     fun application(): Application
     fun userDataSource(): UserDataSource
+    fun userInteractor(): UserInteractor
     fun circleDataSource(): CircleDataSource
     fun circleInteractor(): CircleInteractor
 

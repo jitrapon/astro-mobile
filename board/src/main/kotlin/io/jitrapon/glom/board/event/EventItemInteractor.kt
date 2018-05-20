@@ -7,7 +7,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
-import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -27,7 +27,7 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemInteractor(private val userDataSource: UserDataSource, private val circleInteractor: CircleInteractor,
+class EventItemInteractor(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor,
                           private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
 
     private var placeProvider: PlaceProvider? = null
@@ -174,31 +174,12 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
     /**
      * Returns list of loaded users, if available from specified IDs
      */
-    fun getUsers(userIds: List<String>): List<User?>? {
-        return ArrayList<User?>().apply {
-            userIds.forEach {
-                try {
-                    add(userDataSource.getUser(it).blockingGet())
-                }
-                catch (ex: Exception) {
-                    AppLogger.e(ex)
-                }
-            }
-        }
-    }
+    fun getUsers(userIds: List<String>): List<User?>? = userInteractor.getUsersFromIds(userIds)
 
     /**
-     * Returns the currently signed in User object
+     * Returns the currently signed in user ID
      */
-    fun getCurrentUser(): User? {
-        try {
-            return userDataSource.getCurrentUser().blockingGet()
-        }
-        catch (ex: Exception) {
-            AppLogger.e(ex)
-        }
-        return null
-    }
+    fun getCurrentUserId(): String? = userInteractor.getCurrentUserId()
 
     /**
      * Joins the current user to an event
@@ -206,7 +187,7 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
     fun markEventAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        val userId = getCurrentUser()?.userId
+        val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return
@@ -231,7 +212,7 @@ class EventItemInteractor(private val userDataSource: UserDataSource, private va
     }
 
     fun markEventDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        val userId = getCurrentUser()?.userId
+        val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return

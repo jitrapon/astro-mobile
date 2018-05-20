@@ -7,6 +7,7 @@ import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.circle.CircleRemoteDataSource
 import io.jitrapon.glom.base.domain.circle.CircleRepository
 import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.domain.user.UserRemoteDataSource
 import io.jitrapon.glom.base.domain.user.UserRepository
 import javax.inject.Singleton
@@ -17,6 +18,10 @@ class BaseDomainModule {
     @Provides
     @Singleton
     fun provideUserRepository(): UserDataSource = UserRepository(UserRemoteDataSource())
+
+    @Provides
+    @Singleton
+    fun provideUserInteractor(dataSource: UserDataSource): UserInteractor = UserInteractor(dataSource)
 
     @Provides
     @Singleton

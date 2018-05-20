@@ -7,7 +7,7 @@ import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
-import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -26,7 +26,7 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardInteractor(private val userDataSource: UserDataSource, private val boardDataSource: BoardDataSource,
+class BoardInteractor(private val userInteractor: UserInteractor, private val boardDataSource: BoardDataSource,
                       private val circleInteractor: CircleInteractor) {
 
     /*
@@ -61,7 +61,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
      */
     fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         val circleId = circleInteractor.getActiveCircleId()
-        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userDataSource.getUsers(circleId, refresh),
+        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userInteractor.getUsers(circleId, refresh),
                 BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                     board to users
                 })
@@ -151,7 +151,7 @@ class BoardInteractor(private val userDataSource: UserDataSource, private val bo
     fun createEmptyItem(itemType: Int): BoardItem {
         val now = Date()
         val owners = ArrayList<String>().apply {
-            userDataSource.getCurrentUser().blockingGet()?.userId?.let (::add)
+            userInteractor.getCurrentUserId()?.let (::add)
         }
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,

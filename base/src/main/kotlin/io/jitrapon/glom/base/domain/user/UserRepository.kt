@@ -39,8 +39,6 @@ class UserRepository(private val remoteDataSource: UserDataSource) : Repository<
         userMap!![userId]
     }
 
-    override fun getCurrentUser(): Single<User> = getUser("yoshi3003")
-
     private fun getItems(): List<User> {
         return ArrayList<User>().apply {
             add(User(User.TYPE_USER, "yoshi3003", "boat", "https://yt3.ggpht.com/-Dqv4xtV9L48/AAAAAAAAAAI/AAAAAAAAAAA/bDw66DjBn10/s900-c-k-no-mo-rj-c0xffffff/photo.jpg"))

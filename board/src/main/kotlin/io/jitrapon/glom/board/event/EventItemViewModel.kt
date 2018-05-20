@@ -176,7 +176,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns a AttendStatus from the list of attending userIds
      */
     private fun getEventAttendStatus(userIds: List<String>): EventItemUiModel.AttendStatus {
-        return if (userIds.any { it.equals(interactor.getCurrentUser()?.userId, true) })  EventItemUiModel.AttendStatus.GOING
+        return if (userIds.any { it.equals(interactor.getCurrentUserId(), true) })  EventItemUiModel.AttendStatus.GOING
         else EventItemUiModel.AttendStatus.MAYBE
     }
 
