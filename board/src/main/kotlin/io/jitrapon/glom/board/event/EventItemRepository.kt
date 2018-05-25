@@ -10,11 +10,11 @@ import java.util.concurrent.TimeUnit
  *
  * Created by Jitrapon
  */
-class EventItemRepository : Repository<BoardItem>(), EventItemDataSource {
+class EventItemRepository(private val remoteDataSource: EventItemDataSource) : Repository<BoardItem>(), EventItemDataSource {
 
     private lateinit var item: EventItem
 
-    override fun setItem(item: EventItem) {
+    override fun initWith(item: EventItem) {
         this.item = item
     }
 

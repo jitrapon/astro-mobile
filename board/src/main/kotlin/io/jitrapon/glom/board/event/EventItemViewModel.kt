@@ -218,7 +218,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 animationItem?.let {
                     boardViewModel.observableAnimation.value = it
                 }
-                interactor.markEventAttendStatus(item.itemId, statusCode) {
+                interactor.setItemAttendStatus(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {
                             item.apply {
@@ -245,7 +245,7 @@ class EventItemViewModel : BoardItemViewModel() {
     //region event detail item
 
     fun setPlaceProvider(placeProvider: PlaceProvider) {
-        interactor.setPlaceProvider(placeProvider)
+        interactor.initWith(placeProvider)
     }
 
     /**
@@ -258,7 +258,7 @@ class EventItemViewModel : BoardItemViewModel() {
             }
             else {
                 if (item is EventItem) {
-                    interactor.setItem(item)
+                    interactor.initWith(item)
                     item.itemInfo.let {
                         prevName = it.eventName
                         isNewItem = new
@@ -390,7 +390,7 @@ class EventItemViewModel : BoardItemViewModel() {
             text = null
             status = UiModel.Status.LOADING
         }
-        interactor.markEventDetailAttendStatus(statusCode, {
+        interactor.setItemDetailAttendStatus(statusCode, {
             when (it) {
                 is AsyncSuccessResult -> {
                     it.result?.let {
@@ -429,7 +429,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun onNoteTextChanged(s: CharSequence) {
         // may need to convert from markdown text to String
-        interactor.updateNoteText(s.toString())
+        interactor.setItemNote(s.toString())
     }
 
     //region autocomplete
@@ -518,7 +518,7 @@ class EventItemViewModel : BoardItemViewModel() {
         suggestion.selectData.let {
             if (it is PlaceInfo) {
                 EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description).apply {
-                    interactor.setLocation(this)
+                    interactor.setItemLocation(this)
                     observableLocation.value = getEventDetailLocation(this)
                     observableLocationDescription.value = getEventDetailLocationDescription(this)
                     observableLocationLatLng.value = getEventDetailLocationLatLng(this)
@@ -566,8 +566,8 @@ class EventItemViewModel : BoardItemViewModel() {
      * Displays the datetime picker
      */
     fun showDateTimePicker(isStartDate: Boolean) {
-        val startDate = interactor.getDate(true)
-        val endDate = interactor.getDate(false)
+        val startDate = interactor.getItemDate(true)
+        val endDate = interactor.getItemDate(false)
         val defaultDate: Date =
         if (isStartDate) {
             startDate ?: Date().roundToNextHalfHour()
@@ -583,10 +583,10 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     fun setDate(date: Date?, isStartDate: Boolean) {
         interactor.let {
-            it.setDate(date, isStartDate)
+            it.setItemDate(date, isStartDate)
 
-            observableStartDate.value = getEventDetailDate(it.getDate(true)?.time, true)
-            observableEndDate.value = getEventDetailDate(it.getDate(false)?.time, false)
+            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true)
+            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false)
             observableDateTimePicker.value = null
         }
     }
@@ -599,7 +599,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Navigates to a third-party map application
      */
     fun navigateToMap() {
-        observableViewAction.value = interactor.getLocation()?.let {
+        observableViewAction.value = interactor.getItemLocation()?.let {
             val latLng = if (it.latitude != null && it.longitude != null) {
                 LatLng(it.latitude, it.longitude)
             } else null
@@ -610,8 +610,8 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Update the location text
      */
-    fun onLocationTextChanged(s: CharSequence) {
-        interactor.updateLocationText(s)
+    fun onLocationTextChanged(charSequence: CharSequence) {
+        interactor.setItemLocation(charSequence)
     }
 
     //endregion

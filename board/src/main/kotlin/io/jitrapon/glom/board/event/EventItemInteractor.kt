@@ -30,32 +30,45 @@ import java.util.*
 class EventItemInteractor(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor,
                           private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
 
+    /* place provider use for providing place info */
     private var placeProvider: PlaceProvider? = null
 
+    /* cached copy of the modified note text */
     private var note: String? = null
 
-    private var isInfoChanged: Boolean = false
+    /* flag to keep track of whether the information in this item has changed */
+    private var isItemModified: Boolean = false
+
+    /* convenient board instance */
+    private val board: Board
+        get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
+
+    //region initializers
 
     /**
-     * Initializes the PlaceProvider class
+     * Sets a place provider instance. This can be instantiated from a class with access
+     * to Context
      */
-    fun setPlaceProvider(placeProvider: PlaceProvider) {
-        this.placeProvider = placeProvider
+    fun initWith(provider: PlaceProvider) {
+        placeProvider = provider
     }
 
     /**
-     * Initialize board item to work with
+     * Sets a starting point for working with this item. Must be called before any other
+     * functions
      */
-    fun setItem(item: BoardItem) {
-        isInfoChanged = false
+    fun initWith(item: BoardItem) {
+        isItemModified = false   // must be reset to false because the interactor instance is reused for new items
 
-        eventItemDataSource.setItem(item as EventItem)
+        eventItemDataSource.initWith(item as EventItem)
     }
 
+    //endregion
+    //region save operations
+
     /**
-     * Saves the current state of the item
-     *
-     * @return The new board item and whether or not info has changed
+     * Saves the current state of the item and returns
+     * the new item, along with a flag indicating if the item has been modified
      */
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         eventItemDataSource.getItem().let {
@@ -63,7 +76,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 (it.itemInfo).apply {
                     fields[NAME]?.let { if (it is String) eventName = it }
                     startTime = getSelectedDate()?.time ?: startTime
-                    location = getSelectedLocation()
+                    location = getSelectedItemLocation()
                     note = this@EventItemInteractor.note
                 }
             }.flatMapCompletable {
@@ -72,169 +85,15 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
                         clearSuggestionCache()
-                        onComplete(AsyncSuccessResult(it to isInfoChanged))
+                        onComplete(AsyncSuccessResult(it to isItemModified))
                     }, {
                         onComplete(AsyncErrorResult(it))
                     })
         }
     }
 
-    /**
-     * Updates the location text
-     */
-    fun updateLocationText(locationText: CharSequence) {
-        isInfoChanged = true
-
-        fields[LOCATION] = locationText
-    }
-
-    private fun getSelectedLocation(): EventLocation? {
-        return fields[LOCATION].let {
-            when (it) {
-                is CharSequence -> {
-                    if (TextUtils.isEmpty(it)) null
-                    else EventLocation(it.toString())
-                }
-                is EventLocation -> it
-                else -> getLocation()
-            }
-        }
-    }
-
-    /**
-     * Updates this cached event's date, processing whether the start and end dates are set correctly
-     *
-     * @return true iff the dates are correctly provided and set successfully
-     */
-    fun setDate(date: Date?, isStartDate: Boolean) {
-        isInfoChanged = true
-
-        eventItemDataSource.getItem().itemInfo.let {
-            if (isStartDate) {
-                it.startTime = date?.time
-                fields[START_DAY] = date
-                fields[START_TIME] = date
-
-                // if the new start date surpasses end date, reset the end date
-                if (it.startTime != null && it.endTime != null) {
-                    if (it.startTime!! > it.endTime!!) {
-                        it.endTime = null
-                    }
-                }
-
-                // if the new start date is null, also reset the end date
-                if (it.startTime == null) {
-                    it.endTime = null
-                }
-            }
-            else {
-                it.endTime = date?.time
-                if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
-                    val newStartDate = Date(it.endTime!!).addHour(-1)
-                    it.startTime = newStartDate.time
-                    fields[START_DAY] = newStartDate
-                    fields[START_TIME] = newStartDate
-                }
-            }
-        }
-    }
-
-    /**
-     * Gets the cached event's date
-     */
-    fun getDate(startDate: Boolean): Date? {
-        eventItemDataSource.getItem().itemInfo.let {
-            return if (startDate) it.startTime.let {
-                if (it == null) null else Date(it)
-            }
-            else {
-                it.endTime.let {
-                    if (it == null) null else Date(it)
-                }
-            }
-        }
-    }
-
-    fun getLocation(): EventLocation? {
-        return eventItemDataSource.getItem().itemInfo.location
-    }
-
-    /**
-     * Updates this cache event's location
-     */
-    fun setLocation(location: EventLocation?) {
-        isInfoChanged = true
-
-        eventItemDataSource.getItem().itemInfo.let {
-            it.location = location
-            fields[LOCATION] = location
-        }
-    }
-
-    /**
-     * Returns list of loaded users, if available from specified IDs
-     */
-    fun getUsers(userIds: List<String>): List<User?>? = userInteractor.getUsersFromIds(userIds)
-
-    /**
-     * Returns the currently signed in user ID
-     */
-    fun getCurrentUserId(): String? = userInteractor.getCurrentUserId()
-
-    /**
-     * Joins the current user to an event
-     *
-     * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
-     */
-    fun markEventAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        val userId = userInteractor.getCurrentUserId()
-        if (TextUtils.isEmpty(userId)) {
-            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
-            return
-        }
-
-        getCurrentBoard().let {
-            Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } }
-                    .flatMapCompletable {
-                        when (statusCode) {
-                            2 -> eventItemDataSource.joinEvent(userId!!, it as EventItem)
-                            else -> eventItemDataSource.leaveEvent(userId!!, it as EventItem)
-                        }
-                    }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        onComplete(AsyncSuccessResult((it.items.find { it.itemId == itemId } as? EventItem)?.itemInfo?.attendees))
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
-        }
-    }
-
-    fun markEventDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
-        val userId = userInteractor.getCurrentUserId()
-        if (TextUtils.isEmpty(userId)) {
-            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
-            return
-        }
-
-        isInfoChanged = true
-
-        getCurrentBoard().let {
-            val item = eventItemDataSource.getItem()
-            when (statusCode) {
-                2 -> eventItemDataSource.joinEvent(userId!!, item)
-                else -> eventItemDataSource.leaveEvent(userId!!, item)
-            }
-            .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        onComplete(AsyncSuccessResult(eventItemDataSource.getItem().itemInfo.attendees))
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
-        }
-    }
+    //endregion
+    //region location
 
     /**
      * Retrieves place information
@@ -271,13 +130,167 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
     }
 
-    fun updateNoteText(s: String) {
-        isInfoChanged = true
-
-        note = s
+    fun getItemLocation(): EventLocation? {
+        return eventItemDataSource.getItem().itemInfo.location
     }
 
-    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
+    private fun getSelectedItemLocation(): EventLocation? {
+        return fields[LOCATION].let {
+            when (it) {
+                is CharSequence -> {
+                    if (TextUtils.isEmpty(it)) null
+                    else EventLocation(it.toString())
+                }
+                is EventLocation -> it
+                else -> getItemLocation()
+            }
+        }
+    }
+
+    fun setItemLocation(locationText: CharSequence) {
+        isItemModified = true
+
+        fields[LOCATION] = locationText
+    }
+
+    fun setItemLocation(location: EventLocation?) {
+        isItemModified = true
+
+        eventItemDataSource.getItem().itemInfo.let {
+            it.location = location
+            fields[LOCATION] = location
+        }
+    }
+
+    //endregion
+    //region datetime
+
+    /**
+     * Updates this cached event's date, processing whether the start and end dates are set correctly
+     *
+     * @return true iff the dates are correctly provided and set successfully
+     */
+    fun setItemDate(date: Date?, isStartDate: Boolean) {
+        isItemModified = true
+
+        eventItemDataSource.getItem().itemInfo.let {
+            if (isStartDate) {
+                it.startTime = date?.time
+                fields[START_DAY] = date
+                fields[START_TIME] = date
+
+                // if the new start date surpasses end date, reset the end date
+                if (it.startTime != null && it.endTime != null) {
+                    if (it.startTime!! > it.endTime!!) {
+                        it.endTime = null
+                    }
+                }
+
+                // if the new start date is null, also reset the end date
+                if (it.startTime == null) {
+                    it.endTime = null
+                }
+            }
+            else {
+                it.endTime = date?.time
+                if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
+                    val newStartDate = Date(it.endTime!!).addHour(-1)
+                    it.startTime = newStartDate.time
+                    fields[START_DAY] = newStartDate
+                    fields[START_TIME] = newStartDate
+                }
+            }
+        }
+    }
+
+    fun getItemDate(startDate: Boolean): Date? {
+        eventItemDataSource.getItem().itemInfo.let {
+            return if (startDate) it.startTime.let {
+                if (it == null) null else Date(it)
+            }
+            else {
+                it.endTime.let {
+                    if (it == null) null else Date(it)
+                }
+            }
+        }
+    }
+
+    //endregion
+    //region attend status
+
+    /**
+     * Returns list of loaded users, if available from specified IDs
+     */
+    fun getUsers(userIds: List<String>): List<User?>? = userInteractor.getUsersFromIds(userIds)
+
+    /**
+     * Returns the currently signed in user ID
+     */
+    fun getCurrentUserId(): String? = userInteractor.getCurrentUserId()
+
+    /**
+     * Joins the current user to an event
+     *
+     * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
+     */
+    fun setItemAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+        val userId = userInteractor.getCurrentUserId()
+        if (TextUtils.isEmpty(userId)) {
+            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
+            return
+        }
+
+        board.let {
+            Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } }
+                    .flatMapCompletable {
+                        when (statusCode) {
+                            2 -> eventItemDataSource.joinEvent(userId!!, it as EventItem)
+                            else -> eventItemDataSource.leaveEvent(userId!!, it as EventItem)
+                        }
+                    }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        onComplete(AsyncSuccessResult((it.items.find { it.itemId == itemId } as? EventItem)?.itemInfo?.attendees))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
+        }
+    }
+
+    fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+        val userId = userInteractor.getCurrentUserId()
+        if (TextUtils.isEmpty(userId)) {
+            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
+            return
+        }
+
+        isItemModified = true
+
+        board.let {
+            val item = eventItemDataSource.getItem()
+            when (statusCode) {
+                2 -> eventItemDataSource.joinEvent(userId!!, item)
+                else -> eventItemDataSource.leaveEvent(userId!!, item)
+            }
+            .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        onComplete(AsyncSuccessResult(eventItemDataSource.getItem().itemInfo.attendees))
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
+        }
+    }
+
+    //endregion
+    //region note
+
+    fun setItemNote(newNote: String) {
+        isItemModified = true
+        note = newNote
+    }
 
     //endregion
     //region autocomplete
@@ -333,7 +346,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * should be called in a background thread
      */
     fun filterSuggestions(text: String): List<Suggestion> {
-        isInfoChanged = true
+        isItemModified = true
 
         if (TextUtils.isEmpty(text)) return ArrayList()
 
