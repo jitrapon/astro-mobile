@@ -258,7 +258,7 @@ class EventItemViewModel : BoardItemViewModel() {
             }
             else {
                 if (item is EventItem) {
-                    interactor.initWith(item)
+                    interactor.initWith(item = item)
                     item.itemInfo.let {
                         prevName = it.eventName
                         isNewItem = new

@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.event
 
 import io.reactivex.Completable
+import io.reactivex.Flowable
 
 /**
  * Main entry point to event items in board
@@ -11,7 +12,7 @@ interface EventItemDataSource {
 
     fun initWith(item: EventItem)
 
-    fun getItem(): EventItem
+    fun getItem(): Flowable<EventItem>
 
     fun saveItem(info: EventInfo): Completable
 

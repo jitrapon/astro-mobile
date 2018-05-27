@@ -6,6 +6,7 @@ import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.board.event.EventItemDataSource
 import io.jitrapon.glom.board.event.EventItemInteractor
+import io.jitrapon.glom.board.event.EventItemRemoteDataSource
 import io.jitrapon.glom.board.event.EventItemRepository
 
 @Module
@@ -17,7 +18,7 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun providesEventDataSource(): EventItemDataSource = EventItemRepository()
+    fun providesEventDataSource(userInteractor: UserInteractor): EventItemDataSource = EventItemRepository(EventItemRemoteDataSource(userInteractor))
 
     @Provides
     @BoardScope

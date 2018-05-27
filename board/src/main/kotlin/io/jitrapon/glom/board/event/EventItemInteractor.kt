@@ -43,24 +43,25 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     private val board: Board
         get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
 
+    private val event: EventItem
+        get() = eventItemDataSource.getItem().blockingFirst()
+
     //region initializers
 
     /**
      * Sets a place provider instance. This can be instantiated from a class with access
      * to Context
-     */
-    fun initWith(provider: PlaceProvider) {
-        placeProvider = provider
-    }
-
-    /**
+     *
      * Sets a starting point for working with this item. Must be called before any other
      * functions
      */
-    fun initWith(item: BoardItem) {
-        isItemModified = false   // must be reset to false because the interactor instance is reused for new items
+    fun initWith(provider: PlaceProvider? = null, item: BoardItem? = null) {
+        provider?.let { placeProvider = it }
+        item?.let {
+            isItemModified = false   // must be reset to false because the interactor instance is reused for new items
 
-        eventItemDataSource.initWith(item as EventItem)
+            eventItemDataSource.initWith(it as EventItem)
+        }
     }
 
     //endregion
@@ -71,25 +72,23 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * the new item, along with a flag indicating if the item has been modified
      */
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
-        eventItemDataSource.getItem().let {
-            Single.fromCallable {
-                (it.itemInfo).apply {
-                    fields[NAME]?.let { if (it is String) eventName = it }
-                    startTime = getSelectedDate()?.time ?: startTime
-                    location = getSelectedItemLocation()
-                    note = this@EventItemInteractor.note
-                }
-            }.flatMapCompletable {
-                eventItemDataSource.saveItem(it)
-            }.subscribeOn(Schedulers.computation())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        clearSuggestionCache()
-                        onComplete(AsyncSuccessResult(it to isItemModified))
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
-        }
+        Single.fromCallable {
+            (event.itemInfo).apply {
+                fields[NAME]?.let { if (it is String) eventName = it }
+                startTime = getSelectedDate()?.time ?: startTime
+                location = getSelectedItemLocation()
+                note = this@EventItemInteractor.note
+            }
+        }.flatMapCompletable {
+            eventItemDataSource.saveItem(it)
+        }.subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    clearSuggestionCache()
+                    onComplete(AsyncSuccessResult(event to isItemModified))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     //endregion
@@ -99,39 +98,37 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Retrieves place information
      */
     fun loadPlaceInfo(customName: String?, onComplete: (AsyncResult<EventLocation>) -> Unit) {
-        eventItemDataSource.getItem().itemInfo.let {
-            val placeId = it.location?.googlePlaceId
-            if (!TextUtils.isEmpty(placeId)) {
-                placeProvider?.let {
-                    it.getPlaces(arrayOf(placeId!!))
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe({
-                                if (it.isNotEmpty()) {
-                                    it.first().let {
-                                        onComplete(AsyncSuccessResult(
-                                                EventLocation(
-                                                        it.latLng.latitude,
-                                                        it.latLng.longitude,
-                                                        it.id,
-                                                        "g-place_id",
-                                                        if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
-                                                        it.address.toString())))
-                                    }
+        val placeId = event.itemInfo.location?.googlePlaceId
+        if (!TextUtils.isEmpty(placeId)) {
+            placeProvider?.let {
+                it.getPlaces(arrayOf(placeId!!))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe({
+                            if (it.isNotEmpty()) {
+                                it.first().let {
+                                    onComplete(AsyncSuccessResult(
+                                            EventLocation(
+                                                    it.latLng.latitude,
+                                                    it.latLng.longitude,
+                                                    it.id,
+                                                    "g-place_id",
+                                                    if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
+                                                    it.address.toString())))
                                 }
-                                else {
-                                    onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
-                                }
-                            }, {
-                                onComplete(AsyncErrorResult(it))
-                            })
-                }
+                            }
+                            else {
+                                onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
+                            }
+                        }, {
+                            onComplete(AsyncErrorResult(it))
+                        })
             }
         }
     }
 
     fun getItemLocation(): EventLocation? {
-        return eventItemDataSource.getItem().itemInfo.location
+        return event.itemInfo.location
     }
 
     private fun getSelectedItemLocation(): EventLocation? {
@@ -156,7 +153,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun setItemLocation(location: EventLocation?) {
         isItemModified = true
 
-        eventItemDataSource.getItem().itemInfo.let {
+        event.itemInfo.let {
             it.location = location
             fields[LOCATION] = location
         }
@@ -173,7 +170,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun setItemDate(date: Date?, isStartDate: Boolean) {
         isItemModified = true
 
-        eventItemDataSource.getItem().itemInfo.let {
+        event.itemInfo.let {
             if (isStartDate) {
                 it.startTime = date?.time
                 fields[START_DAY] = date
@@ -204,7 +201,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun getItemDate(startDate: Boolean): Date? {
-        eventItemDataSource.getItem().itemInfo.let {
+        event.itemInfo.let {
             return if (startDate) it.startTime.let {
                 if (it == null) null else Date(it)
             }
@@ -269,7 +266,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         isItemModified = true
 
         board.let {
-            val item = eventItemDataSource.getItem()
+            val item = event
             when (statusCode) {
                 2 -> eventItemDataSource.joinEvent(userId!!, item)
                 else -> eventItemDataSource.leaveEvent(userId!!, item)
@@ -277,7 +274,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        onComplete(AsyncSuccessResult(eventItemDataSource.getItem().itemInfo.attendees))
+                        onComplete(AsyncSuccessResult(event.itemInfo.attendees))
                     }, {
                         onComplete(AsyncErrorResult(it))
                     })

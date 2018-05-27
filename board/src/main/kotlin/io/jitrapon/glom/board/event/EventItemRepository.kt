@@ -3,7 +3,7 @@ package io.jitrapon.glom.board.event
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.BoardItem
 import io.reactivex.Completable
-import java.util.concurrent.TimeUnit
+import io.reactivex.Flowable
 
 /**
  * Retrieves, stores, and saves the state of a board item
@@ -18,7 +18,7 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource) : R
         this.item = item
     }
 
-    override fun getItem(): EventItem = item
+    override fun getItem(): Flowable<EventItem> = Flowable.just(item)
 
     override fun saveItem(info: EventInfo): Completable {
         return Completable.fromCallable {
@@ -27,16 +27,22 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource) : R
     }
 
     override fun joinEvent(userId: String, item: EventItem): Completable {
-        return Completable.fromCallable {
-            item.itemInfo.attendees.add(userId)
-        }.delay(1000L, TimeUnit.MILLISECONDS)
+        return update(
+                Completable.fromCallable {
+                    item.itemInfo.attendees.add(userId)
+                },
+                remoteDataSource.joinEvent(userId, item)
+        )
     }
 
     override fun leaveEvent(userId: String, item: EventItem): Completable {
-        return Completable.fromCallable {
-            item.itemInfo.attendees.removeAll {
-                it.equals(userId, true)
-            }
-        }.delay(1000L, TimeUnit.MILLISECONDS)
+        return update(
+                Completable.fromCallable {
+                    item.itemInfo.attendees.removeAll {
+                        it.equals(userId, true)
+                    }
+                },
+                remoteDataSource.leaveEvent(userId, item)
+        )
     }
 }

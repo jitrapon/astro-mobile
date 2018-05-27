@@ -69,7 +69,7 @@ dependencies {
     }
 
     // kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$rootProject.kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.kotlinVersion"
     api ("androidx.core:core-ktx:$rootProject.androidktxVersion") {
         exclude group: 'org.jetbrains.kotlin'
     }

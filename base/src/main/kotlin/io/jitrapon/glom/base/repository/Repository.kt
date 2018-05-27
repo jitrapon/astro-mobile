@@ -1,6 +1,7 @@
 package io.jitrapon.glom.base.repository
 
 import io.jitrapon.glom.base.model.DataModel
+import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 
@@ -46,5 +47,9 @@ abstract class Repository<T> where T : DataModel {
         else {
             localDataSourceFlowable
         }
+    }
+
+    fun update(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable): Completable {
+        return remoteDataSourceCompletable.andThen(localDataSourceCompletable)
     }
 }

@@ -14,12 +14,12 @@ buildscript {
         minSdkVersion = 23
         minSdkInstantVersion = 21
         supportLibVersion = '27.1.1'
-        constraintLayoutVersion = '1.1.0-beta6'
+        constraintLayoutVersion = '1.1.0'
         runnerVersion = '1.0.1'
         rulesVersion = '1.0.1'
         archLifecycleVersion = '1.1.1'
-        archRoomVersion = '1.1.0-rc1'
-        archPagingVersion = '1.0.0-rc1'
+        archRoomVersion = '1.1.1-rc1'
+        archPagingVersion = '1.0.0'
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'
@@ -34,7 +34,7 @@ buildscript {
         playServicesVersion = '12.0.0'
         okhttp3Version = '3.10.0'
         timberVersion = '4.6.0'
-        lottieVersion = '2.5.0-beta1'
+        lottieVersion = '2.5.4'
         androidktxVersion = '0.2'
     }
 
