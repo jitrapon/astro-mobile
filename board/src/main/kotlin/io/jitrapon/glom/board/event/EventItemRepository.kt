@@ -26,23 +26,25 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource) : R
         }
     }
 
-    override fun joinEvent(userId: String, item: EventItem): Completable {
+    override fun joinEvent(item: EventItem): Completable {
         return update(
                 Completable.fromCallable {
-                    item.itemInfo.attendees.add(userId)
+                    item.itemInfo.attendees.add("yoshi3003")
                 },
-                remoteDataSource.joinEvent(userId, item)
+                remoteDataSource.joinEvent(item),
+                false
         )
     }
 
-    override fun leaveEvent(userId: String, item: EventItem): Completable {
+    override fun leaveEvent(item: EventItem): Completable {
         return update(
                 Completable.fromCallable {
                     item.itemInfo.attendees.removeAll {
-                        it.equals(userId, true)
+                        it.equals("yoshi3003", true)
                     }
                 },
-                remoteDataSource.leaveEvent(userId, item)
+                remoteDataSource.leaveEvent(item),
+                false
         )
     }
 }

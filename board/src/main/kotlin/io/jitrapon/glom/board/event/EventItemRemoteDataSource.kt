@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.event
 
+import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.reactivex.Completable
@@ -9,7 +10,8 @@ enum class EventApiConst(val code: Int) {
     DECLINED(0), MAYBE(1), GOING(2)
 }
 
-class EventItemRemoteDataSource(private val userInteractor: UserInteractor) : RemoteDataSource(), EventItemDataSource {
+class EventItemRemoteDataSource(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor) :
+        RemoteDataSource(), EventItemDataSource {
 
     private val api = retrofit.create(EventApi::class.java)
 
@@ -25,8 +27,8 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor) : Re
         throw NotImplementedError()
     }
 
-    override fun joinEvent(userId: String, item: EventItem): Completable {
-        return api.joinEvent()
+    override fun joinEvent(item: EventItem): Completable {
+        return api.joinEvent(circleInteractor.getActiveCircleId(), item.itemId, EditAttendeeRequest(EventApiConst.GOING.code))
                 .flatMapCompletable {
                     Completable.fromCallable {
                         if (userInteractor.getCurrentUserId() != it.userId || it.status != EventApiConst.GOING.code) {
@@ -36,8 +38,8 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor) : Re
                 }
     }
 
-    override fun leaveEvent(userId: String, item: EventItem): Completable {
-        return api.leaveEvent()
+    override fun leaveEvent(item: EventItem): Completable {
+        return api.leaveEvent(circleInteractor.getActiveCircleId(), item.itemId, EditAttendeeRequest(EventApiConst.DECLINED.code))
                 .flatMapCompletable {
                     Completable.fromCallable {
                         if (userInteractor.getCurrentUserId() != it.userId || it.status != EventApiConst.DECLINED.code) {

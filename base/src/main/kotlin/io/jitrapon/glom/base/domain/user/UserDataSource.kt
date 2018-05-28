@@ -1,7 +1,6 @@
 package io.jitrapon.glom.base.domain.user
 
 import io.reactivex.Flowable
-import io.reactivex.Single
 
 /**
  * Main entry point for accessing user data
@@ -12,5 +11,5 @@ interface UserDataSource {
 
     fun getUsers(circleId: String, refresh: Boolean = false): Flowable<List<User>>
 
-    fun getUser(userId: String): Single<User>
+    fun getUsers(userIds: List<String>): Flowable<List<User>>
 }

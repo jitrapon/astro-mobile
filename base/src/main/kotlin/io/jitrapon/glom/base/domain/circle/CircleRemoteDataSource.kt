@@ -11,7 +11,7 @@ class CircleRemoteDataSource : RemoteDataSource(), CircleDataSource {
     private val api = retrofit.create(CircleApi::class.java)
 
     override fun getCircle(id: String, refresh: Boolean): Flowable<Circle> {
-        return api.getCircleInfo().map {
+        return api.getCircleInfo(id).map {
             it.deserialize()
         }
     }

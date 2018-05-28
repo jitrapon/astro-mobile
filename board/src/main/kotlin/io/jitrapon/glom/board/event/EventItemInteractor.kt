@@ -239,11 +239,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
 
         board.let {
-            Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } }
+            Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } as EventItem }
                     .flatMapCompletable {
                         when (statusCode) {
-                            2 -> eventItemDataSource.joinEvent(userId!!, it as EventItem)
-                            else -> eventItemDataSource.leaveEvent(userId!!, it as EventItem)
+                            2 -> eventItemDataSource.joinEvent(it)
+                            else -> eventItemDataSource.leaveEvent(it)
                         }
                     }
                     .subscribeOn(Schedulers.io())
@@ -268,8 +268,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         board.let {
             val item = event
             when (statusCode) {
-                2 -> eventItemDataSource.joinEvent(userId!!, item)
-                else -> eventItemDataSource.leaveEvent(userId!!, item)
+                2 -> eventItemDataSource.joinEvent(item)
+                else -> eventItemDataSource.leaveEvent(item)
             }
             .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())

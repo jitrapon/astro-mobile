@@ -3,7 +3,6 @@ package io.jitrapon.glom.base.domain.user
 import android.support.v4.util.ArrayMap
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
-import io.reactivex.Single
 
 /**
  * Repository for retrieving and saving User information
@@ -16,7 +15,7 @@ class UserRepository(private val remoteDataSource: UserDataSource) : Repository<
     private var users: List<User>? = null
     
     /* needed so that we can retrieve a User object by their ID in O(1) time */
-    private var userMap: ArrayMap<String, User>? = null
+    private var userMap: ArrayMap<String, User> = ArrayMap()
 
     override fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> {
         users = users ?: getItems()
@@ -25,7 +24,7 @@ class UserRepository(private val remoteDataSource: UserDataSource) : Repository<
                 remoteDataSource.getUsers(circleId, refresh),
                 {
                     users = it
-                    userMap = ArrayMap<String, User>().apply {
+                    userMap = userMap.apply {
                         users?.map {
                             put(it.userId, it)
                         }
@@ -35,8 +34,12 @@ class UserRepository(private val remoteDataSource: UserDataSource) : Repository<
         )
     }
 
-    override fun getUser(userId: String): Single<User> = Single.fromCallable {
-        userMap!![userId]
+    override fun getUsers(userIds: List<String>): Flowable<List<User>> {
+        return Flowable.just(ArrayList<User>().apply {
+            userIds.forEach {
+                userMap[it]?.let(::add)
+            }
+        })
     }
 
     private fun getItems(): List<User> {

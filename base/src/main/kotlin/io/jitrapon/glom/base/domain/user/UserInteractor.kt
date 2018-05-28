@@ -1,6 +1,5 @@
 package io.jitrapon.glom.base.domain.user
 
-import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.Flowable
 import java.util.*
 
@@ -19,13 +18,8 @@ class UserInteractor(private val dataSource: UserDataSource) {
 
     fun getUsersFromIds(userIds: List<String>): List<User?>? {
         return ArrayList<User?>().apply {
-            userIds.forEach {
-                try {
-                    add(dataSource.getUser(it).blockingGet())
-                }
-                catch (ex: Exception) {
-                    AppLogger.e(ex)
-                }
+            dataSource.getUsers(userIds).blockingFirst().map {
+                add(it)
             }
         }
     }

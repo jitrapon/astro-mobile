@@ -2,7 +2,6 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.repository.RemoteDataSource
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.event.EventInfo
 import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventLocation
@@ -15,13 +14,13 @@ class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
     private val api = retrofit.create(BoardApi::class.java)
 
     override fun getBoard(circleId: String, refresh: Boolean): Flowable<Board> {
-        return api.getBoard().map {
+        return api.getBoard(circleId).map {
             it.deserialize()
         }
     }
 
-    override fun addItem(item: BoardItem): Completable {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun createItem(item: BoardItem, remote: Boolean): Completable {
+        api.createBoardItem()
     }
 
     override fun editItem(item: BoardItem): Completable {
@@ -29,10 +28,6 @@ class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
     }
 
     override fun deleteItem(itemId: String): Completable {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun createItem(item: BoardItem): Completable {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -80,7 +75,6 @@ class BoardRemoteDataSource : RemoteDataSource(), BoardDataSource {
                     }
                 }
             }
-            AppLogger.i("Added item")
         }
     }
 

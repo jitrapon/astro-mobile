@@ -15,6 +15,15 @@ import java.util.*
  */
 abstract class Repository<T> where T : DataModel {
 
+    fun create(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
+        return if (parallel) {
+            Completable.concatArray(localDataSourceCompletable, remoteDataSourceCompletable)
+        }
+        else {
+            remoteDataSourceCompletable.andThen(localDataSourceCompletable)
+        }
+    }
+
     fun load(refresh: Boolean, localDataSourceFlowable: Flowable<T>,
                                 remoteDataSourceFlowable: Flowable<T>,
                                 saveToLocalFlowable: (remoteData: T) -> T): Flowable<T> {
@@ -49,7 +58,12 @@ abstract class Repository<T> where T : DataModel {
         }
     }
 
-    fun update(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable): Completable {
-        return remoteDataSourceCompletable.andThen(localDataSourceCompletable)
+    fun update(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
+        return if (parallel) {
+            Completable.concatArray(localDataSourceCompletable, remoteDataSourceCompletable)
+        }
+        else {
+            remoteDataSourceCompletable.andThen(localDataSourceCompletable)
+        }
     }
 }

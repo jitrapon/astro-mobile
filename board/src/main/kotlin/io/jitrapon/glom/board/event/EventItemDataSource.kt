@@ -16,7 +16,7 @@ interface EventItemDataSource {
 
     fun saveItem(info: EventInfo): Completable
 
-    fun joinEvent(userId: String, item: EventItem): Completable
+    fun joinEvent(item: EventItem): Completable
 
-    fun leaveEvent(userId: String, item: EventItem): Completable
+    fun leaveEvent(item: EventItem): Completable
 }

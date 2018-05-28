@@ -54,7 +54,7 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable event location latlng */
     private val observableLocationLatLng = MutableLiveData<LatLng>()
 
-    /* observabe title for attendee */
+    /* observable title for attendee */
     private val observableAttendeeTitle = MutableLiveData<AndroidString>()
 
     /* observable list of event attendees */

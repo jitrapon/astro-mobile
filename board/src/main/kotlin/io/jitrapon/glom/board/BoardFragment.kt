@@ -144,7 +144,19 @@ class BoardFragment : BaseFragment() {
                             viewModel.syncItem(it, true)
                         }
                     }
-                    UiModel.Status.LOADING -> board_status_viewswitcher.reset()
+                    UiModel.Status.LOADING -> {
+                        board_status_viewswitcher.reset()
+
+                        // dispatch any pending updates to items if available
+                        if (!it.itemsChangedIndices.isNullOrEmpty()) {
+                            it.itemsChangedIndices?.forEach {
+                                board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
+                            }
+                        }
+                        else {
+                            //do nothing
+                        }
+                    }
                 }
             }
         })

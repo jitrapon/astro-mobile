@@ -2,7 +2,6 @@ package io.jitrapon.glom.base.domain.user
 
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.reactivex.Flowable
-import io.reactivex.Single
 import java.util.*
 
 class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
@@ -10,12 +9,12 @@ class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
     private val api = retrofit.create(UserApi::class.java)
 
     override fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> {
-        return api.getUsers().map {
+        return api.getUsers(circleId).map {
             it.deserialize()
         }
     }
 
-    override fun getUser(userId: String): Single<User> {
+    override fun getUsers(userIds: List<String>): Flowable<List<User>> {
         throw NotImplementedError()
     }
 

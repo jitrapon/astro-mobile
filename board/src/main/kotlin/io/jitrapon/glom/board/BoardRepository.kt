@@ -34,9 +34,14 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
         )
     }
 
-    override fun addItem(item: BoardItem): Completable {
-        return Completable.fromCallable {
-            board?.items?.add(item)
+    override fun createItem(item: BoardItem, remote: Boolean): Completable {
+        return if (remote) {
+            remoteDataSource.createItem(item)
+        }
+        else {
+            Completable.fromCallable {
+                board?.items?.add(item)
+            }
         }
     }
 
@@ -46,7 +51,7 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
                 val index = it.indexOfFirst { it.itemId == item.itemId }
                 if (index != -1) it[index] = item
             }
-        }.delay(5000L, TimeUnit.MILLISECONDS)
+        }.delay(1000L, TimeUnit.MILLISECONDS)
     }
 
     override fun deleteItem(itemId: String): Completable {
@@ -56,12 +61,6 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
                 it.removeAt(index)
             }
         }
-    }
-
-    override fun createItem(item: BoardItem): Completable {
-        return Completable.fromCallable {
-
-        }.delay(5000L, TimeUnit.MILLISECONDS)
     }
 
     private fun getTestItems(isRemote: Boolean ) = ArrayList<BoardItem>().apply {

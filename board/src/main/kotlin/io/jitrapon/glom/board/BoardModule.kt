@@ -18,7 +18,7 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun providesEventDataSource(userInteractor: UserInteractor): EventItemDataSource = EventItemRepository(EventItemRemoteDataSource(userInteractor))
+    fun providesEventDataSource(userInteractor: UserInteractor, circleInteractor: CircleInteractor): EventItemDataSource = EventItemRepository(EventItemRemoteDataSource(userInteractor, circleInteractor))
 
     @Provides
     @BoardScope

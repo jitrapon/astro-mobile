@@ -87,7 +87,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Adds a new board item to the list, and process it to be grouped appropriately
      */
     fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
-        boardDataSource.addItem(item)
+        boardDataSource.createItem(item, false)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .andThen (
@@ -163,7 +163,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     }
 
     fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.createItem(item)
+        boardDataSource.createItem(item, true)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
