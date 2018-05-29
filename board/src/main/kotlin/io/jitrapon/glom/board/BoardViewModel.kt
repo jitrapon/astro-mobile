@@ -315,18 +315,27 @@ class BoardViewModel : BaseViewModel() {
         boardUiModel.items?.let { items ->
             items.getOrNull(position)?.let { item ->
                 if (item.itemType != BoardItemUiModel.TYPE_HEADER) {
-                    boardInteractor.deleteItem(item.itemId) {
+                    boardInteractor.deleteItemLocal(item.itemId) {
                         when (it) {
                             is AsyncSuccessResult -> {
                                 syncItemIds.remove(item.itemId)
-
                                 onBoardItemChanges(it.result, listOf(), null)
-                                observableViewAction.value = Snackbar(AndroidString(R.string.board_item_deleted), level = MessageLevel.SUCCESS)
+
+                                syncDeletedItem(item.itemId)
                             }
                             is AsyncErrorResult -> handleError(it.error)
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun syncDeletedItem(itemId: String) {
+        boardInteractor.deleteItemRemote(itemId) {
+            when (it) {
+                is AsyncSuccessResult -> observableViewAction.value = Snackbar(AndroidString(R.string.board_item_deleted), level = MessageLevel.SUCCESS)
+                is AsyncErrorResult -> handleError(it.error)
             }
         }
     }

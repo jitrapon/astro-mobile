@@ -126,8 +126,8 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     /**
      * Deletes the specified board item to the list
      */
-    fun deleteItem(itemId: String, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
-        boardDataSource.deleteItem(itemId)
+    fun deleteItemLocal(itemId: String, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+        boardDataSource.deleteItem(itemId, false)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .andThen (
@@ -145,6 +145,17 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
+                })
+    }
+
+    fun deleteItemRemote(itemId: String, onComplete: (AsyncResult<Unit>) -> Unit) {
+        boardDataSource.deleteItem(itemId, true)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
                 })
     }
 

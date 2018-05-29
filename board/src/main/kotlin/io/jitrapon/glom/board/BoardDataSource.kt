@@ -16,5 +16,5 @@ interface BoardDataSource {
 
     fun editItem(item: BoardItem): Completable
 
-    fun deleteItem(itemId: String): Completable
+    fun deleteItem(itemId: String, remote: Boolean = false): Completable
 }

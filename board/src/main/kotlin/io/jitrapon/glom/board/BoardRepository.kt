@@ -8,7 +8,6 @@ import io.jitrapon.glom.board.event.EventLocation
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 /**
  * Repository for retrieving and saving Board information
@@ -35,9 +34,7 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
-        return if (remote) {
-            remoteDataSource.createItem(item)
-        }
+        return if (remote) remoteDataSource.createItem(item)
         else {
             Completable.fromCallable {
                 board?.items?.add(item)
@@ -46,19 +43,28 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
     }
 
     override fun editItem(item: BoardItem): Completable {
-        return Completable.fromCallable {
-            board?.items?.let {
-                val index = it.indexOfFirst { it.itemId == item.itemId }
-                if (index != -1) it[index] = item
-            }
-        }.delay(1000L, TimeUnit.MILLISECONDS)
+        return update(Completable.fromCallable {
+                    board?.items?.let {
+                        val index = it.indexOfFirst { it.itemId == item.itemId }
+                        if (index != -1) it[index] = item
+                    }
+                },
+                remoteDataSource.editItem(item),
+                true
+        )
     }
 
-    override fun deleteItem(itemId: String): Completable {
-        return Completable.fromCallable {
-            board?.items?.let {
-                val index = it.indexOfFirst { it.itemId == itemId }
-                it.removeAt(index)
+    override fun deleteItem(itemId: String, remote: Boolean): Completable {
+        return if (remote) remoteDataSource.deleteItem(itemId)
+        else {
+            Completable.fromCallable {
+                board?.items?.let { items ->
+                    items.indexOfFirst { it.itemId == itemId }.let {
+                        if (it > -1 && it < items.size) {
+                            items.removeAt(it)
+                        }
+                    }
+                }
             }
         }
     }

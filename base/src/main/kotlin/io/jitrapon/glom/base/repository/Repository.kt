@@ -17,7 +17,7 @@ abstract class Repository<T> where T : DataModel {
 
     fun create(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
         return if (parallel) {
-            Completable.concatArray(localDataSourceCompletable, remoteDataSourceCompletable)
+            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
         }
         else {
             remoteDataSourceCompletable.andThen(localDataSourceCompletable)
@@ -60,7 +60,16 @@ abstract class Repository<T> where T : DataModel {
 
     fun update(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
         return if (parallel) {
-            Completable.concatArray(localDataSourceCompletable, remoteDataSourceCompletable)
+            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
+        }
+        else {
+            remoteDataSourceCompletable.andThen(localDataSourceCompletable)
+        }
+    }
+
+    fun delete(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
+        return if (parallel) {
+            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
         }
         else {
             remoteDataSourceCompletable.andThen(localDataSourceCompletable)
