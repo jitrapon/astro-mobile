@@ -57,10 +57,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      */
     fun initWith(provider: PlaceProvider? = null, item: BoardItem? = null) {
         provider?.let { placeProvider = it }
-        item?.let {
-            isItemModified = false   // must be reset to false because the interactor instance is reused for new items
+        (item as? EventItem)?.let {
+            isItemModified = false   // must be reset tit as EventItem)o false because the interactor instance is reused for new items
 
-            eventItemDataSource.initWith(it as EventItem)
+            eventItemDataSource.initWith(it)
+            note = it.itemInfo.note
         }
     }
 
