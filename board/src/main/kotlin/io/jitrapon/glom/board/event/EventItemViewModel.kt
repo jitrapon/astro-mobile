@@ -191,6 +191,9 @@ class EventItemViewModel : BoardItemViewModel() {
                 var animationItem: AnimationItem? = null
                 val message: AndroidString
                 var level: Int = MessageLevel.INFO
+
+                // update the status icon
+                val originalStatus = item.attendStatus
                 when (newStatus) {
                     EventItemUiModel.AttendStatus.GOING -> {
                         statusCode = 2
@@ -215,9 +218,13 @@ class EventItemViewModel : BoardItemViewModel() {
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(EventItemUiModel.ATTENDSTATUS)) }
                 }
+
+                // show the animation
                 animationItem?.let {
                     boardViewModel.observableAnimation.value = it
                 }
+
+                // update the status in the repos
                 interactor.setItemAttendStatus(item.itemId, statusCode) {
                     when (it) {
                         is AsyncSuccessResult -> {
@@ -233,7 +240,22 @@ class EventItemViewModel : BoardItemViewModel() {
                             boardViewModel.observableViewAction.value = Snackbar(message, level = level)
                         }
                         is AsyncErrorResult -> {
-                            handleError(it.error)
+                            AppLogger.e(it.error)
+                            boardViewModel.observableViewAction.execute(arrayOf(
+                                    Loading(false),
+                                    Snackbar(AndroidString(io.jitrapon.glom.R.string.error_generic), level = MessageLevel.ERROR)
+                            ))
+
+                            // revert the status change
+                            item.apply {
+                                attendStatus = originalStatus
+                            }
+                            boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
+                                requestPlaceInfoItemIds = null
+                                diffResult = null
+                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
+                                        arrayListOf(EventItemUiModel.ATTENDSTATUS, EventItemUiModel.ATTENDEES)) }
+                            }
                         }
                     }
                 }

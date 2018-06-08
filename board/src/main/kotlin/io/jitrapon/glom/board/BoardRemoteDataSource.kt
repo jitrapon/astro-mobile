@@ -13,8 +13,8 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
 
     private val api = retrofit.create(BoardApi::class.java)
 
-    override fun getBoard(circleId: String, refresh: Boolean): Flowable<Board> {
-        return api.getBoard(circleId).map {
+    override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
+        return api.getBoard(circleId, getTypeQuery(itemType)).map {
             it.deserialize()
         }
     }
@@ -29,6 +29,16 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {
         return api.deleteBoardItem(circleInteractor.getActiveCircleId(), itemId)
+    }
+
+    private fun getTypeQuery(type: Int): String? = when (type) {
+        BoardItem.TYPE_EVENT -> "event"
+        BoardItem.TYPE_DRAWING -> "drawing"
+        BoardItem.TYPE_FILE -> "file"
+        BoardItem.TYPE_LINK -> "link"
+        BoardItem.TYPE_LIST -> "list"
+        BoardItem.TYPE_NOTE -> "note"
+        else -> null
     }
 
     //region deserializers

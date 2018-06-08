@@ -41,7 +41,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     /* convenient board instance */
     private val board: Board
-        get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
+        get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), BoardItem.TYPE_EVENT).blockingFirst()
 
     private val event: EventItem
         get() = eventItemDataSource.getItem().blockingFirst()

@@ -35,11 +35,24 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     private var itemsLoaded: Int = 0
 
     /*
+     * Board item types
+     */
+    private var itemType: Int = BoardItem.TYPE_EVENT
+
+    /*
      * Filtering type of items
      */
     private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
+
     //region public functions
+
+    /**
+     * Initializes the item type of items to be loaded
+     */
+    fun setItemType(type: Int) {
+        itemType = type
+    }
 
     /**
      * Initializes the filtering type of items when items are loaded.
@@ -61,7 +74,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         val circleId = circleInteractor.getActiveCircleId()
-        Flowable.zip(boardDataSource.getBoard(circleId, refresh), userInteractor.getUsers(circleId, refresh),
+        Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh), userInteractor.getUsers(circleId, refresh),
                 BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                     board to users
                 })
@@ -262,7 +275,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     //endregion
     //region private functions
 
-    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId()).blockingFirst()
+    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), itemType).blockingFirst()
 
     /**
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.

@@ -20,11 +20,11 @@ class BoardRepository(private val remoteDataSource: BoardDataSource) : Repositor
 
     private var isFirstLoad: Boolean = true
 
-    override fun getBoard(circleId: String, refresh: Boolean): Flowable<Board> {
+    override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         board = board ?: Board(circleId, getTestItems(false), Date(10000L))
         return load(refresh,
                 Flowable.just(board),
-                remoteDataSource.getBoard(circleId),
+                remoteDataSource.getBoard(circleId, itemType),
                 {
                     board = it
                     isFirstLoad = false

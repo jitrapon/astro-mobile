@@ -80,18 +80,23 @@ class BoardViewModel : BaseViewModel() {
     init {
         BoardInjector.getComponent().inject(this)
 
-        boardInteractor.setFilteringType(itemFilterType)
-
         loadActiveCircleInfo()
+
+        boardInteractor.apply {
+            setItemType(BoardItem.TYPE_EVENT)
+            setFilteringType(itemFilterType)
+        }
+
         loadBoard(false)
     }
 
     //region board actions
 
     /**
-     * Loads board data and items asynchronously
+     * Loads board data and items asynchronously, default to loading event items
      *
      * @param refresh If true, old data will be discarded and will be refreshed from the server again
+     * @param itemType Board item type to load, see types in BoardItem.kt
      */
     fun loadBoard(refresh: Boolean) {
         observableBoard.value = boardUiModel.apply {

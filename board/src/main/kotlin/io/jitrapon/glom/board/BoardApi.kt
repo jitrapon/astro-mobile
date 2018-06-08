@@ -6,8 +6,8 @@ import retrofit2.http.*
 
 interface BoardApi {
 
-    @GET("5af6b5cf3100006600002720/{circleId}?mocky-delay=1000ms")
-    fun getBoard(@Path("circleId") circleId: String): Flowable<BoardResponse>
+    @GET("5af6b5cf3100006600002720/{circleId}/{type}/?mocky-delay=1000ms")
+    fun getBoard(@Path("circleId") circleId: String, @Path("type") itemType: String?): Flowable<BoardResponse>
 
     @POST("5b0d07eb31000064009d54d7/{circleId}?mocky-delay=800ms")
     fun createBoardItem(@Path("circleId") circleId: String,
