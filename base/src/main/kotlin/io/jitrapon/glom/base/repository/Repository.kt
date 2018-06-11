@@ -26,13 +26,10 @@ abstract class Repository<T> where T : DataModel {
 
     fun load(refresh: Boolean, localDataSourceFlowable: Flowable<T>,
                                 remoteDataSourceFlowable: Flowable<T>,
-                                saveToLocalFlowable: (remoteData: T) -> T): Flowable<T> {
+                                saveToLocalFlowable: (remoteData: T) -> Flowable<T>): Flowable<T> {
         return if (refresh) {
             remoteDataSourceFlowable.flatMap {
-                Flowable.fromCallable {
-                    it.retrievedTime = Date()
-                    saveToLocalFlowable(it)
-                }
+                saveToLocalFlowable(it)
             }
         }
         else {

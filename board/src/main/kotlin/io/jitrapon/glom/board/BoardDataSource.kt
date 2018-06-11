@@ -12,6 +12,8 @@ interface BoardDataSource {
 
     fun getBoard(circleId: String, itemType: Int, refresh: Boolean = false): Flowable<Board>
 
+    fun saveBoard(board: Board): Flowable<Board>
+
     fun createItem(item: BoardItem, remote: Boolean = false): Completable
 
     fun editItem(item: BoardItem): Completable

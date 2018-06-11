@@ -1,5 +1,7 @@
 package io.jitrapon.glom.board
 
+import android.app.Application
+import android.arch.persistence.room.Room
 import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -14,7 +16,11 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideBoardDataSource(circleInteractor: CircleInteractor): BoardDataSource = BoardRepository(BoardRemoteDataSource(circleInteractor))
+    fun provideDatabase(application: Application): BoardDatabase = Room.databaseBuilder(application.applicationContext, BoardDatabase::class.java, "board.db").build()
+
+    @Provides
+    @BoardScope
+    fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase): BoardDataSource = BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database))
 
     @Provides
     @BoardScope

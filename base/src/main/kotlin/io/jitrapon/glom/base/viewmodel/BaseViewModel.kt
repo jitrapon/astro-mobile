@@ -11,6 +11,9 @@ import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.withinDuration
 import java.util.*
 
+/* time in seconds before data is refreshed automatically */
+const val REFRESH_INTERVAL = 60
+
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
  * to retrieve and modify data to an interactor, then transforms the received DataModel
@@ -18,6 +21,7 @@ import java.util.*
  *
  * Created by Jitrapon
  */
+
 abstract class BaseViewModel : ViewModel() {
 
     /* Subclass of this class should set appropriate UiActionModel to this variable to emit action to the view
@@ -58,7 +62,7 @@ abstract class BaseViewModel : ViewModel() {
 
                 // if loading is successful, check if data is stale
                 // if it is, force refresh
-                if (it is AsyncSuccessResult && !it.result.first.withinDuration(Date(), 5)) {
+                if (it is AsyncSuccessResult && !it.result.first.withinDuration(Date(), REFRESH_INTERVAL)) {
                     observableViewAction.value = ReloadData(100L)
                 }
             }).run(callbackDelay)

@@ -108,6 +108,7 @@ dependencies {
     api "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
     api "android.arch.persistence.room:rxjava2:$rootProject.archRoomVersion"
     kapt "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
+
     testImplementation "android.arch.persistence.room:testing:$rootProject.archRoomVersion"
 
     // paging

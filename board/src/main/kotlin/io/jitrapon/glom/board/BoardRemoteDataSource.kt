@@ -15,8 +15,12 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         return api.getBoard(circleId, getTypeQuery(itemType)).map {
-            it.deserialize()
+            it.deserialize(circleId)
         }
+    }
+
+    override fun saveBoard(board: Board): Flowable<Board> {
+        throw NotImplementedError()
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
@@ -43,8 +47,8 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
 
     //region deserializers
 
-    private fun BoardResponse.deserialize(): Board {
-        return Board(boardId = boardId, items = items.deserialize(), retrievedTime = Date())
+    private fun BoardResponse.deserialize(circleId: String): Board {
+        return Board(circleId = circleId, items = items.deserialize(), retrievedTime = Date())
     }
 
     private fun List<BoardItemResponse>.deserialize(): ArrayList<BoardItem> {

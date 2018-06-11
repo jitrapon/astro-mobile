@@ -19,7 +19,7 @@ class CircleRepository(private val remoteDataSource: CircleDataSource) : Reposit
                 remoteDataSource.getCircle(id, refresh),
                 {
                     circle = it
-                    circle!!
+                    Flowable.just(circle)
                 }
         )
     }

@@ -10,7 +10,7 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-data class Board(val boardId: String,
+data class Board(val circleId: String,
                  val items: MutableList<BoardItem>,
                  override var retrievedTime: Date? = Date(),
                  override val error: Throwable? = null) : DataModel {
@@ -26,7 +26,7 @@ data class Board(val boardId: String,
             })
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(boardId)
+        parcel.writeString(circleId)
         parcel.writeTypedList(items)
         parcel.writeLong(retrievedTime?.time ?: -1L)
     }

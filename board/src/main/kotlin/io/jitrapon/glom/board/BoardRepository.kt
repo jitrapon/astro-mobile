@@ -14,23 +14,20 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository(private val remoteDataSource: BoardDataSource) : Repository<Board>(), BoardDataSource {
+class BoardRepository(private val remoteDataSource: BoardDataSource, private val localDataSource: BoardDataSource) : Repository<Board>(), BoardDataSource {
 
     private var board: Board? = null
 
-    private var isFirstLoad: Boolean = true
-
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
-        board = board ?: Board(circleId, getTestItems(false), Date(10000L))
         return load(refresh,
-                Flowable.just(board),
+                localDataSource.getBoard(circleId, itemType),
                 remoteDataSource.getBoard(circleId, itemType),
-                {
-                    board = it
-                    isFirstLoad = false
-                    board!!
-                }
+                localDataSource::saveBoard
         )
+    }
+
+    override fun saveBoard(board: Board): Flowable<Board> {
+        throw NotImplementedError()
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {

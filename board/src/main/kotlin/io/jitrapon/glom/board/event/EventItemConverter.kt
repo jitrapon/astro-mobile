@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.event
 
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardItem
 import io.jitrapon.glom.board.BoardItemResponse
 import java.util.*
@@ -67,4 +68,23 @@ fun EventItem.serializeInfo(): MutableMap<String, Any?> {
             put("is_place_poll_opened", it.placePollStatus)
         }
     }
+}
+
+fun List<EventItemFullEntity>.toBoard(circleId: String): Board {
+    val items = ArrayList<BoardItem>()
+    var updatedTime: Long = Date().time
+    for (entity in this) {
+        entity.entity.let {
+            //TODO add owners
+            if (it.updatedTime < updatedTime) {
+                updatedTime = it.updatedTime
+            }
+            val location: EventLocation? = if (it.latitude == null && it.longitude == null && it.googlePlaceId == null && it.placeId == null && it.placeName == null) null
+            else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName)
+            items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList(),
+                    EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
+                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList())))
+        }
+    }
+    return Board(circleId = circleId, items = items, retrievedTime = Date(updatedTime))
 }
