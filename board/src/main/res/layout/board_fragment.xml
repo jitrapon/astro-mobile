@@ -60,7 +60,7 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:scrollbarStyle="insideOverlay"
-                android:scrollbars="vertical"
+                android:scrollbars="none"
                 android:paddingBottom="@dimen/spacing_normal" >
 
             </android.support.v7.widget.RecyclerView>
