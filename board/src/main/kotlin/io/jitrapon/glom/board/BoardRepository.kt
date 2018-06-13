@@ -14,9 +14,8 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository(private val remoteDataSource: BoardDataSource, private val localDataSource: BoardDataSource) : Repository<Board>(), BoardDataSource {
-
-    private var board: Board? = null
+class BoardRepository(private val remoteDataSource: BoardDataSource, private val localDataSource: BoardDataSource) :
+        Repository<Board>(), BoardDataSource {
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         return load(refresh,
@@ -32,38 +31,16 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
         return if (remote) remoteDataSource.createItem(item)
-        else {
-            Completable.fromCallable {
-                board?.items?.add(item)
-            }
-        }
+        else localDataSource.createItem(item, remote)
     }
 
     override fun editItem(item: BoardItem): Completable {
-        return update(Completable.fromCallable {
-                    board?.items?.let {
-                        val index = it.indexOfFirst { it.itemId == item.itemId }
-                        if (index != -1) it[index] = item
-                    }
-                },
-                remoteDataSource.editItem(item),
-                true
-        )
+        return update(localDataSource.editItem(item), remoteDataSource.editItem(item), true)
     }
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {
         return if (remote) remoteDataSource.deleteItem(itemId)
-        else {
-            Completable.fromCallable {
-                board?.items?.let { items ->
-                    items.indexOfFirst { it.itemId == itemId }.let {
-                        if (it > -1 && it < items.size) {
-                            items.removeAt(it)
-                        }
-                    }
-                }
-            }
-        }
+        else localDataSource.deleteItem(itemId, remote)
     }
 
     private fun getTestItems(isRemote: Boolean ) = ArrayList<BoardItem>().apply {

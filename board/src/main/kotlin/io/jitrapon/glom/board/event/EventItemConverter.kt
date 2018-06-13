@@ -88,3 +88,14 @@ fun List<EventItemFullEntity>.toBoard(circleId: String): Board {
     }
     return Board(circleId = circleId, items = items, retrievedTime = Date(updatedTime))
 }
+
+fun EventItem.toEntity(circleId: String, updatedTimeMs: Long): EventItemFullEntity {
+    return EventItemFullEntity().apply {
+        entity = EventItemEntity(
+                itemId, updatedTimeMs, itemInfo.eventName, itemInfo.startTime, itemInfo.endTime, itemInfo.location?.googlePlaceId,
+                itemInfo.location?.placeId, itemInfo.location?.latitude, itemInfo.location?.longitude,
+                itemInfo.location?.name, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
+                itemInfo.placePollStatus, circleId)
+        attendees = itemInfo.attendees
+    }
+}

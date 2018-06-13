@@ -336,6 +336,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
         return Flowable.just(board to map)
     }
 
+    //TODO need to standardize how to generate this ID with the server
     private fun generateItemId(): String {
         return UUID.randomUUID().toString()
     }

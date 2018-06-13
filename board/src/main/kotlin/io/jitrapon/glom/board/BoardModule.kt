@@ -6,10 +6,7 @@ import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.board.event.EventItemDataSource
-import io.jitrapon.glom.board.event.EventItemInteractor
-import io.jitrapon.glom.board.event.EventItemRemoteDataSource
-import io.jitrapon.glom.board.event.EventItemRepository
+import io.jitrapon.glom.board.event.*
 
 @Module
 class BoardModule {
@@ -24,7 +21,7 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun providesEventDataSource(userInteractor: UserInteractor, circleInteractor: CircleInteractor): EventItemDataSource = EventItemRepository(EventItemRemoteDataSource(userInteractor, circleInteractor))
+    fun providesEventDataSource(userInteractor: UserInteractor, circleInteractor: CircleInteractor, database: BoardDatabase): EventItemDataSource = EventItemRepository(EventItemRemoteDataSource(userInteractor, circleInteractor), EventItemLocalDataSource(database, userInteractor))
 
     @Provides
     @BoardScope

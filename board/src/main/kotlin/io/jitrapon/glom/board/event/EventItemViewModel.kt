@@ -417,6 +417,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 is AsyncSuccessResult -> {
                     it.result?.let {
                         observableAttendees.value = getEventDetailAttendees(it)
+                        observableAttendeeTitle.value = getEventDetailAttendeeTitle(it)
                     }
                     attendStatus = newStatus
                     observableAttendStatus.value = observableAttendStatus.value!!.apply {

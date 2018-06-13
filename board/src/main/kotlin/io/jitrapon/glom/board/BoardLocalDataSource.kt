@@ -8,63 +8,100 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
 
-    private val eventDao: EventItemDao = database.eventItemDao()
+    /* synchronized lock for modifying in-memory board */
+    private val lock: Any = Any()
+    private lateinit var inMemoryBoard: Board
 
-    private lateinit var board: Board
+    /* previously fetched board item type */
     private var lastFetchedItemType: AtomicInteger = AtomicInteger(Integer.MIN_VALUE)
 
+    /* DAO access object to event items */
+    private val eventDao: EventItemDao = database.eventItemDao()
+
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
-        return when (itemType) {
-            BoardItem.TYPE_EVENT -> {
-                if (lastFetchedItemType.get() == itemType) {
-                    Flowable.just(board)
+        // if this item type request has been requested before, just return the cached board version
+        return if (lastFetchedItemType.get() == itemType) Flowable.just(inMemoryBoard)
+
+        // otherwise invoke the corresponding item DAO
+        else {
+            when (itemType) {
+                BoardItem.TYPE_EVENT -> {
+                    eventDao.getEventsInCircle(circleId).toFlowable()
+                            .map { it.toBoard(circleId) }
+                            .doOnNext {
+                                synchronized(lock) {
+                                    inMemoryBoard = it
+                                }
+                                lastFetchedItemType.set(itemType)
+                            }
                 }
-                else {
-                    eventDao.getEventsInCircle(circleId).toFlowable().map {
-                        board = it.toBoard(circleId)
-                        lastFetchedItemType.set(itemType)
-                        board
-                    }
-                }
+                else -> throw NotImplementedError()
             }
-            else -> throw NotImplementedError()
         }
     }
 
     override fun saveBoard(board: Board): Flowable<Board> {
         return Flowable.fromCallable {
-            val entities = ArrayList<EventItemFullEntity>()
+            //TODO delete unsynced items?
+            val eventEntities = ArrayList<EventItemFullEntity>()
             val updatedTime = Date().time
             board.items.forEach {
                 when (it) {
-                    is EventItem -> {
-                        entities.add(EventItemFullEntity().apply {
-                            entity = EventItemEntity(
-                                    it.itemId, updatedTime, it.itemInfo.eventName, it.itemInfo.startTime, it.itemInfo.endTime, it.itemInfo.location?.googlePlaceId,
-                                    it.itemInfo.location?.placeId, it.itemInfo.location?.latitude, it.itemInfo.location?.longitude,
-                                    it.itemInfo.location?.name, it.itemInfo.note, it.itemInfo.timeZone, it.itemInfo.isFullDay, it.itemInfo.datePollStatus,
-                                    it.itemInfo.placePollStatus, board.circleId)
-                            attendees = it.itemInfo.attendees
-                        })
-                    }
-                    else -> throw NotImplementedError()
+                    is EventItem -> eventEntities.add(it.toEntity(board.circleId, updatedTime))
+                    else -> { /* do nothing */ }
                 }
             }
-            eventDao.insertOrReplaceEvents(entities)
-            this.board = board
+            if (eventEntities.isNotEmpty()) eventDao.insertOrReplaceEvents(*eventEntities.toTypedArray())
             board
+        }.doOnNext {
+            synchronized(lock) {
+                inMemoryBoard = it
+            }
         }
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return Completable.fromCallable {
+            when (item) {
+                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, Date().time))
+            }
+        }.doOnComplete {
+            synchronized(lock) {
+                inMemoryBoard.items.add(item)
+            }
+        }
     }
 
     override fun editItem(item: BoardItem): Completable {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return Completable.fromCallable {
+            when (item) {
+                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, Date().time))
+            }
+        }.doOnComplete {
+            synchronized(lock) {
+                inMemoryBoard.items.indexOfFirst { it.itemId == item.itemId }.let {
+                    if (it != -1) {
+                        inMemoryBoard.items[it] = item
+                    }
+                }
+            }
+        }
     }
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return Completable.fromCallable {
+            synchronized(lock) {
+                inMemoryBoard.items.indexOfFirst { itemId == it.itemId }.let {
+                    if (it != -1) {
+                        val item = inMemoryBoard.items[it]
+                        when (item) {
+                            is EventItem -> eventDao.deleteEventById(itemId)
+                            else -> { /* do nothing */ }
+                        }
+                        inMemoryBoard.items.removeAt(it)
+                    }
+                }
+            }
+        }
     }
 }

@@ -10,27 +10,20 @@ import io.reactivex.Flowable
  *
  * Created by Jitrapon
  */
-class EventItemRepository(private val remoteDataSource: EventItemDataSource) : Repository<BoardItem>(), EventItemDataSource {
-
-    private lateinit var item: EventItem
+class EventItemRepository(private val remoteDataSource: EventItemDataSource, private val localDataSource: EventItemLocalDataSource) :
+        Repository<BoardItem>(), EventItemDataSource {
 
     override fun initWith(item: EventItem) {
-        this.item = item
+        localDataSource.initWith(item)
     }
 
-    override fun getItem(): Flowable<EventItem> = Flowable.just(item)
+    override fun getItem(): Flowable<EventItem> = localDataSource.getItem()
 
-    override fun saveItem(info: EventInfo): Completable {
-        return Completable.fromCallable {
-            item.setInfo(info)
-        }
-    }
+    override fun saveItem(info: EventInfo): Completable = localDataSource.saveItem(info)
 
     override fun joinEvent(item: EventItem): Completable {
         return update(
-                Completable.fromCallable {
-                    item.itemInfo.attendees.add("yoshi3003")
-                },
+                localDataSource.joinEvent(item),
                 remoteDataSource.joinEvent(item),
                 false
         )
@@ -38,11 +31,7 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource) : R
 
     override fun leaveEvent(item: EventItem): Completable {
         return update(
-                Completable.fromCallable {
-                    item.itemInfo.attendees.removeAll {
-                        it.equals("yoshi3003", true)
-                    }
-                },
+                localDataSource.leaveEvent(item),
                 remoteDataSource.leaveEvent(item),
                 false
         )

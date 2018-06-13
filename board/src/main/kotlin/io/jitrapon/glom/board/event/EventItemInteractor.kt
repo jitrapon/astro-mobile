@@ -240,8 +240,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
 
         board.let {
+            var item: EventItem? = null
             Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } as EventItem }
                     .flatMapCompletable {
+                        item = it
                         when (statusCode) {
                             2 -> eventItemDataSource.joinEvent(it)
                             else -> eventItemDataSource.leaveEvent(it)
@@ -250,7 +252,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        onComplete(AsyncSuccessResult((it.items.find { it.itemId == itemId } as? EventItem)?.itemInfo?.attendees))
+                        onComplete(AsyncSuccessResult(item!!.itemInfo.attendees))
                     }, {
                         onComplete(AsyncErrorResult(it))
                     })

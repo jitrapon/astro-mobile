@@ -13,13 +13,22 @@ interface EventItemDao {
     fun insert(event: EventItemEntity)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(attendees: List<EventAttendeeEntity>)
+    fun insertAttendees(attendees: List<EventAttendeeEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertAttendee(attendee: EventAttendeeEntity)
+
+    @Delete
+    fun deleteAttendee(attendee: EventAttendeeEntity)
 
     @Transaction
-    fun insertOrReplaceEvents(events: List<EventItemFullEntity>) {
+    fun insertOrReplaceEvents(vararg events: EventItemFullEntity) {
         for (event in events) {
             insert(event.entity)        // when a replace occurs, SQLite will trigger a cascade delete to child tables as well
-            insert(event.attendees.map { EventAttendeeEntity(event.entity.id, it) })
+            insertAttendees(event.attendees.map { EventAttendeeEntity(event.entity.id, it) })
         }
     }
+
+    @Query("DELETE FROM events WHERE id = :itemId")
+    fun deleteEventById(itemId: String)
 }
