@@ -1,23 +1,27 @@
 package io.jitrapon.glom.base.di
 
+import android.app.Application
+import android.arch.persistence.room.Room
 import dagger.Module
 import dagger.Provides
+import io.jitrapon.glom.base.domain.BaseDatabase
 import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.circle.CircleRemoteDataSource
 import io.jitrapon.glom.base.domain.circle.CircleRepository
-import io.jitrapon.glom.base.domain.user.UserDataSource
-import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.domain.user.UserRemoteDataSource
-import io.jitrapon.glom.base.domain.user.UserRepository
+import io.jitrapon.glom.base.domain.user.*
 import javax.inject.Singleton
 
-@Module
+@Module(includes = [BaseModule::class])
 class BaseDomainModule {
 
     @Provides
     @Singleton
-    fun provideUserRepository(): UserDataSource = UserRepository(UserRemoteDataSource())
+    fun provideDatabase(application: Application): BaseDatabase = Room.databaseBuilder(application.applicationContext, BaseDatabase::class.java, "base.db").build()
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(database: BaseDatabase): UserDataSource = UserRepository(UserRemoteDataSource(), UserLocalDataSource(database))
 
     @Provides
     @Singleton
