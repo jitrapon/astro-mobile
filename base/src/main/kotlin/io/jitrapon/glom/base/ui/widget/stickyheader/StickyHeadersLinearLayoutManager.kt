@@ -89,8 +89,8 @@ class StickyHeadersLinearLayoutManager<T> : LinearLayoutManager
     override fun onSaveInstanceState(): Parcelable {
         return io.jitrapon.glom.base.ui.widget.stickyheader.SavedState().apply {
             superState = super.onSaveInstanceState()
-            pendingScrollPosition = pendingScrollPosition
-            pendingScrollOffset = pendingScrollOffset
+            pendingScrollPosition = this@StickyHeadersLinearLayoutManager.pendingScrollPosition
+            pendingScrollOffset = this@StickyHeadersLinearLayoutManager.pendingScrollOffset
         }
     }
 
