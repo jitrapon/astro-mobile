@@ -12,4 +12,6 @@ interface UserDataSource {
     fun getUsers(circleId: String, refresh: Boolean = false): Flowable<List<User>>
 
     fun getUsers(userIds: List<String>): Flowable<List<User>>
+
+    fun saveUsers(users: List<User>): Flowable<List<User>>
 }

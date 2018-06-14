@@ -1,6 +1,5 @@
 package io.jitrapon.glom.base.domain.user
 
-import android.support.v4.util.ArrayMap
 import io.jitrapon.glom.base.repository.Repository
 import io.reactivex.Flowable
 
@@ -14,25 +13,17 @@ class UserRepository(private val remoteDataSource: UserDataSource, private val l
 
     override fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> {
         return loadList(refresh,
-                Flowable.just(users),
+                localDataSource.getUsers(circleId, refresh),
                 remoteDataSource.getUsers(circleId, refresh),
-                {
-                    users = it
-                    userMap = userMap.apply {
-                        users?.map {
-                            put(it.userId, it)
-                        }
-                    }
-                    users!!
-                }
+                localDataSource::saveUsers
         )
     }
 
     override fun getUsers(userIds: List<String>): Flowable<List<User>> {
-        return Flowable.just(ArrayList<User>().apply {
-            userIds.forEach {
-                userMap[it]?.let(::add)
-            }
-        })
+        return localDataSource.getUsers(userIds)
+    }
+
+    override fun saveUsers(users: List<User>): Flowable<List<User>> {
+        throw NotImplementedError()
     }
 }

@@ -3,7 +3,6 @@ package io.jitrapon.glom.base.repository
 import io.jitrapon.glom.base.model.DataModel
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import java.util.*
 
 /**
  * Base class for all repositories. A repository maps one-to-one to a model class implementing
@@ -39,15 +38,10 @@ abstract class Repository<T> where T : DataModel {
 
     fun loadList(refresh: Boolean, localDataSourceFlowable: Flowable<List<T>>,
                  remoteDataSourceFlowable: Flowable<List<T>>,
-                 saveToLocalFlowable: (remoteData: List<T>) -> List<T>): Flowable<List<T>> {
+                 saveToLocalFlowable: (remoteData: List<T>) -> Flowable<List<T>>): Flowable<List<T>> {
         return if (refresh) {
             remoteDataSourceFlowable.flatMap {
-                Flowable.fromCallable {
-                    it.forEach {
-                        it.retrievedTime = Date()
-                    }
-                    saveToLocalFlowable(it)
-                }
+                saveToLocalFlowable(it)
             }
         }
         else {

@@ -18,6 +18,10 @@ class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
         throw NotImplementedError()
     }
 
+    override fun saveUsers(users: List<User>): Flowable<List<User>> {
+        throw NotImplementedError()
+    }
+
     //region deserializer
 
     private fun UsersResponse.deserialize(): List<User> {
