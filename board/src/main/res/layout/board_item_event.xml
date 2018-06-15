@@ -121,16 +121,38 @@
 
     </android.support.constraint.ConstraintLayout>
 
-    <ImageButton
-        android:id="@+id/event_card_join_status_button"
+    <LinearLayout
+        android:id="@+id/event_card_action_buttons_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="?android:selectableItemBackgroundBorderless"
-        app:srcCompat="@drawable/ic_emoticon_neutral"
-        android:layout_gravity="bottom|end"
-        android:paddingStart="@dimen/card_content_padding"
-        android:paddingEnd="@dimen/card_content_padding"
-        android:paddingBottom="@dimen/card_content_padding"
-        android:paddingTop="@dimen/card_content_padding" />
+        android:orientation="horizontal"
+        android:layout_gravity="bottom|end" >
+
+        <ImageButton
+            android:id="@+id/event_card_plan_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_plan_event"
+            android:layout_gravity="bottom|end"
+            android:paddingStart="@dimen/card_content_padding"
+            android:paddingEnd="@dimen/card_content_padding"
+            android:paddingBottom="@dimen/card_content_padding"
+            android:paddingTop="@dimen/card_content_padding"
+            android:tint="@color/reddish" />
+
+        <ImageButton
+            android:id="@+id/event_card_join_status_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_emoticon_neutral"
+            android:layout_gravity="bottom|end"
+            android:paddingStart="@dimen/card_content_padding"
+            android:paddingEnd="@dimen/card_content_padding"
+            android:paddingBottom="@dimen/card_content_padding"
+            android:paddingTop="@dimen/card_content_padding" />
+
+    </LinearLayout>
 
 </android.support.v7.widget.CardView>

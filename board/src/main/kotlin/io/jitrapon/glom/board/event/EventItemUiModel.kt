@@ -17,6 +17,7 @@ data class EventItemUiModel(override val itemId: String,
                             var mapLatLng: LatLng?,     // if not null, will show mini map at the specified lat lng
                             var attendeesAvatars: MutableList<String?>?,
                             var attendStatus: AttendStatus,
+                            var isPlanning: Boolean = false,
                             override val itemType: Int = TYPE_EVENT,
                             override var status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
 
@@ -35,7 +36,8 @@ data class EventItemUiModel(override val itemId: String,
         const val MAPLATLNG = 3
         const val ATTENDEES = 4
         const val ATTENDSTATUS = 5
-        const val STATUS = 6
+        const val SYNCSTATUS = 6
+        const val PLAN = 7
     }
 
     override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
@@ -49,7 +51,8 @@ data class EventItemUiModel(override val itemId: String,
             if (mapLatLng != otherItem.mapLatLng) add(MAPLATLNG)
             if (attendeesAvatars != otherItem.attendeesAvatars) add(ATTENDEES)
             if (attendStatus != otherItem.attendStatus) add(ATTENDSTATUS)
-            if (status != otherItem.status) add(STATUS)
+            if (status != otherItem.status) add(SYNCSTATUS)
+            if (isPlanning != otherItem.isPlanning) add(PLAN)
         }
     }
 
@@ -58,5 +61,5 @@ data class EventItemUiModel(override val itemId: String,
         return LOCATION
     }
 
-    override fun getStatusChangePayload(): Int = STATUS
+    override fun getStatusChangePayload(): Int = SYNCSTATUS
 }

@@ -34,7 +34,7 @@ fun BoardItemResponse.deserialize(): EventItem {
                             )
                         },
                         it["is_date_poll_opened"] as Boolean,
-                        it["is_date_poll_opened"] as Boolean,
+                        it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>))
             }, Date())
 }

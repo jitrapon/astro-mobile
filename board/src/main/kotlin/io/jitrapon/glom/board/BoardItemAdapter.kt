@@ -99,6 +99,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 updateAttendees(item)
                 updateAttendStatus(item)
                 updateStatus(item)
+                updateIsPlanning(item)
             }
             else {
                 val fields = payloads!!.first() as List<*>
@@ -110,7 +111,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         EventItemUiModel.MAPLATLNG -> { updateMap(item) }
                         EventItemUiModel.ATTENDEES -> { updateAttendees(item) }
                         EventItemUiModel.ATTENDSTATUS -> { updateAttendStatus(item) }
-                        EventItemUiModel.STATUS -> { updateStatus(item) }
+                        EventItemUiModel.SYNCSTATUS -> { updateStatus(item) }
+                        EventItemUiModel.PLAN -> { updateIsPlanning(item) }
                     }
                 }
             }
@@ -177,6 +179,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         private val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
         private val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
         private val syncStatus: ImageView = itemView.findViewById(R.id.event_card_sync_status)
+        private val planStatus: ImageButton = itemView.findViewById(R.id.event_card_plan_button)
 
         init {
             attendees.apply {
@@ -317,6 +320,10 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                     }
                 }
             }
+        }
+
+        fun updateIsPlanning(item: EventItemUiModel) {
+            if (item.isPlanning) planStatus.show() else planStatus.hide()
         }
     }
 

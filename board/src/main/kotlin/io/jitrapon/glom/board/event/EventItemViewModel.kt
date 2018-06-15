@@ -88,7 +88,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     mapLatLng = getEventLatLng(it.itemInfo.location),
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
                     attendStatus = getEventAttendStatus(it.itemInfo.attendees),
-                    status = status
+                    status = status,
+                    isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus
             )
         }
     }
