@@ -205,16 +205,29 @@
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
                     style="@style/Widget.Glom.Button.Raised.Colored"
+                    android:theme="@style/Theme.Glom.Button.Raised.White"
+                    android:id="@+id/event_item_plan_button"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/event_item_plan"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="45dp"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:contentDescription="@string/event_item_transition_view" />
+
+                <io.jitrapon.glom.base.ui.widget.GlomButton
+                    style="@style/Widget.Glom.Button.Raised.Colored"
                     android:theme="@style/Theme.Glom.Button.Raised.Colored"
                     android:id="@+id/event_item_join_button"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/event_item_join"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginStart="45dp"
+                    android:layout_marginStart="8dp"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
-                    android:contentDescription="@string/event_item_transition_view" />
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_plan_button" />
 
                 <View
                     android:id="@+id/event_item_note_separator"

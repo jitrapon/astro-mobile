@@ -34,4 +34,5 @@
     <string name="event_item_note_hint">Add more info</string>
     <string name="board_item_created">Item added</string>
     <string name="board_item_deleted">Item deleted</string>
+    <string name="event_item_plan">plan</string>
 </resources>

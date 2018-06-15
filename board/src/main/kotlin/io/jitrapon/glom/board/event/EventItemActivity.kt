@@ -145,6 +145,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             it.setItem(getBoardItemFromIntent(), isNewItem())
             addLocationAutocompleteCallbacks(event_item_location_primary)
         }
+        event_item_plan_button.setOnClickListener {
+
+        }
     }
 
     override fun onResume() {

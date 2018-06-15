@@ -120,5 +120,12 @@
         <item name="colorButtonNormal">@color/warm_grey</item>
         <item name="android:textColor">@drawable/raised_button_text_color</item>
     </style>
+    <style name="Theme.Glom.Button.Raised.White" parent="ThemeOverlay.AppCompat.Light" >
+        <!-- colorAccent will affect the default color -->
+        <item name="colorAccent">@color/white</item>
+        <!-- colorButtonNormal will affect the disabled color -->
+        <item name="colorButtonNormal">@color/warm_grey</item>
+        <item name="android:textColor">@drawable/raised_button_white_text_color</item>
+    </style>
 
 </resources>
