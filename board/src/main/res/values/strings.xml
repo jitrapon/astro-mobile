@@ -35,4 +35,5 @@
     <string name="board_item_created">Item added</string>
     <string name="board_item_deleted">Item deleted</string>
     <string name="event_item_plan">plan</string>
+    <string name="event_item_view_plan">view plan</string>
 </resources>

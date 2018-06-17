@@ -13,6 +13,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
+import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import java.util.*
 import javax.inject.Inject
 
@@ -68,6 +69,12 @@ class EventItemViewModel : BoardItemViewModel() {
 
     /* observable event note */
     private val observableNote = MutableLiveData<AndroidString?>()
+
+    /* observable plan status */
+    private val observablePlanStatus = MutableLiveData<ButtonUiModel>()
+
+    /* observable flag to indicate that a navigation event should be triggered */
+    private val observableNavigation = LiveEvent<Navigation>()
 
     /* whether or not this is a new item to add */
     private var isNewItem: Boolean = false
@@ -264,6 +271,10 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+    fun showEventPlan(boardViewModel: BoardViewModel, position: Int) {
+        boardViewModel.observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, boardViewModel.getBoardItem(position) to false)
+    }
+
     //endregion
     //region event detail item
 
@@ -296,6 +307,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         observableAttendees.value = getEventDetailAttendees(it.attendees)
                         observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
                         observableNote.value = getEventDetailNote(it.note)
+                        observablePlanStatus.value = getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus)
                     }
                 }
                 else {
@@ -413,7 +425,7 @@ class EventItemViewModel : BoardItemViewModel() {
             text = null
             status = UiModel.Status.LOADING
         }
-        interactor.setItemDetailAttendStatus(statusCode, {
+        interactor.setItemDetailAttendStatus(statusCode) {
             when (it) {
                 is AsyncSuccessResult -> {
                     it.result?.let {
@@ -434,7 +446,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     handleError(it.error)
                 }
             }
-        })
+        }
     }
 
     private fun getEventDetailAttendStatus(attendees: List<String>): ButtonUiModel {
@@ -454,6 +466,15 @@ class EventItemViewModel : BoardItemViewModel() {
     fun onNoteTextChanged(s: CharSequence) {
         // may need to convert from markdown text to String
         interactor.setItemNote(s.toString())
+    }
+
+    private fun getEventDetailPlanStatus(datePollStatus: Boolean, placePollStatus: Boolean): ButtonUiModel {
+        return if (datePollStatus || placePollStatus) ButtonUiModel(AndroidString(R.string.event_item_view_plan))
+        else ButtonUiModel(AndroidString(R.string.event_item_plan))
+    }
+
+    fun showEventDetailPlan() {
+        observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, interactor.event to false)
     }
 
     //region autocomplete
@@ -675,6 +696,10 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableAttendStatus(): LiveData<ButtonUiModel> = observableAttendStatus
 
     fun getObservableNote(): LiveData<AndroidString?> = observableNote
+
+    fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
+
+    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     override fun cleanUp() {
         //nothing yet

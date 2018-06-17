@@ -56,7 +56,7 @@ fun Fragment.color(@ColorRes colorRes: Int) = context?.color(colorRes)
  * Start an activity specifying destination class and optional block of code to run
  */
 fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Intent.() -> Unit)? = null,
-                               sharedElements: List<Pair<View, String>>? = null) {
+                               sharedElements: List<Pair<View, String>>? = null, animTransition: Pair<Int, Int>? = null) {
     activity?.let {
         resultCode.let { resultCode ->
             if (resultCode == null) {
@@ -78,6 +78,9 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                         android.support.v4.util.Pair.create(it.first, it.second)
                     }.toTypedArray())).toBundle()
                 })
+            }
+            animTransition?.let {
+                activity!!.overridePendingTransition(it.first, it.second)
             }
         }
     }

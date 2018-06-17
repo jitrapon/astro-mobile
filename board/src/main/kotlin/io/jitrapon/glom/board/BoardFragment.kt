@@ -18,6 +18,7 @@ import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutMan
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.event.EventItem
 import io.jitrapon.glom.board.event.EventItemActivity
+import io.jitrapon.glom.board.event.PlanEventActivity
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -183,6 +184,20 @@ class BoardFragment : BaseFragment() {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
                         putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem)
                     }, sharedElements)
+                }
+            }
+        })
+
+        // observers on navigation event
+        viewModel.getObservableNavigation().observe(this, Observer {
+            it?.let {
+                if (it.action == Const.NAVIGATE_TO_EVENT_PLAN) {
+                    val (boardItem, isNewItem) = it.payload as Pair<*, *>
+
+                    startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_RESULT_CODE, {
+                        putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
+                        putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
+                    }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
                 }
             }
         })

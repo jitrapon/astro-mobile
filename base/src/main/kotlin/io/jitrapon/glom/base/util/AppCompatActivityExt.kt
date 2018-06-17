@@ -7,12 +7,11 @@ import android.content.Intent
 import android.net.Uri
 import android.support.annotation.IdRes
 import android.support.annotation.Size
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentTransaction
+import android.support.v4.app.*
 import android.support.v7.app.ActionBar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.view.View
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -81,4 +80,33 @@ fun AppCompatActivity.startActivity(url: String) {
     startActivity(Intent(Intent.ACTION_VIEW).apply {
         data = Uri.parse(url)
     })
+}
+
+fun <T> AppCompatActivity.startActivity(clazz: Class<T>, resultCode: Int?, action: (Intent.() -> Unit)? = null,
+                                        sharedElements: List<Pair<View, String>>? = null, animTransition: Pair<Int, Int>? = null) {
+    resultCode.let { rs ->
+        if (rs == null) {
+            startActivity(Intent(this, clazz).apply {
+                action?.invoke(this)
+            }, sharedElements.let { elements ->
+                if (elements.isNullOrEmpty()) null
+                else ActivityOptionsCompat.makeSceneTransitionAnimation(this, *(sharedElements!!.map {
+                    android.support.v4.util.Pair.create(it.first, it.second)
+                }.toTypedArray())).toBundle()
+            })
+        }
+        else {
+            ActivityCompat.startActivityForResult(this, Intent(this, clazz).apply {
+                action?.invoke(this)
+            }, rs, sharedElements.let { elements ->
+                if (elements.isNullOrEmpty()) null
+                else ActivityOptionsCompat.makeSceneTransitionAnimation(this, *(sharedElements!!.map {
+                    android.support.v4.util.Pair.create(it.first, it.second)
+                }.toTypedArray())).toBundle()
+            })
+        }
+        animTransition?.let {
+            overridePendingTransition(it.first, it.second)
+        }
+    }
 }

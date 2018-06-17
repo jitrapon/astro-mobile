@@ -40,10 +40,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     private var isItemModified: Boolean = false
 
     /* convenient board instance */
-    private val board: Board
+    val board: Board
         get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), BoardItem.TYPE_EVENT).blockingFirst()
 
-    private val event: EventItem
+    val event: EventItem
         get() = eventItemDataSource.getItem().blockingFirst()
 
     //region initializers

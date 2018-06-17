@@ -22,6 +22,7 @@ import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
+import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
@@ -146,7 +147,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             addLocationAutocompleteCallbacks(event_item_location_primary)
         }
         event_item_plan_button.setOnClickListener {
-
+            viewModel.showEventDetailPlan()
         }
     }
 
@@ -341,16 +342,14 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 }
             })
 
+            // observe on plan status
+            getObservablePlanStatus().observe(this@EventItemActivity, Observer {
+                it?.let(event_item_plan_button::applyState)
+            })
+
             // observe on attend status
             getObservableAttendStatus().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    event_item_join_button.apply {
-                        isEnabled = it.status == UiModel.Status.SUCCESS || it.status == UiModel.Status.ERROR
-                        it.text?.let {
-                            text = context.getString(it)
-                        }
-                    }
-                }
+                it?.let(event_item_join_button::applyState)
             })
 
             // observe on event note
@@ -359,6 +358,20 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                     noteTextWatcher?.let (::removeTextChangedListener)
                     setText(context.getString(it))
                     noteTextWatcher?.let (::addTextChangedListener)
+                }
+            })
+
+            // observe on navigation event
+            getObservableNavigation().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    if (it.action == NAVIGATE_TO_EVENT_PLAN) {
+                        val (boardItem, isNewItem) = it.payload as Pair<*, *>
+
+                        startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_RESULT_CODE, {
+                            putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
+                            putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
+                        }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
+                    }
                 }
             })
         }

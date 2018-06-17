@@ -2,8 +2,15 @@ package io.jitrapon.glom.board
 
 import android.content.Intent
 import android.os.Bundle
+import android.transition.ChangeBounds
 import android.view.WindowManager
 import io.jitrapon.glom.base.ui.BaseActivity
+
+/* animation delay time in ms before content of this view appears */
+const val SHOW_ANIM_DELAY = 300L
+
+/* enter transition animation time */
+const val SHARED_ELEMENT_ANIM_TIME = 220L
 
 /**
  * Base parent activity to be used to show different board item when in detailed, expanded mode
@@ -11,12 +18,6 @@ import io.jitrapon.glom.base.ui.BaseActivity
  * @author Jitrapon Tiachunpun
  */
 abstract class BoardItemActivity : BaseActivity() {
-
-    companion object {
-
-        /* animation delay time in ms before content of this view appears */
-        const val SHOW_ANIM_DELAY = 300L
-    }
 
     /*
      * Indicates whether or not this activity has been started yet
@@ -26,7 +27,7 @@ abstract class BoardItemActivity : BaseActivity() {
     /**
      * Transition listener for properly animating objects at respect times to transition animations
      */
-    private val transitionListener = object : android.transition.Transition.TransitionListener {
+    private val transitionListener: android.transition.Transition.TransitionListener = object : android.transition.Transition.TransitionListener {
 
         override fun onTransitionStart(p0: android.transition.Transition?) {
             if (!isActivityStarted) onBeginTransitionAnimationStart()
@@ -63,7 +64,14 @@ abstract class BoardItemActivity : BaseActivity() {
             setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
 
             // set transition element
+            sharedElementEnterTransition = ChangeBounds().apply {
+                duration = SHARED_ELEMENT_ANIM_TIME
+            }
             sharedElementEnterTransition.addListener(transitionListener)
+
+            sharedElementExitTransition = ChangeBounds().apply {
+                duration = SHARED_ELEMENT_ANIM_TIME
+            }
         }
     }
 

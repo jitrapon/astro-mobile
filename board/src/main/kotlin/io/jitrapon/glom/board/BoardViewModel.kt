@@ -4,7 +4,6 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
 import android.support.v7.util.DiffUtil
-import android.view.View
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.model.*
@@ -40,7 +39,10 @@ class BoardViewModel : BaseViewModel() {
     internal val observableAnimation = LiveEvent<AnimationItem>()
 
     /* live data for selected board item and list of shared views for transition */
-    private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<View, String>>?, Boolean>>()
+    private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>>()
+
+    /* observable flag to indicate that a navigation event should be triggered */
+    val observableNavigation = LiveEvent<Navigation>()
 
     /* whether or not first load function has been called */
     private var firstLoadCalled: Boolean = false
@@ -198,16 +200,23 @@ class BoardViewModel : BaseViewModel() {
     }
 
     /**
+     * Returns the underlying board item given the position of its UIModel in the list
+     */
+    fun getBoardItem(position: Int): BoardItem? {
+        return boardUiModel.items?.getOrNull(position)?.let {
+            boardInteractor.getBoardItem(it.itemId)
+        }
+    }
+
+    /**
      * Expands current board item (specified by position in the recyclerview)
      *
      * @param position The position of the item to view in the RecyclerView
      * @param transitionViews The shared views to allow smooth transition animation between activities
      */
-    fun viewItemDetail(position: Int, transitionViews: List<Pair<View, String>>? = null) {
-        boardUiModel.items?.getOrNull(position)?.let {
-            boardInteractor.getBoardItem(it.itemId)?.let {
-                observableBoardItem.value = Triple(it, transitionViews, false)
-            }
+    fun viewItemDetail(position: Int, transitionViews: List<Pair<android.view.View, String>>? = null) {
+        getBoardItem(position)?.let {
+            observableBoardItem.value = Triple(it, transitionViews, false)
         }
     }
 
@@ -267,7 +276,7 @@ class BoardViewModel : BaseViewModel() {
 
     private fun syncItem(operation: (BoardItem, ((AsyncResult<BoardItem>) -> Unit)) -> Unit, boardItem: BoardItem, successMessage: AndroidString) {
         var index: Int
-        operation(boardItem, {
+        operation(boardItem) {
             boardUiModel.items?.let { items ->
                 index = items.indexOfFirst { boardItem.itemId == it.itemId }
                 if (index != -1) {
@@ -313,7 +322,7 @@ class BoardViewModel : BaseViewModel() {
                     }
                 }
             }
-        })
+        }
     }
 
     fun deleteItem(position: Int) {
@@ -352,7 +361,7 @@ class BoardViewModel : BaseViewModel() {
      * Loads information about this circle, specifically name, avatar, and places
      */
     private fun loadActiveCircleInfo() {
-        circleInteractor.loadCircle(true, {
+        circleInteractor.loadCircle(true) {
             when (it) {
                 is AsyncSuccessResult -> {
                     //TODO display circle info in board
@@ -361,7 +370,7 @@ class BoardViewModel : BaseViewModel() {
                     handleError(it.error)
                 }
             }
-        })
+        }
     }
 
     //endregion
@@ -436,7 +445,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Returns an observable that if set, becomes the currently selected item
      */
-    fun getObservableBoardItem(): LiveData<Triple<BoardItem, List<Pair<View, String>>?, Boolean>> = observableBoardItem
+    fun getObservableBoardItem(): LiveData<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>> = observableBoardItem
 
     //endregion
     //region view states
@@ -466,6 +475,11 @@ class BoardViewModel : BaseViewModel() {
      * Returns a specific Board UI item model
      */
     fun getBoardItemUiModel(position: Int): BoardItemUiModel? = boardUiModel.items.get(position, null)
+
+    /**
+     * Observable navigation events
+     */
+    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     //endregion
 }

@@ -207,6 +207,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
                 hide()
             }
+            planStatus.setOnClickListener {
+                BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java)?.let {
+                    (it as? EventItemViewModel)?.showEventPlan(viewModel, adapterPosition)
+                }
+            }
         }
 
         fun updateTitle(item: EventItemUiModel) {
