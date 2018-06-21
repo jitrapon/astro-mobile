@@ -458,6 +458,14 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+    fun updateEventDetailAttendStatus() {
+        interactor.event.itemInfo.let {
+            observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
+            observableAttendees.value = getEventDetailAttendees(it.attendees)
+            observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
+        }
+    }
+
     private fun getEventDetailNote(note: String?): AndroidString? {
         note ?: return null
         return AndroidString(text = note)
@@ -473,8 +481,11 @@ class EventItemViewModel : BoardItemViewModel() {
         else ButtonUiModel(AndroidString(R.string.event_item_plan))
     }
 
-    fun showEventDetailPlan() {
-        observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, interactor.event to false)
+    fun showEventDetailPlan(name: String) {
+        interactor.event.let {
+            it.itemInfo.eventName = name       // update the name to be the currently displayed one
+            observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, it to false)
+        }
     }
 
     //region autocomplete

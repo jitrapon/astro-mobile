@@ -6,6 +6,7 @@ import io.reactivex.Single
 @Dao
 interface EventItemDao {
 
+    @Transaction
     @Query("SELECT * FROM events WHERE circle_id = :circleId")
     fun getEventsInCircle(circleId: String): Single<List<EventItemFullEntity>>
 

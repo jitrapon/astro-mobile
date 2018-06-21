@@ -1,13 +1,18 @@
 package io.jitrapon.glom.base.util
 
 import android.content.Context
+import android.content.res.Configuration
+import android.support.annotation.ColorInt
 import android.support.annotation.ColorRes
 import android.support.annotation.DimenRes
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.text.TextUtils
+import android.util.TypedValue
 import android.widget.Toast
+import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
+
 
 /**
  * Contains various functions using the Context
@@ -58,6 +63,7 @@ fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, posit
 /**
  * Convenience wrapper to retrieve @ColorInt integer from Color ID
  */
+@ColorInt
 fun Context.color(@ColorRes colorId: Int) = ContextCompat.getColor(this, colorId)
 
 /**
@@ -78,3 +84,20 @@ fun Context.getString(string: AndroidString?): CharSequence? {
  * Convenience wrapper to retrieve Integer in Pixel from @DimenRes
  */
 fun Context.dimen(@DimenRes dimenId: Int): Int = resources.getDimensionPixelSize(dimenId)
+
+/**
+ * Retrieves the color primary of the theme
+ */
+@ColorInt
+fun Context.colorPrimary(): Int {
+    return TypedValue().let {
+        val resolved = theme.resolveAttribute(R.attr.colorPrimary, it, true)
+        if (resolved) color(it.resourceId)
+        else color(R.color.dark_grey)
+    }
+}
+
+/**
+ * Returns true if the current orientation is landscape
+ */
+fun Context.isLandscape(): Boolean = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

@@ -320,9 +320,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                     UiModel.Status.ERROR -> {
                         syncStatus.hide()
                     }
-                    UiModel.Status.EMPTY -> {
-                        //not applicable
-                    }
+                    else -> { /* not applicable */ }
                 }
             }
         }

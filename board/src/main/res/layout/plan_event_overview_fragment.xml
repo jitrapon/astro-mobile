@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <android.support.v7.widget.AppCompatTextView
+        android:id="@+id/event_plan_name"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/event_plan_name_height"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="12sp"
+        app:autoSizeMaxTextSize="54sp"
+        app:autoSizeStepGranularity="2sp"
+        android:textColor="@color/white"
+        android:lineSpacingMultiplier="1.0"
+        android:gravity="bottom|center_horizontal"
+        android:layout_marginTop="@dimen/event_plan_name_top_margin"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp" />
+
+    <TextView
+        style="@style/TextAppearance.H3"
+        android:id="@+id/event_plan_attendee_label"
+        android:layout_width="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="wrap_content"
+        android:textColor="?android:attr/colorPrimary"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_name"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="12dp" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/event_plan_attendee_recycler_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_attendee_label"
+        app:layout_constraintBottom_toTopOf="@+id/event_plan_join_button"
+        android:paddingTop="18dp"
+        android:paddingBottom="18dp"
+        android:clipToPadding="false" />
+
+    <Button
+        android:theme="@style/Theme.Glom.Button.Raised.Colored"
+        android:id="@+id/event_plan_join_button"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/bottom_action_button_height"
+        android:foreground="?android:attr/selectableItemBackground"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</android.support.constraint.ConstraintLayout>

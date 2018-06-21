@@ -1,21 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:id="@+id/event_plan_viewpager_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/blue_grey" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/plan_event_overlay" />
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:elevation="@dimen/app_bar_elevation"
-        android:fitsSystemWindows="true"
-        android:background="@null"  >
+        app:elevation="0dp"
+        android:background="@color/transparent"
+        android:fitsSystemWindows="true" >
 
         <android.support.v7.widget.Toolbar
-            android:id="@+id/event_plan_toolbar"
+            android:id="@+id/event_plan_actionbar"
             android:layout_width="match_parent"
             android:layout_height="72dp"
-            android:background="@color/transparent"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             android:fitsSystemWindows="true" >
+
+            <com.rd.PageIndicatorView
+                android:id="@+id/pageIndicatorView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:piv_animationType="worm"
+                app:piv_dynamicCount="true"
+                app:piv_interactiveAnimation="true"
+                app:piv_selectedColor="@color/white"
+                app:piv_unselectedColor="@color/blue_grey"
+                app:piv_viewPager="@+id/event_plan_viewpager"
+                app:piv_padding="12dp"
+                app:piv_radius="6dp"
+                android:layout_gravity="center_horizontal"
+                android:paddingTop="12dp" />
 
         </android.support.v7.widget.Toolbar>
 
@@ -24,6 +51,7 @@
     <android.support.v4.view.ViewPager
         android:id="@+id/event_plan_viewpager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-</android.support.constraint.ConstraintLayout>
+</android.support.design.widget.CoordinatorLayout>

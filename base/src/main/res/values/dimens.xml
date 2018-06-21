@@ -25,9 +25,17 @@
     <dimen name="avatar_normal">40dp</dimen>
     <dimen name="avatar_large">56dp</dimen>
     <dimen name="avatar_large_width">63dp</dimen>
+    <dimen name="avatar_xlarge">78dp</dimen>
     <dimen name="avatar_spacing">7dp</dimen>
 
     <!-- line seperator text -->
     <dimen name="line_seperator_title">12sp</dimen>
     <dimen name="line_seperator_text_margin">6dp</dimen>
+
+    <!-- buttons -->
+    <dimen name="bottom_action_button_height">48dp</dimen>
+
+    <!-- event plan -->
+    <dimen name="event_plan_name_height">176dp</dimen>
+    <dimen name="event_plan_name_top_margin">18dp</dimen>
 </resources>

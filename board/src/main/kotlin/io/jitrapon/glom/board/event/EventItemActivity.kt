@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.Observer
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
@@ -127,7 +128,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             viewModel.onLocationTextChanged(s)
         }
         event_item_attendees.apply {
-            adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 20)
+            adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 20,
+                    userLayoutId = R.layout.user_avatar_with_name, otherLayoutId = R.layout.remaining_indicator_large)
             context?.let {
                 addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
             }
@@ -147,7 +149,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             addLocationAutocompleteCallbacks(event_item_location_primary)
         }
         event_item_plan_button.setOnClickListener {
-            viewModel.showEventDetailPlan()
+            viewModel.showEventDetailPlan(event_item_title.text.toString())
         }
     }
 
@@ -433,6 +435,14 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     //endregion
     //region other view callbacks
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
+            data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
+                viewModel.updateEventDetailAttendStatus()
+            }
+        }
+    }
 
     override fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
         viewModel.saveItem {

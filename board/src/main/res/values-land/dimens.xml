@@ -4,4 +4,8 @@
     <!-- cardview -->
     <dimen name="card_side_margin">102dp</dimen>
     <dimen name="card_header_item_text_margin">120dp</dimen>
+
+    <!-- event plan -->
+    <dimen name="event_plan_name_height">100dp</dimen>
+    <dimen name="event_plan_name_top_margin">8dp</dimen>
 </resources>

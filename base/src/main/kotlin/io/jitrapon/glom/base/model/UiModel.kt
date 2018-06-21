@@ -9,7 +9,7 @@ package io.jitrapon.glom.base.model
 interface UiModel {
 
     enum class Status {
-        SUCCESS, ERROR, EMPTY, LOADING
+        SUCCESS, ERROR, EMPTY, LOADING, POSITIVE, NEGATIVE
     }
 
     var status: Status

@@ -8,6 +8,7 @@ import android.support.annotation.DrawableRes
 import android.support.annotation.RawRes
 import android.support.v4.app.Fragment
 import android.widget.ImageView
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import io.jitrapon.glom.base.component.GlideApp
 
 
@@ -50,7 +51,8 @@ fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeho
  * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
  */
 fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeholder: Int? = null,
-                          @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
+                          @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE,
+                          crossFade: Int? = null) {
     GlideApp.with(activity)
             .load(url)
             .apply {
@@ -63,6 +65,9 @@ fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeho
                     Transformation.CENTER_CROP -> centerCrop()
                     Transformation.CIRCLE_CROP -> circleCrop()
                     else -> { /* do nothing */ }
+                }
+                crossFade?.let {
+                    this.transition(DrawableTransitionOptions.withCrossFade(it))
                 }
             }
             .into(this)

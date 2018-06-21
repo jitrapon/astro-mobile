@@ -39,6 +39,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     /* flag to keep track of whether the information in this item has changed */
     private var isItemModified: Boolean = false
 
+    /* whether or not initWith() has been called to initialize the item */
+    private var initialized: Boolean = false
+
     /* convenient board instance */
     val board: Board
         get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), BoardItem.TYPE_EVENT).blockingFirst()
@@ -56,14 +59,28 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * functions
      */
     fun initWith(provider: PlaceProvider? = null, item: BoardItem? = null) {
-        provider?.let { placeProvider = it }
+        if (provider != null && placeProvider == null) {
+            placeProvider = provider
+        }
         (item as? EventItem)?.let {
             isItemModified = false   // must be reset tit as EventItem)o false because the interactor instance is reused for new items
 
             eventItemDataSource.initWith(it)
             note = it.itemInfo.note
+
+            initialized = true
         }
     }
+
+    /**
+     * Returns true if initWith() has been called
+     */
+    fun isInitialized(): Boolean = initialized
+
+    /**
+     * Returns true if the item initialized with initWith() has been modified
+     */
+    fun isItemModified() = isItemModified
 
     //endregion
     //region save operations
@@ -75,7 +92,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         Single.fromCallable {
             (event.itemInfo).apply {
-                fields[NAME]?.let { if (it is String) eventName = it }
+                fields[NAME]?.let {
+                    if (it is String) {
+                        eventName = it
+                    }
+                }
                 startTime = getSelectedDate()?.time ?: startTime
                 location = getSelectedItemLocation()
                 note = this@EventItemInteractor.note
@@ -86,7 +107,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     clearSuggestionCache()
-                    onComplete(AsyncSuccessResult(event to isItemModified))
+                    val temp = isItemModified
+                    isItemModified = false
+                    onComplete(AsyncSuccessResult(event to temp))
                 }, {
                     onComplete(AsyncErrorResult(it))
                 })
@@ -268,20 +291,18 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
         isItemModified = true
 
-        board.let {
-            val item = event
-            when (statusCode) {
-                2 -> eventItemDataSource.joinEvent(item)
-                else -> eventItemDataSource.leaveEvent(item)
-            }
-            .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        onComplete(AsyncSuccessResult(event.itemInfo.attendees))
-                    }, {
-                        onComplete(AsyncErrorResult(it))
-                    })
+        val item = event
+        when (statusCode) {
+            2 -> eventItemDataSource.joinEvent(item)
+            else -> eventItemDataSource.leaveEvent(item)
         }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(event.itemInfo.attendees))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     //endregion

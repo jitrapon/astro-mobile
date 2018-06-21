@@ -26,7 +26,8 @@
         </activity>
         <activity android:name=".event.EventItemActivity"
             android:theme="@style/Theme.Glom.DialogActivity" />
-        <activity android:name=".event.PlanEventActivity" />
+        <activity android:name=".event.PlanEventActivity"
+            android:theme="@style/Theme.Glom.Translucent" />
     </application>
 
 </manifest>

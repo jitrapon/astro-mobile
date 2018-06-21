@@ -158,6 +158,7 @@ class BoardFragment : BaseFragment() {
                             //do nothing
                         }
                     }
+                    else -> { /* not applicable */ }
                 }
             }
         })
@@ -219,6 +220,11 @@ class BoardFragment : BaseFragment() {
                 catch (ex: Exception) {
                     AppLogger.e(ex)
                 }
+            }
+        }
+        else if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
+            data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
+                viewModel.syncItem(it, false)
             }
         }
     }

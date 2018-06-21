@@ -18,9 +18,11 @@ import io.jitrapon.glom.board.R
  * Created by Jitrapon
  */
 class EventItemAttendeeAdapter(private val activity: Activity,
-                               private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+                               private val visibleItemCount: Int = 3,
+                               private val userLayoutId: Int,
+                               private val otherLayoutId: Int) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
 
-    private lateinit var users: List<UserUiModel>
+    private var users: List<UserUiModel> = ArrayList()
 
     companion object {
 
@@ -42,10 +44,10 @@ class EventItemAttendeeAdapter(private val activity: Activity,
     }
 
     override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder =
-            MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.remaining_indicator_large, parent, false))
+            MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(otherLayoutId, parent, false))
 
     override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-            AvatarViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_avatar_with_name, parent, false))
+            AvatarViewHolder(LayoutInflater.from(parent.context).inflate(userLayoutId, parent, false))
 
     override fun getOtherItemViewType(position: Int): Int = TYPE_AVATAR
 
