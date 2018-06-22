@@ -115,38 +115,35 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
 
     private fun getAutocompletePrediction(query: String, bounds: LatLngBounds, filter: AutocompleteFilter): Single<Array<AutocompletePrediction>> {
         return Single.create { single ->
-            if (lifeCycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                if (TextUtils.isEmpty(query)) {
-                    single.onSuccess(emptyArray())
-                }
-                else {
-                    client.getAutocompletePredictions(query, bounds, filter).let {
-                        it.addOnCompleteListener {
-                            val result = ArrayList<AutocompletePrediction>()
-                            if (it.isSuccessful) {
-                                if (it.result != null && it.result.count > 0) {
-                                    it.result.filter { it.isDataValid }
-                                            .forEach { result.add(it.freeze()) }
-                                    it.result.release()
-                                    single.onSuccess(result.toTypedArray())
-                                }
-                                else {
-                                    single.onSuccess(emptyArray())
-                                }
+            if (TextUtils.isEmpty(query)) {
+                single.onSuccess(emptyArray())
+            }
+            else {
+                client.getAutocompletePredictions(query, bounds, filter).let {
+                    it.addOnCompleteListener {
+                        val result = ArrayList<AutocompletePrediction>()
+                        if (it.isSuccessful) {
+                            if (it.result != null && it.result.count > 0) {
+                                it.result.filter { it.isDataValid }
+                                        .forEach { result.add(it.freeze()) }
+                                it.result.release()
+                                single.onSuccess(result.toTypedArray())
                             }
                             else {
-                                it.exception?.let {
-                                    single.onError(it)
-                                }
+                                single.onSuccess(emptyArray())
                             }
                         }
-                        it.addOnFailureListener {
-                            single.onError(it)
+                        else {
+                            it.exception?.let {
+                                single.onError(it)
+                            }
                         }
+                    }
+                    it.addOnFailureListener {
+                        single.onError(it)
                     }
                 }
             }
-            else single.onError(Exception("Attempting to get autocomplete predictions while lifecycle is not at least STARTED"))
         }
     }
 

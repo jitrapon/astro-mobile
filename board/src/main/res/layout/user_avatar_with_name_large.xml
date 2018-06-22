@@ -10,15 +10,15 @@
 
     <ImageView
         android:id="@+id/user_avatar_image"
-        android:layout_width="@dimen/avatar_xlarge"
-        android:layout_height="@dimen/avatar_xlarge"
+        android:layout_width="@dimen/avatar_large_width"
+        android:layout_height="@dimen/avatar_large_width"
         android:contentDescription="@string/event_card_image_content_description"
         android:src="@color/dark_grey"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
-        style="@style/TextAppearance.H3"
+        style="@style/TextAppearance.H4"
         android:id="@+id/user_avatar_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
