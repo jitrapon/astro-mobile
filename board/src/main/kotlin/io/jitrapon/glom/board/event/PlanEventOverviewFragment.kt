@@ -4,7 +4,6 @@ import android.arch.lifecycle.Observer
 import android.support.v4.app.FragmentActivity
 import android.support.v7.widget.GridLayoutManager
 import android.view.View
-import android.widget.Toast
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.*
@@ -55,8 +54,6 @@ class PlanEventOverviewFragment : BaseFragment() {
     }
 
     override fun onSubscribeToObservables() {
-        subscribeToViewActionObservables(viewModel.observableViewAction)
-
         viewModel.apply {
             getObservableName().observe(this@PlanEventOverviewFragment, Observer {
                 it?.let {
@@ -95,15 +92,6 @@ class PlanEventOverviewFragment : BaseFragment() {
                     }
                 }
             })
-        }
-    }
-
-    override fun showLoading(show: Boolean) {
-        if (show) {
-            Toast.makeText(context!!, "Loading...", Toast.LENGTH_LONG).show()
-        }
-        else {
-
         }
     }
 }

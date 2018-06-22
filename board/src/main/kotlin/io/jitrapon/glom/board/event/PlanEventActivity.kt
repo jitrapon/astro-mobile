@@ -6,6 +6,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.support.v4.content.ContextCompat
 import io.jitrapon.glom.base.ui.BaseActivity
+import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.R
@@ -20,6 +21,10 @@ import kotlinx.android.synthetic.main.plan_event_activity.*
 class PlanEventActivity : BaseActivity() {
 
     private lateinit var viewModel: PlanEventViewModel
+
+    private val progressDialog: GlomProgressDialog by lazy {
+        GlomProgressDialog()
+    }
 
     //region lifecycle
 
@@ -47,6 +52,8 @@ class PlanEventActivity : BaseActivity() {
     }
 
     override fun onSubscribeToObservables() {
+        subscribeToViewActionObservables(viewModel.observableViewAction)
+
         viewModel.apply {
             getObservableBackground().observe(this@PlanEventActivity, Observer {
                 event_plan_viewpager_background.loadFromUrl(this@PlanEventActivity, it, null, null,
@@ -74,6 +81,15 @@ class PlanEventActivity : BaseActivity() {
                 PlanEventOverviewFragment.newInstance(),
                 PlanEventDateFragment.newInstance(),
                 PlanEventLocationFragment.newInstance()))
+    }
+
+    override fun showLoading(show: Boolean) {
+        if (show) {
+            progressDialog.show(this)
+        }
+        else {
+            progressDialog.dismiss()
+        }
     }
 
     //endregion

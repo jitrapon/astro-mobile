@@ -70,6 +70,7 @@ abstract class BaseActivity : AppCompatActivity() {
                 is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
