@@ -27,6 +27,7 @@ class GlomProgressDialog {
                 }
                 else setCancelable(false)
             }
+            setCanceledOnTouchOutside(false)
             show()
             dialog = this
         }

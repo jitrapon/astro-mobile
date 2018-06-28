@@ -2,31 +2,67 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/blue_grey" >
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <TextView
         style="@style/TextAppearance.H4"
         android:id="@+id/event_plan_date_instruction"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Great choice. Now pick one or more dates for people to choose!"
+        android:text="@string/event_plan_date_generic_instruction"
         android:textColor="@color/white"
         android:gravity="center"
         android:paddingStart="32dp"
         android:paddingEnd="32dp"
-        android:layout_marginTop="8dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:lines="2"
+        android:ellipsize="end" />
 
-    <CalendarView
+    <com.prolificinteractive.materialcalendarview.MaterialCalendarView
         android:id="@+id/event_plan_date_calendar"
+        app:mcv_tileWidth="48dp"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/event_plan_date_calendar_height"
+        android:background="@color/white"
+        android:layout_marginStart="@dimen/event_plan_vote_horizontal_margin"
+        android:layout_marginEnd="@dimen/event_plan_vote_horizontal_margin"
+        android:layout_marginTop="@dimen/event_plan_instruction_vertical_margin"
         app:layout_constraintTop_toBottomOf="@+id/event_plan_date_instruction"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@color/white"
-        android:layout_marginTop="8dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp" />
-    
+        app:mcv_selectionColor="?android:attr/colorAccent"
+        app:mcv_leftArrowMask="@drawable/ic_left"
+        app:mcv_rightArrowMask="@drawable/ic_right"
+        app:mcv_arrowColor="@color/warm_grey" />
+
+    <TextView
+        android:id="@+id/event_plan_date_vote_instruction"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/event_plan_date_vote_generic_instruction"
+        android:textColor="@color/white"
+        android:textSize="@dimen/event_plan_vote_instruction_text_size"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_calendar"
+        android:layout_marginTop="@dimen/event_plan_vote_instruction_vertical_margin"
+        android:lines="2"
+        android:ellipsize="end" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/event_plan_date_vote_recyclerview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/event_plan_vote_instruction_vertical_margin"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/event_plan_date_calendar"
+        app:layout_constraintStart_toStartOf="@+id/event_plan_date_calendar"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_vote_instruction" />
+
 </android.support.constraint.ConstraintLayout>

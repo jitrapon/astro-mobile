@@ -14,12 +14,12 @@ buildscript {
         minSdkVersion = 23
         minSdkInstantVersion = 21
         supportLibVersion = '27.1.1'
-        constraintLayoutVersion = '1.1.1'
+        constraintLayoutVersion = '1.1.2'
         runnerVersion = '1.0.1'
         rulesVersion = '1.0.1'
         archLifecycleVersion = '1.1.1'
-        archRoomVersion = '1.1.1-rc1'
-        archPagingVersion = '1.0.0'
+        archRoomVersion = '1.1.1'
+        archPagingVersion = '1.0.1'
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.4.0'
@@ -54,6 +54,7 @@ allprojects {
         google()
         jcenter()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 

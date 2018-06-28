@@ -33,8 +33,4 @@
 
     <!-- buttons -->
     <dimen name="bottom_action_button_height">48dp</dimen>
-
-    <!-- event plan -->
-    <dimen name="event_plan_name_height">176dp</dimen>
-    <dimen name="event_plan_name_top_margin">18dp</dimen>
 </resources>

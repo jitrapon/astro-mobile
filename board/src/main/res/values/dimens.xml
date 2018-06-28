@@ -13,4 +13,13 @@
     <dimen name="card_expand_vertical_margin">75dp</dimen>
     <dimen name="card_expand_horizontal_margin">10dp</dimen>
     <dimen name="card_expand_space_margin">10dp</dimen>
+
+    <!-- event plan -->
+    <dimen name="event_plan_name_height">176dp</dimen>
+    <dimen name="event_plan_name_top_margin">18dp</dimen>
+    <dimen name="event_plan_instruction_vertical_margin">12dp</dimen>
+    <dimen name="event_plan_vote_instruction_text_size">12sp</dimen>
+    <dimen name="event_plan_vote_instruction_vertical_margin">8dp</dimen>
+    <dimen name="event_plan_vote_horizontal_margin">24dp</dimen>
+    <dimen name="event_plan_date_calendar_height">300dp</dimen>
 </resources>
