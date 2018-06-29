@@ -77,10 +77,13 @@ class PlanEventActivity : BaseActivity() {
     }
 
     private fun createViewPager() {
-        event_plan_viewpager.createWithFragments(this, arrayOf(
-                PlanEventOverviewFragment.newInstance(),
-                PlanEventDateFragment.newInstance(),
-                PlanEventLocationFragment.newInstance()))
+        event_plan_viewpager.apply {
+            createWithFragments(this@PlanEventActivity, arrayOf(
+                    PlanEventOverviewFragment.newInstance(),
+                    PlanEventDateFragment.newInstance(),
+                    PlanEventLocationFragment.newInstance()))
+            doOnFragmentSelected<PlanEventDateFragment>(supportFragmentManager) { it.onVisible() }
+        }
     }
 
     override fun showLoading(show: Boolean) {

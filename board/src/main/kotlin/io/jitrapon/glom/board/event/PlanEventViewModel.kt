@@ -139,6 +139,13 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     //endregion
+    //region event plan date
+
+    fun loadDatePolls() {
+
+    }
+
+    //endregion
 
     /**
      * Not applicable
