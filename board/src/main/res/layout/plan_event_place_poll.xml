@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardElevation="@dimen/event_plan_calendar_elevation"
+    app:cardCornerRadius="3dp"
+    app:cardBackgroundColor="@color/white" >
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <TextView
+            android:id="@+id/event_plan_date_poll_date"
+            style="@style/TextAppearance.H3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Fri, Apr 7"
+            android:textStyle="normal"
+            app:layout_constraintEnd_toStartOf="@+id/event_plan_date_poll_thumb_up"
+            app:layout_constraintBottom_toTopOf="@+id/event_plan_date_poll_time"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="18dp" />
+
+        <TextView
+            android:id="@+id/event_plan_date_poll_time"
+            style="@style/TextAppearance.H4.Light"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="7:00pm - 9:00 pm"
+            android:textStyle="normal"
+            app:layout_constraintBottom_toTopOf="@+id/event_plan_date_poll_date"
+            app:layout_constraintEnd_toEndOf="@+id/event_plan_date_poll_date"
+            app:layout_constraintStart_toStartOf="@+id/event_plan_date_poll_date"
+            app:layout_constraintTop_toBottomOf="@+id/event_plan_date_poll_date" />
+
+        <ImageView
+            android:id="@+id/event_plan_date_poll_thumb_up"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            app:srcCompat="@drawable/ic_thumb_up"
+            app:layout_constraintStart_toEndOf="@+id/event_plan_date_poll_date"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="54dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:tint="@color/warm_grey" />
+
+        <TextView
+            android:id="@+id/event_plan_date_poll_count"
+            style="@style/TextAppearance.H3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:text="20"
+            android:maxLength="5"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/event_plan_date_poll_thumb_up"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </android.support.constraint.ConstraintLayout>
+
+</android.support.v7.widget.CardView>

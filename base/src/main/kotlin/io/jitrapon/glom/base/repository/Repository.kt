@@ -23,9 +23,9 @@ abstract class Repository<T> where T : DataModel {
         }
     }
 
-    fun load(refresh: Boolean, localDataSourceFlowable: Flowable<T>,
+    inline fun load(refresh: Boolean, localDataSourceFlowable: Flowable<T>,
                                 remoteDataSourceFlowable: Flowable<T>,
-                                saveToLocalFlowable: (remoteData: T) -> Flowable<T>): Flowable<T> {
+                                crossinline saveToLocalFlowable: (remoteData: T) -> Flowable<T>): Flowable<T> {
         return if (refresh) {
             remoteDataSourceFlowable.flatMap {
                 saveToLocalFlowable(it)
@@ -36,9 +36,22 @@ abstract class Repository<T> where T : DataModel {
         }
     }
 
-    fun loadList(refresh: Boolean, localDataSourceFlowable: Flowable<List<T>>,
+    inline fun loadList(refresh: Boolean, localDataSourceFlowable: Flowable<List<T>>,
                  remoteDataSourceFlowable: Flowable<List<T>>,
-                 saveToLocalFlowable: (remoteData: List<T>) -> Flowable<List<T>>): Flowable<List<T>> {
+                 crossinline saveToLocalFlowable: (remoteData: List<T>) -> Flowable<List<T>>): Flowable<List<T>> {
+        return if (refresh) {
+            remoteDataSourceFlowable.flatMap {
+                saveToLocalFlowable(it)
+            }
+        }
+        else {
+            localDataSourceFlowable
+        }
+    }
+
+    inline fun <E> loadTypedList(refresh: Boolean, localDataSourceFlowable: Flowable<List<E>>,
+                        remoteDataSourceFlowable: Flowable<List<E>>,
+                        crossinline saveToLocalFlowable: (remoteData: List<E>) -> Flowable<List<E>>): Flowable<List<E>> {
         return if (refresh) {
             remoteDataSourceFlowable.flatMap {
                 saveToLocalFlowable(it)

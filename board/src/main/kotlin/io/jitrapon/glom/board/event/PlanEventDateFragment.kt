@@ -1,11 +1,16 @@
 package io.jitrapon.glom.board.event
 
+import android.arch.lifecycle.Observer
 import android.support.v4.app.FragmentActivity
 import android.view.View
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
+import io.jitrapon.glom.base.util.dimen
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.obtainViewModel
+import io.jitrapon.glom.base.util.show
 import io.jitrapon.glom.board.R
 import kotlinx.android.synthetic.main.plan_event_date_fragment.*
 
@@ -44,16 +49,48 @@ class PlanEventDateFragment : BaseFragment() {
      */
     override fun onSetupView(view: View) {
         event_plan_date_calendar.apply {
-            selectionMode = MaterialCalendarView.SELECTION_MODE_MULTIPLE
+            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+            tileWidth
         }
         event_plan_date_vote_progressbar.hide()
+        event_plan_date_poll_recyclerview.apply {
+            adapter = EventPollAdapter(viewModel, true)
+            addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
+        }
     }
 
     /**
      * Called when this fragment is ready to subscribe to ViewModel's events
      */
     override fun onSubscribeToObservables() {
-        subscribeToViewActionObservables(viewModel.getObservableViewAction())
+        viewModel.getObservableDatePlan().observe(this, Observer {
+            it?.let {
+                when (it.status) {
+                    UiModel.Status.LOADING -> {
+                        event_plan_date_calendar.apply {
+                            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+                        }
+
+                        event_plan_date_vote_progressbar.show()
+                    }
+                    UiModel.Status.SUCCESS -> {
+                        event_plan_date_calendar.apply {
+                            selectionMode = MaterialCalendarView.SELECTION_MODE_MULTIPLE
+                        }
+
+                        event_plan_date_vote_progressbar.hide()
+                        event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
+                    }
+                    else -> {
+                        event_plan_date_calendar.apply {
+                            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+                        }
+
+                        event_plan_date_vote_progressbar.hide()
+                    }
+                }
+            }
+        })
     }
 
     //region fragment functions

@@ -40,4 +40,6 @@
     <string name="event_plan_user_not_attending">You\'re not going | %1$s total</string>
     <string name="event_plan_date_generic_instruction">Propose one or more dates for this event!</string>
     <string name="event_plan_date_vote_generic_instruction">Proposed dates will appear below. Organizers can select one to change the time of this event.</string>
+    <string name="event_plan_open_vote">Open Vote</string>
+    <string name="event_plan_close_vote">Close Vote</string>
 </resources>

@@ -5,6 +5,8 @@ import android.arch.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.toDateString
+import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.BoardInjector
 import io.jitrapon.glom.board.BoardItem
@@ -42,8 +44,18 @@ class PlanEventViewModel : BaseViewModel() {
     /* observable navigation event */
     private val observableNavigation = LiveEvent<Navigation>()
 
+    /* cached event date plan UI model for reuse */
+    private val datePlan: EventDatePlanUiModel
+
+    /* observable date plan */
+    private val observableDatePlan = MutableLiveData<EventDatePlanUiModel>()
+
+    /* whether or not the current user ID owns this item */
+    private var isUserAnOwner: Boolean = false
+
     init {
         BoardInjector.getComponent().inject(this)
+        datePlan = EventDatePlanUiModel(ArrayList(), ButtonUiModel(null, UiModel.Status.EMPTY), UiModel.Status.EMPTY)
     }
 
     /**
@@ -55,7 +67,7 @@ class PlanEventViewModel : BaseViewModel() {
     fun setItem(placeProvider: PlaceProvider?, item: BoardItem?) {
         item.let {
             if (it == null) {
-                //TODO
+                handleError(Exception("Item is NULL but expected not NULL"))
             }
             else {
                 if (item is EventItem) {
@@ -63,12 +75,36 @@ class PlanEventViewModel : BaseViewModel() {
                         interactor.initWith(placeProvider, item)
                     }
                     item.itemInfo.let {
+                        isUserAnOwner = item.owners.contains(interactor.getCurrentUserId())
+
+                        // set up the overview page
                         isUserAttending = it.attendees.contains(interactor.getCurrentUserId())
                         observableName.value = AndroidString(text = it.eventName)
                         observableAttendees.value = it.attendees.toUiModel()
                         observableAttendeesLabel.value = getAttendeesLabel(it.attendees)
                         observableJoinButton.value = getJoinButtonStatus()
                         observableBackground.value = "https://mir-s3-cdn-cf.behance.net/project_modules/1400/82cf1121015893.59b6dc9dc8015.jpg"
+
+                        // set up the date plan page
+                        observableDatePlan.value = datePlan.apply {
+                            item.itemInfo.let {
+                                if (isUserAnOwner) {
+                                    pollStatusButton.apply {
+                                        if (it.datePollStatus) {
+                                            text = AndroidString(R.string.event_plan_close_vote)
+                                            status = UiModel.Status.NEGATIVE
+                                        }
+                                        else {
+                                            text = AndroidString(R.string.event_plan_open_vote)
+                                            status = UiModel.Status.POSITIVE
+                                        }
+                                    }
+                                }
+                                else {
+                                    pollStatusButton.status = UiModel.Status.EMPTY
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -142,6 +178,73 @@ class PlanEventViewModel : BaseViewModel() {
     //region event plan date
 
     fun loadDatePolls() {
+        observableDatePlan.value = datePlan.apply { status = UiModel.Status.LOADING }
+
+        interactor.loadDatePlan { it ->
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableDatePlan.value = datePlan.apply {
+                        status = UiModel.Status.SUCCESS
+
+                        datePolls.apply {
+                            clear()
+                            it.result.forEach { add(it.toUiModel()) }
+                        }
+                    }
+                }
+                is AsyncErrorResult -> {
+                    observableDatePlan.value = datePlan.apply { status = UiModel.Status.ERROR }
+
+                    handleError(it.error)
+                }
+            }
+        }
+    }
+
+    private fun EventDatePoll.toUiModel(): EventDatePollUiModel {
+        val (dateString, timeString) = getPollDateTime(startTime, endTime)
+        return EventDatePollUiModel(dateString, timeString, users.size,
+                if (users.contains(interactor.getCurrentUserId())) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE)
+    }
+
+    private fun getPollDateTime(start: Long, end: Long?): Pair<AndroidString, AndroidString> {
+        val startDate = Calendar.getInstance().apply { time = Date(start) }
+        val currentDate = Calendar.getInstance()
+        var showYear = startDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
+
+        // if end datetime is not present, only show start time
+        if (end == null) return Date(start).let {
+            AndroidString(text = it.toDateString(showYear)) to AndroidString(text = it.toTimeString())
+        }
+
+        // if end datetime is present
+        // concat the dates together with a hyphen
+        val endDate = Calendar.getInstance().apply { time = Date(end) }
+        val startYearNotEqEndYear = startDate[Calendar.YEAR] != endDate[Calendar.YEAR]
+        showYear = showYear || startYearNotEqEndYear
+        val startDateTime = Date(start)
+        val endDateTime = Date(end)
+        return AndroidString(text = StringBuilder().apply {
+                append(startDateTime.toDateString(showYear))
+                if (startDate[Calendar.DAY_OF_YEAR] != endDate[Calendar.DAY_OF_YEAR]) {
+                    append(" - ")
+                    append(endDateTime.toDateString(showYear))
+                }
+            }.toString()) to AndroidString(text = "${startDateTime.toTimeString()} - ${endDateTime.toTimeString()}")
+    }
+
+    fun getDatePollItem(position: Int) = datePlan.datePolls[position]
+
+    fun toggleDatePoll(position: Int) {
+
+    }
+
+    fun getDatePollCount(): Int = datePlan.datePolls.size
+
+    //endregion
+    //region place poll
+
+    fun togglePlacePoll(position: Int) {
 
     }
 
@@ -165,6 +268,8 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableJoinButton(): LiveData<ButtonUiModel> = observableJoinButton
 
     fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
+
+    fun getObservableDatePlan(): LiveData<EventDatePlanUiModel> = observableDatePlan
 
     //endregion
 }

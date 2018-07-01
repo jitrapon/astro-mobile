@@ -36,4 +36,12 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 false
         )
     }
+
+    override fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>> {
+        return loadTypedList(true,
+                remoteDataSource.getDatePolls(item),
+                remoteDataSource.getDatePolls(item)) {
+                Flowable.just(it)   // no save action required
+        }
+    }
 }

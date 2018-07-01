@@ -21,5 +21,7 @@
     <dimen name="event_plan_vote_instruction_text_size">12sp</dimen>
     <dimen name="event_plan_vote_instruction_vertical_margin">8dp</dimen>
     <dimen name="event_plan_vote_horizontal_margin">24dp</dimen>
-    <dimen name="event_plan_date_calendar_height">300dp</dimen>
+    <dimen name="event_plan_date_calendar_height">280dp</dimen>
+    <dimen name="event_plan_calendar_elevation">8dp</dimen>
+    <dimen name="event_plan_poll_vertical_offset">8dp</dimen>
 </resources>

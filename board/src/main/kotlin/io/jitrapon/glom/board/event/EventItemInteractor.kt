@@ -255,7 +255,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      *
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
-    fun setItemAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+    fun setItemAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
         val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
@@ -282,7 +282,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
     }
 
-    fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<MutableList<String>?>) -> Unit)) {
+    fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
         val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
@@ -311,6 +311,22 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun setItemNote(newNote: String) {
         isItemModified = true
         note = newNote
+    }
+
+    //endregion
+    //region date polls
+
+    fun loadDatePlan(onComplete: (AsyncResult<List<EventDatePoll>>) -> Unit) {
+        eventItemDataSource.getDatePolls(event)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
     }
 
     //endregion

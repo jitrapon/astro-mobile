@@ -3,7 +3,7 @@
     <string name="application_name">Glom</string>
 
     <!-- error messages -->
-    <string name="error_generic">An error occurred, please try again</string>
+    <string name="error_generic">Well, this is embarrassing. Sorry but something went wrong, I\'m notifying my developer right now!</string>
 
     <!-- bottom navigation view -->
     <string name="main_nav_item_board_title">Board</string>

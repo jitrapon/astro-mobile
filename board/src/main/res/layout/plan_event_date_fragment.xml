@@ -21,11 +21,12 @@
         android:lines="2"
         android:ellipsize="end" />
 
-    <com.prolificinteractive.materialcalendarview.MaterialCalendarView
-        android:id="@+id/event_plan_date_calendar"
-        app:mcv_tileWidth="48dp"
+    <android.support.v7.widget.CardView
+        android:id="@+id/event_plan_date_calendar_cardview"
         android:layout_width="0dp"
-        android:layout_height="@dimen/event_plan_date_calendar_height"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_default="percent"
+        app:layout_constraintHeight_percent="0.4"
         android:background="@color/white"
         android:layout_marginStart="@dimen/event_plan_vote_horizontal_margin"
         android:layout_marginEnd="@dimen/event_plan_vote_horizontal_margin"
@@ -33,10 +34,20 @@
         app:layout_constraintTop_toBottomOf="@+id/event_plan_date_instruction"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:mcv_selectionColor="?android:attr/colorAccent"
-        app:mcv_leftArrowMask="@drawable/ic_left"
-        app:mcv_rightArrowMask="@drawable/ic_right"
-        app:mcv_arrowColor="@color/warm_grey" />
+        app:cardCornerRadius="3dp"
+        app:cardElevation="@dimen/event_plan_calendar_elevation" >
+
+        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+            android:id="@+id/event_plan_date_calendar"
+            app:mcv_tileWidth="48dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:mcv_selectionColor="?android:attr/colorAccent"
+            app:mcv_leftArrowMask="@drawable/ic_left"
+            app:mcv_rightArrowMask="@drawable/ic_right"
+            app:mcv_arrowColor="@color/warm_grey" />
+
+    </android.support.v7.widget.CardView>
 
     <TextView
         android:id="@+id/event_plan_date_vote_instruction"
@@ -50,21 +61,25 @@
         android:paddingEnd="32dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_calendar"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_calendar_cardview"
         android:layout_marginTop="@dimen/event_plan_vote_instruction_vertical_margin"
         android:lines="2"
         android:ellipsize="end" />
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/event_plan_date_vote_recyclerview"
+        android:id="@+id/event_plan_date_poll_recyclerview"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="@dimen/event_plan_vote_instruction_vertical_margin"
+        android:paddingBottom="8dp"
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/event_plan_date_calendar"
-        app:layout_constraintStart_toStartOf="@+id/event_plan_date_calendar"
-        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_vote_instruction" />
+        android:paddingStart="@dimen/event_plan_vote_horizontal_margin"
+        android:paddingEnd="@dimen/event_plan_vote_horizontal_margin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_date_vote_instruction"
+        app:layoutManager="android.support.v7.widget.LinearLayoutManager" />
 
     <ProgressBar
         android:id="@+id/event_plan_date_vote_progressbar"
@@ -75,6 +90,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/event_plan_date_vote_recyclerview" />
+        app:layout_constraintTop_toTopOf="@+id/event_plan_date_poll_recyclerview" />
 
 </android.support.constraint.ConstraintLayout>

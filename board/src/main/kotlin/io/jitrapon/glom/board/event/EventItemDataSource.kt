@@ -19,4 +19,6 @@ interface EventItemDataSource {
     fun joinEvent(item: EventItem): Completable
 
     fun leaveEvent(item: EventItem): Completable
+
+    fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>>
 }
