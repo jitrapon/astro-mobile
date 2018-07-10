@@ -1,9 +1,7 @@
 package io.jitrapon.glom.board.event
 
 import io.reactivex.Flowable
-import retrofit2.http.Body
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface EventApi {
 
@@ -16,4 +14,18 @@ interface EventApi {
     fun leaveEvent(@Path("circleId") circleId: String,
                    @Path("itemId") itemId: String,
                    @Body request: EditAttendeeRequest): Flowable<EditAttendeeResponse>
+
+    @GET("/circle/{circleId}/board/{itemId}/date_polls")
+    fun getDatePolls(@Path("circleId") circleId: String,
+                     @Path("itemId") itemId: String): Flowable<GetDatePollResponse>
+
+    @PATCH("/circle/{circleId}/board/{itemId}/date_poll/{datePollId}")
+    fun updateDatePollCount(@Path("circleId") circleId: String,
+                            @Path("itemId") itemId: String,
+                            @Path("datePollId") datePollId: String,
+                            @Body request: UpdatePollCountRequest): Flowable<UpdatePollCountResponse>
+
+    @POST("/circle/{circleId}/board/{itemId}/date_poll")
+    fun addDatePoll(@Path("circleId") circleId: String,
+                    @Path("itemId") itemId: String): Flowable<EventDatePollResponse>
 }

@@ -21,4 +21,8 @@ interface EventItemDataSource {
     fun leaveEvent(item: EventItem): Completable
 
     fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>>
+
+    fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Flowable<EventDatePoll>
+
+    fun addDatePoll(item: EventItem): Flowable<EventDatePoll>
 }

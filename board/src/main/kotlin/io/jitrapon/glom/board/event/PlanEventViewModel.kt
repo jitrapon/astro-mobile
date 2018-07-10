@@ -236,7 +236,9 @@ class PlanEventViewModel : BaseViewModel() {
     fun getDatePollItem(position: Int) = datePlan.datePolls[position]
 
     fun toggleDatePoll(position: Int) {
+        datePlan.datePolls[position].let {
 
+        }
     }
 
     fun getDatePollCount(): Int = datePlan.datePolls.size

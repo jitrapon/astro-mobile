@@ -5,7 +5,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     app:cardElevation="@dimen/event_plan_calendar_elevation"
     app:cardCornerRadius="8dp"
-    app:cardBackgroundColor="@color/white" >
+    app:cardBackgroundColor="@color/white"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true" >
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
@@ -22,7 +25,7 @@
             app:layout_constraintBottom_toTopOf="@+id/event_plan_date_poll_time"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:layout_marginStart="18dp" />
 
         <TextView

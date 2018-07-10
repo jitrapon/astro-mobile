@@ -47,4 +47,12 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     override fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>> {
         throw NotImplementedError()
     }
+
+    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Flowable<EventDatePoll> {
+        throw NotImplementedError()
+    }
+
+    override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {
+        throw NotImplementedError()
+    }
 }
