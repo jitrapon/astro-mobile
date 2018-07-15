@@ -9,6 +9,8 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
 
     private lateinit var inMemoryItem: EventItem
 
+    private var inMemoryDatePolls: List<EventDatePoll> = ArrayList()
+
     /* DAO access object to event items */
     private val eventDao: EventItemDao = database.eventItemDao()
 
@@ -44,12 +46,27 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>> {
-        throw NotImplementedError()
+    override fun getDatePolls(item: EventItem, refresh: Boolean): Flowable<List<EventDatePoll>> {
+        return Flowable.just(inMemoryDatePolls)
     }
 
-    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Flowable<EventDatePoll> {
-        throw NotImplementedError()
+    override fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>> {
+        inMemoryDatePolls = polls
+        return Flowable.just(inMemoryDatePolls)
+    }
+
+    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Completable {
+        return Completable.fromCallable {
+            inMemoryDatePolls.find { it.id == poll.id }?.let {
+                if (upvote) {
+                    userInteractor.getCurrentUserId()?.let(it.users::add)
+                }
+                else {
+                    userInteractor.getCurrentUserId()?.let(it.users::remove)
+                }
+            }
+            inMemoryDatePolls
+        }
     }
 
     override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {

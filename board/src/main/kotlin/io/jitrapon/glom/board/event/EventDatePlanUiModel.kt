@@ -5,4 +5,5 @@ import io.jitrapon.glom.base.model.UiModel
 
 data class EventDatePlanUiModel(val datePolls: MutableList<EventDatePollUiModel>,
                                 val pollStatusButton: ButtonUiModel,
+                                var itemChangedIndex: Int?,
                                 override var status: UiModel.Status) : UiModel

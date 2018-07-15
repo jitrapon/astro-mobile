@@ -46,6 +46,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     val board: Board
         get() = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), BoardItem.TYPE_EVENT).blockingFirst()
 
+    /* convenient event item instance */
     val event: EventItem
         get() = eventItemDataSource.getItem().blockingFirst()
 
@@ -317,7 +318,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     //region date polls
 
     fun loadDatePlan(onComplete: (AsyncResult<List<EventDatePoll>>) -> Unit) {
-        eventItemDataSource.getDatePolls(event)
+        eventItemDataSource.getDatePolls(event, true)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -326,6 +327,20 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
+                })
+    }
+
+    fun updateDatePollCount(id: String, upvote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
+        eventItemDataSource.getDatePolls(event, false)
+                .flatMapCompletable {
+                    eventItemDataSource.updateDatePollCount(event, it.first { it.id == id }, upvote)
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
                 })
     }
 

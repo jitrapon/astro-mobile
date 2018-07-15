@@ -74,12 +74,17 @@ class PlanEventDateFragment : BaseFragment() {
                         event_plan_date_vote_progressbar.show()
                     }
                     UiModel.Status.SUCCESS -> {
-                        event_plan_date_calendar.apply {
-                            selectionMode = MaterialCalendarView.SELECTION_MODE_MULTIPLE
-                        }
+                        if (it.itemChangedIndex == null) {
+                            event_plan_date_calendar.apply {
+                                selectionMode = MaterialCalendarView.SELECTION_MODE_MULTIPLE
+                            }
 
-                        event_plan_date_vote_progressbar.hide()
-                        event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
+                            event_plan_date_vote_progressbar.hide()
+                            event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
+                        }
+                        else {
+                            event_plan_date_poll_recyclerview.adapter.notifyItemChanged(it.itemChangedIndex!!)
+                        }
                     }
                     else -> {
                         event_plan_date_calendar.apply {

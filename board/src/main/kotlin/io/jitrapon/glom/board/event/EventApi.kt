@@ -15,11 +15,11 @@ interface EventApi {
                    @Path("itemId") itemId: String,
                    @Body request: EditAttendeeRequest): Flowable<EditAttendeeResponse>
 
-    @GET("/circle/{circleId}/board/{itemId}/date_polls")
+    @GET("5b48631e2f00009500481854/circle/{circleId}/board/{itemId}/date_polls")
     fun getDatePolls(@Path("circleId") circleId: String,
                      @Path("itemId") itemId: String): Flowable<GetDatePollResponse>
 
-    @PATCH("/circle/{circleId}/board/{itemId}/date_poll/{datePollId}")
+    @PATCH("5b486a852f0000800048187e/circle/{circleId}/board/{itemId}/date_poll/{datePollId}")
     fun updateDatePollCount(@Path("circleId") circleId: String,
                             @Path("itemId") itemId: String,
                             @Path("datePollId") datePollId: String,

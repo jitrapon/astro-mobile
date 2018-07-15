@@ -37,11 +37,25 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
         )
     }
 
-    override fun getDatePolls(item: EventItem): Flowable<List<EventDatePoll>> {
-        return loadTypedList(true,
+    override fun getDatePolls(item: EventItem, refresh: Boolean): Flowable<List<EventDatePoll>> {
+        return loadTypedList(refresh,
+                localDataSource.getDatePolls(item),
                 remoteDataSource.getDatePolls(item),
-                remoteDataSource.getDatePolls(item)) {
-                Flowable.just(it)   // no save action required
-        }
+                localDataSource::saveDatePolls)
+    }
+
+    override fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>> {
+        throw NotImplementedError()
+    }
+
+    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Completable {
+        return update(
+                localDataSource.updateDatePollCount(item, poll, upvote),
+                remoteDataSource.updateDatePollCount(item, poll, upvote),
+                false)
+    }
+
+    override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
