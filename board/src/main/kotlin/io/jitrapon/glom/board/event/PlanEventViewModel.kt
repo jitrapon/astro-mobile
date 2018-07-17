@@ -53,6 +53,9 @@ class PlanEventViewModel : BaseViewModel() {
     /* whether or not the current user ID owns this item */
     private var isUserAnOwner: Boolean = false
 
+    /* whether or not date plan has been loaded */
+    private var isDatePlanLoaded: Boolean = false
+
     init {
         BoardInjector.getComponent().inject(this)
         datePlan = EventDatePlanUiModel(ArrayList(), ButtonUiModel(null, UiModel.Status.EMPTY), null, UiModel.Status.EMPTY)
@@ -114,6 +117,16 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun saveItem() {
         observableNavigation.value = Navigation(Const.NAVIGATE_BACK, if (interactor.isItemModified()) interactor.event else null)
+    }
+
+    fun getFirstVisiblePageIndex(): Int {
+        return interactor.event.itemInfo.let {
+            when {
+                it.datePollStatus -> 1
+                it.placePollStatus -> 2
+                else -> 0
+            }
+        }
     }
 
     //region event overview
@@ -179,9 +192,13 @@ class PlanEventViewModel : BaseViewModel() {
     //region event plan date
 
     fun loadDatePolls() {
+        if (isDatePlanLoaded) return
+
         observableDatePlan.value = datePlan.apply { status = UiModel.Status.LOADING }
 
         interactor.loadDatePlan { it ->
+            isDatePlanLoaded = true
+
             when (it) {
                 is AsyncSuccessResult -> {
                     observableDatePlan.value = datePlan.apply {
@@ -204,7 +221,7 @@ class PlanEventViewModel : BaseViewModel() {
 
     private fun EventDatePoll.toUiModel(): EventDatePollUiModel {
         val (dateString, timeString) = getPollDateTime(startTime, endTime)
-        return EventDatePollUiModel(id, dateString, timeString, users.size,
+        return EventDatePollUiModel(id, dateString, timeString, Date(startTime), endTime?.let { Date(it) }, users.size,
                 if (users.contains(interactor.getCurrentUserId())) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE)
     }
 
@@ -238,9 +255,19 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun toggleDatePoll(position: Int) {
         val originalStatus = datePlan.datePolls[position].status
+        val originalCount = datePlan.datePolls[position].count
         observableDatePlan.value = datePlan.apply {
             datePlan.datePolls.apply {
-                this[position].status = if (status == UiModel.Status.POSITIVE) UiModel.Status.NEGATIVE else UiModel.Status.POSITIVE
+                this[position].apply {
+                    if (status == UiModel.Status.POSITIVE) {
+                        status = UiModel.Status.NEGATIVE
+                        count -= 1
+                    }
+                    else {
+                        status = UiModel.Status.POSITIVE
+                        count += 1
+                    }
+                }
             }
             itemChangedIndex = position
         }
@@ -260,12 +287,13 @@ class PlanEventViewModel : BaseViewModel() {
                     is AsyncErrorResult -> {
                         observableDatePlan.value = datePlan.apply {
                             datePlan.datePolls.apply {
-                                this[position].status = originalStatus
+                                this[position].apply {
+                                    status = originalStatus
+                                    count = originalCount
+                                }
                             }
                             itemChangedIndex = position
                         }
-
-                        handleError(it.error)
                     }
                 }
             }

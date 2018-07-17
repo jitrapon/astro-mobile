@@ -18,7 +18,7 @@ class PlanEventLocationFragment : BaseFragment() {
     companion object {
 
         @JvmStatic
-        fun newInstance(): PlanEventLocationFragment {
+        fun newInstance(isFirstVisible: Boolean): PlanEventLocationFragment {
             return PlanEventLocationFragment()
         }
     }

@@ -78,11 +78,13 @@ class PlanEventActivity : BaseActivity() {
 
     private fun createViewPager() {
         event_plan_viewpager.apply {
+            val firstVisiblePageIndex = viewModel.getFirstVisiblePageIndex()
             createWithFragments(this@PlanEventActivity, arrayOf(
                     PlanEventOverviewFragment.newInstance(),
-                    PlanEventDateFragment.newInstance(),
-                    PlanEventLocationFragment.newInstance()))
+                    PlanEventDateFragment.newInstance(firstVisiblePageIndex == 1),
+                    PlanEventLocationFragment.newInstance(firstVisiblePageIndex == 2)))
             doOnFragmentSelected<PlanEventDateFragment>(supportFragmentManager) { it.onVisible() }
+            setCurrentItem(firstVisiblePageIndex, false)
         }
     }
 
