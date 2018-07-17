@@ -97,8 +97,7 @@ class PlanEventDateFragment : BaseFragment() {
                             event_plan_date_calendar.apply {
                                 selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
                                 it.datePolls.forEach {
-                                    setSelectedDate()
-                                    it.calendarStartDate
+
                                 }
                             }
 
