@@ -38,6 +38,9 @@ class PlanEventViewModel : BaseViewModel() {
     /* observable join button */
     private val observableJoinButton = MutableLiveData<ButtonUiModel>()
 
+    /* observable date time picker */
+    private val observableDateTimePicker = LiveEvent<DateTimePickerUiModel>()
+
     /* whether or not user is attending */
     private var isUserAttending: Boolean = false
 
@@ -302,6 +305,10 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun getDatePollCount(): Int = datePlan.datePolls.size
 
+    fun showDateTimeRangePicker(date: Date) {
+        observableDateTimePicker.value = DateTimePickerUiModel(date)
+    }
+
     //endregion
     //region place poll
 
@@ -331,6 +338,8 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     fun getObservableDatePlan(): LiveData<EventDatePlanUiModel> = observableDatePlan
+
+    fun getObservableDateTimePicker(): LiveEvent<DateTimePickerUiModel> = observableDateTimePicker
 
     //endregion
 }

@@ -145,3 +145,10 @@ fun Date.toDayMonthYear(): Triple<Int, Int, Int> {
 fun Date.withinDuration(other: Date, seconds: Int): Boolean {
     return TimeUnit.SECONDS.convert(Math.abs(time - other.time), TimeUnit.MILLISECONDS) <= seconds
 }
+
+fun Date.setTime(year: Int, month: Int, day: Int): Date {
+    return Calendar.getInstance().let {
+        it.set(year, month, day)
+        it.time
+    }
+}

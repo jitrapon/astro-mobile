@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
+
+    <io.jitrapon.glom.board.event.widget.GlomCalendarView
+        android:id="@+id/calendar_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:mcv_selectionColor="?android:attr/colorAccent"
+        app:mcv_leftArrowMask="@drawable/ic_left"
+        app:mcv_rightArrowMask="@drawable/ic_right"
+        app:mcv_arrowColor="@color/warm_grey" />
+
+</ScrollView>

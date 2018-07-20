@@ -37,7 +37,7 @@
         app:cardCornerRadius="3dp"
         app:cardElevation="@dimen/event_plan_calendar_elevation" >
 
-        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+        <io.jitrapon.glom.board.event.widget.GlomCalendarView
             android:id="@+id/event_plan_date_calendar"
             app:mcv_tileWidth="48dp"
             android:layout_width="match_parent"

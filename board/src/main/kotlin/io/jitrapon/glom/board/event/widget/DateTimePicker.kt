@@ -1,4 +1,4 @@
-package io.jitrapon.glom.base.ui.widget
+package io.jitrapon.glom.board.event.widget
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -22,7 +22,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         TimePickerDialog.OnTimeSetListener {
 
     /* DatePicker dialog */
-    private lateinit var datePicker: DatePickerDialog
+    private lateinit var datePicker: GlomDatePickerDialog
 
     /* TimePicker dialog */
     private lateinit var timePicker: TimePickerDialog
@@ -49,19 +49,18 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         if (this.picker != picker) {
             val (day, month, year) = picker.defaultDate.toDayMonthYear()
             calendar.time = picker.defaultDate
-            datePicker = DatePickerDialog(context, this, year, month, day)
-            datePicker.apply {
-                setButton(DialogInterface.BUTTON_NEUTRAL, context.getString(R.string.done_button), { dialog, _ ->
+            datePicker = GlomDatePickerDialog(context, this, year, month, day).apply {
+                setButton(DialogInterface.BUTTON_NEUTRAL, context.getString(R.string.done_button)) { dialog, _ ->
                     dialog.dismiss()
                     onDateTimeSet(calendar.let {
-                        it[Calendar.YEAR] = datePicker.year
-                        it[Calendar.MONTH] = datePicker.month
-                        it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth
+                        it[Calendar.YEAR] = datePicker.year ?: 0
+                        it[Calendar.MONTH] = datePicker.month ?: 0
+                        it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth ?: 0
                         it.time
                     })
-                })
+                }
                 create()
-                getButton(DatePickerDialog.BUTTON_POSITIVE).text = context.getString(R.string.date_picker_set_time_button)
+                getButton(DialogInterface.BUTTON_POSITIVE).text = context.getString(R.string.date_picker_set_time_button)
                 setOnCancelListener {
                     onCancel()
                 }
@@ -71,7 +70,10 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         datePicker.show()
     }
 
-    override fun onDateSet(view: DatePicker, year: Int, month: Int, dayOfMonth: Int) {
+    /**
+     * Called when the DialogInterface.BUTTON_POSITIVE is clicked
+     */
+    override fun onDateSet(view: DatePicker?, year: Int, month: Int, dayOfMonth: Int) {
         calendar.apply {
             set(Calendar.YEAR, year)
             set(Calendar.MONTH, month)
@@ -81,10 +83,10 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
             timePicker = TimePickerDialog(context, this@DateTimePicker, get(Calendar.HOUR_OF_DAY),
                     get(Calendar.MINUTE), DateFormat.is24HourFormat(context))
             timePicker.apply {
-                setButton(DialogInterface.BUTTON_NEUTRAL, context.getString(R.string.pick_date_button), { dialog, _ ->
+                setButton(DialogInterface.BUTTON_NEUTRAL, context.getString(R.string.pick_date_button)) { dialog, _ ->
                     dialog.dismiss()
                     datePicker.show()
-                })
+                }
                 create()
                 setOnCancelListener {
                     onCancelListener?.invoke()
