@@ -28,7 +28,7 @@ class GlomCalendarView : MaterialCalendarView {
      * Whether or not user has selected any dates
      */
     val hasSelected: Boolean
-        get() = selectedDate == null
+        get() = selectedDate != null
 
     /**
      * The year of the currently selected date
@@ -84,8 +84,11 @@ class GlomCalendarView : MaterialCalendarView {
     /**
      * Selects a date. If it's already selected, nothing happens
      */
-    fun select(date: Date) {
+    fun select(date: Date, scrollToDate: Boolean) {
         setDateSelected(date, true)
+        if (scrollToDate) {
+            setCurrentDate(date)
+        }
     }
 
     /**

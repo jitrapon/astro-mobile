@@ -42,6 +42,6 @@
     <string name="event_plan_date_vote_generic_instruction">Proposed dates will appear below. Organizers can select one to change the time of this event.</string>
     <string name="event_plan_open_vote">Open Vote</string>
     <string name="event_plan_close_vote">Close Vote</string>
-    <string name="picker_dialog_set_start_date_title">Select start date</string>
-    <string name="picker_dialog_set_end_date_title">End start date</string>
+    <string name="event_plan_date_choose_poll_end_title">select end time</string>
+    <string name="event_plan_date_reset_poll_start_time">reset start time</string>
 </resources>

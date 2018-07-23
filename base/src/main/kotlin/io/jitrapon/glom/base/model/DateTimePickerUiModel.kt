@@ -8,4 +8,5 @@ import java.util.*
  * Created by Jitrapon
  */
 data class DateTimePickerUiModel(val defaultDate: Date,
+                                 val minDate: Date?,
                                  override var status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel

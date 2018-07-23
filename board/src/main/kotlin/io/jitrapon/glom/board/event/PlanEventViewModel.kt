@@ -306,7 +306,7 @@ class PlanEventViewModel : BaseViewModel() {
     fun getDatePollCount(): Int = datePlan.datePolls.size
 
     fun showDateTimeRangePicker(date: Date) {
-        observableDateTimePicker.value = DateTimePickerUiModel(date)
+        observableDateTimePicker.value = DateTimePickerUiModel(date, date)
     }
 
     //endregion

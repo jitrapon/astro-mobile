@@ -631,7 +631,7 @@ class EventItemViewModel : BoardItemViewModel() {
         else {
             endDate ?: startDate?.addHour(1) ?: Date().roundToNextHalfHour().addHour(1)
         }
-        observableDateTimePicker.value = DateTimePickerUiModel(defaultDate) to isStartDate
+        observableDateTimePicker.value = DateTimePickerUiModel(defaultDate, if (!isStartDate && startDate != null) startDate else null) to isStartDate
     }
 
     /**

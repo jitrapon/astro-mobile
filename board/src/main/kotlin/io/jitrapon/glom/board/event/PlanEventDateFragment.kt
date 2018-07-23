@@ -1,11 +1,9 @@
 package io.jitrapon.glom.board.event
 
-import android.app.DatePickerDialog
 import android.arch.lifecycle.Observer
 import android.support.v4.app.FragmentActivity
 import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
-import android.widget.Toast
 import androidx.os.bundleOf
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import io.jitrapon.glom.base.model.UiModel
@@ -13,8 +11,8 @@ import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.event.widget.DateTimePicker
 import io.jitrapon.glom.board.event.widget.GlomCalendarView
-import io.jitrapon.glom.board.event.widget.GlomDatePickerDialog
 import kotlinx.android.synthetic.main.plan_event_date_fragment.*
 import java.util.*
 
@@ -27,7 +25,9 @@ class PlanEventDateFragment : BaseFragment() {
 
     private lateinit var viewModel: PlanEventViewModel
 
-    private var dateTimePicker: GlomDatePickerDialog? = null
+    private val dateTimePicker: DateTimePicker by lazy {
+        DateTimePicker(context!!)
+    }
 
     companion object {
 
@@ -79,67 +79,61 @@ class PlanEventDateFragment : BaseFragment() {
      * Called when this fragment is ready to subscribe to ViewModel's events
      */
     override fun onSubscribeToObservables() {
-        viewModel.apply {
-            getObservableDatePlan().observe(this@PlanEventDateFragment, Observer {
-                it?.let {
-                    when (it.status) {
-                        UiModel.Status.LOADING -> {
-                            event_plan_date_calendar.apply {
-                                setSelectionMode(GlomCalendarView.SelectionMode.NONE)
-                            }
-
-                            event_plan_date_vote_progressbar.show()
+        viewModel.getObservableDatePlan().observe(this@PlanEventDateFragment, Observer {
+            it?.let {
+                when (it.status) {
+                    UiModel.Status.LOADING -> {
+                        event_plan_date_calendar.apply {
+                            setSelectionMode(GlomCalendarView.SelectionMode.NONE)
                         }
-                        UiModel.Status.SUCCESS -> {
-                            if (it.itemChangedIndex == null) {
-                                event_plan_date_calendar.apply {
-                                    setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
-                                    for (datePoll in it.datePolls) {
-                                        val endDate = datePoll.calendarEndDate
-                                        if (endDate == null) {
-                                            select(datePoll.calendarStartDate)
-                                        }
-                                        else {
-                                            selectRange(datePoll.calendarStartDate, endDate)
-                                        }
+
+                        event_plan_date_vote_progressbar.show()
+                    }
+                    UiModel.Status.SUCCESS -> {
+                        if (it.itemChangedIndex == null) {
+                            event_plan_date_calendar.apply {
+                                setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
+                                for (datePoll in it.datePolls) {
+                                    val endDate = datePoll.calendarEndDate
+                                    if (endDate == null) {
+                                        select(datePoll.calendarStartDate, false)
                                     }
-                                    onDateSelected { date, _ ->
-                                        viewModel.showDateTimeRangePicker(date)
+                                    else {
+                                        selectRange(datePoll.calendarStartDate, endDate)
                                     }
                                 }
-
-                                event_plan_date_vote_progressbar.hide()
-                                event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
-                            }
-                            else {
-                                event_plan_date_poll_recyclerview.adapter.notifyItemChanged(it.itemChangedIndex!!)
-                            }
-                        }
-                        else -> {
-                            event_plan_date_calendar.apply {
-                                selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+                                onDateSelected { date, _ ->
+                                    viewModel.showDateTimeRangePicker(date)
+                                }
                             }
 
                             event_plan_date_vote_progressbar.hide()
+                            event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
+                        }
+                        else {
+                            event_plan_date_poll_recyclerview.adapter.notifyItemChanged(it.itemChangedIndex!!)
                         }
                     }
-                }
-            })
+                    else -> {
+                        event_plan_date_calendar.apply {
+                            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+                        }
 
-            getObservableDateTimePicker().observe(this@PlanEventDateFragment, Observer {
-                it?.let { uiModel ->
-                    context?.let {
-                        val (day, month, year) = uiModel.defaultDate.toDayMonthYear()
-                        dateTimePicker = dateTimePicker ?: GlomDatePickerDialog(it, DatePickerDialog.OnDateSetListener { view, year, month, day ->
-                            Toast.makeText(context, "$day $month $year", Toast.LENGTH_LONG).show()
-                        }, day, month, year)
-                        dateTimePicker?.let {
-                            it.show()
-                        }
+                        event_plan_date_vote_progressbar.hide()
                     }
                 }
-            })
-        }
+            }
+        })
+
+        viewModel.getObservableDateTimePicker().observe(this@PlanEventDateFragment, Observer {
+            it?.let { picker ->
+                dateTimePicker.showRangePicker(picker, { (startDate, endDate) ->
+                    AppLogger.i("From $startDate to $endDate")
+                }, {
+                    AppLogger.i("cancel")
+                })
+            }
+        })
     }
 
     //region fragment functions
