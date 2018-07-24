@@ -310,7 +310,30 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     fun addDatePoll(startDate: Date, endDate: Date?) {
-        interactor.addDatePoll()
+        observableDatePlan.value = datePlan.apply { status = UiModel.Status.LOADING }
+
+        interactor.addDatePoll(startDate, endDate) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableDatePlan.value = datePlan.apply {
+                        itemChangedIndex = null
+                        status = UiModel.Status.SUCCESS
+                        datePolls.apply {
+                            clear()
+                            it.result.forEach { add(it.toUiModel()) }
+                        }
+                    }
+                }
+                is AsyncErrorResult -> {
+                    observableDatePlan.value = datePlan.apply {
+                        itemChangedIndex = null
+                        status = UiModel.Status.SUCCESS
+                    }
+
+                    handleError(it.error)
+                }
+            }
+        }
     }
 
     //endregion

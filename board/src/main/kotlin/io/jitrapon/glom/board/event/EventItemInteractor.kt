@@ -344,8 +344,18 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
-    fun addDatePoll(startDate: Date, endDate: Date?) {
+    fun addDatePoll(startDate: Date, endDate: Date?, onComplete: (AsyncResult<List<EventDatePoll>>) -> Unit) {
         eventItemDataSource.addDatePoll(event, startDate, endDate)
+                .flatMap {
+                    eventItemDataSource.getDatePolls(event, true)
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     //endregion

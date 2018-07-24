@@ -57,6 +57,6 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
     }
 
     override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return remoteDataSource.addDatePoll(item, startDate, endDate)
     }
 }
