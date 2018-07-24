@@ -4,12 +4,13 @@ import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.board.BoardDatabase
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.*
 
 class EventItemLocalDataSource(database: BoardDatabase, private val userInteractor: UserInteractor): EventItemDataSource {
 
     private lateinit var inMemoryItem: EventItem
 
-    private var inMemoryDatePolls: List<EventDatePoll> = ArrayList()
+    private var inMemoryDatePolls: MutableList<EventDatePoll> = ArrayList()
 
     /* DAO access object to event items */
     private val eventDao: EventItemDao = database.eventItemDao()
@@ -51,7 +52,7 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     }
 
     override fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>> {
-        inMemoryDatePolls = polls
+        inMemoryDatePolls = polls.toMutableList()
         return Flowable.just(inMemoryDatePolls)
     }
 
@@ -69,7 +70,7 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {
+    override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
         throw NotImplementedError()
     }
 }

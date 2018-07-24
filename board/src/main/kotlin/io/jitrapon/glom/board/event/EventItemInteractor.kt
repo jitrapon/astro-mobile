@@ -344,6 +344,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
+    fun addDatePoll(startDate: Date, endDate: Date?) {
+        eventItemDataSource.addDatePoll(event, startDate, endDate)
+    }
+
     //endregion
     //region autocomplete
     

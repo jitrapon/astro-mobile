@@ -5,6 +5,7 @@ import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.*
 
 enum class EventApiConst(val code: Int) {
     DECLINED(0), MAYBE(1), GOING(2)
@@ -73,7 +74,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                 }
     }
 
-    override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {
+    override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
         return api.addDatePoll(circleInteractor.getActiveCircleId(), item.itemId)
                 .map {
                     EventDatePoll(it.pollId, it.users.toMutableList(), it.startTime, it.endTime)

@@ -4,6 +4,7 @@ import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.BoardItem
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.*
 
 /**
  * Retrieves, stores, and saves the state of a board item
@@ -55,7 +56,7 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 false)
     }
 
-    override fun addDatePoll(item: EventItem): Flowable<EventDatePoll> {
+    override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

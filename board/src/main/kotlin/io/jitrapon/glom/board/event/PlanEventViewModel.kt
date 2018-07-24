@@ -309,6 +309,10 @@ class PlanEventViewModel : BaseViewModel() {
         observableDateTimePicker.value = DateTimePickerUiModel(date, date)
     }
 
+    fun addDatePoll(startDate: Date, endDate: Date?) {
+        interactor.addDatePoll()
+    }
+
     //endregion
     //region place poll
 

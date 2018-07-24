@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.event
 
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.*
 
 /**
  * Main entry point to event items in board
@@ -24,7 +25,7 @@ interface EventItemDataSource {
 
     fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Completable
 
-    fun addDatePoll(item: EventItem): Flowable<EventDatePoll>
+    fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll>
 
     fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>>
 }

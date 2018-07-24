@@ -9,7 +9,10 @@ import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.util.dimen
+import io.jitrapon.glom.base.util.hide
+import io.jitrapon.glom.base.util.obtainViewModel
+import io.jitrapon.glom.base.util.show
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.event.widget.DateTimePicker
 import io.jitrapon.glom.board.event.widget.GlomCalendarView
@@ -128,9 +131,9 @@ class PlanEventDateFragment : BaseFragment() {
         viewModel.getObservableDateTimePicker().observe(this@PlanEventDateFragment, Observer {
             it?.let { picker ->
                 dateTimePicker.showRangePicker(picker, { (startDate, endDate) ->
-                    AppLogger.i("From $startDate to $endDate")
+                    viewModel.addDatePoll(startDate, endDate)
                 }, {
-                    AppLogger.i("cancel")
+                    // do nothing
                 })
             }
         })
