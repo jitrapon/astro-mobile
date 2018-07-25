@@ -28,4 +28,8 @@ interface EventApi {
     @POST("5b57f89e300000ff05fe4ccd/circle/{circleId}/board/{itemId}/date_poll")
     fun addDatePoll(@Path("circleId") circleId: String,
                     @Path("itemId") itemId: String): Flowable<EventDatePollResponse>
+
+    @PATCH("/circle/{circleId}/board/{itemId}")
+    fun setDatePollStatus(@Path("circleId") circleId: String,
+                          @Path("itemId") itemId: String): Flowable<PatchEventResponse>
 }

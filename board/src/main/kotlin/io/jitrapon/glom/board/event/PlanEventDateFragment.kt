@@ -66,6 +66,9 @@ class PlanEventDateFragment : BaseFragment() {
             addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }
+        event_plan_date_poll_status_button.setOnClickListener {
+            viewModel.toggleDatePollStatus()
+        }
 
         // if this is the first page the user sees, load the date plan immediately
         arguments?.let {
@@ -143,6 +146,29 @@ class PlanEventDateFragment : BaseFragment() {
                         event_plan_date_calendar.select(picker.defaultDate, false, false)
                     }
                 })
+            }
+        })
+
+        viewModel.getObservableDateVoteStatusButton().observe(this@PlanEventDateFragment, Observer {
+            it?.let {
+                when {
+                    it.status == UiModel.Status.POSITIVE -> event_plan_date_poll_status_button.apply {
+                        context?.let {
+                            show()
+                            setBackgroundColor(it.colorPrimary())
+                            setTextColor(it.color(R.color.white))
+                        }
+                    }
+                    it.status == UiModel.Status.NEGATIVE -> event_plan_date_poll_status_button.apply {
+                        context?.let {
+                            show()
+                            setBackgroundColor(it.color(R.color.white))
+                            setTextColor(it.colorPrimary())
+                        }
+                    }
+                    it.status == UiModel.Status.EMPTY -> event_plan_date_poll_status_button.hide()
+                }
+                event_plan_date_poll_status_button.text = context?.getString(it.text)
             }
         })
     }

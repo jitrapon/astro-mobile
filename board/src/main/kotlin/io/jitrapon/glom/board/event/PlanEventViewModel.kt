@@ -59,6 +59,9 @@ class PlanEventViewModel : BaseViewModel() {
     /* whether or not date plan has been loaded */
     private var isDatePlanLoaded: Boolean = false
 
+    /* observable date poll status (opened/closed) button */
+    private val observableDateVoteStatusButton = MutableLiveData<ButtonUiModel>()
+
     init {
         BoardInjector.getComponent().inject(this)
         datePlan = EventDatePlanUiModel(ArrayList(), ButtonUiModel(null, UiModel.Status.EMPTY), null, UiModel.Status.EMPTY)
@@ -112,6 +115,9 @@ class PlanEventViewModel : BaseViewModel() {
                                 }
                             }
                         }
+
+                        // set up date vote status button
+                        observableDateVoteStatusButton.value = getDatePollStatusButton()
                     }
                 }
             }
@@ -343,6 +349,34 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun getDatePolls() = datePlan.datePolls
 
+    private fun getDatePollStatusButton(): ButtonUiModel {
+        return interactor.event.let {
+            if (it.owners.contains(interactor.getCurrentUserId())) {
+                if (it.itemInfo.datePollStatus) {
+                    ButtonUiModel(AndroidString(R.string.event_plan_close_vote), UiModel.Status.NEGATIVE)
+                }
+                else {
+                    ButtonUiModel(AndroidString(R.string.event_plan_open_vote), UiModel.Status.POSITIVE)
+                }
+            }
+            else {
+                ButtonUiModel(null, UiModel.Status.EMPTY)
+            }
+        }
+    }
+
+    fun toggleDatePollStatus() {
+        observableViewAction.value = Loading(true)
+
+        interactor.setItemDatePollStatus(!interactor.event.owners.contains(interactor.getCurrentUserId())) {
+            observableViewAction.value = Loading(false)
+            when (it) {
+                is AsyncSuccessResult -> observableDateVoteStatusButton.value = getDatePollStatusButton()
+                is AsyncErrorResult -> handleError(it.error)
+            }
+        }
+    }
+
     //endregion
     //region place poll
 
@@ -374,6 +408,8 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableDatePlan(): LiveData<EventDatePlanUiModel> = observableDatePlan
 
     fun getObservableDateTimePicker(): LiveEvent<DateTimePickerUiModel> = observableDateTimePicker
+
+    fun getObservableDateVoteStatusButton(): LiveData<ButtonUiModel> = observableDateVoteStatusButton
 
     //endregion
 }

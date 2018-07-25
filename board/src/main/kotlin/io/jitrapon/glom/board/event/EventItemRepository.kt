@@ -59,4 +59,8 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
     override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
         return remoteDataSource.addDatePoll(item, startDate, endDate)
     }
+
+    override fun setDatePollStatus(open: Boolean): Completable {
+        return remoteDataSource.setDatePollStatus(open)
+    }
 }

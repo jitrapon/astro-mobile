@@ -306,6 +306,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
+    fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Boolean>) -> Unit)) {
+        eventItemDataSource.setDatePollStatus()
+    }
+
     //endregion
     //region note
 

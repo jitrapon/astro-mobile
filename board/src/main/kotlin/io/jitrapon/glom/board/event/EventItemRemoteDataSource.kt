@@ -80,4 +80,11 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                     EventDatePoll(it.pollId, it.users.toMutableList(), it.startTime, it.endTime)
                 }
     }
+
+    override fun setDatePollStatus(item: EventItem, open: Boolean): Flowable<Boolean> {
+        return api.setDatePollStatus(circleInteractor.getActiveCircleId(), item.itemId, open)
+                .map {
+
+                }
+    }
 }
