@@ -17,6 +17,8 @@ class GlomCalendarView : MaterialCalendarView {
 
     constructor(context: Context, attrs: AttributeSet): super(context, attrs)
 
+    private var listener: ((Date, Boolean) -> Unit)? = null
+
     /**
      * All the selection mode of the calendar
      */
@@ -75,32 +77,52 @@ class GlomCalendarView : MaterialCalendarView {
     /**
      * Called when a date is selected or unselected
      */
-    inline fun onDateSelected(crossinline func: (Date, Boolean) -> Unit) {
+    fun onDateSelected(func: (Date, Boolean) -> Unit) {
+        listener = func
         setOnDateChangedListener { _, date, selected ->
-            func(date.date, selected)
+            listener?.invoke(date.date, selected)
         }
     }
 
     /**
-     * Selects a date. If it's already selected, nothing happens
+     * Selects a date. If it's already selected, nothing happens.
+     * Calling this will not trigger the onDateSelected callback.
      */
-    fun select(date: Date, scrollToDate: Boolean) {
-        setDateSelected(date, true)
+    fun select(date: Date, scrollToDate: Boolean, selected: Boolean = true) {
+        setOnDateChangedListener(null)
+
+        setDateSelected(date, selected)
         if (scrollToDate) {
             setCurrentDate(date)
         }
+
+        setOnDateChangedListener{ _, d, isSelected ->
+            listener?.invoke(d.date, isSelected)
+        }
+    }
+
+    fun clear() {
+        clearSelection()
     }
 
     /**
      * Selects multiple dates starting from `start` date to `end` date.
      * If any dates in-between are already selected, their states will remain selected
+     *
+     * Calling this will not trigger the onDateSelected callback.
      */
     fun selectRange(start: Date, end: Date) {
+        setOnDateChangedListener(null)
+
         val counter = Calendar.getInstance().apply { time = start }
         val finish = Calendar.getInstance().apply { time = end }
         while (counter.before(finish) || counter == finish) {
             setDateSelected(counter, true)
             counter.add(Calendar.DATE, 1)
+        }
+
+        setOnDateChangedListener{ _, d, selected ->
+            listener?.invoke(d.date, selected)
         }
     }
 }

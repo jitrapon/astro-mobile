@@ -19,7 +19,8 @@ import java.util.*
 class GlomDatePickerDialog(context: Context, private val listener: DatePickerDialog.OnDateSetListener?,
                            year: Int, monthOfYear: Int, dayOfMonth: Int,
                            selectionMode: GlomCalendarView.SelectionMode = GlomCalendarView.SelectionMode.SINGLE,
-                           title: CharSequence? = null) :
+                           title: CharSequence? = null,
+                           dimBehind: Boolean = true) :
         AlertDialog(context, 0), DialogInterface.OnClickListener {
 
     private lateinit var calendarView: GlomCalendarView
@@ -29,7 +30,7 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
     //region constructors
 
     init {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        if (!dimBehind) window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
         title?.let (::setTitle)
         setView(LayoutInflater.from(getContext()).inflate(io.jitrapon.glom.board.R.layout.event_date_picker_dialog, null).apply {

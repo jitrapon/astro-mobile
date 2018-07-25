@@ -64,7 +64,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         if (this.picker != picker) {
             val (day, month, year) = picker.defaultDate.toDayMonthYear()
             calendar.time = picker.defaultDate
-            datePicker = GlomDatePickerDialog(context, this, year, month, day).apply {
+            datePicker = GlomDatePickerDialog(context, this, year, month, day, dimBehind = false).apply {
                 setOnNeutralButtonClicked {
                     it.dismiss()
                     onDateTimeSet(calendar.let {
@@ -125,7 +125,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         isSelectingEndDate = true
 
         val (day, month, year) = calendar.time.toDayMonthYear()
-        datePicker = GlomDatePickerDialog(context, this, year, month, day).apply {
+        datePicker = GlomDatePickerDialog(context, this, year, month, day, dimBehind = true).apply {
             setMinDate(calendar.time)
             create()
             getButton(DialogInterface.BUTTON_NEUTRAL).text = context.getString(io.jitrapon.glom.board.R.string.event_plan_date_reset_poll_start_time)

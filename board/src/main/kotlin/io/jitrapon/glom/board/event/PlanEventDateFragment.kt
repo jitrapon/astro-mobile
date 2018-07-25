@@ -9,10 +9,7 @@ import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
-import io.jitrapon.glom.base.util.dimen
-import io.jitrapon.glom.base.util.hide
-import io.jitrapon.glom.base.util.obtainViewModel
-import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.event.widget.DateTimePicker
 import io.jitrapon.glom.board.event.widget.GlomCalendarView
@@ -86,15 +83,12 @@ class PlanEventDateFragment : BaseFragment() {
             it?.let {
                 when (it.status) {
                     UiModel.Status.LOADING -> {
-                        event_plan_date_calendar.apply {
-                            setSelectionMode(GlomCalendarView.SelectionMode.NONE)
-                        }
-
                         event_plan_date_vote_progressbar.show()
                     }
                     UiModel.Status.SUCCESS -> {
                         if (it.itemChangedIndex == null) {
                             event_plan_date_calendar.apply {
+                                clear()
                                 setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
                                 for (datePoll in it.datePolls) {
                                     val endDate = datePoll.calendarEndDate
@@ -106,6 +100,7 @@ class PlanEventDateFragment : BaseFragment() {
                                     }
                                 }
                                 onDateSelected { date, _ ->
+                                    select(date, false)
                                     viewModel.showDateTimeRangePicker(date)
                                 }
                             }
@@ -133,7 +128,20 @@ class PlanEventDateFragment : BaseFragment() {
                 dateTimePicker.showRangePicker(picker, { (startDate, endDate) ->
                     viewModel.addDatePoll(startDate, endDate)
                 }, {
-                    // do nothing
+                    viewModel.cancelAddDatePoll()
+
+                    // if this date does not belong to any date poll, deselect it
+                    val datePolls = viewModel.getDatePolls()
+                    var foundInDatePoll = false
+                    for (poll in datePolls) {
+                        if (poll.calendarStartDate.sameDateAs(picker.defaultDate)) {
+                            foundInDatePoll = true
+                            break
+                        }
+                    }
+                    if (!foundInDatePoll) {
+                        event_plan_date_calendar.select(picker.defaultDate, false, false)
+                    }
                 })
             }
         })
