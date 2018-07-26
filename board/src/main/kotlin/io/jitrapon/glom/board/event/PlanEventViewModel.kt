@@ -80,7 +80,7 @@ class PlanEventViewModel : BaseViewModel() {
             }
             else {
                 if (item is EventItem) {
-                    interactor.initWith(placeProvider, item)
+                    interactor.initWith(placeProvider, item, true)
 
                     item.itemInfo.let {
                         isUserAnOwner = item.owners.contains(interactor.getCurrentUserId())

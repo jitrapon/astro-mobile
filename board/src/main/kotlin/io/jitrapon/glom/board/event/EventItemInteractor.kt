@@ -59,12 +59,14 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Sets a starting point for working with this item. Must be called before any other
      * functions
      */
-    fun initWith(provider: PlaceProvider? = null, item: BoardItem? = null) {
+    fun initWith(provider: PlaceProvider? = null, item: BoardItem? = null, retainModifiedStatus: Boolean = false) {
         if (provider != null && placeProvider == null) {
             placeProvider = provider
         }
         (item as? EventItem)?.let {
-            isItemModified = false   // must be reset tit as EventItem)o false because the interactor instance is reused for new items
+            if (!retainModifiedStatus) {
+                isItemModified = false   // must be reset tit as EventItem)o false because the interactor instance is reused for new items
+            }
 
             eventItemDataSource.initWith(it)
             note = it.itemInfo.note
