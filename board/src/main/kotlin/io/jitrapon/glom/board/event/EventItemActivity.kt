@@ -18,12 +18,12 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.board.event.widget.DateTimePicker
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
+import io.jitrapon.glom.board.event.widget.DateTimePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 /**
@@ -439,7 +439,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
-                viewModel.updateEventDetailAttendStatus()
+                viewModel.apply {
+                    updateEventDetailAttendStatus()
+                }
             }
         }
     }

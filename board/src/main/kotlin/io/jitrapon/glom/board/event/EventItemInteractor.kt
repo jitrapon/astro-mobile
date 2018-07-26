@@ -306,8 +306,17 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
-    fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Boolean>) -> Unit)) {
-        eventItemDataSource.setDatePollStatus()
+    fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
+        isItemModified = true
+
+        eventItemDataSource.setDatePollStatus(event, open)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     //endregion

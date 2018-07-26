@@ -74,7 +74,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         throw NotImplementedError()
     }
 
-    override fun setDatePollStatus(item: EventItem, open: Boolean): Flowable<Boolean> {
-        throw NotImplementedError()
+    override fun setDatePollStatus(item: EventItem, open: Boolean): Completable {
+        return Completable.fromCallable {
+            eventDao.updateDatePollStatus(item.itemId, open)
+            item.itemInfo.datePollStatus = open
+            inMemoryItem
+        }
     }
 }

@@ -81,10 +81,14 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                 }
     }
 
-    override fun setDatePollStatus(item: EventItem, open: Boolean): Flowable<Boolean> {
-        return api.setDatePollStatus(circleInteractor.getActiveCircleId(), item.itemId, open)
-                .map {
-
+    override fun setDatePollStatus(item: EventItem, open: Boolean): Completable {
+        return api.setDatePollStatus(circleInteractor.getActiveCircleId(), item.itemId, UpdateDatePollStatusRequest(open))
+                .flatMapCompletable {
+                    Completable.fromCallable {
+                        if (open != it.datePollStatus) {
+                            throw Exception("Response received does not match expected, received ${it.datePollStatus}, expected $open")
+                        }
+                    }
                 }
     }
 }

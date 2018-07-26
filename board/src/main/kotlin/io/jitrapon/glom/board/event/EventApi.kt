@@ -29,7 +29,8 @@ interface EventApi {
     fun addDatePoll(@Path("circleId") circleId: String,
                     @Path("itemId") itemId: String): Flowable<EventDatePollResponse>
 
-    @PATCH("/circle/{circleId}/board/{itemId}")
+    @PATCH("5b598ee92f000059005f943c/circle/{circleId}/board/{itemId}")
     fun setDatePollStatus(@Path("circleId") circleId: String,
-                          @Path("itemId") itemId: String): Flowable<PatchEventResponse>
+                          @Path("itemId") itemId: String,
+                          @Body request: UpdateDatePollStatusRequest): Flowable<PatchEventResponse>
 }

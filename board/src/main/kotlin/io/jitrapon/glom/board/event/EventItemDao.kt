@@ -32,4 +32,7 @@ interface EventItemDao {
 
     @Query("DELETE FROM events WHERE id = :itemId")
     fun deleteEventById(itemId: String)
+
+    @Query("UPDATE events SET date_poll_status = :open WHERE id = :itemId")
+    fun updateDatePollStatus(itemId: String, open: Boolean)
 }

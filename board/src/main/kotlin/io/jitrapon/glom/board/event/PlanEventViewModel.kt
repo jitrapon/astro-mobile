@@ -80,9 +80,8 @@ class PlanEventViewModel : BaseViewModel() {
             }
             else {
                 if (item is EventItem) {
-                    if (!interactor.isInitialized() || interactor.event.itemId != item.itemId) {
-                        interactor.initWith(placeProvider, item)
-                    }
+                    interactor.initWith(placeProvider, item)
+
                     item.itemInfo.let {
                         isUserAnOwner = item.owners.contains(interactor.getCurrentUserId())
 
@@ -367,8 +366,9 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun toggleDatePollStatus() {
         observableViewAction.value = Loading(true)
+        val pollIsOpened = interactor.event.itemInfo.datePollStatus
 
-        interactor.setItemDatePollStatus(!interactor.event.owners.contains(interactor.getCurrentUserId())) {
+        interactor.setItemDatePollStatus(!pollIsOpened) {
             observableViewAction.value = Loading(false)
             when (it) {
                 is AsyncSuccessResult -> observableDateVoteStatusButton.value = getDatePollStatusButton()
