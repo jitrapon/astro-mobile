@@ -36,6 +36,8 @@ data class EventItemEntity(
         val datePollStatus: Boolean,
         @ColumnInfo(name = "place_poll_status")
         val placePollStatus: Boolean,
+        @ColumnInfo(name = "is_owner")
+        val isOwner: Boolean,
         @ColumnInfo(name = "circle_id")
         val circleId: String
 )
@@ -58,3 +60,5 @@ class EventItemFullEntity {
     @Relation(parentColumn = "id", entityColumn = "event_id", entity = EventAttendeeEntity::class, projection = ["user_id"])
     lateinit var attendees: List<String>
 }
+
+

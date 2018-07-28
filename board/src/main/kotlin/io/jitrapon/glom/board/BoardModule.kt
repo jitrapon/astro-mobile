@@ -17,7 +17,8 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase): BoardDataSource = BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database))
+    fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase, userInteractor: UserInteractor): BoardDataSource =
+            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, userInteractor))
 
     @Provides
     @BoardScope

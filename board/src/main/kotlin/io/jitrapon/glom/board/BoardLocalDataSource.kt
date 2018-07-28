@@ -1,12 +1,13 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.board.event.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
+class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: UserInteractor) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
     private val lock: Any = Any()
@@ -27,7 +28,7 @@ class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
                     eventDao.getEventsInCircle(circleId).toFlowable()
-                            .map { it.toBoard(circleId) }
+                            .map { it.toBoard(circleId, userInteractor.getCurrentUserId()) }
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it
@@ -47,7 +48,7 @@ class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
             val updatedTime = Date().time
             board.items.forEach {
                 when (it) {
-                    is EventItem -> eventEntities.add(it.toEntity(board.circleId, updatedTime))
+                    is EventItem -> eventEntities.add(it.toEntity(board.circleId, userInteractor.getCurrentUserId(), updatedTime))
                     else -> { /* do nothing */ }
                 }
             }
@@ -63,7 +64,7 @@ class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, Date().time))
+                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
             }
         }.doOnComplete {
             synchronized(lock) {
@@ -75,7 +76,7 @@ class BoardLocalDataSource(database: BoardDatabase) : BoardDataSource {
     override fun editItem(item: BoardItem): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, Date().time))
+                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
             }
         }.doOnComplete {
             synchronized(lock) {
