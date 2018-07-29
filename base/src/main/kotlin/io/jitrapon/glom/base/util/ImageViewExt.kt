@@ -1,12 +1,15 @@
 package io.jitrapon.glom.base.util
 
 import android.app.Activity
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.support.annotation.ColorInt
 import android.support.annotation.DrawableRes
 import android.support.annotation.RawRes
 import android.support.v4.app.Fragment
+import android.support.v4.widget.ImageViewCompat
 import android.widget.ImageView
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import io.jitrapon.glom.base.component.GlideApp
@@ -106,5 +109,10 @@ fun ImageView.clear(fragment: Fragment) {
     GlideApp.with(fragment).clear(this)
 }
 
-
+/**
+ * Tints this image view to a specific color
+ */
+fun ImageView.tint(@ColorInt color: Int) {
+    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))
+}
 

@@ -1,7 +1,5 @@
 package io.jitrapon.glom.board.event
 
-import android.content.res.ColorStateList
-import android.support.v4.widget.ImageViewCompat
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +10,7 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.color
 import io.jitrapon.glom.base.util.colorPrimary
 import io.jitrapon.glom.base.util.getString
+import io.jitrapon.glom.base.util.tint
 import io.jitrapon.glom.board.R
 
 class EventPollAdapter(private val viewModel: PlanEventViewModel, private val isDatePoll: Boolean) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -47,10 +46,9 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                 holder.time.apply {
                     text = context.getString(it.time)
                 }
-                holder.selectIcon.apply {
-                    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(
-                            if (it.status == UiModel.Status.POSITIVE) context.colorPrimary() else context.color(R.color.warm_grey)))
-                }
+                holder.selectIcon.tint(
+                        if (it.status == UiModel.Status.POSITIVE) holder.selectIcon.context.colorPrimary()
+                        else holder.selectIcon.context.color(R.color.warm_grey))
                 holder.count.text = it.count.toString()
             }
         }
