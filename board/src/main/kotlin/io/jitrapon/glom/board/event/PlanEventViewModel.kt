@@ -62,9 +62,12 @@ class PlanEventViewModel : BaseViewModel() {
     /* observable date poll status (opened/closed) button */
     private val observableDateVoteStatusButton = MutableLiveData<ButtonUiModel>()
 
+    /* last selected date poll position */
+    private var lastSelectedDatePollIndex: Int? = null
+
     init {
         BoardInjector.getComponent().inject(this)
-        datePlan = EventDatePlanUiModel(ArrayList(), ButtonUiModel(null, UiModel.Status.EMPTY), null, UiModel.Status.EMPTY)
+        datePlan = EventDatePlanUiModel(ArrayList<EventDatePollUiModel>(), null, null, UiModel.Status.EMPTY)
     }
 
     /**
@@ -95,24 +98,8 @@ class PlanEventViewModel : BaseViewModel() {
 
                         // set up the date plan page
                         observableDatePlan.value = datePlan.apply {
-                            itemChangedIndex = null
-                            item.itemInfo.let {
-                                if (isUserAnOwner) {
-                                    pollStatusButton.apply {
-                                        if (it.datePollStatus) {
-                                            text = AndroidString(R.string.event_plan_close_vote)
-                                            status = UiModel.Status.NEGATIVE
-                                        }
-                                        else {
-                                            text = AndroidString(R.string.event_plan_open_vote)
-                                            status = UiModel.Status.POSITIVE
-                                        }
-                                    }
-                                }
-                                else {
-                                    pollStatusButton.status = UiModel.Status.EMPTY
-                                }
-                            }
+                            itemsChangedIndices = null
+                            selectedDatePoll = null
                         }
 
                         // set up date vote status button
@@ -208,7 +195,14 @@ class PlanEventViewModel : BaseViewModel() {
             isDatePlanLoaded = true
 
             when (it) {
-                is AsyncSuccessResult -> refreshDatePolls(it.result)
+                is AsyncSuccessResult -> {
+                    if (!interactor.event.itemInfo.datePollStatus && isUserAnOwner) {
+                        refreshAndSelectDatePoll()
+                    }
+                    else {
+                        refreshDatePolls(it.result)
+                    }
+                }
                 is AsyncErrorResult -> {
                     observableDatePlan.value = datePlan.apply { status = UiModel.Status.ERROR }
 
@@ -220,7 +214,8 @@ class PlanEventViewModel : BaseViewModel() {
 
     private fun refreshDatePolls(result: List<EventDatePoll>) {
         observableDatePlan.value = datePlan.apply {
-            itemChangedIndex = null
+            itemsChangedIndices = null
+            selectedDatePoll = null
             status = UiModel.Status.SUCCESS
             datePolls.apply {
                 clear()
@@ -229,17 +224,20 @@ class PlanEventViewModel : BaseViewModel() {
         }
     }
 
-    private fun EventDatePoll.toUiModel(): EventDatePollUiModel {
+    private fun EventDatePoll.toUiModel(status: UiModel.Status? = null): EventDatePollUiModel {
         // not owner: see own upvote, date poll status: true || false
         // owner: see own upvote only date poll status == true, false otherwise
         val (dateString, timeString) = getPollDateTime(startTime, endTime)
-        val event = interactor.event
-        val isDatePollOpened = event.itemInfo.datePollStatus
-        val isOwner = event.owners.contains(interactor.getCurrentUserId())
-        val isUpvoted = users.contains(interactor.getCurrentUserId())
-        val showUpvoted = if (!isUpvoted) false else !isOwner || (isOwner && isDatePollOpened)
-        return EventDatePollUiModel(id, dateString, timeString, Date(startTime), endTime?.let { Date(it) }, users.size,
-                if (showUpvoted) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE)
+        return if (status == null) {
+            val event = interactor.event
+            val isDatePollOpened = event.itemInfo.datePollStatus
+            val isOwner = event.owners.contains(interactor.getCurrentUserId())
+            val isUpvoted = users.contains(interactor.getCurrentUserId())
+            val showUpvoted = if (!isUpvoted) false else !isOwner || (isOwner && isDatePollOpened)
+            EventDatePollUiModel(id, dateString, timeString, Date(startTime), endTime?.let { Date(it) }, users.size,
+                    if (showUpvoted) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE)
+        }
+        else EventDatePollUiModel(id, dateString, timeString, Date(startTime), endTime?.let { Date(it) }, users.size, status)
     }
 
     private fun getPollDateTime(start: Long, end: Long?): Pair<AndroidString, AndroidString> {
@@ -271,49 +269,57 @@ class PlanEventViewModel : BaseViewModel() {
     fun getDatePollItem(position: Int) = datePlan.datePolls[position]
 
     fun toggleDatePoll(position: Int) {
-        val originalStatus = datePlan.datePolls[position].status
-        val originalCount = datePlan.datePolls[position].count
-        observableDatePlan.value = datePlan.apply {
-            datePlan.datePolls.apply {
-                this[position].apply {
-                    if (status == UiModel.Status.POSITIVE) {
-                        status = UiModel.Status.NEGATIVE
-                        count -= 1
-                    }
-                    else {
-                        status = UiModel.Status.POSITIVE
-                        count += 1
+        if (!isUserAnOwner || (isUserAnOwner && interactor.event.itemInfo.datePollStatus)) {
+            val originalStatus = datePlan.datePolls[position].status
+            val originalCount = datePlan.datePolls[position].count
+            observableDatePlan.value = datePlan.apply {
+                datePlan.datePolls.apply {
+                    this[position].apply {
+                        if (status == UiModel.Status.POSITIVE) {
+                            status = UiModel.Status.NEGATIVE
+                            count -= 1
+                        }
+                        else {
+                            status = UiModel.Status.POSITIVE
+                            count += 1
+                        }
                     }
                 }
+                itemsChangedIndices = listOf(position)
+                selectedDatePoll = null
             }
-            itemChangedIndex = position
-        }
 
-        datePlan.datePolls[position].let {
-            val isUpvoting = originalStatus == UiModel.Status.NEGATIVE
-            interactor.updateDatePollCount(it.id, isUpvoting) {
-                when (it) {
-                    is AsyncSuccessResult -> {
-                        observableDatePlan.value = datePlan.apply {
-                            datePlan.datePolls.apply {
-                                this[position].status = if (isUpvoting) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE
-                            }
-                            itemChangedIndex = position
-                        }
-                    }
-                    is AsyncErrorResult -> {
-                        observableDatePlan.value = datePlan.apply {
-                            datePlan.datePolls.apply {
-                                this[position].apply {
-                                    status = originalStatus
-                                    count = originalCount
+            datePlan.datePolls[position].let {
+                val isUpvoting = originalStatus == UiModel.Status.NEGATIVE
+                interactor.updateDatePollCount(it.id, isUpvoting) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            observableDatePlan.value = datePlan.apply {
+                                datePlan.datePolls.apply {
+                                    this[position].status = if (isUpvoting) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE
                                 }
+                                itemsChangedIndices = listOf(position)
+                                selectedDatePoll = null
                             }
-                            itemChangedIndex = position
+                        }
+                        is AsyncErrorResult -> {
+                            observableDatePlan.value = datePlan.apply {
+                                datePlan.datePolls.apply {
+                                    this[position].apply {
+                                        status = originalStatus
+                                        count = originalCount
+                                    }
+                                }
+                                itemsChangedIndices = listOf(position)
+                                selectedDatePoll = null
+                            }
                         }
                     }
                 }
             }
+        }
+        else {
+            setDatePollSelected(position)
         }
     }
 
@@ -329,10 +335,18 @@ class PlanEventViewModel : BaseViewModel() {
 
         interactor.addDatePoll(startDate, endDate) {
             when (it) {
-                is AsyncSuccessResult -> refreshDatePolls(it.result)
+                is AsyncSuccessResult -> {
+                    if (!interactor.event.itemInfo.datePollStatus && isUserAnOwner) {
+                        refreshAndSelectDatePoll()
+                    }
+                    else {
+                        refreshDatePolls(it.result)
+                    }
+                }
                 is AsyncErrorResult -> {
                     observableDatePlan.value = datePlan.apply {
-                        itemChangedIndex = null
+                        itemsChangedIndices = null
+                        selectedDatePoll = null
                         status = UiModel.Status.SUCCESS
                     }
 
@@ -371,9 +385,60 @@ class PlanEventViewModel : BaseViewModel() {
         interactor.setItemDatePollStatus(!pollIsOpened) {
             observableViewAction.value = Loading(false)
             when (it) {
-                is AsyncSuccessResult -> observableDateVoteStatusButton.value = getDatePollStatusButton()
-                is AsyncErrorResult -> handleError(it.error)
+                is AsyncSuccessResult -> {
+                    observableDateVoteStatusButton.value = getDatePollStatusButton()
+
+                    // find out which date poll has the most vote, then preselect that
+                    refreshAndSelectDatePoll()
+                }
+                is AsyncErrorResult -> {}
             }
+        }
+    }
+
+    private fun refreshAndSelectDatePoll() {
+        val polls = interactor.datePolls
+        val maxIndex: Int? = if (polls.isNullOrEmpty()) null else {
+            var temp = 0
+            for (i in 1 until polls.size) {
+                polls[i].let {
+                    if (it.users.size > polls[temp].users.size) {
+                        temp = i
+                    }
+                }
+            }
+            temp
+        }
+        lastSelectedDatePollIndex = maxIndex
+
+        observableDatePlan.value = datePlan.apply {
+            itemsChangedIndices = null
+            status = UiModel.Status.SUCCESS
+            datePolls.apply {
+                clear()
+                for (i in 0 until polls.size) {
+                    add(polls[i].toUiModel(if (maxIndex != null && maxIndex == i) UiModel.Status.SUCCESS else null))     // success status means selected
+                }
+            }
+            selectedDatePoll = maxIndex?.let { datePolls[it] }
+        }
+    }
+
+    private fun setDatePollSelected(index: Int) {
+        if (index != lastSelectedDatePollIndex) {
+            observableDatePlan.value = datePlan.apply {
+                itemsChangedIndices = ArrayList<Int>().apply {
+                    add(index)
+                    lastSelectedDatePollIndex?.let(::add)
+                }
+                status = UiModel.Status.SUCCESS
+                datePolls[index].status = UiModel.Status.SUCCESS
+                lastSelectedDatePollIndex?.let {
+                    datePolls[it].status = UiModel.Status.NEGATIVE
+                }
+                selectedDatePoll = datePolls[index]
+            }
+            lastSelectedDatePollIndex = index
         }
     }
 

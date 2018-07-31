@@ -50,6 +50,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     val event: EventItem
         get() = eventItemDataSource.getItem().blockingFirst()
 
+    /* in-memory event date polls */
+    val datePolls: List<EventDatePoll>
+        get() = eventItemDataSource.getDatePolls(event, false).blockingFirst()
+
     //region initializers
 
     /**

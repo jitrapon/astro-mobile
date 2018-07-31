@@ -89,7 +89,7 @@ class PlanEventDateFragment : BaseFragment() {
                         event_plan_date_vote_progressbar.show()
                     }
                     UiModel.Status.SUCCESS -> {
-                        if (it.itemChangedIndex == null) {
+                        if (it.itemsChangedIndices.isNullOrEmpty()) {
                             event_plan_date_calendar.apply {
                                 clear()
                                 setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
@@ -112,8 +112,12 @@ class PlanEventDateFragment : BaseFragment() {
                             event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
                         }
                         else {
-                            event_plan_date_poll_recyclerview.adapter.notifyItemChanged(it.itemChangedIndex!!)
+                            for (index in it.itemsChangedIndices!!) {
+                                event_plan_date_poll_recyclerview.adapter.notifyItemChanged(index)
+                            }
                         }
+
+
                     }
                     else -> {
                         event_plan_date_calendar.apply {
@@ -152,21 +156,30 @@ class PlanEventDateFragment : BaseFragment() {
         viewModel.getObservableDateVoteStatusButton().observe(this@PlanEventDateFragment, Observer {
             it?.let {
                 when {
-                    it.status == UiModel.Status.POSITIVE -> event_plan_date_poll_status_button.apply {
-                        context?.let {
-                            show()
-                            setBackgroundColor(it.colorPrimary())
-                            setTextColor(it.color(R.color.white))
+                    it.status == UiModel.Status.POSITIVE -> {
+                        event_plan_date_poll_status_button.apply {
+                            context?.let {
+                                show()
+                                setBackgroundColor(it.colorPrimary())
+                                setTextColor(it.color(R.color.white))
+                            }
                         }
+                        event_plan_date_select_poll_button.show()
                     }
-                    it.status == UiModel.Status.NEGATIVE -> event_plan_date_poll_status_button.apply {
-                        context?.let {
-                            show()
-                            setBackgroundColor(it.color(R.color.white))
-                            setTextColor(it.colorPrimary())
+                    it.status == UiModel.Status.NEGATIVE -> {
+                        event_plan_date_poll_status_button.apply {
+                            context?.let {
+                                show()
+                                setBackgroundColor(it.color(R.color.white))
+                                setTextColor(it.colorPrimary())
+                            }
                         }
+                        event_plan_date_select_poll_button.hide()
                     }
-                    it.status == UiModel.Status.EMPTY -> event_plan_date_poll_status_button.hide()
+                    it.status == UiModel.Status.EMPTY -> {
+                        event_plan_date_poll_status_button.hide()
+                        event_plan_date_select_poll_button.hide()
+                    }
                 }
                 event_plan_date_poll_status_button.text = context?.getString(it.text)
             }

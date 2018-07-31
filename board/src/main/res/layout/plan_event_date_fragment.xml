@@ -99,7 +99,21 @@
         android:layout_width="0dp"
         android:layout_height="@dimen/bottom_action_button_height"
         android:foreground="?android:attr/selectableItemBackground"
+        app:layout_constraintHorizontal_weight="0.5"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/event_plan_date_select_poll_button"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <Button
+        android:theme="@style/Theme.Glom.Button.Raised.Colored"
+        android:id="@+id/event_plan_date_select_poll_button"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/bottom_action_button_height"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:background="@color/white"
+        android:textColor="?android:colorPrimary"
+        app:layout_constraintHorizontal_weight="0.5"
+        app:layout_constraintStart_toEndOf="@+id/event_plan_date_poll_status_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 

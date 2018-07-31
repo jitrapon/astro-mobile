@@ -47,8 +47,11 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                     text = context.getString(it.time)
                 }
                 holder.selectIcon.tint(
-                        if (it.status == UiModel.Status.POSITIVE) holder.selectIcon.context.colorPrimary()
-                        else holder.selectIcon.context.color(R.color.warm_grey))
+                        when (it.status) {
+                            UiModel.Status.POSITIVE -> holder.selectIcon.context.colorPrimary()
+                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(R.color.calm_blue)
+                            else -> holder.selectIcon.context.color(R.color.warm_grey)
+                        })
                 holder.count.text = it.count.toString()
             }
         }
