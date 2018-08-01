@@ -44,4 +44,6 @@
     <string name="event_plan_close_vote">Close Vote</string>
     <string name="event_plan_date_choose_poll_end_title">select end time</string>
     <string name="event_plan_date_reset_poll_start_time">reset start time</string>
+    <string name="event_plan_date_no_selection">no time selected</string>
+    <string name="event_plan_date_select">set time as\n%1$s %2$s</string>
 </resources>

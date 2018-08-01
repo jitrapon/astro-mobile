@@ -184,6 +184,14 @@ class PlanEventDateFragment : BaseFragment() {
                 event_plan_date_poll_status_button.text = context?.getString(it.text)
             }
         })
+
+        viewModel.getObservableDateSelectButton().observe(this@PlanEventDateFragment, Observer {
+            it?.let { button ->
+                context?.let {
+                    event_plan_date_select_poll_button.text = it.getString(button.text)
+                }
+            }
+        })
     }
 
     //region fragment functions

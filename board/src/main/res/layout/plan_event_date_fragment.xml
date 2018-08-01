@@ -112,6 +112,8 @@
         android:foreground="?android:attr/selectableItemBackground"
         android:background="@color/white"
         android:textColor="?android:colorPrimary"
+        android:maxLines="2"
+        android:ellipsize="end"
         app:layout_constraintHorizontal_weight="0.5"
         app:layout_constraintStart_toEndOf="@+id/event_plan_date_poll_status_button"
         app:layout_constraintEnd_toEndOf="parent"
