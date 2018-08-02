@@ -244,6 +244,17 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
     }
 
+    fun syncItemDate(startDate: Date?, endDate: Date?, onComplete: (AsyncResult<Pair<Date?, Date?>>) -> Unit) {
+        eventItemDataSource.setDate(event, startDate, endDate)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete()
+                }, {
+
+                })
+    }
+
     //endregion
     //region attend status
 

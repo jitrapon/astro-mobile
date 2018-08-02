@@ -30,4 +30,6 @@ interface EventItemDataSource {
     fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>>
 
     fun setDatePollStatus(item: EventItem, open: Boolean): Completable
+
+    fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable
 }

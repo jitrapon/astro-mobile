@@ -441,6 +441,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
                 viewModel.apply {
                     updateEventDetailAttendStatus()
+                    updateEventDetailDate()
                 }
             }
         }

@@ -466,6 +466,14 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+    fun updateEventDetailDate() {
+        interactor.event.itemInfo.let {
+            observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true)
+            observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false)
+            observableDateTimePicker.value = null
+        }
+    }
+
     private fun getEventDetailNote(note: String?): AndroidString? {
         note ?: return null
         return AndroidString(text = note)

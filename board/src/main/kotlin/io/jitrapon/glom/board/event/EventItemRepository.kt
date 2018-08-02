@@ -66,4 +66,11 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 remoteDataSource.setDatePollStatus(item, open),
                 false)
     }
+
+    override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
+        return update(
+                localDataSource.setDate(item, startDate, endDate),
+                remoteDataSource.setDate(item, startDate, endDate),
+                false)
+    }
 }

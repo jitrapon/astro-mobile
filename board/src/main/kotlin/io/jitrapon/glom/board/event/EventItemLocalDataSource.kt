@@ -81,4 +81,15 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
             inMemoryItem
         }
     }
+
+    override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
+        return Completable.fromCallable {
+            eventDao.updateDateTime(item.itemId, startDate, endDate)
+            item.itemInfo.apply {
+                startTime = startDate?.time
+                endTime = endDate?.time
+            }
+            inMemoryItem
+        }
+    }
 }

@@ -69,6 +69,9 @@ class PlanEventDateFragment : BaseFragment() {
         event_plan_date_poll_status_button.setOnClickListener {
             viewModel.toggleDatePollStatus()
         }
+        event_plan_date_select_poll_button.setOnClickListener {
+            viewModel.setDateTimeFromPoll()
+        }
 
         // if this is the first page the user sees, load the date plan immediately
         arguments?.let {

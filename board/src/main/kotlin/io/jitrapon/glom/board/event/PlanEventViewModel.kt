@@ -465,6 +465,21 @@ class PlanEventViewModel : BaseViewModel() {
         }
     }
 
+    fun setDateTimeFromPoll() {
+        lastSelectedDatePollIndex?.let {
+            observableViewAction.value = Loading(true)
+
+            val selected = datePlan.datePolls[it]
+            interactor.syncItemDate(selected.calendarStartDate, selected.calendarEndDate) {
+
+            }
+            interactor.apply {
+                setItemDate(datePlan.datePolls[it].calendarStartDate, true)
+                setItemDate(datePlan.datePolls[it].calendarEndDate, false)
+            }
+        }
+    }
+
     //endregion
     //region place poll
 
