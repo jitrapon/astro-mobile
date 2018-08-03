@@ -96,10 +96,10 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
         return api.setDate(circleInteractor.getActiveCircleId(), item.itemId, UpdateDateRequest(startDate?.time, endDate?.time))
                 .flatMapCompletable {
                     Completable.fromCallable {
-                        if (it.startTime != startDate?.time || it.endTime != endDate?.time) {
-                            throw Exception("Response received does not match expected, received ${it.startTime} - ${it.endTime}, " +
-                                    "expected ${startDate?.time} - ${endDate?.time}")
-                        }
+//                        if (it.startTime != startDate?.time || it.endTime != endDate?.time) {
+//                            throw Exception("Response received does not match expected, received ${it.startTime} - ${it.endTime}, " +
+//                                    "expected ${startDate?.time} - ${endDate?.time}")
+//                        }
                     }
                 }
     }

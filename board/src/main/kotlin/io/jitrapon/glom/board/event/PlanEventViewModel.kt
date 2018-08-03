@@ -471,11 +471,20 @@ class PlanEventViewModel : BaseViewModel() {
 
             val selected = datePlan.datePolls[it]
             interactor.syncItemDate(selected.calendarStartDate, selected.calendarEndDate) {
-
-            }
-            interactor.apply {
-                setItemDate(datePlan.datePolls[it].calendarStartDate, true)
-                setItemDate(datePlan.datePolls[it].calendarEndDate, false)
+                when (it) {
+                    is AsyncSuccessResult -> {
+                        val date = selected.date.text ?: ""
+                        val time = if (!TextUtils.isEmpty(selected.time.text)) " (${selected.time.text})" else ""
+                        observableViewAction.execute(arrayOf(
+                                Loading(false),
+                                Toast(AndroidString(
+                                        resId = R.string.event_plan_date_select_completed,
+                                        formatArgs = arrayOf(date, time))
+                                )
+                        ))
+                    }
+                    is AsyncErrorResult -> handleError(it.error)
+                }
             }
         }
     }

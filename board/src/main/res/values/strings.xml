@@ -46,4 +46,5 @@
     <string name="event_plan_date_reset_poll_start_time">reset start time</string>
     <string name="event_plan_date_no_selection">no time selected</string>
     <string name="event_plan_date_select">set time as\n%1$s %2$s</string>
+    <string name="event_plan_date_select_completed">Time set as %1$s %2$s</string>
 </resources>

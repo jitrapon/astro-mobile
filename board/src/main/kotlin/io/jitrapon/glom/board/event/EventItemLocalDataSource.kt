@@ -31,6 +31,9 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         return Completable.fromCallable {
             userInteractor.getCurrentUserId()?.let {
                 eventDao.insertAttendee(EventAttendeeEntity(item.itemId, it))
+            }
+        }.doOnComplete {
+            userInteractor.getCurrentUserId()?.let {
                 item.itemInfo.attendees.add(it)
             }
         }
@@ -40,8 +43,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         return Completable.fromCallable {
             userInteractor.getCurrentUserId()?.let { userId ->
                 eventDao.deleteAttendee(EventAttendeeEntity(item.itemId, userId))
+            }
+        }.doOnComplete {
+            userInteractor.getCurrentUserId()?.let {
                 item.itemInfo.attendees.removeAll {
-                    it.equals(userId, true)
+                    it.equals(it, true)
                 }
             }
         }
@@ -66,7 +72,6 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
                     userInteractor.getCurrentUserId()?.let(it.users::remove)
                 }
             }
-            inMemoryDatePolls
         }
     }
 
@@ -77,19 +82,19 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     override fun setDatePollStatus(item: EventItem, open: Boolean): Completable {
         return Completable.fromCallable {
             eventDao.updateDatePollStatus(item.itemId, open)
+        }.doOnComplete {
             item.itemInfo.datePollStatus = open
-            inMemoryItem
         }
     }
 
     override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
         return Completable.fromCallable {
-            eventDao.updateDateTime(item.itemId, startDate, endDate)
+            eventDao.updateDateTime(item.itemId, startDate?.time, endDate?.time)
+        }.doOnComplete {
             item.itemInfo.apply {
                 startTime = startDate?.time
                 endTime = endDate?.time
             }
-            inMemoryItem
         }
     }
 }

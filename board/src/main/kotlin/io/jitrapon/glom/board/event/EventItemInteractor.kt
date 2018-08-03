@@ -244,14 +244,16 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
     }
 
-    fun syncItemDate(startDate: Date?, endDate: Date?, onComplete: (AsyncResult<Pair<Date?, Date?>>) -> Unit) {
+    fun syncItemDate(startDate: Date?, endDate: Date?, onComplete: (AsyncResult<Unit>) -> Unit) {
         eventItemDataSource.setDate(event, startDate, endDate)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    onComplete()
-                }, {
+                    isItemModified = true
 
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
                 })
     }
 
@@ -307,8 +309,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             return
         }
 
-        isItemModified = true
-
         val item = event
         when (statusCode) {
             2 -> eventItemDataSource.joinEvent(item)
@@ -317,6 +317,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
+                    isItemModified = true
+
                     onComplete(AsyncSuccessResult(event.itemInfo.attendees))
                 }, {
                     onComplete(AsyncErrorResult(it))
@@ -324,12 +326,12 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
-        isItemModified = true
-
         eventItemDataSource.setDatePollStatus(event, open)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
+                    isItemModified = true
+
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))

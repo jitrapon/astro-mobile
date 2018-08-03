@@ -35,4 +35,7 @@ interface EventItemDao {
 
     @Query("UPDATE events SET date_poll_status = :open WHERE id = :itemId")
     fun updateDatePollStatus(itemId: String, open: Boolean)
+
+    @Query("UPDATE events SET start_time = :start, end_time = :end WHERE id = :itemId")
+    fun updateDateTime(itemId: String, start: Long?, end: Long?)
 }
