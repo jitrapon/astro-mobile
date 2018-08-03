@@ -119,8 +119,6 @@ class PlanEventDateFragment : BaseFragment() {
                                 event_plan_date_poll_recyclerview.adapter.notifyItemChanged(index)
                             }
                         }
-
-
                     }
                     else -> {
                         event_plan_date_calendar.apply {

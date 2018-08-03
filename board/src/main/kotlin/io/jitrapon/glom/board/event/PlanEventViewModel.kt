@@ -492,6 +492,10 @@ class PlanEventViewModel : BaseViewModel() {
     //endregion
     //region place poll
 
+    fun loadPlacePolls() {
+
+    }
+
     fun togglePlacePoll(position: Int) {
 
     }
