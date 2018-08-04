@@ -69,9 +69,19 @@ class PlanEventViewModel : BaseViewModel() {
     /* last selected date poll position */
     private var lastSelectedDatePollIndex: Int? = null
 
+    /* cached event place plan UI model for reuse */
+    private val placePlan: EventPlacePlanUiModel
+
+    /* place polls */
+    private val observablePlacePlan = MutableLiveData<EventPlacePlanUiModel>()
+
+    /* whether or not place plan has been loaded */
+    private var isPlacePlanLoaded: Boolean = false
+
     init {
         BoardInjector.getComponent().inject(this)
         datePlan = EventDatePlanUiModel(ArrayList<EventDatePollUiModel>(), null, UiModel.Status.EMPTY)
+        placePlan = EventPlacePlanUiModel(ArrayList<EventPlacePollUiModel>(), null, UiModel.Status.EMPTY)
     }
 
     /**
@@ -493,10 +503,48 @@ class PlanEventViewModel : BaseViewModel() {
     //region place poll
 
     fun loadPlacePolls() {
+        if (isPlacePlanLoaded) return
+
+        observablePlacePlan.value = placePlan.apply { status = UiModel.Status.LOADING }
+
+        interactor.loadPlacePlan { it ->
+            isPlacePlanLoaded = true
+
+            when (it) {
+                is AsyncSuccessResult -> {
+                    if (!interactor.event.itemInfo.placePollStatus && isUserAnOwner) {
+                        refreshAndSelectPlacePoll()
+                    }
+                    else {
+                        refreshPlacePolls(it.result)
+                    }
+                }
+                is AsyncErrorResult -> {
+                    observablePlacePlan.value = placePlan.apply { status = UiModel.Status.ERROR }
+
+                    handleError(it.error)
+                }
+            }
+        }
+    }
+
+    private fun refreshAndSelectPlacePoll() {
+
+    }
+
+    private fun refreshPlacePolls(result: List<EventPlacePollUiModel>) {
 
     }
 
     fun togglePlacePoll(position: Int) {
+
+    }
+
+    fun togglePlacePollStatus() {
+
+    }
+
+    fun setPlaceFromPoll() {
 
     }
 
@@ -528,6 +576,8 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableDateVoteStatusButton(): LiveData<ButtonUiModel> = observableDateVoteStatusButton
 
     fun getObservableDateSelectButton(): LiveData<ButtonUiModel> = observableDateSelectButton
+
+    fun getObservablePlacePlan(): LiveData<EventPlacePlanUiModel> = observablePlacePlan
 
     //endregion
 }
