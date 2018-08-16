@@ -91,5 +91,36 @@ class PlanEventPlaceFragment : BaseFragment() {
                 }
             }
         })
+
+        viewModel.getObservablePlacePlan().observe(this@PlanEventPlaceFragment, Observer {
+            it?.let {
+                when (it.status) {
+                    UiModel.Status.LOADING -> {
+                        event_plan_place_vote_progressbar.show()
+                    }
+                    UiModel.Status.SUCCESS -> {
+                        if (it.itemsChangedIndices.isNullOrEmpty()) {
+                            event_plan_place_vote_progressbar.hide()
+                            event_plan_place_poll_recyclerview.adapter.notifyDataSetChanged()
+                        }
+                        else {
+                            for (index in it.itemsChangedIndices!!) {
+                                event_plan_place_poll_recyclerview.adapter.notifyItemChanged(index)
+                            }
+                        }
+                    }
+                    else -> {
+                        event_plan_place_vote_progressbar.hide()
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * Called when fragment is visible
+     */
+    fun onVisible() {
+        viewModel.loadPlacePolls()
     }
 }

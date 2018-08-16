@@ -95,11 +95,12 @@ abstract class BaseViewModel : ViewModel() {
     /**
      * Generic error handling from a response
      */
-    fun handleError(throwable: Throwable) {
+    fun handleError(throwable: Throwable, showAsToast: Boolean = false) {
         AppLogger.e(throwable)
         observableViewAction.execute(arrayOf(
                 Loading(false),
-                Snackbar(AndroidString(R.string.error_generic), level = MessageLevel.ERROR)
+                if (showAsToast) Toast(AndroidString(R.string.error_generic))
+                else Snackbar(AndroidString(R.string.error_generic), level = MessageLevel.ERROR)
         ))
     }
 

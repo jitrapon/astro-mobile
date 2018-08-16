@@ -19,7 +19,7 @@ import java.util.*
 /**
  * Screen that shows date polls of the event plan
  *
- * @author Jitrapon Tiachunpun
+ * @author Jitrapon Tiachunpun - Nad
  */
 class PlanEventDateFragment : BaseFragment() {
 

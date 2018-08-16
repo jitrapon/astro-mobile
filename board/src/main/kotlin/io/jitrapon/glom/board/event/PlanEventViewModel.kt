@@ -232,17 +232,17 @@ class PlanEventViewModel : BaseViewModel() {
             status = UiModel.Status.SUCCESS
             datePolls.apply {
                 clear()
-                result.forEach { add(it.toUiModel()) }
+                val event = interactor.event
+                result.forEach { add(it.toUiModel(event)) }
             }
         }
     }
 
-    private fun EventDatePoll.toUiModel(status: UiModel.Status? = null): EventDatePollUiModel {
+    private fun EventDatePoll.toUiModel(event: EventItem, status: UiModel.Status? = null): EventDatePollUiModel {
         // not owner: see own upvote, date poll status: true || false
         // owner: see own upvote only date poll status == true, false otherwise
         val (dateString, timeString) = getPollDateTime(startTime, endTime)
         return if (status == null) {
-            val event = interactor.event
             val isDatePollOpened = event.itemInfo.datePollStatus
             val isOwner = event.owners.contains(interactor.getCurrentUserId())
             val isUpvoted = users.contains(interactor.getCurrentUserId())
@@ -447,8 +447,9 @@ class PlanEventViewModel : BaseViewModel() {
             status = UiModel.Status.SUCCESS
             datePolls.apply {
                 clear()
+                val event = interactor.event
                 for (i in 0 until polls.size) {
-                    add(polls[i].toUiModel(if (maxIndex != null && maxIndex == i) UiModel.Status.SUCCESS else null))     // success status means selected
+                    add(polls[i].toUiModel(event, if (maxIndex != null && maxIndex == i) UiModel.Status.SUCCESS else null))     // success status means selected
                 }
             }
         }
@@ -528,11 +529,53 @@ class PlanEventViewModel : BaseViewModel() {
         }
     }
 
-    private fun refreshAndSelectPlacePoll() {
+    private fun refreshPlacePolls(result: List<EventPlacePoll>) {
+        val requestPlaceInfoItemIds = ArrayList<String>()
+        observablePlacePlan.value = placePlan.apply {
+            itemsChangedIndices = null
+            status = UiModel.Status.SUCCESS
+            placePolls.apply {
+                clear()
+                val event = interactor.event
+                result.forEach {
+                    add(it.toUiModel(event))
 
+                    // add list of item IDs that contain a place ID
+                    it.location.googlePlaceId?.let { _ ->
+                        requestPlaceInfoItemIds.add(it.id)
+                    }
+                }
+            }
+        }
+
+        // fetch place info from added IDs
+        if (requestPlaceInfoItemIds.isNotEmpty()) {
+
+        }
     }
 
-    private fun refreshPlacePolls(result: List<EventPlacePollUiModel>) {
+    private fun EventPlacePoll.toUiModel(event: EventItem, status: UiModel.Status? = null): EventPlacePollUiModel {
+        val uiStatus: UiModel.Status = if (status == null) {
+            val isPlacePollOpened = event.itemInfo.placePollStatus
+            val isOwner = event.owners.contains(interactor.getCurrentUserId())
+            val isUpvoted = users.contains(interactor.getCurrentUserId())
+            val showUpvoted = if (!isUpvoted) false else !isOwner || (isOwner && isPlacePollOpened)
+            if (showUpvoted) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE
+        }
+        else status
+        return EventPlacePollUiModel(id,
+                if (location.googlePlaceId != null) AndroidString(R.string.event_card_location_placeholder) else
+                    AndroidString(text = location.name),
+                if (location.googlePlaceId != null) null else AndroidString(text = "${location.latitude}, ${location.longitude}"),
+                if (location.googlePlaceId != null) null else AndroidString(text = location.description),
+                if (location.googlePlaceId != null) null else avatar,
+                users.size,
+                if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
+                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),
+                uiStatus)
+    }
+
+    private fun refreshAndSelectPlacePoll() {
 
     }
 

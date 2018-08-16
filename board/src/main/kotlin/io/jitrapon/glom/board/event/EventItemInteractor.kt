@@ -391,6 +391,22 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     //endregion
+    //region place polls
+
+    fun loadPlacePlan(onComplete: (AsyncResult<List<EventPlacePoll>>) -> Unit) {
+        eventItemDataSource.getPlacePolls(event, true)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }, {
+                    //nothing yet
+                })
+    }
+
+    //endregion
     //region autocomplete
     
     companion object {

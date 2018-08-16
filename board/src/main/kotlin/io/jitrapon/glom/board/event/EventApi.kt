@@ -38,4 +38,8 @@ interface EventApi {
     fun setDate(@Path("circleId") circleId: String,
                           @Path("itemId") itemId: String,
                           @Body request: UpdateDateRequest): Flowable<PatchEventResponse>
+
+    @GET("/circle/{circleId}/board/{itemId}/place_polls")
+    fun getPlacePolls(@Path("circleId") circleId: String,
+                      @Path("itemId") itemId: String): Flowable<GetPlacePollResponse>
 }

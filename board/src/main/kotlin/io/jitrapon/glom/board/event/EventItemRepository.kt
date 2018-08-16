@@ -73,4 +73,15 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 remoteDataSource.setDate(item, startDate, endDate),
                 false)
     }
+
+    override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {
+        return loadTypedList(refresh,
+                localDataSource.getPlacePolls(item),
+                remoteDataSource.getPlacePolls(item),
+                localDataSource::savePlacePolls)
+    }
+
+    override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
+        throw NotImplementedError()
+    }
 }

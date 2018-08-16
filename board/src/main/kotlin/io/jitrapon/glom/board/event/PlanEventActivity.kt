@@ -84,6 +84,7 @@ class PlanEventActivity : BaseActivity() {
                     PlanEventDateFragment.newInstance(firstVisiblePageIndex == 1),
                     PlanEventPlaceFragment.newInstance(firstVisiblePageIndex == 2)))
             doOnFragmentSelected<PlanEventDateFragment>(supportFragmentManager) { it.onVisible() }
+            doOnFragmentSelected<PlanEventPlaceFragment>(supportFragmentManager) { it.onVisible() }
             setCurrentItem(firstVisiblePageIndex, false)
         }
     }

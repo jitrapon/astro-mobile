@@ -96,11 +96,23 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
         return api.setDate(circleInteractor.getActiveCircleId(), item.itemId, UpdateDateRequest(startDate?.time, endDate?.time))
                 .flatMapCompletable {
                     Completable.fromCallable {
-//                        if (it.startTime != startDate?.time || it.endTime != endDate?.time) {
-//                            throw Exception("Response received does not match expected, received ${it.startTime} - ${it.endTime}, " +
-//                                    "expected ${startDate?.time} - ${endDate?.time}")
-//                        }
+                        if (it.startTime != startDate?.time || it.endTime != endDate?.time) {
+                            throw Exception("Response received does not match expected, received ${it.startTime} - ${it.endTime}, " +
+                                    "expected ${startDate?.time} - ${endDate?.time}")
+                        }
                     }
                 }
+    }
+
+    override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {
+        return api.getPlacePolls(circleInteractor.getActiveCircleId(), item.itemId).map {
+                    it.places.map { EventPlacePoll(it.pollId, it.users.toMutableList(), it.avatar, it.isAiSuggested, EventLocation(
+                            it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description)
+                    )}
+                }
+    }
+
+    override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
+        throw NotImplementedError()
     }
 }

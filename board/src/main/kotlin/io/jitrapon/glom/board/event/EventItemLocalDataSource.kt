@@ -12,6 +12,8 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
 
     private var inMemoryDatePolls: MutableList<EventDatePoll> = ArrayList()
 
+    private var inMemoryPlacePolls: MutableList<EventPlacePoll> = ArrayList()
+
     /* DAO access object to event items */
     private val eventDao: EventItemDao = database.eventItemDao()
 
@@ -45,9 +47,9 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
                 eventDao.deleteAttendee(EventAttendeeEntity(item.itemId, userId))
             }
         }.doOnComplete {
-            userInteractor.getCurrentUserId()?.let {
+            userInteractor.getCurrentUserId()?.let { currentUserId ->
                 item.itemInfo.attendees.removeAll {
-                    it.equals(it, true)
+                    it.equals(currentUserId, true)
                 }
             }
         }
@@ -96,5 +98,14 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
                 endTime = endDate?.time
             }
         }
+    }
+
+    override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {
+        return Flowable.just(inMemoryPlacePolls)
+    }
+
+    override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
+        inMemoryPlacePolls = polls.toMutableList()
+        return Flowable.just(inMemoryPlacePolls)
     }
 }

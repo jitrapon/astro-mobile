@@ -73,5 +73,15 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
 
     inner class EventPlacePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
 
+        val title: TextView = itemView.findViewById(R.id.event_plan_place_poll_name)
+        val subtitle: TextView = itemView.findViewById(R.id.event_plan_place_poll_subtitle)
+        val selectIcon: ImageView = itemView.findViewById(R.id.event_plan_place_poll_thumb_up)
+        val count: TextView = itemView.findViewById(R.id.event_plan_place_poll_count)
+
+        init {
+            itemView.setOnClickListener {
+                onItemClicked(adapterPosition)
+            }
+        }
     }
 }
