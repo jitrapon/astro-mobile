@@ -18,7 +18,10 @@ fun BoardItemResponse.deserialize(): EventItem {
                             EventLocation(it["lat"].asNullableDouble(),
                                     it["long"].asNullableDouble(),
                                     it["g_place_id"] as? String?,
-                                    it["place_id"] as? String?
+                                    it["place_id"] as? String?,
+                                    it["name"] as? String?,
+                                    it["description"] as? String?,
+                                    it["address"] as? String?
                             )
                         },
                         it["note"] as? String?,
@@ -51,6 +54,10 @@ fun EventItem.serializeInfo(): MutableMap<String, Any?> {
                     put("long", it.longitude)
                     put("g_place_id", it.googlePlaceId)
                     put("place_id", it.placeId)
+                    // we don't send name, description, and address because a custom place must have been created before this
+//                    put("name", it.name)
+//                    put("description", it.description)
+//                    put("address", it.address)
                 }
             })
             put("note", it.note)
@@ -80,7 +87,7 @@ fun List<EventItemFullEntity>.toBoard(circleId: String, userId: String?): Board 
                 updatedTime = it.updatedTime
             }
             val location: EventLocation? = if (it.latitude == null && it.longitude == null && it.googlePlaceId == null && it.placeId == null && it.placeName == null) null
-            else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName)
+            else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
             items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
                     EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
                             it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList())))
@@ -94,7 +101,7 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
         entity = EventItemEntity(
                 itemId, updatedTimeMs, itemInfo.eventName, itemInfo.startTime, itemInfo.endTime, itemInfo.location?.googlePlaceId,
                 itemInfo.location?.placeId, itemInfo.location?.latitude, itemInfo.location?.longitude,
-                itemInfo.location?.name, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
+                itemInfo.location?.name, itemInfo.location?.description, itemInfo.location?.address, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
                 itemInfo.placePollStatus, owners.contains(userId), circleId)
         attendees = itemInfo.attendees
     }

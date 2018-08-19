@@ -5,8 +5,8 @@ import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.UiModel
 
 data class EventPlacePollUiModel(val id: String,
-                                 var title: AndroidString,
-                                 var subtitle: AndroidString?,
+                                 var name: AndroidString?,
+                                 var address: AndroidString?,
                                  var description: AndroidString?,
                                  var avatar: String?,
                                  var count: Int,

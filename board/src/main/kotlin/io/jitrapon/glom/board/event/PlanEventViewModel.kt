@@ -530,7 +530,6 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     private fun refreshPlacePolls(result: List<EventPlacePoll>) {
-        val requestPlaceInfoItemIds = ArrayList<String>()
         observablePlacePlan.value = placePlan.apply {
             itemsChangedIndices = null
             status = UiModel.Status.SUCCESS
@@ -539,18 +538,39 @@ class PlanEventViewModel : BaseViewModel() {
                 val event = interactor.event
                 result.forEach {
                     add(it.toUiModel(event))
-
-                    // add list of item IDs that contain a place ID
-                    it.location.googlePlaceId?.let { _ ->
-                        requestPlaceInfoItemIds.add(it.id)
-                    }
                 }
             }
         }
 
         // fetch place info from added IDs
-        if (requestPlaceInfoItemIds.isNotEmpty()) {
+        loadPlaceInfo()
+    }
 
+    private fun loadPlaceInfo() {
+        interactor.loadPollPlaceInfo {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    if (!it.result.isEmpty) {
+                        observablePlacePlan.value = placePlan.apply {
+                            itemsChangedIndices = ArrayList()
+                            for (i in placePolls.indices) {
+                                val poll = placePolls[i]
+                                it.result[poll.id]?.let {
+                                    itemsChangedIndices?.add(i)
+
+                                    poll.name = AndroidString(text = it.name)
+                                    poll.address = AndroidString(text = it.address)
+                                    poll.description = null
+                                    poll.avatar = null
+                                }
+                            }
+                        }
+                    }
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
+                }
+            }
         }
     }
 
@@ -564,9 +584,8 @@ class PlanEventViewModel : BaseViewModel() {
         }
         else status
         return EventPlacePollUiModel(id,
-                if (location.googlePlaceId != null) AndroidString(R.string.event_card_location_placeholder) else
-                    AndroidString(text = location.name),
-                if (location.googlePlaceId != null) null else AndroidString(text = "${location.latitude}, ${location.longitude}"),
+                if (location.googlePlaceId != null) null else AndroidString(text = location.name),
+                if (location.googlePlaceId != null) null else AndroidString(text = location.address),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.description),
                 if (location.googlePlaceId != null) null else avatar,
                 users.size,
@@ -574,6 +593,10 @@ class PlanEventViewModel : BaseViewModel() {
                     ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),
                 uiStatus)
     }
+
+    fun getPlacePollItem(position: Int) = placePlan.placePolls[position]
+
+    fun getPlacePollCount(): Int = placePlan.placePolls.size
 
     private fun refreshAndSelectPlacePoll() {
 
@@ -588,6 +611,10 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     fun setPlaceFromPoll() {
+
+    }
+
+    fun viewPlaceDetails(position: Int) {
 
     }
 

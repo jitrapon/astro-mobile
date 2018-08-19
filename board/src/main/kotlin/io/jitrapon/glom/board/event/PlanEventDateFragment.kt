@@ -31,6 +31,8 @@ class PlanEventDateFragment : BaseFragment() {
 
     companion object {
 
+        const val DELAY_FIRST_LOAD = 200L
+
         @JvmStatic
         fun newInstance(isFirstVisible: Boolean): PlanEventDateFragment {
             return PlanEventDateFragment().apply {
@@ -74,9 +76,11 @@ class PlanEventDateFragment : BaseFragment() {
         }
 
         // if this is the first page the user sees, load the date plan immediately
-        arguments?.let {
-            if (it.getBoolean("isFirstVisible", false)) {
-                viewModel.loadDatePolls()
+        delayRun(DELAY_FIRST_LOAD) {
+            arguments?.let {
+                if (it.getBoolean("isFirstVisible", false)) {
+                    viewModel.loadDatePolls()
+                }
             }
         }
     }
@@ -201,7 +205,9 @@ class PlanEventDateFragment : BaseFragment() {
      * Called when fragment is visible
      */
     fun onVisible() {
-        viewModel.loadDatePolls()
+        delayRun(DELAY_FIRST_LOAD) {
+            viewModel.loadDatePolls()
+        }
     }
 
     //endregion

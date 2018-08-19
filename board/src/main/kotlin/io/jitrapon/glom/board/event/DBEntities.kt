@@ -26,6 +26,10 @@ data class EventItemEntity(
         val longitude: Double?,
         @ColumnInfo(name = "place_name")
         val placeName: String?,
+        @ColumnInfo(name = "place_description")
+        val placeDescription: String?,
+        @ColumnInfo(name = "place_address")
+        val placeAddress: String?,
         @ColumnInfo(name = "note")
         val note: String?,
         @ColumnInfo(name = "time_zone")

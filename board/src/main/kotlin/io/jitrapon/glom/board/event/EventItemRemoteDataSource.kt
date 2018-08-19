@@ -107,7 +107,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
     override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {
         return api.getPlacePolls(circleInteractor.getActiveCircleId(), item.itemId).map {
                     it.places.map { EventPlacePoll(it.pollId, it.users.toMutableList(), it.avatar, it.isAiSuggested, EventLocation(
-                            it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description)
+                            it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description, it.address)
                     )}
                 }
     }

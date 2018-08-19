@@ -14,6 +14,7 @@ data class GetPlacePollResponse(@field: Json(name = "places") val places: List<E
 data class EventPlacePollResponse(@field: Json(name = "poll_id") val pollId: String,
                                   @field: Json(name = "name") val name: String?,
                                   @field: Json(name = "description") val description: String?,
+                                  @field: Json(name = "address") val address: String?,
                                   @field: Json(name = "avatar") val avatar: String?,
                                   @field: Json(name = "latitude") val latitude: Double?,
                                   @field: Json(name = "longitude") val longitude: Double?,

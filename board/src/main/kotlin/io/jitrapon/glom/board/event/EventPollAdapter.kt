@@ -1,16 +1,14 @@
 package io.jitrapon.glom.board.event
 
 import android.support.v7.widget.RecyclerView
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.util.color
-import io.jitrapon.glom.base.util.colorPrimary
-import io.jitrapon.glom.base.util.getString
-import io.jitrapon.glom.base.util.tint
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 
 class EventPollAdapter(private val viewModel: PlanEventViewModel, private val isDatePoll: Boolean) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -30,12 +28,12 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
             TYPE_DATE_POLL -> EventDatePollViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.plan_event_date_poll, parent, false), viewModel::toggleDatePoll)
             TYPE_PLACE_POLL -> EventPlacePollViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.plan_event_place_poll, parent, false), viewModel::togglePlacePoll)
+                    .inflate(R.layout.plan_event_place_poll, parent, false), viewModel::togglePlacePoll, viewModel::viewPlaceDetails)
             else -> { null!! }
         }
     }
 
-    override fun getItemCount(): Int = viewModel.getDatePollCount()
+    override fun getItemCount(): Int = if (isDatePoll) viewModel.getDatePollCount() else viewModel.getPlacePollCount()
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is EventDatePollViewHolder) {
@@ -44,7 +42,36 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                     text = context.getString(it.date)
                 }
                 holder.time.apply {
-                    text = context.getString(it.time)
+                    val time = context.getString(it.time)
+                    if (TextUtils.isEmpty(time)) {
+                        hide()
+                    }
+                    else {
+                        text = time
+                    }
+                }
+                holder.selectIcon.tint(
+                        when (it.status) {
+                            UiModel.Status.POSITIVE -> holder.selectIcon.context.colorPrimary()
+                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(R.color.calm_blue)
+                            else -> holder.selectIcon.context.color(R.color.warm_grey)
+                        })
+                holder.count.text = it.count.toString()
+            }
+        }
+        else if (holder is EventPlacePollViewHolder) {
+            viewModel.getPlacePollItem(position).let {
+                holder.title.apply {
+                    text = context.getString(it.name)
+                }
+                holder.subtitle.apply {
+                    val subtitle = context.getString(it.address)
+                    if (TextUtils.isEmpty(subtitle)) {
+                        hide()
+                    }
+                    else {
+                        text = subtitle
+                    }
                 }
                 holder.selectIcon.tint(
                         when (it.status) {
@@ -71,16 +98,20 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
         }
     }
 
-    inner class EventPlacePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
+    inner class EventPlacePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit, onItemInfoClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
 
         val title: TextView = itemView.findViewById(R.id.event_plan_place_poll_name)
         val subtitle: TextView = itemView.findViewById(R.id.event_plan_place_poll_subtitle)
         val selectIcon: ImageView = itemView.findViewById(R.id.event_plan_place_poll_thumb_up)
         val count: TextView = itemView.findViewById(R.id.event_plan_place_poll_count)
+        val info: ImageView = itemView.findViewById(R.id.event_plan_place_info_button)
 
         init {
             itemView.setOnClickListener {
                 onItemClicked(adapterPosition)
+            }
+            info.setOnClickListener {
+                onItemInfoClicked(adapterPosition)
             }
         }
     }

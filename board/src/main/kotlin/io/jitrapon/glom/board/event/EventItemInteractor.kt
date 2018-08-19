@@ -1,8 +1,10 @@
 package io.jitrapon.glom.board.event
 
+import android.support.v4.util.ArrayMap
 import android.text.TextUtils
 import android.util.SparseArray
 import androidx.util.set
+import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -53,6 +55,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     /* in-memory event date polls */
     val datePolls: List<EventDatePoll>
         get() = eventItemDataSource.getDatePolls(event, false).blockingFirst()
+
+    /* in-memory event place polls */
+    val placePolls: List<EventPlacePoll>
+        get() = eventItemDataSource.getPlacePolls(event, false).blockingFirst()
 
     //region initializers
 
@@ -404,6 +410,44 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 }, {
                     //nothing yet
                 })
+    }
+
+    fun loadPollPlaceInfo(onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
+        if (placeProvider == null) {
+            onComplete(AsyncErrorResult(Exception("Place provider implementation is NULL")))
+            return
+        }
+        val pollIds = ArrayList<String>()   // list to store poll IDs that have Google Place IDs
+
+        placeProvider?.let { placeProvider ->
+            Single.fromCallable {
+                placePolls.filter {
+                    val hasPlaceId = it.location.googlePlaceId != null
+                    pollIds.add(it.id)
+                    hasPlaceId
+                }.map {
+                    it.location.googlePlaceId!!
+                }.toTypedArray()
+            }.flatMap {
+                placeProvider.getPlaces(it)
+            }.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ result ->
+                        if (pollIds.size == result.size) {
+                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                                for (i in result.indices) {
+                                    put(pollIds[i], result[i])
+                                }
+                            }))
+                        }
+                        else {
+                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                                    " returned places array size (${result.size}) does not match requested item array size (${pollIds.size})")))
+                        }
+                    }, {
+                        onComplete(AsyncErrorResult(it))
+                    })
+        }
     }
 
     //endregion

@@ -183,7 +183,7 @@ abstract class BaseFragment : Fragment() {
     /**
      * Wrapper around Android's handler to delay run a Runnable on the main thread
      */
-    fun delayRun(delay: Long, block: (Handler) -> Unit) {
+    inline fun delayRun(delay: Long, crossinline block: (Handler) -> Unit) {
         handler.postDelayed({
             block(handler)
         }, delay)
