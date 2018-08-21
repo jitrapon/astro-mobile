@@ -44,11 +44,11 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         if (context == null && activity == null) throw IllegalArgumentException("Context and Activity must not be null")
         if (context != null) {
             isInstantApp = InstantApps.isInstantApp(context)
-            Places.getGeoDataClient(context, null)
+            Places.getGeoDataClient(context)
         }
         else {
             isInstantApp = InstantApps.isInstantApp(activity!!)
-            Places.getGeoDataClient(activity, null)
+            Places.getGeoDataClient(activity)
         }
     }
 
