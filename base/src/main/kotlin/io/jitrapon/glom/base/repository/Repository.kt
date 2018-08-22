@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.repository
 import io.jitrapon.glom.base.model.DataModel
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import io.reactivex.schedulers.Schedulers
 
 /**
  * Base class for all repositories. A repository maps one-to-one to a model class implementing
@@ -14,9 +15,12 @@ import io.reactivex.Flowable
  */
 abstract class Repository<T> where T : DataModel {
 
+    /**
+     * To both tasks work in parallel subscribeOn should be called on each of the completables that would be merged.
+     */
     fun create(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
         return if (parallel) {
-            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
+            Completable.mergeArray(localDataSourceCompletable.subscribeOn(Schedulers.io()), remoteDataSourceCompletable.subscribeOn(Schedulers.io()))
         }
         else {
             remoteDataSourceCompletable.andThen(localDataSourceCompletable)
@@ -64,7 +68,7 @@ abstract class Repository<T> where T : DataModel {
 
     fun update(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
         return if (parallel) {
-            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
+            Completable.mergeArray(localDataSourceCompletable.subscribeOn(Schedulers.io()), remoteDataSourceCompletable.subscribeOn(Schedulers.io()))
         }
         else {
             remoteDataSourceCompletable.andThen(localDataSourceCompletable)
@@ -73,7 +77,7 @@ abstract class Repository<T> where T : DataModel {
 
     fun delete(localDataSourceCompletable: Completable, remoteDataSourceCompletable: Completable, parallel: Boolean = true): Completable {
         return if (parallel) {
-            Completable.mergeArray(localDataSourceCompletable, remoteDataSourceCompletable)
+            Completable.mergeArray(localDataSourceCompletable.subscribeOn(Schedulers.io()), remoteDataSourceCompletable.subscribeOn(Schedulers.io()))
         }
         else {
             remoteDataSourceCompletable.andThen(localDataSourceCompletable)

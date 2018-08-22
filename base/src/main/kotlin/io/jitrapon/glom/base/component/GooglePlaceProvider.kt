@@ -86,8 +86,7 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                             val places = it.result
                             if (it.isSuccessful) {
                                 val result = ArrayList<Place>()
-                                places
-                                        .filter { it.isDataValid }
+                                places.filter { it.isDataValid }
                                         .forEach { result.add(it.freeze()) }
                                 places.release()
                                 single.onSuccess(result.toTypedArray())
@@ -107,6 +106,10 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                 }
             }
         }
+    }
+
+    override fun getPlacePhotos(placeId: String): Single<String> {
+        TODO()
     }
 
     override fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>> {

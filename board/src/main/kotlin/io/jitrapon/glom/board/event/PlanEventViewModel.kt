@@ -555,11 +555,11 @@ class PlanEventViewModel : BaseViewModel() {
                             itemsChangedIndices = ArrayList()
                             for (i in placePolls.indices) {
                                 val poll = placePolls[i]
-                                it.result[poll.id]?.let {
+                                it.result[poll.id]?.let { place ->
                                     itemsChangedIndices?.add(i)
 
-                                    poll.name = AndroidString(text = it.name)
-                                    poll.address = AndroidString(text = it.address)
+                                    poll.name = AndroidString(text = place.name)
+                                    poll.address = AndroidString(text = place.address)
                                     poll.description = null
                                     poll.avatar = null
                                 }

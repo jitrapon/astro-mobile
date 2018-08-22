@@ -15,5 +15,7 @@ interface PlaceProvider : LifecycleObserver {
 
     fun getPlaces(placeIds: Array<String>): Single<Array<Place>>
 
+    fun getPlacePhotos(placeId: String): Single<String>
+
     fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>>
 }

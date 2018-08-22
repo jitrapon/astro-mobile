@@ -29,7 +29,7 @@ class CircleRemoteDataSource : RemoteDataSource(), CircleDataSource {
     private fun List<PlaceInfoResponse>.deserialize(): MutableList<PlaceInfo> {
         return ArrayList<PlaceInfo>().apply {
             this@deserialize.map {
-                add(PlaceInfo(it.name, it.description, it.avatar, it.lat, it.long, it.googlePlaceId, it.placeId, it.status))
+                add(PlaceInfo(it.name, it.description, null, it.avatar, it.lat, it.long, it.googlePlaceId, it.placeId, it.status))
             }
         }
     }

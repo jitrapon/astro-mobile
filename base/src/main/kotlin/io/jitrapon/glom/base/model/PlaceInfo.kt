@@ -9,6 +9,7 @@ import java.util.*
  */
 data class PlaceInfo(var name: String? = null,
                      var description: String? = null,
+                     var address: String? = null,
                      var avatar: String? = null,
                      var latitude: Double? = null,
                      var longitude: Double? = null,
@@ -19,6 +20,7 @@ data class PlaceInfo(var name: String? = null,
                      override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(
+            parcel.readString(),
             parcel.readString(),
             parcel.readString(),
             parcel.readString(),
@@ -36,6 +38,7 @@ data class PlaceInfo(var name: String? = null,
         parcel.writeString(name)
         parcel.writeString(description)
         parcel.writeString(avatar)
+        parcel.writeString(address)
         parcel.writeValue(latitude)
         parcel.writeValue(longitude)
         parcel.writeString(googlePlaceId)

@@ -19,15 +19,17 @@
             style="@style/TextAppearance.H3"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Peking Restaurant"
+            android:text="Peking Restaurant Hello kaasfd saf asfa"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@+id/event_plan_place_poll_thumb_up"
+            app:layout_constraintEnd_toStartOf="@+id/event_plan_place_info_button"
             app:layout_constraintBottom_toTopOf="@+id/event_plan_place_poll_subtitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginStart="18dp"
             app:layout_constraintVertical_bias="0.5"
-            app:layout_constraintVertical_chainStyle="packed" />
+            app:layout_constraintVertical_chainStyle="packed"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/event_plan_place_poll_subtitle"
@@ -35,12 +37,14 @@
             android:textSize="12sp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="26 Soi 8, Pattanakarn 56"
+            android:text="26 Soi 8, Pattanakarn 56, Bangkok, 10250"
             android:textStyle="normal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/event_plan_place_poll_name"
             app:layout_constraintStart_toStartOf="@+id/event_plan_place_poll_name"
-            app:layout_constraintTop_toBottomOf="@+id/event_plan_place_poll_name" />
+            app:layout_constraintTop_toBottomOf="@+id/event_plan_place_poll_name"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <ImageView
             android:id="@+id/event_plan_place_info_button"
@@ -62,7 +66,7 @@
             app:srcCompat="@drawable/ic_thumb_up"
             app:layout_constraintStart_toEndOf="@+id/event_plan_place_poll_name"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="48dp"
+            android:layout_marginEnd="0dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:tint="@color/warm_grey" />
@@ -72,8 +76,6 @@
             style="@style/TextAppearance.H3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
             android:text="200"
             android:maxLength="5"
             app:layout_constraintBottom_toBottomOf="parent"

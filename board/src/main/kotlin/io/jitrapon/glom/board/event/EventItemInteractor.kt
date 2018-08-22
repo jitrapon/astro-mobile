@@ -423,7 +423,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             Single.fromCallable {
                 placePolls.filter {
                     val hasPlaceId = it.location.googlePlaceId != null
-                    pollIds.add(it.id)
+                    if (hasPlaceId) pollIds.add(it.id)
                     hasPlaceId
                 }.map {
                     it.location.googlePlaceId!!
@@ -627,7 +627,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             if (!showAllCustomPlaces) {
                 placeProvider?.getAutocompletePrediction(query)?.blockingGet()?.let {
                     it.map {
-                        Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(),
+                        Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(), null,
                                 null, null, null, it.placeId, "g_place_id"))
                     }.let { addAll(it) }
                 }
