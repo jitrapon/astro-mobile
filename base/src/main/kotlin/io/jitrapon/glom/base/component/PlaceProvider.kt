@@ -1,8 +1,10 @@
 package io.jitrapon.glom.base.component
 
 import android.arch.lifecycle.LifecycleObserver
+import android.graphics.Bitmap
 import com.google.android.gms.location.places.AutocompletePrediction
 import com.google.android.gms.location.places.Place
+import io.reactivex.Maybe
 import io.reactivex.Single
 
 /**
@@ -13,9 +15,18 @@ import io.reactivex.Single
  */
 interface PlaceProvider : LifecycleObserver {
 
+    /**
+     * Given an array of place IDs, return an array of place details
+     */
     fun getPlaces(placeIds: Array<String>): Single<Array<Place>>
 
-    fun getPlacePhotos(placeId: String): Single<String>
+    /**
+     * Given a place ID, return the first image of a place
+     */
+    fun getPlacePhoto(placeId: String): Maybe<Bitmap>
 
+    /**
+     * Given a query, return an array auto-complete prediction objects
+     */
     fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>>
 }

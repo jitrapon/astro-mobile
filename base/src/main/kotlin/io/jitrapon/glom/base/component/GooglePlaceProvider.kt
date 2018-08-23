@@ -4,11 +4,13 @@ import android.app.Activity
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Context
+import android.graphics.Bitmap
 import android.text.TextUtils
 import com.google.android.gms.location.places.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.instantapps.InstantApps
+import io.reactivex.Maybe
 import io.reactivex.Single
 
 /**
@@ -108,8 +110,36 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         }
     }
 
-    override fun getPlacePhotos(placeId: String): Single<String> {
-        TODO()
+    override fun getPlacePhoto(placeId: String): Maybe<Bitmap> {
+        return Maybe.create { maybe ->
+            if (isInstantApp || placeId.isEmpty()) {
+                maybe.onComplete()
+            }
+            else {
+                client.getPlacePhotos(placeId).let {
+                    it.addOnCompleteListener {
+                        val photosMetadata = it.result.photoMetadata
+                        if (photosMetadata.count == 0) {
+                            maybe.onComplete()
+                        }
+                        else {
+                            val meta = photosMetadata[0]
+                            client.getPhoto(meta).let {
+                                it.addOnCompleteListener {
+                                    maybe.onSuccess(it.result.bitmap)
+                                }
+                                it.addOnFailureListener {
+                                    maybe.onError(it)
+                                }
+                            }
+                        }
+                    }
+                    it.addOnFailureListener {
+                        maybe.onError(it)
+                    }
+                }
+            }
+        }
     }
 
     override fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>> {

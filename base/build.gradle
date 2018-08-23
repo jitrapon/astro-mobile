@@ -128,7 +128,7 @@ dependencies {
     api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroidVersion"
 
     // google play services
-    api "com.google.android.gms:play-services-places:$rootProject.playServicesVersion"
+    api "com.google.android.gms:play-services-places:$rootProject.playServicesPlaceVersion"
 
     // networking
     api ("com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion") {

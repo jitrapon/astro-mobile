@@ -70,6 +70,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                         hide()
                     }
                     else {
+                        show()
                         text = subtitle
                     }
                 }
