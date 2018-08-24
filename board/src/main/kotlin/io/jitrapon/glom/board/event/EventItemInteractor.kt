@@ -5,6 +5,7 @@ import android.text.TextUtils
 import android.util.SparseArray
 import androidx.util.set
 import com.google.android.gms.location.places.Place
+import com.google.android.gms.location.places.PlacePhotoResponse
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -412,40 +413,46 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
-    fun loadPollPlaceInfo(onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
+    fun loadPollPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>,
+                          onLoadPlaceDetailsComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit,
+                          onLoadPlacePhotosComplete: (AsyncResult<PlacePhotoResponse?>) -> Unit) {
         if (placeProvider == null) {
-            onComplete(AsyncErrorResult(Exception("Place provider implementation is NULL")))
+            onLoadPlaceDetailsComplete(AsyncErrorResult(Exception("Place provider implementation is NULL")))
             return
         }
-        val pollIds = ArrayList<String>()   // list to store poll IDs that have Google Place IDs
+        val placeIds = pollPlaceIdMap.map { it.value }.toTypedArray()
 
         placeProvider?.let { placeProvider ->
-            Single.fromCallable {
-                placePolls.filter {
-                    val hasPlaceId = it.location.googlePlaceId != null
-                    if (hasPlaceId) pollIds.add(it.id)
-                    hasPlaceId
-                }.map {
-                    it.location.googlePlaceId!!
-                }.toTypedArray()
-            }.flatMap {
-                placeProvider.getPlaces(it)
-            }.subscribeOn(Schedulers.io())
+            // load place details from place IDs
+            placeProvider.getPlaces(placeIds)
+                    .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ result ->
-                        if (pollIds.size == result.size) {
-                            onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                        if (pollPlaceIdMap.size == result.size) {
+                            onLoadPlaceDetailsComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
                                 for (i in result.indices) {
-                                    put(pollIds[i], result[i])
+                                    put(pollPlaceIdMap.keyAt(i), result[i])
                                 }
                             }))
                         }
                         else {
-                            onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                    " returned places array size (${result.size}) does not match requested item array size (${pollIds.size})")))
+                            onLoadPlaceDetailsComplete(AsyncErrorResult(Exception("Failed to process result because" +
+                                    " returned places array size (${result.size}) does not match requested item array size (${pollPlaceIdMap.size})")))
                         }
                     }, {
-                        onComplete(AsyncErrorResult(it))
+                        onLoadPlaceDetailsComplete(AsyncErrorResult(it))
+                    })
+
+            // load place photos from place IDs
+            placeProvider.getPlacePhoto(placeIds[0])
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ result ->
+                        onLoadPlacePhotosComplete(AsyncSuccessResult(result))
+                    }, {
+                        onLoadPlacePhotosComplete(AsyncErrorResult(it))
+                    }, {
+                        onLoadPlacePhotosComplete(AsyncSuccessResult(null))
                     })
         }
     }

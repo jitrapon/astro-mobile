@@ -4,7 +4,6 @@ import android.app.Activity
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Context
-import android.graphics.Bitmap
 import android.text.TextUtils
 import com.google.android.gms.location.places.*
 import com.google.android.gms.maps.model.LatLng
@@ -110,7 +109,7 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
         }
     }
 
-    override fun getPlacePhoto(placeId: String): Maybe<Bitmap> {
+    override fun getPlacePhoto(placeId: String): Maybe<PlacePhotoResponse> {
         return Maybe.create { maybe ->
             if (isInstantApp || placeId.isEmpty()) {
                 maybe.onComplete()
@@ -126,7 +125,7 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                             val meta = photosMetadata[0]
                             client.getPhoto(meta).let {
                                 it.addOnCompleteListener {
-                                    maybe.onSuccess(it.result.bitmap)
+                                    maybe.onSuccess(it.result)
                                 }
                                 it.addOnFailureListener {
                                     maybe.onError(it)

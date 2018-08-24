@@ -21,13 +21,12 @@
         android:lines="2"
         android:ellipsize="end" />
 
-    <Space
+    <ImageView
         android:id="@+id/event_plan_place_scrollview"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintHeight_default="percent"
         app:layout_constraintHeight_percent="0.4"
-        android:background="@color/white"
         android:layout_marginTop="@dimen/event_plan_instruction_vertical_margin"
         app:layout_constraintTop_toBottomOf="@+id/event_plan_place_instruction"
         app:layout_constraintStart_toStartOf="parent"

@@ -4,6 +4,7 @@ import android.arch.lifecycle.LifecycleObserver
 import android.graphics.Bitmap
 import com.google.android.gms.location.places.AutocompletePrediction
 import com.google.android.gms.location.places.Place
+import com.google.android.gms.location.places.PlacePhotoResponse
 import io.reactivex.Maybe
 import io.reactivex.Single
 
@@ -23,7 +24,7 @@ interface PlaceProvider : LifecycleObserver {
     /**
      * Given a place ID, return the first image of a place
      */
-    fun getPlacePhoto(placeId: String): Maybe<Bitmap>
+    fun getPlacePhoto(placeId: String): Maybe<PlacePhotoResponse>
 
     /**
      * Given a query, return an array auto-complete prediction objects

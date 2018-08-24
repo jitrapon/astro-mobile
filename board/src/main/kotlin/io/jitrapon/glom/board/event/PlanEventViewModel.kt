@@ -2,6 +2,8 @@ package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
+import android.graphics.Bitmap
+import android.support.v4.util.ArrayMap
 import android.text.TextUtils
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
@@ -77,6 +79,9 @@ class PlanEventViewModel : BaseViewModel() {
 
     /* whether or not place plan has been loaded */
     private var isPlacePlanLoaded: Boolean = false
+
+    /* currently loaded place photo */
+    private val observablePlacePhoto = MutableLiveData<Bitmap?>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -530,6 +535,7 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     private fun refreshPlacePolls(result: List<EventPlacePoll>) {
+        val pollPlaceIdMap = ArrayMap<String, String>()
         observablePlacePlan.value = placePlan.apply {
             itemsChangedIndices = null
             status = UiModel.Status.SUCCESS
@@ -538,16 +544,22 @@ class PlanEventViewModel : BaseViewModel() {
                 val event = interactor.event
                 result.forEach {
                     add(it.toUiModel(event))
+
+                    it.location.googlePlaceId?.let { placeId ->
+                        pollPlaceIdMap.put(it.id, placeId)
+                    }
                 }
             }
         }
 
         // fetch place info from added IDs
-        loadPlaceInfo()
+        if (pollPlaceIdMap.isNotEmpty()) {
+            loadPlaceInfo(pollPlaceIdMap)
+        }
     }
 
-    private fun loadPlaceInfo() {
-        interactor.loadPollPlaceInfo {
+    private fun loadPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>) {
+        interactor.loadPollPlaceInfo(pollPlaceIdMap, {
             when (it) {
                 is AsyncSuccessResult -> {
                     if (!it.result.isEmpty) {
@@ -560,8 +572,6 @@ class PlanEventViewModel : BaseViewModel() {
 
                                     poll.name = AndroidString(text = place.name)
                                     poll.address = AndroidString(text = place.address)
-                                    poll.description = null
-                                    poll.avatar = null
                                 }
                             }
                         }
@@ -571,7 +581,18 @@ class PlanEventViewModel : BaseViewModel() {
                     handleError(it.error)
                 }
             }
-        }
+        }, {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    it.result?.let { photo ->
+                        observablePlacePhoto.value = photo.bitmap
+                    }
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
+                }
+            }
+        })
     }
 
     private fun EventPlacePoll.toUiModel(event: EventItem, status: UiModel.Status? = null): EventPlacePollUiModel {
@@ -587,7 +608,6 @@ class PlanEventViewModel : BaseViewModel() {
                 if (location.googlePlaceId != null) null else AndroidString(text = location.name),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.address),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.description),
-                if (location.googlePlaceId != null) null else avatar,
                 users.size,
                 if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
                     ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),
@@ -648,6 +668,8 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableDateSelectButton(): LiveData<ButtonUiModel> = observableDateSelectButton
 
     fun getObservablePlacePlan(): LiveData<EventPlacePlanUiModel> = observablePlacePlan
+
+    fun getObservablePlacePhoto(): LiveData<Bitmap?> = observablePlacePhoto
 
     //endregion
 }
