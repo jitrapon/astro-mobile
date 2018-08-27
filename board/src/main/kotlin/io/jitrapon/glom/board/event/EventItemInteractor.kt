@@ -5,7 +5,6 @@ import android.text.TextUtils
 import android.util.SparseArray
 import androidx.util.set
 import com.google.android.gms.location.places.Place
-import com.google.android.gms.location.places.PlacePhotoResponse
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -414,8 +413,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun loadPollPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>,
-                          onLoadPlaceDetailsComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit,
-                          onLoadPlacePhotosComplete: (AsyncResult<PlacePhotoResponse?>) -> Unit) {
+                          onLoadPlaceDetailsComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
         if (placeProvider == null) {
             onLoadPlaceDetailsComplete(AsyncErrorResult(Exception("Place provider implementation is NULL")))
             return
@@ -441,18 +439,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                         }
                     }, {
                         onLoadPlaceDetailsComplete(AsyncErrorResult(it))
-                    })
-
-            // load place photos from place IDs
-            placeProvider.getPlacePhoto(placeIds[0])
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ result ->
-                        onLoadPlacePhotosComplete(AsyncSuccessResult(result))
-                    }, {
-                        onLoadPlacePhotosComplete(AsyncErrorResult(it))
-                    }, {
-                        onLoadPlacePhotosComplete(AsyncSuccessResult(null))
                     })
         }
     }

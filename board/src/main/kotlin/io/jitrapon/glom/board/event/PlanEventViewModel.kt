@@ -559,7 +559,7 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     private fun loadPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>) {
-        interactor.loadPollPlaceInfo(pollPlaceIdMap, {
+        interactor.loadPollPlaceInfo(pollPlaceIdMap) {
             when (it) {
                 is AsyncSuccessResult -> {
                     if (!it.result.isEmpty) {
@@ -581,18 +581,7 @@ class PlanEventViewModel : BaseViewModel() {
                     handleError(it.error)
                 }
             }
-        }, {
-            when (it) {
-                is AsyncSuccessResult -> {
-                    it.result?.let { photo ->
-                        observablePlacePhoto.value = photo.bitmap
-                    }
-                }
-                is AsyncErrorResult -> {
-                    handleError(it.error)
-                }
-            }
-        })
+        }
     }
 
     private fun EventPlacePoll.toUiModel(event: EventItem, status: UiModel.Status? = null): EventPlacePollUiModel {
@@ -608,6 +597,7 @@ class PlanEventViewModel : BaseViewModel() {
                 if (location.googlePlaceId != null) null else AndroidString(text = location.name),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.address),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.description),
+                location.googlePlaceId ?: avatar,
                 users.size,
                 if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
                     ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),

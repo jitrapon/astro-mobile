@@ -1,7 +1,6 @@
 package io.jitrapon.glom.base.component
 
 import android.arch.lifecycle.LifecycleObserver
-import android.graphics.Bitmap
 import com.google.android.gms.location.places.AutocompletePrediction
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.location.places.PlacePhotoResponse
