@@ -26,6 +26,11 @@ interface PlaceProvider : LifecycleObserver {
     fun getPlacePhoto(placeId: String): Maybe<PlacePhotoResponse>
 
     /**
+     * Given a place ID, return the first image of a place, callback style
+     */
+    fun getPlacePhoto(placeId: String, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit)
+
+    /**
      * Given a query, return an array auto-complete prediction objects
      */
     fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>>

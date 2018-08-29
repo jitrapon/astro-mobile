@@ -18,7 +18,6 @@ import com.bumptech.glide.request.RequestOptions
 class GlomGlideModule : AppGlideModule() {
 
     companion object {
-
         private const val DISK_CACHE_SIZE: Long = 1024 * 1024 * 250 // 250 MB
         private const val DISK_CACHE_NAME: String = "image_cache"
     }

@@ -13,13 +13,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.color
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
+import javax.inject.Inject
 
 /**
  * All fragments should extend from this base class for convenience functions (including analytics).
@@ -42,8 +43,13 @@ abstract class BaseFragment : Fragment() {
     /*
      * shared Google place provider
      */
-    val placeProvider: PlaceProvider by lazy {
-        GooglePlaceProvider(lifecycle, activity = activity)
+    @Inject
+    lateinit var placeProvider: PlaceProvider
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        ObjectGraph.component.inject(this)
     }
 
     override fun onResume() {

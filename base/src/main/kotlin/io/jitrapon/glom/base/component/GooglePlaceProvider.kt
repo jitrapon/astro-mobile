@@ -1,8 +1,6 @@
 package io.jitrapon.glom.base.component
 
 import android.app.Activity
-import android.arch.lifecycle.Lifecycle
-import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Context
 import android.text.TextUtils
 import com.google.android.gms.location.places.*
@@ -24,19 +22,11 @@ import io.reactivex.Single
  *
  * Created by Jitrapon on 11/30/2017.
  */
-class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activity: Activity? = null) : PlaceProvider {
+class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) : PlaceProvider {
 
     private var isInstantApp: Boolean = false
 
     //region constructors
-
-    /**
-     * Initializes the life cycle object from the constructor to be notified of any change in the
-     * state in the life cycle
-     */
-    private var lifeCycle: Lifecycle = lifeCycle.apply {
-        addObserver(this@GooglePlaceProvider)
-    }
 
     /**
      * GeoDataClient instance to talk to a Google server
@@ -68,11 +58,6 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
 
     //endregion
     //region lifecycle
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun cleanup() {
-        lifeCycle.removeObserver(this)
-    }
 
     override fun getPlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
@@ -136,6 +121,36 @@ class GooglePlaceProvider(lifeCycle: Lifecycle, context: Context? = null, activi
                     it.addOnFailureListener {
                         maybe.onError(it)
                     }
+                }
+            }
+        }
+    }
+
+    override fun getPlacePhoto(placeId: String, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit) {
+        if (isInstantApp || placeId.isEmpty()) {
+            onError(Exception("Place ID is empty or operation not supported in instant app mode"))
+        }
+        else {
+            client.getPlacePhotos(placeId).let {
+                it.addOnCompleteListener {
+                    val photosMetadata = it.result.photoMetadata
+                    if (photosMetadata.count == 0) {
+                        onError(Exception("There are no photos available for this place ID"))
+                    }
+                    else {
+                        val meta = photosMetadata[0]
+                        client.getPhoto(meta).let {
+                            it.addOnCompleteListener {
+                                onSuccess(it.result)
+                            }
+                            it.addOnFailureListener {
+                                onError(it)
+                            }
+                        }
+                    }
+                }
+                it.addOnFailureListener {
+                    onError(it)
                 }
             }
         }

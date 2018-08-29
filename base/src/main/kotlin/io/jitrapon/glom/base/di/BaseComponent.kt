@@ -7,6 +7,8 @@ import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
+import io.jitrapon.glom.base.ui.BaseActivity
+import io.jitrapon.glom.base.ui.BaseFragment
 import javax.inject.Singleton
 
 /**
@@ -16,7 +18,7 @@ import javax.inject.Singleton
  * Created by Jitrapon
  */
 @Singleton
-@Component(modules = [BaseModule::class, BaseDomainModule::class, NetModule::class])
+@Component(modules = [BaseModule::class, BaseDomainModule::class, NetModule::class, GoogleModule::class])
 interface BaseComponent {
 
     fun application(): Application
@@ -26,4 +28,6 @@ interface BaseComponent {
     fun circleInteractor(): CircleInteractor
 
     fun inject(dataSource: RemoteDataSource)
+    fun inject(activity: BaseActivity)
+    fun inject(fragment: BaseFragment)
 }

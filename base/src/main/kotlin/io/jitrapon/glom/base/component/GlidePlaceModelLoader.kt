@@ -17,7 +17,7 @@ private const val PLACE_ID_PREFIX = "place:"
  */
 sealed class GlidePlaceModelLoader : ModelLoader<String, ByteBuffer> {
 
-    override fun buildLoadData(model: String, width: Int, height: Int, options: Options): ModelLoader.LoadData<ByteBuffer>? =
+    override fun buildLoadData(model: String, width: Int, height: Int, options: Options): ModelLoader.LoadData<ByteBuffer> =
             ModelLoader.LoadData(ObjectKey(model), GlidePlaceDataFetcher(model.toPlaceId()))
 
     override fun handles(model: String) = model.isValidModel()
@@ -40,8 +40,12 @@ class GlidePlaceDataFetcher(private val placeId: String) : DataFetcher<ByteBuffe
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun loadData(priority: Priority?, callback: DataFetcher.DataCallback<in ByteBuffer>?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    /**
+     * Called on one of Glide's background threads. A given DataFetcher will only be used on a single background thread at a time, so it doesn’t need to be thread safe.
+     * However, multiple DataFetchers may be run in parallel, so any shared resources accessed by DataFetchers should be thread safe.
+     */
+    override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in ByteBuffer>) {
+
     }
 }
 

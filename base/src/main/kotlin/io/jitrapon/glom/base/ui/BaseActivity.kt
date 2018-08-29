@@ -10,13 +10,14 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import com.google.android.instantapps.InstantApps
-import io.jitrapon.glom.base.component.GooglePlaceProvider
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
+import javax.inject.Inject
 
 /**
  * Wrapper around Android's AppCompatActivity. Contains convenience functions
@@ -44,12 +45,13 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     /* shared google place provider */
-    val placeProvider: PlaceProvider by lazy {
-        GooglePlaceProvider(lifecycle, activity = this)
-    }
+    @Inject
+    lateinit var placeProvider: PlaceProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        ObjectGraph.component.inject(this)
 
         onCreateViewModel()
         onSubscribeToObservables()
