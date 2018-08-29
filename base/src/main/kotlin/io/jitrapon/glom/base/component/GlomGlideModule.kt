@@ -2,7 +2,9 @@ package io.jitrapon.glom.base.component
 
 import android.content.Context
 import android.util.Log
+import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
+import com.bumptech.glide.Registry
 import com.bumptech.glide.annotation.GlideModule
 import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.cache.InternalCacheDiskCacheFactory
@@ -29,5 +31,9 @@ class GlomGlideModule : AppGlideModule() {
                 .disallowHardwareConfig())
                 .setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_NAME, DISK_CACHE_SIZE))
                 .setLogLevel(Log.ERROR)
+    }
+
+    override fun registerComponents(context: Context?, glide: Glide?, registry: Registry?) {
+        TODO()
     }
 }

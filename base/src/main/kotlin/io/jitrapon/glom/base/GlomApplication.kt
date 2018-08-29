@@ -16,6 +16,9 @@ class GlomApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // initialize object dependency graph
+        ObjectGraph.init(this)
+
         // allow support for older pre-lollipop devices to use vector graphics
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
@@ -27,8 +30,5 @@ class GlomApplication : Application() {
 
         // initialize Google Play Services
         MapsInitializer.initialize(this)
-
-        // initialize object dependency graph
-        ObjectGraph.init(this)
     }
 }

@@ -104,15 +104,19 @@ class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) 
                     it.addOnCompleteListener {
                         val photosMetadata = it.result.photoMetadata
                         if (photosMetadata.count == 0) {
+                            photosMetadata.release()
                             maybe.onComplete()
                         }
                         else {
                             val meta = photosMetadata[0]
+                            meta.maxWidth
                             client.getPhoto(meta).let {
                                 it.addOnCompleteListener {
+                                    photosMetadata.release()
                                     maybe.onSuccess(it.result)
                                 }
                                 it.addOnFailureListener {
+                                    photosMetadata.release()
                                     maybe.onError(it)
                                 }
                             }
@@ -126,7 +130,7 @@ class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) 
         }
     }
 
-    override fun getPlacePhoto(placeId: String, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit) {
+    override fun getPlacePhoto(placeId: String, width: Int, height: Int, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit) {
         if (isInstantApp || placeId.isEmpty()) {
             onError(Exception("Place ID is empty or operation not supported in instant app mode"))
         }
@@ -135,15 +139,18 @@ class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) 
                 it.addOnCompleteListener {
                     val photosMetadata = it.result.photoMetadata
                     if (photosMetadata.count == 0) {
+                        photosMetadata.release()
                         onError(Exception("There are no photos available for this place ID"))
                     }
                     else {
                         val meta = photosMetadata[0]
-                        client.getPhoto(meta).let {
+                        client.getScaledPhoto(meta, width, height).let {
                             it.addOnCompleteListener {
+                                photosMetadata.release()
                                 onSuccess(it.result)
                             }
                             it.addOnFailureListener {
+                                photosMetadata.release()
                                 onError(it)
                             }
                         }

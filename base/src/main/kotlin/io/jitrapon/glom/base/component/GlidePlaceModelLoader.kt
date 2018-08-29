@@ -1,5 +1,7 @@
 package io.jitrapon.glom.base.component
 
+import android.graphics.Bitmap
+import android.support.v4.graphics.BitmapCompat
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.Options
@@ -15,10 +17,10 @@ private const val PLACE_ID_PREFIX = "place:"
  *
  * @author Jitrapon Tiachunpun
  */
-sealed class GlidePlaceModelLoader : ModelLoader<String, ByteBuffer> {
+sealed class GlidePlaceModelLoader(private val placeProvider: PlaceProvider, width: Int, height: Int) : ModelLoader<String, ByteBuffer> {
 
     override fun buildLoadData(model: String, width: Int, height: Int, options: Options): ModelLoader.LoadData<ByteBuffer> =
-            ModelLoader.LoadData(ObjectKey(model), GlidePlaceDataFetcher(model.toPlaceId()))
+            ModelLoader.LoadData(ObjectKey(model), GlidePlaceDataFetcher(placeProvider, width, height, model.toPlaceId()))
 
     override fun handles(model: String) = model.isValidModel()
 }
@@ -26,18 +28,18 @@ sealed class GlidePlaceModelLoader : ModelLoader<String, ByteBuffer> {
 /**
  * Handles the work to fetch Google place photo data asynchronously
  */
-class GlidePlaceDataFetcher(private val placeId: String) : DataFetcher<ByteBuffer> {
+class GlidePlaceDataFetcher(private val placeProvider: PlaceProvider, private val width: Int, private val height: Int, private val placeId: String) : DataFetcher<ByteBuffer> {
 
     override fun getDataClass(): Class<ByteBuffer> = ByteBuffer::class.java
 
     override fun cleanup() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //no I/O or InputStream to close
     }
 
     override fun getDataSource(): DataSource = DataSource.REMOTE
 
     override fun cancel() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //not applicable
     }
 
     /**
@@ -45,7 +47,24 @@ class GlidePlaceDataFetcher(private val placeId: String) : DataFetcher<ByteBuffe
      * However, multiple DataFetchers may be run in parallel, so any shared resources accessed by DataFetchers should be thread safe.
      */
     override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in ByteBuffer>) {
+        placeProvider.getPlacePhoto(placeId, width, height, {
+            it.bitmap.let {
+                val buffer = it.toByteBuffer()
+                it.recycle()
+                callback.onDataReady(buffer)
+            }
+        }, {
+            callback.onLoadFailed(it)
+        })
+    }
 
+    private fun Bitmap.toByteBuffer(): ByteBuffer {
+        val bytes = BitmapCompat.getAllocationByteCount(this)
+        return ByteBuffer.allocate(bytes).let {
+            copyPixelsToBuffer(it)
+            it.rewind()
+            it
+        }
     }
 }
 
