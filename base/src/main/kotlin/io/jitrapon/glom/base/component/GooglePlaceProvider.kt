@@ -137,22 +137,32 @@ class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) 
         else {
             client.getPlacePhotos(placeId).let {
                 it.addOnCompleteListener {
-                    val photosMetadata = it.result.photoMetadata
-                    if (photosMetadata.count == 0) {
-                        photosMetadata.release()
-                        onError(Exception("There are no photos available for this place ID"))
+                    if (it.isSuccessful) {
+                        val photosMetadata = it.result.photoMetadata
+                        if (photosMetadata.count == 0) {
+                            photosMetadata.release()
+                            onError(Exception("There are no photos available for this place ID"))
+                        }
+                        else {
+                            val meta = photosMetadata[0]
+                            client.getScaledPhoto(meta, width, height).let {
+                                it.addOnCompleteListener {
+                                    photosMetadata.release()
+                                    onSuccess(it.result)
+                                }
+                                it.addOnFailureListener {
+                                    photosMetadata.release()
+                                    onError(it)
+                                }
+                            }
+                        }
                     }
                     else {
-                        val meta = photosMetadata[0]
-                        client.getScaledPhoto(meta, width, height).let {
-                            it.addOnCompleteListener {
-                                photosMetadata.release()
-                                onSuccess(it.result)
-                            }
-                            it.addOnFailureListener {
-                                photosMetadata.release()
-                                onError(it)
-                            }
+                        if (it.exception != null) {
+                            onError(it.exception!!)
+                        }
+                        else {
+                            onError(Exception("Unknown error"))
                         }
                     }
                 }

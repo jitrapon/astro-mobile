@@ -2,7 +2,6 @@ package io.jitrapon.glom.base.util
 
 import android.app.Activity
 import android.content.res.ColorStateList
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -86,7 +85,6 @@ fun ImageView.loadFromPlaceId(fragment: Fragment, placeId: String?, @DrawableRes
                               @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE,
                               crossFade: Int? = null) {
     GlideApp.with(fragment)
-            .asBitmap()
             .load(placeId?.toGlidePlaceId())
             .apply {
                 placeholder?.let (this::placeholder)
@@ -99,18 +97,26 @@ fun ImageView.loadFromPlaceId(fragment: Fragment, placeId: String?, @DrawableRes
                     Transformation.CIRCLE_CROP -> circleCrop()
                     else -> { /* do nothing */ }
                 }
-                listener(object : RequestListener<Bitmap> {
-                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>?, isFirstResource: Boolean): Boolean {
-                        return false // Allow calling onLoadFailed on the Target.
+                listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(e: GlideException?, model: Any, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
+                        e?.let {
+                            it.causes.forEach { cause ->
+                                AppLogger.e(cause)
+                            }
+                            it.rootCauses.forEach { rootCause ->
+                                AppLogger.e(rootCause)
+                            }
+                        }
+                        return false // allow calling onLoadFailed on the Target.
                     }
 
-                    override fun onResourceReady(resource: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                        return false // Allow calling onResourceReady on the Target.
+                    override fun onResourceReady(resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean): Boolean {
+                        return false // allow calling onResourceReady on the Target.
                     }
                 })
-//                crossFade?.let {
-//                    this.transition(DrawableTransitionOptions.withCrossFade(it))
-//                }
+                crossFade?.let {
+                    this.transition(DrawableTransitionOptions.withCrossFade(it))
+                }
             }
             .into(this)
 }

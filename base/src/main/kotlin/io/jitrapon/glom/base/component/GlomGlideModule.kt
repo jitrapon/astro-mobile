@@ -12,7 +12,7 @@ import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.module.AppGlideModule
 import com.bumptech.glide.request.RequestOptions
 import io.jitrapon.glom.base.di.ObjectGraph
-import java.nio.ByteBuffer
+import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -25,7 +25,7 @@ import javax.inject.Named
 class GlomGlideModule : AppGlideModule() {
 
     @field:[Inject Named("place")]
-    lateinit var placeModelLoaderFactory: ModelLoaderFactory<String, ByteBuffer>
+    lateinit var placeModelLoaderFactory: ModelLoaderFactory<String, InputStream>
 
     init {
         ObjectGraph.component.inject(this)
@@ -42,10 +42,10 @@ class GlomGlideModule : AppGlideModule() {
         builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_ARGB_8888)
                 .disallowHardwareConfig())
                 .setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_NAME, DISK_CACHE_SIZE))
-                .setLogLevel(Log.WARN)
+                .setLogLevel(Log.DEBUG)
     }
 
     override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
-        registry.prepend(String::class.java, ByteBuffer::class.java, placeModelLoaderFactory)
+        registry.prepend(String::class.java, InputStream::class.java, placeModelLoaderFactory)
     }
 }

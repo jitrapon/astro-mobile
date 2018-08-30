@@ -78,6 +78,7 @@ class PlanEventActivity : BaseActivity() {
 
     private fun createViewPager() {
         event_plan_viewpager.apply {
+            offscreenPageLimit = 2
             val firstVisiblePageIndex = viewModel.getFirstVisiblePageIndex()
             createWithFragments(this@PlanEventActivity, arrayOf(
                     PlanEventOverviewFragment.newInstance(),
