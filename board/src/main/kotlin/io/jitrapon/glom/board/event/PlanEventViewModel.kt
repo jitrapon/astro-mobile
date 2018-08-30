@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.support.v4.util.ArrayMap
 import android.text.TextUtils
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.component.toGlidePlaceId
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.toDateString
@@ -598,7 +597,7 @@ class PlanEventViewModel : BaseViewModel() {
                 if (location.googlePlaceId != null) null else AndroidString(text = location.name),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.address),
                 if (location.googlePlaceId != null) null else AndroidString(text = location.description),
-                location.googlePlaceId?.toGlidePlaceId() ?: avatar,
+                avatar ?: location.googlePlaceId,
                 users.size,
                 if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
                     ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),

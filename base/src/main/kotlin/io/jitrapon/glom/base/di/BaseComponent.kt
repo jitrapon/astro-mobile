@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.di
 
 import android.app.Application
 import dagger.Component
+import io.jitrapon.glom.base.component.GlomGlideModule
 import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
@@ -18,7 +19,7 @@ import javax.inject.Singleton
  * Created by Jitrapon
  */
 @Singleton
-@Component(modules = [BaseModule::class, BaseDomainModule::class, NetModule::class, GoogleModule::class])
+@Component(modules = [BaseModule::class, BaseDomainModule::class, NetModule::class, GoogleModule::class, GlideModule::class])
 interface BaseComponent {
 
     fun application(): Application
@@ -30,4 +31,5 @@ interface BaseComponent {
     fun inject(dataSource: RemoteDataSource)
     fun inject(activity: BaseActivity)
     fun inject(fragment: BaseFragment)
+    fun inject(module: GlomGlideModule)
 }

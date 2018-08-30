@@ -20,6 +20,7 @@ object ObjectGraph {
                 .baseDomainModule(BaseDomainModule())
                 .netModule(NetModule())
                 .googleModule(GoogleModule())
+                .glideModule(GlideModule())
                 .build()
     }
 }

@@ -71,6 +71,7 @@ class PlanEventPlaceFragment : BaseFragment() {
                 }
             }
         }
+        event_plan_place_scrollview.loadFromPlaceId(this, "ChIJmZKsCFOe4jARjZUEQW7WV58")
     }
 
     /**

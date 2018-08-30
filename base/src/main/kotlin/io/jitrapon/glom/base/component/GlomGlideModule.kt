@@ -8,8 +8,13 @@ import com.bumptech.glide.Registry
 import com.bumptech.glide.annotation.GlideModule
 import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.cache.InternalCacheDiskCacheFactory
+import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.module.AppGlideModule
 import com.bumptech.glide.request.RequestOptions
+import io.jitrapon.glom.base.di.ObjectGraph
+import java.nio.ByteBuffer
+import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * Application module for Glide library to initialize settings for all image loading requests.
@@ -18,6 +23,13 @@ import com.bumptech.glide.request.RequestOptions
  */
 @GlideModule
 class GlomGlideModule : AppGlideModule() {
+
+    @field:[Inject Named("place")]
+    lateinit var placeModelLoaderFactory: ModelLoaderFactory<String, ByteBuffer>
+
+    init {
+        ObjectGraph.component.inject(this)
+    }
 
     companion object {
         private const val DISK_CACHE_SIZE: Long = 1024 * 1024 * 250 // 250 MB
@@ -30,10 +42,10 @@ class GlomGlideModule : AppGlideModule() {
         builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_ARGB_8888)
                 .disallowHardwareConfig())
                 .setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_NAME, DISK_CACHE_SIZE))
-                .setLogLevel(Log.ERROR)
+                .setLogLevel(Log.WARN)
     }
 
-    override fun registerComponents(context: Context?, glide: Glide?, registry: Registry?) {
-        TODO()
+    override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
+        registry.prepend(String::class.java, ByteBuffer::class.java, placeModelLoaderFactory)
     }
 }

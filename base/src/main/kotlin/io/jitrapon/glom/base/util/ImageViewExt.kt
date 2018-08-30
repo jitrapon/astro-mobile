@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.util
 
 import android.app.Activity
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -11,8 +12,13 @@ import android.support.annotation.RawRes
 import android.support.v4.app.Fragment
 import android.support.v4.widget.ImageViewCompat
 import android.widget.ImageView
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import io.jitrapon.glom.base.component.GlideApp
+import io.jitrapon.glom.base.di.toGlidePlaceId
 
 
 /**
@@ -38,7 +44,7 @@ fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeho
             .apply {
                 placeholder?.let (this::placeholder)
                 error?.let (this::error)
-                fallback?.let (this::fallback)
+                fallback.let (this::fallback)
                 when (transformation) {
                     Transformation.FIT_CENTER -> fitCenter()
                     Transformation.CENTER_INSIDE -> centerInside()
@@ -61,7 +67,7 @@ fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeho
             .apply {
                 placeholder?.let (this::placeholder)
                 error?.let (this::error)
-                fallback?.let (this::fallback)
+                fallback.let (this::fallback)
                 when (transformation) {
                     Transformation.FIT_CENTER -> fitCenter()
                     Transformation.CENTER_INSIDE -> centerInside()
@@ -76,6 +82,39 @@ fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeho
             .into(this)
 }
 
+fun ImageView.loadFromPlaceId(fragment: Fragment, placeId: String?, @DrawableRes placeholder: Int? = null,
+                              @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE,
+                              crossFade: Int? = null) {
+    GlideApp.with(fragment)
+            .asBitmap()
+            .load(placeId?.toGlidePlaceId())
+            .apply {
+                placeholder?.let (this::placeholder)
+                error?.let (this::error)
+                fallback.let (this::fallback)
+                when (transformation) {
+                    Transformation.FIT_CENTER -> fitCenter()
+                    Transformation.CENTER_INSIDE -> centerInside()
+                    Transformation.CENTER_CROP -> centerCrop()
+                    Transformation.CIRCLE_CROP -> circleCrop()
+                    else -> { /* do nothing */ }
+                }
+                listener(object : RequestListener<Bitmap> {
+                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>?, isFirstResource: Boolean): Boolean {
+                        return false // Allow calling onLoadFailed on the Target.
+                    }
+
+                    override fun onResourceReady(resource: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        return false // Allow calling onResourceReady on the Target.
+                    }
+                })
+//                crossFade?.let {
+//                    this.transition(DrawableTransitionOptions.withCrossFade(it))
+//                }
+            }
+            .into(this)
+}
+
 fun ImageView.loadFromRaw(fragment: Fragment, @RawRes resId: Int, @DrawableRes placeholder: Int? = null,
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
@@ -83,7 +122,7 @@ fun ImageView.loadFromRaw(fragment: Fragment, @RawRes resId: Int, @DrawableRes p
             .apply {
                 placeholder?.let (this::placeholder)
                 error?.let (this::error)
-                fallback?.let (this::fallback)
+                fallback.let (this::fallback)
                 when (transformation) {
                     Transformation.FIT_CENTER -> fitCenter()
                     Transformation.CENTER_INSIDE -> centerInside()
