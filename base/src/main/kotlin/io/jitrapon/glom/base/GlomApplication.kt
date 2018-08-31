@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatDelegate
 import com.google.android.gms.maps.MapsInitializer
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.DeviceUtils
 
 /**
  * Application class where all the dependencies are initialized if appropriate
@@ -30,5 +31,8 @@ class GlomApplication : Application() {
 
         // initialize Google Play Services
         MapsInitializer.initialize(this)
+
+        // initialize device utility classes
+        DeviceUtils.init(this)
     }
 }

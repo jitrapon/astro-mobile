@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
+import com.bumptech.glide.MemoryCategory
 import com.bumptech.glide.Registry
 import com.bumptech.glide.annotation.GlideModule
 import com.bumptech.glide.load.DecodeFormat
@@ -12,6 +13,7 @@ import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.module.AppGlideModule
 import com.bumptech.glide.request.RequestOptions
 import io.jitrapon.glom.base.di.ObjectGraph
+import io.jitrapon.glom.base.util.DeviceUtils
 import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Named
@@ -39,7 +41,8 @@ class GlomGlideModule : AppGlideModule() {
     override fun isManifestParsingEnabled() = false
 
     override fun applyOptions(context: Context, builder: GlideBuilder) {
-        builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_ARGB_8888)
+        builder.setDefaultRequestOptions(RequestOptions().format(
+                if (DeviceUtils.isHighPerformingDevice) DecodeFormat.PREFER_ARGB_8888 else DecodeFormat.PREFER_RGB_565)
                 .disallowHardwareConfig())
                 .setDiskCache(InternalCacheDiskCacheFactory(context, DISK_CACHE_NAME, DISK_CACHE_SIZE))
                 .setLogLevel(Log.DEBUG)
@@ -47,5 +50,12 @@ class GlomGlideModule : AppGlideModule() {
 
     override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
         registry.prepend(String::class.java, InputStream::class.java, placeModelLoaderFactory)
+
+        if (DeviceUtils.isHighPerformingDevice) {
+            glide.setMemoryCategory(MemoryCategory.NORMAL)
+        }
+        else {
+            glide.setMemoryCategory(MemoryCategory.LOW)
+        }
     }
 }
