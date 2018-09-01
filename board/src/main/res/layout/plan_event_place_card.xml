@@ -1,76 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v7.widget.CardView  xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/event_plan_date_calendar_cardview"
     android:layout_width="190dp"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto" >
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="3dp"
+    app:cardElevation="@dimen/event_plan_calendar_elevation" >
 
-    <ImageView
-        android:id="@+id/event_plan_place_card_image"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintHeight_percent="0.45"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
 
-    <TextView
-        style="@style/TextAppearance.H4"
-        android:id="@+id/event_plan_place_card_name"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/event_plan_place_card_image"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="theCommons"
-        android:textStyle="bold"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="4dp"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        <ImageView
+            android:id="@+id/event_plan_place_card_image"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintHeight_percent="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        style="@style/TextAppearance.H4.Light"
-        android:id="@+id/event_place_plan_card_address"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="335 (Thonglor 17), 55 Sukhumvit Rd"
-        android:textSize="12sp"
-        app:layout_constraintTop_toBottomOf="@+id/event_plan_place_card_name"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="0dp"
-        android:lines="2"
-        android:ellipsize="end" />
+        <TextView
+            style="@style/TextAppearance.H4"
+            android:id="@+id/event_plan_place_card_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/event_plan_place_card_image"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="theCommons"
+            android:textStyle="bold"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="8dp"
+            android:lines="2"
+            android:ellipsize="end" />
 
-    <TextView
-        style="@style/TextAppearance.H4"
-        android:id="@+id/event_place_plan_description"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="#beer #western #burger #pizza #bar #dinner"
-        android:textSize="12sp"
-        app:layout_constraintTop_toBottomOf="@+id/event_place_plan_card_address"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="8dp"
-        android:lines="2"
-        android:ellipsize="end" />
+        <TextView
+            style="@style/TextAppearance.H4.Light"
+            android:id="@+id/event_place_plan_card_address"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="335 (Thonglor 17), 55 Sukhumvit Rd"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@+id/event_plan_place_card_name"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="0dp"
+            android:lines="2"
+            android:ellipsize="end" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.Colored"
-        android:id="@+id/event_plan_place_card_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="add to poll"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/event_place_plan_description"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <io.jitrapon.glom.base.ui.widget.GlomButton
+            style="@style/Widget.Glom.Button.Raised.Colored"
+            android:theme="@style/Theme.Glom.Button.Raised.Colored"
+            android:id="@+id/event_plan_place_card_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="add to poll"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/event_place_plan_card_address"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-</android.support.constraint.ConstraintLayout>
+    </android.support.constraint.ConstraintLayout>
+
+</android.support.v7.widget.CardView>

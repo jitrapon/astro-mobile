@@ -22,7 +22,7 @@ class GlomButton : AppCompatButton {
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(context, attrs, defStyleAttr)
 
     fun applyState(uiModel: ButtonUiModel) {
-        isEnabled = uiModel.status == UiModel.Status.SUCCESS || uiModel.status == UiModel.Status.ERROR
+        isEnabled = uiModel.status != UiModel.Status.LOADING
         uiModel.text?.let {
             text = context.getString(it)
         }

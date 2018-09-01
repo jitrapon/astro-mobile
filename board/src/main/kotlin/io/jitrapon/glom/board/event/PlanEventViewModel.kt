@@ -85,8 +85,8 @@ class PlanEventViewModel : BaseViewModel() {
 
     init {
         BoardInjector.getComponent().inject(this)
-        datePlan = EventDatePlanUiModel(ArrayList<EventDatePollUiModel>(), null, UiModel.Status.EMPTY)
-        placePlan = EventPlacePlanUiModel(ArrayList<EventPlacePollUiModel>(), null, UiModel.Status.EMPTY)
+        datePlan = EventDatePlanUiModel(ArrayList(), null, UiModel.Status.EMPTY)
+        placePlan = EventPlacePlanUiModel(ArrayList(), null, ArrayList(), null, UiModel.Status.EMPTY)
     }
 
     /**
@@ -536,18 +536,21 @@ class PlanEventViewModel : BaseViewModel() {
 
     private fun refreshPlacePolls(result: List<EventPlacePoll>) {
         val pollPlaceIdMap = ArrayMap<String, String>()
+        val event = interactor.event
         observablePlacePlan.value = placePlan.apply {
-            itemsChangedIndices = null
+            pollChangedIndices = null
             status = UiModel.Status.SUCCESS
-            placePolls.apply {
-                clear()
-                val event = interactor.event
-                result.forEach {
-                    add(it.toUiModel(event))
-
-                    it.location.googlePlaceId?.let { placeId ->
-                        pollPlaceIdMap.put(it.id, placeId)
+            placePolls.clear()
+            placeCards.clear()
+            result.forEach {
+                it.location.googlePlaceId?.let { placeId ->
+                    pollPlaceIdMap.put(it.id, placeId)
+                }
+                it.toUiModel(event).let { uiModel ->
+                    if (!it.isAiSuggested) {
+                        placePolls.add(uiModel)
                     }
+                    placeCards.add(uiModel)
                 }
             }
         }
@@ -564,14 +567,28 @@ class PlanEventViewModel : BaseViewModel() {
                 is AsyncSuccessResult -> {
                     if (!it.result.isEmpty) {
                         observablePlacePlan.value = placePlan.apply {
-                            itemsChangedIndices = ArrayList()
+
+                            // notify changes to the polls with place IDs
+                            pollChangedIndices = ArrayList()
                             for (i in placePolls.indices) {
                                 val poll = placePolls[i]
                                 it.result[poll.id]?.let { place ->
-                                    itemsChangedIndices?.add(i)
+                                    pollChangedIndices?.add(i)
 
                                     poll.name = AndroidString(text = place.name)
                                     poll.address = AndroidString(text = place.address)
+                                }
+                            }
+
+                            // notify changes to the cards with place IDs
+                            cardChangedIndices = ArrayList()
+                            for (i in placeCards.indices) {
+                                val card = placeCards[i]
+                                it.result[card.id]?.let { place ->
+                                    cardChangedIndices?.add(i)
+
+                                    card.name = AndroidString(text = place.name)
+                                    card.address = AndroidString(text = place.address)
                                 }
                             }
                         }
@@ -600,13 +617,17 @@ class PlanEventViewModel : BaseViewModel() {
                 avatar ?: location.googlePlaceId,
                 users.size,
                 if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
-                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.NEGATIVE),
+                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.LOADING),
                 uiStatus)
     }
 
     fun getPlacePollItem(position: Int) = placePlan.placePolls[position]
 
+    fun getPlaceCardItem(position: Int) = placePlan.placeCards[position]
+
     fun getPlacePollCount(): Int = placePlan.placePolls.size
+
+    fun getPlaceCardCount(): Int = placePlan.placeCards.size
 
     private fun refreshAndSelectPlacePoll() {
 

@@ -24,4 +24,5 @@
     <dimen name="event_plan_date_calendar_height">280dp</dimen>
     <dimen name="event_plan_calendar_elevation">8dp</dimen>
     <dimen name="event_plan_poll_vertical_offset">8dp</dimen>
+    <dimen name="event_plan_place_card_offset">15dp</dimen>
 </resources>

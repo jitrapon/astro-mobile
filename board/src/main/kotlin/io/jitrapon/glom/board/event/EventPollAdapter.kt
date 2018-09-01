@@ -8,20 +8,17 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.ui.widget.GlomButton
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 
-class EventPollAdapter(private val viewModel: PlanEventViewModel, private val isDatePoll: Boolean) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+const val TYPE_DATE_POLL = 0
+const val TYPE_PLACE_POLL = 1
+const val TYPE_PLACE_CARD = 2
 
-    companion object {
+class EventPollAdapter(private val viewModel: PlanEventViewModel, private val itemType: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-        private const val TYPE_DATE_POLL = 0
-        private const val TYPE_PLACE_POLL = 1
-    }
-
-    override fun getItemViewType(position: Int): Int {
-        return if (isDatePoll) TYPE_DATE_POLL else TYPE_PLACE_POLL
-    }
+    override fun getItemViewType(position: Int): Int = itemType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
@@ -29,15 +26,22 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                     .inflate(R.layout.plan_event_date_poll, parent, false), viewModel::toggleDatePoll)
             TYPE_PLACE_POLL -> EventPlacePollViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.plan_event_place_poll, parent, false), viewModel::togglePlacePoll, viewModel::viewPlaceDetails)
+            TYPE_PLACE_CARD -> EventPlaceCardViewHolder(LayoutInflater.from(parent.context)
+                    .inflate(R.layout.plan_event_place_card, parent, false))
             else -> { null!! }
         }
     }
 
-    override fun getItemCount(): Int = if (isDatePoll) viewModel.getDatePollCount() else viewModel.getPlacePollCount()
+    override fun getItemCount(): Int = when (itemType) {
+        TYPE_DATE_POLL -> viewModel.getDatePollCount()
+        TYPE_PLACE_POLL -> viewModel.getPlacePollCount()
+        TYPE_PLACE_CARD -> viewModel.getPlaceCardCount()
+        else -> 0
+    }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder is EventDatePollViewHolder) {
-            viewModel.getDatePollItem(position).let {
+        when (holder) {
+            is EventDatePollViewHolder -> viewModel.getDatePollItem(position).let {
                 holder.date.apply {
                     text = context.getString(it.date)
                 }
@@ -58,9 +62,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                         })
                 holder.count.text = it.count.toString()
             }
-        }
-        else if (holder is EventPlacePollViewHolder) {
-            viewModel.getPlacePollItem(position).let {
+            is EventPlacePollViewHolder -> viewModel.getPlacePollItem(position).let {
                 holder.title.apply {
                     text = context.getString(it.name)
                 }
@@ -81,6 +83,23 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                             else -> holder.selectIcon.context.color(R.color.warm_grey)
                         })
                 holder.count.text = it.count.toString()
+            }
+            is EventPlaceCardViewHolder -> viewModel.getPlaceCardItem(position).let {
+                it.avatar?.let {
+                    if (it.startsWith("http")) {
+                        holder.image.loadFromUrl(holder.image.context, it, transformation = Transformation.CENTER_CROP)
+                    }
+                    else {
+                        holder.image.loadFromPlaceId(holder.image.context, it, transformation = Transformation.CENTER_CROP)
+                    }
+                }
+                holder.name.apply {
+                    text = context.getString(it.name)
+                }
+                holder.address.apply {
+                    text = context.getString(it.address)
+                }
+                holder.button.applyState(it.actionButton)
             }
         }
     }
@@ -115,5 +134,13 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val is
                 onItemInfoClicked(adapterPosition)
             }
         }
+    }
+
+    inner class EventPlaceCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val image: ImageView = itemView.findViewById(R.id.event_plan_place_card_image)
+        val name: TextView = itemView.findViewById(R.id.event_plan_place_card_name)
+        val address: TextView = itemView.findViewById(R.id.event_place_plan_card_address)
+        val button: GlomButton = itemView.findViewById(R.id.event_plan_place_card_button)
     }
 }

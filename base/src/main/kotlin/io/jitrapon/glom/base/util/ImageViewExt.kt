@@ -1,6 +1,7 @@
 package io.jitrapon.glom.base.util
 
 import android.app.Activity
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -58,6 +59,28 @@ fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeho
 /**
  * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
  */
+fun ImageView.loadFromUrl(context: Context, url: String?, @DrawableRes placeholder: Int? = null,
+                          @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
+    GlideApp.with(context)
+            .load(url)
+            .apply {
+                placeholder?.let (this::placeholder)
+                error?.let (this::error)
+                fallback.let (this::fallback)
+                when (transformation) {
+                    Transformation.FIT_CENTER -> fitCenter()
+                    Transformation.CENTER_INSIDE -> centerInside()
+                    Transformation.CENTER_CROP -> centerCrop()
+                    Transformation.CIRCLE_CROP -> circleCrop()
+                    else -> { /* do nothing */ }
+                }
+            }
+            .into(this)
+}
+
+/**
+ * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
+ */
 fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeholder: Int? = null,
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE,
                           crossFade: Int? = null) {
@@ -81,10 +104,10 @@ fun ImageView.loadFromUrl(activity: Activity, url: String?, @DrawableRes placeho
             .into(this)
 }
 
-fun ImageView.loadFromPlaceId(fragment: Fragment, placeId: String?, @DrawableRes placeholder: Int? = null,
+fun ImageView.loadFromPlaceId(context: Context, placeId: String?, @DrawableRes placeholder: Int? = null,
                               @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE,
                               crossFade: Int? = null) {
-    GlideApp.with(fragment)
+    GlideApp.with(context)
             .load(placeId?.toGlidePlaceId())
             .apply {
                 placeholder?.let (this::placeholder)
@@ -98,12 +121,12 @@ fun ImageView.loadFromPlaceId(fragment: Fragment, placeId: String?, @DrawableRes
                     else -> { /* do nothing */ }
                 }
                 listener(object : RequestListener<Drawable> {
-                    override fun onLoadFailed(e: GlideException?, model: Any, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
+                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
                         e?.let {
-                            it.causes.forEach { cause ->
+                            it.causes?.forEach { cause ->
                                 AppLogger.e(cause)
                             }
-                            it.rootCauses.forEach { rootCause ->
+                            it.rootCauses?.forEach { rootCause ->
                                 AppLogger.e(rootCause)
                             }
                         }

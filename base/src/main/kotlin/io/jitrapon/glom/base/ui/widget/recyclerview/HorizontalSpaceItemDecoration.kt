@@ -10,11 +10,15 @@ import android.view.View
  *
  * Created by Jitrapon
  */
-class HorizontalSpaceItemDecoration(private val spacing: Int) : RecyclerView.ItemDecoration() {
+class HorizontalSpaceItemDecoration(private val spacing: Int, private val centerFirstItem: Boolean = false) : RecyclerView.ItemDecoration() {
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-        if (parent.getChildAdapterPosition(view) != parent.adapter.itemCount - 1) {
+        val position = parent.getChildAdapterPosition(view)
+        if (position != parent.adapter.itemCount - 1) {
             outRect.right = spacing
+        }
+        if (position == 0 && centerFirstItem) {
+            outRect.left = Math.round((parent.width / 2f) - (view.width / 2f))
         }
     }
 }

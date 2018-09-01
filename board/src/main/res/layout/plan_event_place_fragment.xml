@@ -21,8 +21,8 @@
         android:lines="2"
         android:ellipsize="end" />
 
-    <ImageView
-        android:id="@+id/event_plan_place_scrollview"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/event_plan_place_card_recyclerview"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintHeight_default="percent"
@@ -30,7 +30,11 @@
         android:layout_marginTop="@dimen/event_plan_instruction_vertical_margin"
         app:layout_constraintTop_toBottomOf="@+id/event_plan_place_instruction"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="horizontal"
+        app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+        android:clipToPadding="false"
+        android:paddingEnd="@dimen/event_plan_place_card_offset" />
 
     <TextView
         android:id="@+id/event_plan_place_vote_instruction"
@@ -44,7 +48,7 @@
         android:paddingEnd="32dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/event_plan_place_scrollview"
+        app:layout_constraintTop_toBottomOf="@+id/event_plan_place_card_recyclerview"
         android:layout_marginTop="@dimen/event_plan_vote_instruction_vertical_margin"
         android:lines="2"
         android:ellipsize="end" />

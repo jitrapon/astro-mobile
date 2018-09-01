@@ -7,6 +7,7 @@ import android.view.View
 import androidx.os.bundleOf
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
@@ -52,7 +53,7 @@ class PlanEventPlaceFragment : BaseFragment() {
     override fun onSetupView(view: View) {
         event_plan_place_vote_progressbar.hide()
         event_plan_place_poll_recyclerview.apply {
-            adapter = EventPollAdapter(viewModel, false)
+            adapter = EventPollAdapter(viewModel, TYPE_PLACE_POLL)
             addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }
@@ -61,6 +62,11 @@ class PlanEventPlaceFragment : BaseFragment() {
         }
         event_plan_place_select_poll_button.setOnClickListener {
             viewModel.setPlaceFromPoll()
+        }
+        event_plan_place_card_recyclerview.apply {
+            adapter = EventPollAdapter(viewModel, TYPE_PLACE_CARD)
+            addItemDecoration(HorizontalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_place_card_offset), true))
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }
 
         // if this is the first page the user sees, load the plan immediately
@@ -84,13 +90,23 @@ class PlanEventPlaceFragment : BaseFragment() {
                         event_plan_place_vote_progressbar.show()
                     }
                     UiModel.Status.SUCCESS -> {
-                        if (it.itemsChangedIndices.isNullOrEmpty()) {
-                            event_plan_place_vote_progressbar.hide()
+                        event_plan_place_vote_progressbar.hide()
+
+                        if (it.pollChangedIndices.isNullOrEmpty()) {
                             event_plan_place_poll_recyclerview.adapter.notifyDataSetChanged()
                         }
                         else {
-                            for (index in it.itemsChangedIndices!!) {
+                            for (index in it.pollChangedIndices!!) {
                                 event_plan_place_poll_recyclerview.adapter.notifyItemChanged(index)
+                            }
+                        }
+
+                        if (it.cardChangedIndices.isNullOrEmpty()) {
+                            event_plan_place_card_recyclerview.adapter.notifyDataSetChanged()
+                        }
+                        else {
+                            for (index in it.cardChangedIndices!!) {
+                                event_plan_place_card_recyclerview.adapter.notifyItemChanged(index)
                             }
                         }
                     }
@@ -98,12 +114,6 @@ class PlanEventPlaceFragment : BaseFragment() {
                         event_plan_place_vote_progressbar.hide()
                     }
                 }
-            }
-        })
-
-        viewModel.getObservablePlacePhoto().observe(this@PlanEventPlaceFragment, Observer {
-            it?.let {
-                event_plan_place_scrollview.setImageBitmap(it)
             }
         })
     }

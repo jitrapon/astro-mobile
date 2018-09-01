@@ -64,7 +64,7 @@ class PlanEventDateFragment : BaseFragment() {
         }
         event_plan_date_vote_progressbar.hide()
         event_plan_date_poll_recyclerview.apply {
-            adapter = EventPollAdapter(viewModel, true)
+            adapter = EventPollAdapter(viewModel, TYPE_DATE_POLL)
             addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }

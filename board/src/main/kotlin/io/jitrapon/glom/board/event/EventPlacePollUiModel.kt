@@ -10,5 +10,5 @@ data class EventPlacePollUiModel(val id: String,
                                  var description: AndroidString?,
                                  var avatar: String?,
                                  var count: Int,
-                                 var actionButton: ButtonUiModel?,
+                                 var actionButton: ButtonUiModel,
                                  override var status: UiModel.Status) : UiModel
