@@ -35,5 +35,13 @@ interface EventItemDataSource {
 
     fun getPlacePolls(item: EventItem, refresh: Boolean = true): Flowable<List<EventPlacePoll>>
 
+    fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable
+
+    fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll>
+
     fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>>
+
+    fun setPlacePollStatus(item: EventItem, open: Boolean): Completable
+
+    fun setPlace(item: EventItem, location: EventLocation?): Completable
 }

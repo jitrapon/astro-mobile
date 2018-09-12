@@ -92,6 +92,7 @@ class PlanEventPlaceFragment : BaseFragment() {
                     UiModel.Status.SUCCESS -> {
                         event_plan_place_vote_progressbar.hide()
 
+                        // update the place polls
                         if (it.pollChangedIndices.isNullOrEmpty()) {
                             event_plan_place_poll_recyclerview.adapter.notifyDataSetChanged()
                         }
@@ -101,6 +102,7 @@ class PlanEventPlaceFragment : BaseFragment() {
                             }
                         }
 
+                        // update the card suggestions
                         if (it.cardChangedIndices.isNullOrEmpty()) {
                             event_plan_place_card_recyclerview.adapter.notifyDataSetChanged()
                         }
@@ -113,6 +115,46 @@ class PlanEventPlaceFragment : BaseFragment() {
                     else -> {
                         event_plan_place_vote_progressbar.hide()
                     }
+                }
+            }
+        })
+
+        viewModel.getObservablePlaceStatusButton().observe(this@PlanEventPlaceFragment, Observer {
+            it?.let {
+                when {
+                    it.status == UiModel.Status.POSITIVE -> {
+                        event_plan_place_poll_status_button.apply {
+                            context?.let {
+                                show()
+                                setBackgroundColor(it.colorPrimary())
+                                setTextColor(it.color(R.color.white))
+                            }
+                        }
+                        event_plan_place_select_poll_button.show()
+                    }
+                    it.status == UiModel.Status.NEGATIVE -> {
+                        event_plan_place_poll_status_button.apply {
+                            context?.let {
+                                show()
+                                setBackgroundColor(it.color(R.color.white))
+                                setTextColor(it.colorPrimary())
+                            }
+                        }
+                        event_plan_place_select_poll_button.hide()
+                    }
+                    it.status == UiModel.Status.EMPTY -> {
+                        event_plan_place_poll_status_button.hide()
+                        event_plan_place_select_poll_button.hide()
+                    }
+                }
+                event_plan_place_poll_status_button.text = context?.getString(it.text)
+            }
+        })
+
+        viewModel.getObservablePlaceSelectButton().observe(this@PlanEventPlaceFragment, Observer {
+            it?.let { button ->
+                context?.let {
+                    event_plan_place_select_poll_button.text = it.getString(button.text)
                 }
             }
         })

@@ -84,4 +84,30 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
     override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
         throw NotImplementedError()
     }
+
+    override fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable {
+        return update(
+                localDataSource.updatePlacePollCount(item, poll, upvote),
+                remoteDataSource.updatePlacePollCount(item, poll, upvote),
+                false
+        )
+    }
+
+    override fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll> {
+        return remoteDataSource.addPlacePoll(item, placeId, googlePlaceId)
+    }
+
+    override fun setPlacePollStatus(item: EventItem, open: Boolean): Completable {
+        return update(
+                localDataSource.setPlacePollStatus(item, open),
+                remoteDataSource.setPlacePollStatus(item, open),
+                false)
+    }
+
+    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
+        return update(
+                localDataSource.setPlace(item, location),
+                remoteDataSource.setPlace(item, location),
+                false)
+    }
 }

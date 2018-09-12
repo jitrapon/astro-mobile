@@ -108,4 +108,45 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         inMemoryPlacePolls = polls.toMutableList()
         return Flowable.just(inMemoryPlacePolls)
     }
+
+    override fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable {
+        return Completable.fromCallable {
+            inMemoryPlacePolls.find { it.id == poll.id }?.let {
+                if (upvote) {
+                    userInteractor.getCurrentUserId()?.let(it.users::add)
+                }
+                else {
+                    userInteractor.getCurrentUserId()?.let(it.users::remove)
+                }
+            }
+        }
+    }
+
+    override fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll> {
+        throw NotImplementedError()
+    }
+
+    override fun setPlacePollStatus(item: EventItem, open: Boolean): Completable {
+        return Completable.fromCallable {
+            eventDao.updatePlacePollStatus(item.itemId, open)
+        }.doOnComplete {
+            item.itemInfo.placePollStatus = open
+        }
+    }
+
+    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
+        return Completable.fromCallable {
+            if (location == null) {
+                eventDao.updatePlace(item.itemId)
+            }
+            else {
+                eventDao.updatePlace(item.itemId, location.googlePlaceId, location.placeId, location.latitude,
+                        location.longitude, location.name, location.description, location.address)
+            }
+        }.doOnComplete {
+            item.itemInfo.apply {
+                this.location = location
+            }
+        }
+    }
 }

@@ -38,4 +38,11 @@ interface EventItemDao {
 
     @Query("UPDATE events SET start_time = :start, end_time = :end WHERE id = :itemId")
     fun updateDateTime(itemId: String, start: Long?, end: Long?)
+
+    @Query("UPDATE events SET place_poll_status = :open WHERE id = :itemId")
+    fun updatePlacePollStatus(itemId: String, open: Boolean)
+
+    @Query("UPDATE events SET g_place_id = :googlePlaceId, place_id = :placeId, latitude = :latitude, longitude = :longitude, place_name = :placeName, place_description = :placeDescription, place_address = :placeAddress WHERE id = :itemId")
+    fun updatePlace(itemId: String, googlePlaceId: String? = null, placeId: String? = null, latitude: Double? = null, longitude: Double? = null, placeName: String? = null,
+                    placeDescription: String? = null, placeAddress: String? = null)
 }

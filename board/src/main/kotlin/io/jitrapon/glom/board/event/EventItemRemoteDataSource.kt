@@ -75,7 +75,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
     }
 
     override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
-        return api.addDatePoll(circleInteractor.getActiveCircleId(), item.itemId)
+        return api.addDatePoll(circleInteractor.getActiveCircleId(), item.itemId, EventDatePollRequest(startDate.time, endDate?.time))
                 .map {
                     EventDatePoll(it.pollId, it.users.toMutableList(), it.startTime, it.endTime)
                 }
@@ -93,7 +93,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
     }
 
     override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
-        return api.setDate(circleInteractor.getActiveCircleId(), item.itemId, UpdateDateRequest(startDate?.time, endDate?.time))
+        return api.setDate(circleInteractor.getActiveCircleId(), item.itemId, EventDatePollRequest(startDate?.time, endDate?.time))
                 .flatMapCompletable {
                     Completable.fromCallable {
                         if (it.startTime != startDate?.time || it.endTime != endDate?.time) {
@@ -114,5 +114,52 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
 
     override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
         throw NotImplementedError()
+    }
+
+    override fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable {
+        return api.updatePlacePollCount(circleInteractor.getActiveCircleId(), item.itemId, poll.id, UpdatePollCountRequest(upvote))
+                .flatMapCompletable {
+                    Completable.fromCallable {
+                        if (upvote && !it.users.contains(userInteractor.getCurrentUserId())) {
+                            throw Exception("Response received does not contain current user id")
+                        }
+                        else if (!upvote && it.users.contains(userInteractor.getCurrentUserId())) {
+                            throw Exception("Response received contains current user id")
+                        }
+                    }
+                }
+    }
+
+    override fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll> {
+        return api.addPlacePoll(circleInteractor.getActiveCircleId(), item.itemId, EventPlacePollRequest(placeId, googlePlaceId))
+                .map {
+                    EventPlacePoll(it.pollId, it.users.toMutableList(), it.avatar, it.isAiSuggested,
+                            EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description, it.address))
+                }
+    }
+
+    override fun setPlacePollStatus(item: EventItem, open: Boolean): Completable {
+        return api.setPlacePollStatus(circleInteractor.getActiveCircleId(), item.itemId, UpdatePlacePollStatusRequest(open))
+                .flatMapCompletable {
+                    Completable.fromCallable {
+                        if (open != it.placePollStatus) {
+                            throw Exception("Response received does not match expected, received ${it.placePollStatus}, expected $open")
+                        }
+                    }
+                }
+    }
+
+    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
+        return api.setPlace(circleInteractor.getActiveCircleId(), item.itemId, UpdatePlaceRequest(if (location == null) null else EventPlacePollRequest(location.placeId, location.googlePlaceId)))
+                .flatMapCompletable {
+                    Completable.fromCallable {
+                        val response = if (it.location == null) null else EventLocation(it.location.latitude, it.location.longitude, it.location.googlePlaceId, it.location.placeId, it.location.name,
+                                it.location.description, it.location.address)
+                        if (location != response) {
+                            throw Exception("Response received does not match expected, received $response, " +
+                                    "expected $location")
+                        }
+                    }
+                }
     }
 }

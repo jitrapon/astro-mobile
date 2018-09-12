@@ -2,7 +2,6 @@ package io.jitrapon.glom.board.event
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
-import android.graphics.Bitmap
 import android.support.v4.util.ArrayMap
 import android.text.TextUtils
 import io.jitrapon.glom.base.component.PlaceProvider
@@ -56,9 +55,6 @@ class PlanEventViewModel : BaseViewModel() {
     /* observable date polls */
     private val observableDatePlan = MutableLiveData<EventDatePlanUiModel>()
 
-    /* whether or not the current user ID owns this item */
-    private var isUserAnOwner: Boolean = false
-
     /* whether or not date plan has been loaded */
     private var isDatePlanLoaded: Boolean = false
 
@@ -80,8 +76,14 @@ class PlanEventViewModel : BaseViewModel() {
     /* whether or not place plan has been loaded */
     private var isPlacePlanLoaded: Boolean = false
 
-    /* currently loaded place photo */
-    private val observablePlacePhoto = MutableLiveData<Bitmap?>()
+    /* last selected place poll position */
+    private var lastSelectedPlacePollIndex: Int? = null
+
+    /* observable place poll status (opened/closed) button */
+    private val observablePlaceStatusButton = MutableLiveData<ButtonUiModel>()
+
+    /* observable select place button for owners */
+    private val observablePlaceSelectButton = MutableLiveData<ButtonUiModel>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -105,7 +107,6 @@ class PlanEventViewModel : BaseViewModel() {
                     interactor.initWith(placeProvider, item, true)
 
                     item.itemInfo.let {
-                        isUserAnOwner = item.owners.contains(interactor.getCurrentUserId())
 
                         // set up the overview page
                         isUserAttending = it.attendees.contains(interactor.getCurrentUserId())
@@ -119,10 +120,16 @@ class PlanEventViewModel : BaseViewModel() {
                         observableDatePlan.value = datePlan.apply {
                             itemsChangedIndices = null
                         }
+                        observablePlacePlan.value = placePlan.apply {
+                            pollChangedIndices = null
+                            cardChangedIndices = null
+                        }
 
                         // refresh the bottom buttons
                         refreshDatePollStatusButton(observableDateVoteStatusButton.value ?: ButtonUiModel(null))
                         refreshDatePollSelectButton(observableDateSelectButton.value ?: ButtonUiModel(null))
+                        refreshPlacePollStatusButton(observablePlaceStatusButton.value ?: ButtonUiModel(null))
+                        refreshPlacePollSelectButton(observablePlaceSelectButton.value ?: ButtonUiModel(null))
                     }
                 }
             }
@@ -215,7 +222,7 @@ class PlanEventViewModel : BaseViewModel() {
 
             when (it) {
                 is AsyncSuccessResult -> {
-                    if (!interactor.event.itemInfo.datePollStatus && isUserAnOwner) {
+                    if (interactor.canUpdateDateTimeFromPoll()) {
                         refreshAndSelectDatePoll()
                     }
                     else {
@@ -249,7 +256,7 @@ class PlanEventViewModel : BaseViewModel() {
         val (dateString, timeString) = getPollDateTime(startTime, endTime)
         return if (status == null) {
             val isDatePollOpened = event.itemInfo.datePollStatus
-            val isOwner = event.owners.contains(interactor.getCurrentUserId())
+            val isOwner = interactor.isOwner()
             val isUpvoted = users.contains(interactor.getCurrentUserId())
             val showUpvoted = if (!isUpvoted) false else !isOwner || (isOwner && isDatePollOpened)
             EventDatePollUiModel(id, dateString, timeString, Date(startTime), endTime?.let { Date(it) }, users.size,
@@ -287,7 +294,7 @@ class PlanEventViewModel : BaseViewModel() {
     fun getDatePollItem(position: Int) = datePlan.datePolls[position]
 
     fun toggleDatePoll(position: Int) {
-        if (!isUserAnOwner || (isUserAnOwner && interactor.event.itemInfo.datePollStatus)) {
+        if (interactor.canUpdateDatePollCount()) {
             val originalStatus = datePlan.datePolls[position].status
             val originalCount = datePlan.datePolls[position].count
             observableDatePlan.value = datePlan.apply {
@@ -351,7 +358,7 @@ class PlanEventViewModel : BaseViewModel() {
         interactor.addDatePoll(startDate, endDate) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    if (!interactor.event.itemInfo.datePollStatus && isUserAnOwner) {
+                    if (interactor.canUpdateDateTimeFromPoll()) {
                         refreshAndSelectDatePoll()
                     }
                     else {
@@ -379,7 +386,7 @@ class PlanEventViewModel : BaseViewModel() {
     private fun refreshDatePollStatusButton(uiModel: ButtonUiModel) {
         observableDateVoteStatusButton.value = uiModel.let { button ->
             val event = interactor.event
-            if (event.owners.contains(interactor.getCurrentUserId())) {
+            if (interactor.isOwner()) {
                 if (event.itemInfo.datePollStatus) {
                     button.text = AndroidString(R.string.event_plan_close_vote)
                     button.status = UiModel.Status.NEGATIVE
@@ -518,8 +525,8 @@ class PlanEventViewModel : BaseViewModel() {
 
             when (it) {
                 is AsyncSuccessResult -> {
-                    if (!interactor.event.itemInfo.placePollStatus && isUserAnOwner) {
-                        refreshAndSelectPlacePoll()
+                    if (interactor.canUpdatePlaceFromPoll()) {
+                        refreshAndSelectPlacePoll(it.result)
                     }
                     else {
                         refreshPlacePolls(it.result)
@@ -539,6 +546,7 @@ class PlanEventViewModel : BaseViewModel() {
         val event = interactor.event
         observablePlacePlan.value = placePlan.apply {
             pollChangedIndices = null
+            cardChangedIndices = null
             status = UiModel.Status.SUCCESS
             placePolls.clear()
             placeCards.clear()
@@ -559,6 +567,50 @@ class PlanEventViewModel : BaseViewModel() {
         if (pollPlaceIdMap.isNotEmpty()) {
             loadPlaceInfo(pollPlaceIdMap)
         }
+    }
+
+    private fun refreshAndSelectPlacePoll(result: List<EventPlacePoll>) {
+        val pollPlaceIdMap = ArrayMap<String, String>()
+        val event = interactor.event
+
+        placePlan.placePolls.clear()
+        placePlan.placeCards.clear()
+
+        val maxIndex: Int? = if (result.isNullOrEmpty()) null else {
+            var temp = 0
+            for (i in 0 until result.size) {
+                result[i].let {
+                    if (it.users.size > result[temp].users.size) {
+                        temp = i
+                    }
+
+                    it.location.googlePlaceId?.let { placeId ->
+                        pollPlaceIdMap.put(it.id, placeId)
+                    }
+                    it.toUiModel(event).let { uiModel ->
+                        if (!it.isAiSuggested) {
+                            placePlan.placePolls.add(uiModel)
+                        }
+                        placePlan.placeCards.add(uiModel)
+                    }
+                }
+            }
+            temp
+        }
+        lastSelectedPlacePollIndex = maxIndex
+        lastSelectedPlacePollIndex?.let {
+            placePlan.placePolls[it].status = UiModel.Status.SUCCESS
+        }
+
+        observablePlacePlan.value = placePlan.apply {
+            pollChangedIndices = null
+            cardChangedIndices = null
+            status = UiModel.Status.SUCCESS
+        }
+
+        refreshPlacePollSelectButton(observablePlaceSelectButton.value ?: ButtonUiModel(null))
+
+        loadPlaceInfo(pollPlaceIdMap)
     }
 
     private fun loadPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>) {
@@ -604,7 +656,7 @@ class PlanEventViewModel : BaseViewModel() {
     private fun EventPlacePoll.toUiModel(event: EventItem, status: UiModel.Status? = null): EventPlacePollUiModel {
         val uiStatus: UiModel.Status = if (status == null) {
             val isPlacePollOpened = event.itemInfo.placePollStatus
-            val isOwner = event.owners.contains(interactor.getCurrentUserId())
+            val isOwner = interactor.isOwner()
             val isUpvoted = users.contains(interactor.getCurrentUserId())
             val showUpvoted = if (!isUpvoted) false else !isOwner || (isOwner && isPlacePollOpened)
             if (showUpvoted) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE
@@ -629,24 +681,156 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun getPlaceCardCount(): Int = placePlan.placeCards.size
 
-    private fun refreshAndSelectPlacePoll() {
-
+    private fun refreshPlacePollStatusButton(uiModel: ButtonUiModel) {
+        observablePlaceStatusButton.value = uiModel.let { button ->
+            val event = interactor.event
+            if (interactor.isOwner()) {
+                if (event.itemInfo.placePollStatus) {
+                    button.text = AndroidString(R.string.event_plan_close_vote)
+                    button.status = UiModel.Status.NEGATIVE
+                }
+                else {
+                    button.text = AndroidString(R.string.event_plan_open_vote)
+                    button.status = UiModel.Status.POSITIVE
+                }
+            }
+            else {
+                button.text = null
+                button.status = UiModel.Status.EMPTY
+            }
+            button
+        }
     }
 
     fun togglePlacePoll(position: Int) {
+        if (interactor.canUpdatePlacePollCount()) {
+            val originalStatus = placePlan.placePolls[position].status
+            val originalCount = placePlan.placePolls[position].count
+            observablePlacePlan.value = placePlan.apply {
+                placePolls.apply {
+                    this[position].apply {
+                        if (status == UiModel.Status.POSITIVE) {
+                            status = UiModel.Status.NEGATIVE
+                            count -= 1
+                        }
+                        else {
+                            status = UiModel.Status.POSITIVE
+                            count += 1
+                        }
+                    }
+                }
+                pollChangedIndices = mutableListOf(position)
+            }
 
+            placePlan.placePolls[position].let {
+                val isUpvoting = originalStatus == UiModel.Status.NEGATIVE
+                interactor.updatePlacePollCount(it.id, isUpvoting) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            observablePlacePlan.value = placePlan.apply {
+                                placePlan.placePolls.apply {
+                                    this[position].status = if (isUpvoting) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE
+                                }
+                                pollChangedIndices = mutableListOf(position)
+                            }
+                        }
+                        is AsyncErrorResult -> {
+                            observablePlacePlan.value = placePlan.apply {
+                                placePlan.placePolls.apply {
+                                    this[position].apply {
+                                        status = originalStatus
+                                        count = originalCount
+                                    }
+                                }
+                                pollChangedIndices = mutableListOf(position)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            setPlacePollSelected(position)
+        }
+    }
+
+    private fun setPlacePollSelected(index: Int) {
+        if (index != lastSelectedPlacePollIndex) {
+            observablePlacePlan.value = placePlan.apply {
+                pollChangedIndices = ArrayList<Int>().apply {
+                    add(index)
+                    lastSelectedPlacePollIndex?.let(::add)
+                }
+                status = UiModel.Status.SUCCESS
+                placePolls[index].status = UiModel.Status.SUCCESS
+                lastSelectedPlacePollIndex?.let {
+                    placePolls[it].status = UiModel.Status.NEGATIVE
+                }
+            }
+            lastSelectedPlacePollIndex = index
+
+            refreshPlacePollSelectButton(observablePlaceSelectButton.value ?: ButtonUiModel(null))
+        }
     }
 
     fun togglePlacePollStatus() {
+        observableViewAction.value = Loading(true)
+        val pollIsOpened = interactor.event.itemInfo.placePollStatus
 
+        interactor.setItemPlacePollStatus(!pollIsOpened) {
+            observableViewAction.value = Loading(false)
+            when (it) {
+                is AsyncSuccessResult -> {
+                    refreshPlacePollStatusButton(observablePlaceStatusButton.value ?: ButtonUiModel(null))
+
+                    // find out which place poll has the most vote, then preselect that
+                    refreshAndSelectPlacePoll(interactor.placePolls)
+                }
+                is AsyncErrorResult -> {}
+            }
+        }
     }
 
     fun setPlaceFromPoll() {
+        lastSelectedDatePollIndex?.let {
+            observableViewAction.value = Loading(true)
 
+            val selected = placePlan.placePolls[it]
+            interactor.syncItemPlace(selected.id) {
+                when (it) {
+                    is AsyncSuccessResult -> {
+                        val name = if (!TextUtils.isEmpty(selected.name?.text)) " (${selected.name?.text})" else ""
+                        observableViewAction.execute(arrayOf(
+                                Loading(false),
+                                Toast(AndroidString(
+                                        resId = R.string.event_plan_place_select_completed,
+                                        formatArgs = arrayOf(name))
+                                )
+                        ))
+                    }
+                    is AsyncErrorResult -> handleError(it.error)
+                }
+            }
+        }
     }
 
     fun viewPlaceDetails(position: Int) {
 
+    }
+
+    private fun refreshPlacePollSelectButton(uiModel: ButtonUiModel) {
+        observablePlaceSelectButton.value = uiModel.let { button ->
+            lastSelectedPlacePollIndex.let {
+                if (it == null) {
+                    button.text = AndroidString(R.string.event_plan_place_no_selection)
+                }
+                else {
+                    val selected = placePlan.placePolls[it]
+                    button.text = AndroidString(R.string.event_plan_place_select, arrayOf(selected.name?.text ?: ""))
+                }
+            }
+            button
+        }
     }
 
     //endregion
@@ -680,7 +864,9 @@ class PlanEventViewModel : BaseViewModel() {
 
     fun getObservablePlacePlan(): LiveData<EventPlacePlanUiModel> = observablePlacePlan
 
-    fun getObservablePlacePhoto(): LiveData<Bitmap?> = observablePlacePhoto
+    fun getObservablePlaceStatusButton(): LiveData<ButtonUiModel> = observablePlaceStatusButton
+
+    fun getObservablePlaceSelectButton(): LiveData<ButtonUiModel> = observablePlaceSelectButton
 
     //endregion
 }

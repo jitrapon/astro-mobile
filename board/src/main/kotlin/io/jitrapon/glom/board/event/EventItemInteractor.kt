@@ -60,6 +60,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     val placePolls: List<EventPlacePoll>
         get() = eventItemDataSource.getPlacePolls(event, false).blockingFirst()
 
+    /* whether or not the current user ID owns this item */
+    private var isUserAnOwner: Boolean = false
+
     //region initializers
 
     /**
@@ -80,7 +83,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
             eventItemDataSource.initWith(it)
             note = it.itemInfo.note
-
+            isUserAnOwner = item.owners.contains(getCurrentUserId())
             initialized = true
         }
     }
@@ -94,6 +97,31 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Returns true if the item initialized with initWith() has been modified
      */
     fun isItemModified() = isItemModified
+
+    /**
+     * Whether or not this user is an owner
+     */
+    fun isOwner() = isUserAnOwner
+
+    /**
+     * Whether or not the user can select a new date from a date poll
+     */
+    fun canUpdateDateTimeFromPoll() = !event.itemInfo.datePollStatus && isUserAnOwner
+
+    /**
+     * Whether or not the user can update the date poll count
+     */
+    fun canUpdateDatePollCount() = !isUserAnOwner || (isUserAnOwner && event.itemInfo.datePollStatus)
+
+    /**
+     * Whether or not the user can select a new place from a place poll
+     */
+    fun canUpdatePlaceFromPoll() = !event.itemInfo.placePollStatus && isUserAnOwner
+
+    /**
+     * Whether or not the user can update the place poll count
+     */
+    fun canUpdatePlacePollCount() = !isUserAnOwner || (isUserAnOwner && event.itemInfo.placePollStatus)
 
     //endregion
     //region save operations
@@ -441,6 +469,55 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                         onLoadPlaceDetailsComplete(AsyncErrorResult(it))
                     })
         }
+    }
+
+    fun addPlacePoll() {
+
+    }
+
+    fun updatePlacePollCount(id: String, upvote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
+        eventItemDataSource.getPlacePolls(event, false)
+                .flatMapCompletable {
+                    eventItemDataSource.updatePlacePollCount(event, it.first { it.id == id }, upvote)
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
+    }
+
+    fun setItemPlacePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
+        eventItemDataSource.setPlacePollStatus(event, open)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    isItemModified = true
+
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
+    }
+
+    fun syncItemPlace(id: String, onComplete: (AsyncResult<Unit>) -> Unit) {
+        eventItemDataSource.getPlacePolls(event, false)
+                .flatMapCompletable {
+                    it.first { it.id == id }.let { poll ->
+                        eventItemDataSource.setPlace(event, poll.location)
+                    }
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    isItemModified = true
+
+                    onComplete(AsyncSuccessResult(Unit))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     //endregion

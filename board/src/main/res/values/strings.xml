@@ -51,4 +51,7 @@
     <string name="event_plan_place_vote_generic_instruction">Tap one of the places below to vote for it. Don\'t like the suggestions? Try adding your own!</string>
     <string name="event_plan_place_add">Add</string>
     <string name="event_plan_place_added">Added</string>
+    <string name="event_plan_place_no_selection">no place selected</string>
+    <string name="event_plan_place_select">set place as\n%1$s</string>
+    <string name="event_plan_place_select_completed">Place set as %1$s</string>
 </resources>
