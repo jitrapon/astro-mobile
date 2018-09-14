@@ -71,12 +71,12 @@ class PlanEventOverviewFragment : BaseFragment() {
                         it.status == UiModel.Status.POSITIVE -> event_plan_join_button.apply {
                             context?.let {
                                 setBackgroundColor(it.colorPrimary())
-                                setTextColor(it.color(R.color.white))
+                                setTextColor(it.color(io.jitrapon.glom.R.color.white))
                             }
                         }
                         it.status == UiModel.Status.NEGATIVE -> event_plan_join_button.apply {
                             context?.let {
-                                setBackgroundColor(it.color(R.color.white))
+                                setBackgroundColor(it.color(io.jitrapon.glom.R.color.white))
                                 setTextColor(it.colorPrimary())
                             }
                         }

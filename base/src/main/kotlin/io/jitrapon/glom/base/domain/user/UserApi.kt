@@ -6,6 +6,6 @@ import retrofit2.http.Path
 
 interface UserApi {
 
-    @GET("5b00ff00300000660020a71f/{circleId}")
+    @GET("circle/{circleId}/users")
     fun getUsers(@Path("circleId") circleId: String): Flowable<UsersResponse>
 }

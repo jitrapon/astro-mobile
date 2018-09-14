@@ -48,16 +48,15 @@ fun EventItem.serializeInfo(): MutableMap<String, Any?> {
             put("event_name", it.eventName)
             put("start_time", it.startTime)
             put("end_time", it.endTime)
-            put("location", if (it.location == null) null else HashMap<String, Any?>().apply {
-                it.location?.let {
-                    put("lat", it.latitude)
-                    put("long", it.longitude)
-                    put("g_place_id", it.googlePlaceId)
-                    put("place_id", it.placeId)
-                    // we don't send name, description, and address because a custom place must have been created before this
-//                    put("name", it.name)
-//                    put("description", it.description)
-//                    put("address", it.address)
+            put("location", HashMap<String, Any?>().apply {
+                it.location.let {
+                    put("lat", it?.latitude)
+                    put("long", it?.longitude)
+                    put("g_place_id", it?.googlePlaceId)
+                    put("place_id", it?.placeId)
+                    put("name", it?.name)
+                    put("description", it?.description)
+                    put("address", it?.address)
                 }
             })
             put("note", it.note)

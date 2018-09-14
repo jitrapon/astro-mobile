@@ -10,7 +10,7 @@ import java.util.*
  */
 class UserInteractor(private val dataSource: UserDataSource) {
 
-    private var signedInUserId: String? = "yoshi3003"
+    private var signedInUserId: String? = "okpkcLsh2xURIVfRZ1aWTKCmIcI3"
 
     fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> = dataSource.getUsers(circleId, refresh)
 

@@ -57,7 +57,7 @@ class PlanEventActivity : BaseActivity() {
         viewModel.apply {
             getObservableBackground().observe(this@PlanEventActivity, Observer {
                 event_plan_viewpager_background.loadFromUrl(this@PlanEventActivity, it, null, null,
-                        ColorDrawable(ContextCompat.getColor(this@PlanEventActivity, R.color.blue_grey)),
+                        ColorDrawable(ContextCompat.getColor(this@PlanEventActivity, io.jitrapon.glom.R.color.blue_grey)),
                         Transformation.CENTER_CROP,
                         800)
             })

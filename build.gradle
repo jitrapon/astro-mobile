@@ -43,6 +43,8 @@ buildscript {
 
         keystoreProperties = new Properties()
         releaseKeystorePath = 'release.keystore'
+
+        debugApplicationIdSuffix = ".debug"
     }
 
     repositories {

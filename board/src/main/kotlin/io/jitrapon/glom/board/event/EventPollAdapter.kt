@@ -57,8 +57,8 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
                 holder.selectIcon.tint(
                         when (it.status) {
                             UiModel.Status.POSITIVE -> holder.selectIcon.context.colorPrimary()
-                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(R.color.calm_blue)
-                            else -> holder.selectIcon.context.color(R.color.warm_grey)
+                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(io.jitrapon.glom.R.color.calm_blue)
+                            else -> holder.selectIcon.context.color(io.jitrapon.glom.R.color.warm_grey)
                         })
                 holder.count.text = it.count.toString()
             }
@@ -79,8 +79,8 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
                 holder.selectIcon.tint(
                         when (it.status) {
                             UiModel.Status.POSITIVE -> holder.selectIcon.context.colorPrimary()
-                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(R.color.calm_blue)
-                            else -> holder.selectIcon.context.color(R.color.warm_grey)
+                            UiModel.Status.SUCCESS -> holder.selectIcon.context.color(io.jitrapon.glom.R.color.calm_blue)
+                            else -> holder.selectIcon.context.color(io.jitrapon.glom.R.color.warm_grey)
                         })
                 holder.count.text = it.count.toString()
             }

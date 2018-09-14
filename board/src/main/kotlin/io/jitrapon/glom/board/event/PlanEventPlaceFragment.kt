@@ -127,7 +127,7 @@ class PlanEventPlaceFragment : BaseFragment() {
                             context?.let {
                                 show()
                                 setBackgroundColor(it.colorPrimary())
-                                setTextColor(it.color(R.color.white))
+                                setTextColor(it.color(io.jitrapon.glom.R.color.white))
                             }
                         }
                         event_plan_place_select_poll_button.show()
@@ -136,7 +136,7 @@ class PlanEventPlaceFragment : BaseFragment() {
                         event_plan_place_poll_status_button.apply {
                             context?.let {
                                 show()
-                                setBackgroundColor(it.color(R.color.white))
+                                setBackgroundColor(it.color(io.jitrapon.glom.R.color.white))
                                 setTextColor(it.colorPrimary())
                             }
                         }

@@ -47,6 +47,7 @@ android {
             debuggable true
 
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
+            resValue "string", "server_url", "http://192.168.1.35:8080/"
         }
         release {
             minifyEnabled true
@@ -56,6 +57,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
 
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
+            resValue "string", "server_url", "http://163.47.10.120:8080/"
         }
     }
 }

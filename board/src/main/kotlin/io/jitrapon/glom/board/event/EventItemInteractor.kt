@@ -177,8 +177,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                                                     it.latLng.latitude,
                                                     it.latLng.longitude,
                                                     it.id,
-                                                    "g-place_id",
+                                                    null,
                                                     if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
+                                                    null,
                                                     it.address.toString())))
                                 }
                             }
@@ -697,8 +698,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             if (!showAllCustomPlaces) {
                 placeProvider?.getAutocompletePrediction(query)?.blockingGet()?.let {
                     it.map {
-                        Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), it.getSecondaryText(null)?.toString(), null,
-                                null, null, null, it.placeId, "g_place_id"))
+                        Suggestion(PlaceInfo(it.getPrimaryText(null)?.toString(), null, it.getSecondaryText(null)?.toString(),
+                                null, null, null, it.placeId, null))
                     }.let { addAll(it) }
                 }
             }

@@ -6,19 +6,19 @@ import retrofit2.http.*
 
 interface BoardApi {
 
-    @GET("5b5c281e32000084004262a1/{circleId}/{type}/?mocky-delay=1000ms")
-    fun getBoard(@Path("circleId") circleId: String, @Path("type") itemType: String?): Flowable<BoardResponse>
+    @GET("circle/{circleId}/board")
+    fun getBoard(@Path("circleId") circleId: String, @Query("type") itemType: String?): Flowable<BoardResponse>
 
-    @POST("5b0d07eb31000064009d54d7/{circleId}?mocky-delay=800ms")
+    @POST("circle/{circleId}/board")
     fun createBoardItem(@Path("circleId") circleId: String,
                         @Body item: BoardItemRequest): Completable
 
-    @PUT("5b0d0f1731000053009d54ee/{circleId}/item/{itemId}?mocky-delay=1000ms")
+    @PUT("circle/{circleId}/board/{itemId}")
     fun editBoardItem(@Path("circleId") circleId: String,
                       @Path("itemId") itemId: String,
                       @Body info: MutableMap<String, Any?>): Completable    // https://github.com/square/retrofit/issues/1805
 
-    @DELETE("5b0d172131000063009d5506/{circleId}/item/{itemId}?mocky-delay=1000ms")
+    @DELETE("circle/{circleId}/board/{itemId}")
     fun deleteBoardItem(@Path("circleId") circleId: String,
                       @Path("itemId") itemId: String): Completable
 }

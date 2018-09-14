@@ -14,7 +14,7 @@ data class PlaceInfo(var name: String? = null,
                      var latitude: Double? = null,
                      var longitude: Double? = null,
                      var googlePlaceId: String? = null,
-                     var placeId: String,
+                     var placeId: String? = null,
                      var status: Int = FAVORITED,
                      override var retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : DataModel {

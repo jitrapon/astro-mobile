@@ -150,9 +150,9 @@ class EventItemViewModel : BoardItemViewModel() {
         return if (!TextUtils.isEmpty(location.name)) {
             AndroidString(text = location.name)
         }
-        else if (location.placeId == null && location.googlePlaceId == null) {
+        else if (location.placeId == null && location.googlePlaceId == null && location.latitude != null && location.longitude != null) {
             AndroidString(resId = R.string.event_card_location_latlng,
-                    formatArgs = arrayOf(location.latitude?.toString() ?: "null", location.longitude?.toString() ?: "null"))
+                    formatArgs = arrayOf(location.latitude.toString(), location.longitude.toString()))
         }
         else if (!TextUtils.isEmpty(location.googlePlaceId)) {
             AndroidString(R.string.event_card_location_placeholder)
@@ -360,7 +360,7 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDetailLocationDescription(location: EventLocation?): AndroidString? {
         location ?: return null
-        return if (TextUtils.isEmpty(location.description)) null else AndroidString(text = location.description)
+        return if (TextUtils.isEmpty(location.address)) null else AndroidString(text = location.address)
     }
 
     /**
@@ -581,7 +581,7 @@ class EventItemViewModel : BoardItemViewModel() {
     fun selectPlace(suggestion: Suggestion) {
         suggestion.selectData.let {
             if (it is PlaceInfo) {
-                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description).apply {
+                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description, it.address).apply {
                     interactor.setItemLocation(this)
                     observableLocation.value = getEventDetailLocation(this)
                     observableLocationDescription.value = getEventDetailLocationDescription(this)

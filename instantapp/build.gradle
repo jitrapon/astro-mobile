@@ -16,7 +16,9 @@ android {
     }
 
     buildTypes {
-        debug {}
+        debug {
+//            applicationIdSuffix rootProject.debugApplicationIdSuffix
+        }
         release {}
     }
 }

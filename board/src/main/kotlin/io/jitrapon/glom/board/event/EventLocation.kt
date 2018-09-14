@@ -28,6 +28,7 @@ data class EventLocation(val latitude: Double?,
             parcel.readString(),
             parcel.readString(),
             parcel.readString(),
+            parcel.readString(),
             parcel.readString())
 
     constructor(name: String?) : this(null, null, null, null, name, null)
@@ -39,6 +40,7 @@ data class EventLocation(val latitude: Double?,
         parcel.writeString(placeId)
         parcel.writeString(name)
         parcel.writeString(description)
+        parcel.writeString(address)
     }
 
     override fun describeContents(): Int = 0
