@@ -431,8 +431,12 @@ class PlanEventViewModel : BaseViewModel() {
                 is AsyncSuccessResult -> {
                     refreshDatePollStatusButton(observableDateVoteStatusButton.value ?: ButtonUiModel(null))
 
-                    // find out which date poll has the most vote, then preselect that
-                    refreshAndSelectDatePoll()
+                    if (interactor.canUpdateDateTimeFromPoll()) {
+                        refreshAndSelectDatePoll()
+                    }
+                    else {
+                        refreshDatePolls(interactor.datePolls)
+                    }
                 }
                 is AsyncErrorResult -> {}
             }
@@ -792,7 +796,7 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     fun setPlaceFromPoll() {
-        lastSelectedDatePollIndex?.let {
+        lastSelectedPlacePollIndex?.let {
             observableViewAction.value = Loading(true)
 
             val selected = placePlan.placePolls[it]
