@@ -20,7 +20,7 @@
     <string name="event_card_join_success">%1$s confirmed</string>
     <string name="event_card_maybe_success">%1$s unconfirmed</string>
     <string name="event_card_background_transition">event_card_background_transition</string>
-    <string name="event_item_name_hint">Name</string>
+    <string name="event_item_name_hint">What\'s up?</string>
     <string name="board_item_edited">Item updated</string>
     <string name="event_item_start_date_placeholder">Set start time</string>
     <string name="event_item_end_date_placeholder">Set end time</string>

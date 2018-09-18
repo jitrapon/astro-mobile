@@ -343,7 +343,7 @@ class EventItemViewModel : BoardItemViewModel() {
         return AndroidString(text = StringBuilder().apply {
             val date = Date(dateAsEpochMs)
             append(date.toDateString(true))
-            append("\n")
+            append("   ")
             append(date.toTimeString())
         }.toString())
     }
