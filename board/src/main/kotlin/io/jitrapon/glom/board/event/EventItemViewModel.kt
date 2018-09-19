@@ -339,7 +339,7 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean): AndroidString? {
         dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
-                                                        else R.string.event_item_end_date_placeholder)
+                                                        else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
         return AndroidString(text = StringBuilder().apply {
             val date = Date(dateAsEpochMs)
             append(date.toDateString(true))
@@ -675,7 +675,8 @@ class EventItemViewModel : BoardItemViewModel() {
      * Update the location text
      */
     fun onLocationTextChanged(charSequence: CharSequence) {
-        interactor.setItemLocation(charSequence)
+        if (charSequence.isEmpty()) interactor.setItemLocation(location = null)
+        else interactor.setItemLocation(charSequence)
     }
 
     //endregion

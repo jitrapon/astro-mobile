@@ -98,13 +98,13 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_clock_icon"
                     app:srcCompat="@drawable/ic_time" />
 
-                <TextView
+                <io.jitrapon.glom.board.event.widget.GlomTextView
                     android:id="@+id/event_item_start_time"
                     style="@style/CardView.TextView"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="36dp"
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:layout_marginTop="1dp"
                     android:layout_marginEnd="@dimen/card_content_padding"
@@ -112,7 +112,9 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/event_item_clock_icon"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_title_til"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:drawableEnd="@drawable/ic_close"
+                    android:drawableTint="@color/grey" />
 
                 <View
                     android:id="@+id/event_item_time_separator"
@@ -126,20 +128,22 @@
                     app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_end_time" />
 
-                <TextView
+                <io.jitrapon.glom.board.event.widget.GlomTextView
                     android:id="@+id/event_item_end_time"
                     style="@style/CardView.TextView"
                     android:foreground="?android:attr/selectableItemBackground"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="36dp"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:drawableEnd="@drawable/ic_close"
+                    android:drawableTint="@color/grey" />
 
                 <ImageView
                     android:id="@+id/event_item_location_icon"
@@ -166,7 +170,9 @@
                     android:hint="@string/event_item_location_hint"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/event_item_location_icon"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_time_separator" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_time_separator"
+                    android:drawableEnd="@drawable/ic_close"
+                    android:drawableTint="@color/grey" />
 
                 <TextView
                     android:id="@+id/event_item_location_secondary"

@@ -116,16 +116,32 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 }
             }
         }
-        event_item_start_time.setOnClickListener {
-            event_item_title.clearFocusAndHideKeyboard()
-            viewModel.showDateTimePicker(true)
+        event_item_start_time.apply {
+            setOnClickListener {
+                event_item_title.clearFocusAndHideKeyboard()
+                viewModel.showDateTimePicker(true)
+            }
+            setOnDrawableClick {
+                viewModel.setDate(null, true)
+            }
         }
-        event_item_end_time.setOnClickListener {
-            event_item_title.clearFocusAndHideKeyboard()
-            viewModel.showDateTimePicker(false)
+        event_item_end_time.apply {
+            setOnClickListener {
+                event_item_title.clearFocusAndHideKeyboard()
+                viewModel.showDateTimePicker(false)
+            }
+            setOnDrawableClick {
+                viewModel.setDate(null, false)
+            }
         }
         locationTextWatcher = event_item_location_primary.doOnTextChanged { s, _, _, _ ->
             viewModel.onLocationTextChanged(s)
+            event_item_location_primary.setDrawableVisible(s.isNotEmpty())
+        }
+        event_item_location_primary.apply {
+            setOnDrawableClick {
+                setText(null, true)
+            }
         }
         event_item_attendees.apply {
             adapter = EventItemAttendeeAdapter(this@EventItemActivity, visibleItemCount = 20,
@@ -257,11 +273,17 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on the start date
             getObservableStartDate().observe(this@EventItemActivity, Observer {
                 event_item_start_time.text = getString(it)
+                it?.let {
+                    event_item_start_time.setDrawableVisible(it.status != UiModel.Status.EMPTY)
+                }
             })
 
             // observe on the end date
             getObservableEndDate().observe(this@EventItemActivity, Observer {
                 event_item_end_time.text = getString(it)
+                it?.let {
+                    event_item_end_time.setDrawableVisible(it.status != UiModel.Status.EMPTY)
+                }
             })
 
             // open a datetime picker
@@ -284,6 +306,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         locationTextWatcher?.let (::removeTextChangedListener)
                         setText(getString(it), false)
                         Selection.setSelection(text, text.length)
+                        setDrawableVisible(text.isNotEmpty())
                         locationTextWatcher?.let (::addTextChangedListener)
                     }
                 }
