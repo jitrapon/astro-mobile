@@ -19,6 +19,6 @@ data class EventPlacePollResponse(@field: Json(name = "poll_id") val pollId: Str
                                   @field: Json(name = "latitude") val latitude: Double?,
                                   @field: Json(name = "longitude") val longitude: Double?,
                                   @field: Json(name = "place_id") val placeId: String?,
-                                  @field: Json(name = "google_place_id") val googlePlaceId: String?,
+                                  @field: Json(name = "g_place_id") val googlePlaceId: String?,
                                   @field: Json(name = "is_ai_suggested") val isAiSuggested: Boolean,
                                   @field: Json(name = "users") val users: List<String>)

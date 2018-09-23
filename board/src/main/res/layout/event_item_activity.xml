@@ -163,16 +163,28 @@
                     style="@style/CardView.EditText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="@dimen/card_content_padding"
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view"
-                    android:hint="@string/event_item_location_hint"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_location_icon"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_time_separator"
                     android:drawableEnd="@drawable/ic_close"
-                    android:drawableTint="@color/grey" />
+                    android:drawableTint="@color/grey"
+                    android:hint="@string/event_item_location_hint"
+                    app:layout_constraintEnd_toStartOf="@+id/event_item_view_placepicker_button"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_location_icon"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_time_separator" />
+
+                <io.jitrapon.glom.base.ui.widget.GlomButton
+                    android:id="@+id/event_item_view_placepicker_button"
+                    style="@style/Widget.Glom.Button.Flat"
+                    android:layout_width="65dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="@string/event_item_transition_view"
+                    android:text="@string/event_item_view_place_picker"
+                    app:layout_constraintBottom_toBottomOf="@+id/event_item_location_primary"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/event_item_location_primary"
+                    android:layout_marginTop="8dp" />
 
                 <TextView
                     android:id="@+id/event_item_location_secondary"

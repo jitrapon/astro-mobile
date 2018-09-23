@@ -15,10 +15,13 @@ import io.jitrapon.glom.board.R
 const val TYPE_DATE_POLL = 0
 const val TYPE_PLACE_POLL = 1
 const val TYPE_PLACE_CARD = 2
+const val TYPE_ADD_PLACE_POLL = 3
 
 class EventPollAdapter(private val viewModel: PlanEventViewModel, private val itemType: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    override fun getItemViewType(position: Int): Int = itemType
+    override fun getItemViewType(position: Int): Int = if (itemType == TYPE_PLACE_POLL) {
+        if (viewModel.isAddPlacePollButton(position)) TYPE_ADD_PLACE_POLL else TYPE_PLACE_POLL
+    } else itemType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
@@ -26,6 +29,8 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
                     .inflate(R.layout.plan_event_date_poll, parent, false), viewModel::toggleDatePoll)
             TYPE_PLACE_POLL -> EventPlacePollViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.plan_event_place_poll, parent, false), viewModel::togglePlacePoll, viewModel::viewPlaceDetails)
+            TYPE_ADD_PLACE_POLL -> EventAddPlacePollViewHolder(LayoutInflater.from(parent.context)
+                    .inflate(R.layout.plan_event_add_place_poll, parent, false), viewModel::showPlacePicker)
             TYPE_PLACE_CARD -> EventPlaceCardViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.plan_event_place_card, parent, false))
             else -> { null!! }
@@ -142,5 +147,14 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         val name: TextView = itemView.findViewById(R.id.event_plan_place_card_name)
         val address: TextView = itemView.findViewById(R.id.event_place_plan_card_address)
         val button: GlomButton = itemView.findViewById(R.id.event_plan_place_card_button)
+    }
+
+    inner class EventAddPlacePollViewHolder(itemView: View, onItemClicked: () -> Unit) : RecyclerView.ViewHolder(itemView) {
+
+        init {
+            itemView.setOnClickListener {
+                onItemClicked()
+            }
+        }
     }
 }

@@ -155,7 +155,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                     Completable.fromCallable {
                         val response = if (it.location == null) null else EventLocation(it.location.latitude, it.location.longitude, it.location.googlePlaceId, it.location.placeId, it.location.name,
                                 it.location.description, it.location.address)
-                        if (location != response) {
+                        if (location?.placeId != response?.placeId && location?.googlePlaceId != response?.googlePlaceId) {
                             throw Exception("Response received does not match expected, received $response, " +
                                     "expected $location")
                         }

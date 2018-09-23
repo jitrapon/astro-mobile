@@ -8,12 +8,14 @@ import android.text.SpannedString
 import android.text.TextUtils
 import androidx.text.bold
 import androidx.text.buildSpannedString
+import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
+import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
 import java.util.*
 import javax.inject.Inject
 
@@ -458,19 +460,23 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    fun updateEventDetailAttendStatus() {
+    fun updateEventFromPlan() {
         interactor.event.itemInfo.let {
-            observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
-            observableAttendees.value = getEventDetailAttendees(it.attendees)
-            observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
-        }
-    }
+            if (interactor.isItemModified()) {
+                observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
+                observableAttendees.value = getEventDetailAttendees(it.attendees)
+                observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
 
-    fun updateEventDetailDate() {
-        interactor.event.itemInfo.let {
-            observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true)
-            observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false)
-            observableDateTimePicker.value = null
+                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true)
+                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false)
+                observableDateTimePicker.value = null
+
+                it.location?.apply {
+                    observableLocation.value = getEventDetailLocation(this)
+                    observableLocationDescription.value = getEventDetailLocationDescription(this)
+                    observableLocationLatLng.value = getEventDetailLocationLatLng(this)
+                }
+            }
         }
     }
 
@@ -592,6 +598,18 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+
+    fun selectPlace(place: Place?) {
+        place?.let {
+            EventLocation(it.latLng.latitude, it.latLng.longitude, it.id, null, it.name.toString(), null, it.address.toString()).apply {
+                interactor.setItemLocation(this)
+                observableLocation.value = getEventDetailLocation(this)
+                observableLocationDescription.value = getEventDetailLocationDescription(this)
+                observableLocationLatLng.value = getEventDetailLocationLatLng(this)
+            }
+        }
+    }
+
     private fun loadPlaceInfoIfRequired(customName: String?, googlePlaceId: String?) {
         if (!TextUtils.isEmpty(googlePlaceId)) {
             interactor.loadPlaceInfo(customName) { result ->
@@ -677,6 +695,13 @@ class EventItemViewModel : BoardItemViewModel() {
     fun onLocationTextChanged(charSequence: CharSequence) {
         if (charSequence.isEmpty()) interactor.setItemLocation(location = null)
         else interactor.setItemLocation(charSequence)
+    }
+
+    /**
+     * Navigates to the Place Picker widget
+     */
+    fun showPlacePicker() {
+        observableNavigation.value = Navigation(NAVIGATE_TO_PLACE_PICKER, null)
     }
 
     //endregion

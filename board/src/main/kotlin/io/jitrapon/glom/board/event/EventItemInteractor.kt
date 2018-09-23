@@ -172,15 +172,16 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                         .subscribe({
                             if (it.isNotEmpty()) {
                                 it.first().let {
-                                    onComplete(AsyncSuccessResult(
-                                            EventLocation(
-                                                    it.latLng.latitude,
-                                                    it.latLng.longitude,
-                                                    it.id,
-                                                    null,
-                                                    if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
-                                                    null,
-                                                    it.address.toString())))
+                                    val location = EventLocation(
+                                            it.latLng.latitude,
+                                            it.latLng.longitude,
+                                            it.id,
+                                            null,
+                                            if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
+                                            null,
+                                            it.address.toString())
+                                    setItemLocation(location)
+                                    onComplete(AsyncSuccessResult(location))
                                 }
                             }
                             else {
@@ -458,7 +459,13 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                         if (pollPlaceIdMap.size == result.size) {
                             onLoadPlaceDetailsComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
                                 for (i in result.indices) {
-                                    put(pollPlaceIdMap.keyAt(i), result[i])
+                                    val pollId = pollPlaceIdMap.keyAt(i)
+                                    val placeInfo = result[i]
+                                    put(pollId, placeInfo)
+                                    placePolls.firstOrNull { it.id == pollId }?.let {
+                                        it.location = EventLocation(placeInfo.latLng.latitude, placeInfo.latLng.longitude,
+                                                placeInfo.id, null, placeInfo.name?.toString(), null, placeInfo.address?.toString())
+                                    }
                                 }
                             }))
                         }
@@ -472,8 +479,18 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         }
     }
 
-    fun addPlacePoll() {
-
+    fun addPlacePoll(googlePlaceId: String?, placeId: String?, onComplete: (AsyncResult<List<EventPlacePoll>>) -> Unit) {
+        eventItemDataSource.addPlacePoll(event, placeId, googlePlaceId)
+                .flatMap {
+                    eventItemDataSource.getPlacePolls(event, true)
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(it))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                })
     }
 
     fun updatePlacePollCount(id: String, upvote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
@@ -514,6 +531,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     isItemModified = true
+                    fields[LOCATION] = event.itemInfo.location
 
                     onComplete(AsyncSuccessResult(Unit))
                 }, {

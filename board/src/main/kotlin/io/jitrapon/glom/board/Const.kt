@@ -16,4 +16,6 @@ object Const {
     const val NAVIGATE_TO_EVENT_PLAN = "action.navigate.event.plan"
     const val PLAN_EVENT_RESULT_CODE = 1002
     const val NAVIGATE_BACK = "action.navigate.back"
+    const val NAVIGATE_TO_PLACE_PICKER = "action.navigate.placepicker"
+    const val PLACE_PICKER_RESULT_CODE = 1003
 }

@@ -10,6 +10,7 @@ import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.plan_event_activity.*
 
 /**
@@ -25,6 +26,8 @@ class PlanEventActivity : BaseActivity() {
     private val progressDialog: GlomProgressDialog by lazy {
         GlomProgressDialog()
     }
+
+    private val placePicker: PlacePicker by lazy { PlacePicker() }
 
     //region lifecycle
 
@@ -63,10 +66,15 @@ class PlanEventActivity : BaseActivity() {
             })
             getObservableNavigation().observe(this@PlanEventActivity, Observer {
                 it?.let {
-                    setResult(RESULT_OK, Intent().apply {
-                        putExtra(Const.EXTRA_BOARD_ITEM, it.payload as? EventItem?)
-                    })
-                    finish()
+                    if (it.action == Const.NAVIGATE_BACK) {
+                        setResult(RESULT_OK, Intent().apply {
+                            putExtra(Const.EXTRA_BOARD_ITEM, it.payload as? EventItem?)
+                        })
+                        finish()
+                    }
+                    else if (it.action == Const.NAVIGATE_TO_PLACE_PICKER) {
+                        placePicker.launch(this@PlanEventActivity, Const.PLACE_PICKER_RESULT_CODE)
+                    }
                 }
             })
         }
@@ -96,6 +104,12 @@ class PlanEventActivity : BaseActivity() {
         }
         else {
             progressDialog.dismiss()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == Const.PLACE_PICKER_RESULT_CODE) {
+            viewModel.addPlaceToPoll(placePicker.getPlaceFromResult(this@PlanEventActivity, resultCode, data))
         }
     }
 

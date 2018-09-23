@@ -23,8 +23,12 @@ import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoratio
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.*
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
+import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
 import io.jitrapon.glom.board.event.widget.DateTimePicker
+import io.jitrapon.glom.board.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
+
+
 
 /**
  * Shows dialog-like UI for viewing and/or editing an event in a board.
@@ -53,6 +57,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     /* Google Map object */
     private var map: GoogleMap? = null
+
+    /* Place picker widget */
+    private val placePicker: PlacePicker by lazy { PlacePicker() }
 
     companion object {
 
@@ -166,6 +173,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         }
         event_item_plan_button.setOnClickListener {
             viewModel.showEventDetailPlan(event_item_title.text.toString())
+        }
+        event_item_view_placepicker_button.setOnClickListener {
+            viewModel.showPlacePicker()
         }
     }
 
@@ -397,6 +407,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                             putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
                         }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
                     }
+                    else if (it.action == NAVIGATE_TO_PLACE_PICKER) {
+                        placePicker.launch(this@EventItemActivity, Const.PLACE_PICKER_RESULT_CODE)
+                    }
                 }
             })
         }
@@ -462,11 +475,11 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
-                viewModel.apply {
-                    updateEventDetailAttendStatus()
-                    updateEventDetailDate()
-                }
+                viewModel.updateEventFromPlan()
             }
+        }
+        else if (requestCode == Const.PLACE_PICKER_RESULT_CODE) {
+            viewModel.selectPlace(placePicker.getPlaceFromResult(this@EventItemActivity, resultCode, data))
         }
     }
 

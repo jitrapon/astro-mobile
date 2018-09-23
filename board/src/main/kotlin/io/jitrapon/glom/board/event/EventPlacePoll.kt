@@ -7,4 +7,4 @@ data class EventPlacePoll(override val id: String,
                           override var users: MutableList<String>,
                           val avatar: String?,
                           val isAiSuggested: Boolean,
-                          val location: EventLocation) : EventPoll(id, users)
+                          var location: EventLocation) : EventPoll(id, users)

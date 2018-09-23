@@ -4,6 +4,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.support.v4.util.ArrayMap
 import android.text.TextUtils
+import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.isNullOrEmpty
@@ -100,7 +101,7 @@ class PlanEventViewModel : BaseViewModel() {
     fun setItem(placeProvider: PlaceProvider?, item: BoardItem?) {
         item.let {
             if (it == null) {
-                handleError(Exception("Item is NULL but expected not NULL"))
+                handleError(Exception("Item is NULL but expected not NULL"), true)
             }
             else {
                 if (item is EventItem) {
@@ -204,7 +205,7 @@ class PlanEventViewModel : BaseViewModel() {
                         observableJoinButton.value = getJoinButtonStatus()
                     }
                 }
-                is AsyncErrorResult -> handleError(it.error)
+                is AsyncErrorResult -> handleError(it.error, true)
             }
         }
     }
@@ -232,7 +233,7 @@ class PlanEventViewModel : BaseViewModel() {
                 is AsyncErrorResult -> {
                     observableDatePlan.value = datePlan.apply { status = UiModel.Status.ERROR }
 
-                    handleError(it.error)
+                    handleError(it.error, true)
                 }
             }
         }
@@ -371,7 +372,7 @@ class PlanEventViewModel : BaseViewModel() {
                         status = UiModel.Status.SUCCESS
                     }
 
-                    handleError(it.error)
+                    handleError(it.error, true)
                 }
             }
         }
@@ -510,7 +511,7 @@ class PlanEventViewModel : BaseViewModel() {
                                 )
                         ))
                     }
-                    is AsyncErrorResult -> handleError(it.error)
+                    is AsyncErrorResult -> handleError(it.error, true)
                 }
             }
         }
@@ -539,7 +540,7 @@ class PlanEventViewModel : BaseViewModel() {
                 is AsyncErrorResult -> {
                     observablePlacePlan.value = placePlan.apply { status = UiModel.Status.ERROR }
 
-                    handleError(it.error)
+                    handleError(it.error, true)
                 }
             }
         }
@@ -565,6 +566,7 @@ class PlanEventViewModel : BaseViewModel() {
                     placeCards.add(uiModel)
                 }
             }
+            placePolls.add(EventPlacePollUiModel(isAddButton = true, status = UiModel.Status.SUCCESS))
         }
 
         // fetch place info from added IDs
@@ -647,11 +649,14 @@ class PlanEventViewModel : BaseViewModel() {
                                     card.address = AndroidString(text = place.address)
                                 }
                             }
+
+                            // refresh the select place button with the correct name after retrieval
+                            refreshPlacePollSelectButton(observablePlaceSelectButton.value ?: ButtonUiModel(null))
                         }
                     }
                 }
                 is AsyncErrorResult -> {
-                    handleError(it.error)
+                    handleError(it.error, true)
                 }
             }
         }
@@ -673,8 +678,7 @@ class PlanEventViewModel : BaseViewModel() {
                 avatar ?: location.googlePlaceId,
                 users.size,
                 if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
-                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.LOADING),
-                uiStatus)
+                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.LOADING), false, uiStatus)
     }
 
     fun getPlacePollItem(position: Int) = placePlan.placePolls[position]
@@ -684,6 +688,12 @@ class PlanEventViewModel : BaseViewModel() {
     fun getPlacePollCount(): Int = placePlan.placePolls.size
 
     fun getPlaceCardCount(): Int = placePlan.placeCards.size
+
+    fun isAddPlacePollButton(position: Int) = (placePlan.placePolls.size - 1 == position) && interactor.event.itemInfo.placePollStatus
+
+    fun showPlacePicker() {
+        observableNavigation.value = Navigation(Const.NAVIGATE_TO_PLACE_PICKER, null)
+    }
 
     private fun refreshPlacePollStatusButton(uiModel: ButtonUiModel) {
         observablePlaceStatusButton.value = uiModel.let { button ->
@@ -787,8 +797,12 @@ class PlanEventViewModel : BaseViewModel() {
                 is AsyncSuccessResult -> {
                     refreshPlacePollStatusButton(observablePlaceStatusButton.value ?: ButtonUiModel(null))
 
-                    // find out which place poll has the most vote, then preselect that
-                    refreshAndSelectPlacePoll(interactor.placePolls)
+                    if (interactor.canUpdatePlaceFromPoll()) {
+                        refreshAndSelectPlacePoll(interactor.placePolls)
+                    }
+                    else {
+                        refreshPlacePolls(interactor.placePolls)
+                    }
                 }
                 is AsyncErrorResult -> {}
             }
@@ -812,7 +826,35 @@ class PlanEventViewModel : BaseViewModel() {
                                 )
                         ))
                     }
-                    is AsyncErrorResult -> handleError(it.error)
+                    is AsyncErrorResult -> handleError(it.error, true)
+                }
+            }
+        }
+    }
+
+    fun addPlaceToPoll(place: Place?) {
+        place?.let {
+            observablePlacePlan.value = placePlan.apply { status = UiModel.Status.LOADING }
+
+            interactor.addPlacePoll(it.id, null) {
+                when (it) {
+                    is AsyncSuccessResult -> {
+                        if (interactor.canUpdatePlaceFromPoll()) {
+                            refreshAndSelectPlacePoll(it.result)
+                        }
+                        else {
+                            refreshPlacePolls(it.result)
+                        }
+                    }
+                    is AsyncErrorResult -> {
+                        observablePlacePlan.value = placePlan.apply {
+                            pollChangedIndices = null
+                            cardChangedIndices = null
+                            status = UiModel.Status.SUCCESS
+                        }
+
+                        handleError(it.error, true)
+                    }
                 }
             }
         }

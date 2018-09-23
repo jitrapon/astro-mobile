@@ -54,4 +54,6 @@
     <string name="event_plan_place_no_selection">no place selected</string>
     <string name="event_plan_place_select">set place as\n%1$s</string>
     <string name="event_plan_place_select_completed">Place set as %1$s</string>
+    <string name="event_item_view_place_picker">map</string>
+    <string name="event_plan_place_add_button">Add a place</string>
 </resources>

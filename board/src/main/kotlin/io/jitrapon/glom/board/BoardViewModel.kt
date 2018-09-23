@@ -296,8 +296,7 @@ class BoardViewModel : BaseViewModel() {
                             observableViewAction.value = Snackbar(successMessage, level = MessageLevel.SUCCESS)
 
                             // refresh the board item ordering
-                            //TODO
-//                                    loadBoard(false)
+                            loadBoard(false)
                         }
                         is AsyncErrorResult -> {
                             handleError(it.error)
@@ -313,6 +312,9 @@ class BoardViewModel : BaseViewModel() {
                                     add(index to arrayListOf(items[index].getStatusChangePayload()))
                                 }
                             }
+
+                            // refresh the board item ordering
+                            loadBoard(false)
                         }
                     }
 
