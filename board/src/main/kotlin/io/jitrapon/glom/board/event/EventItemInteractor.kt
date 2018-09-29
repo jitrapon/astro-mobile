@@ -218,10 +218,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         fields[LOCATION] = locationText
     }
 
-    fun setItemLocation(location: EventLocation?, modify: Boolean = true) {
-        isItemModified = modify
-
+    fun setItemLocation(location: EventLocation?) {
         event.itemInfo.let {
+            isItemModified = it.location != location
+
             it.location = location
             fields[LOCATION] = location
         }
