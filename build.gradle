@@ -10,9 +10,9 @@ buildscript {
 
         kotlinVersion = '1.2.61'
 
-        buildToolsVersion = '27.0.3'
-        compileSdkVersion = 27
-        targetSdkVersion = 27
+        buildToolsVersion = '28.0.3'
+        compileSdkVersion = 28
+        targetSdkVersion = 28
         minSdkVersion = 23
         minSdkInstantVersion = 21
 
@@ -53,7 +53,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:3.2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.2'
     }
