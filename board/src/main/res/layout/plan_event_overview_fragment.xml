@@ -49,7 +49,7 @@
         android:paddingBottom="18dp"
         android:clipToPadding="false" />
 
-    <Button
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         android:theme="@style/Theme.Glom.Button.Raised.Colored"
         android:id="@+id/event_plan_join_button"
         android:layout_width="0dp"

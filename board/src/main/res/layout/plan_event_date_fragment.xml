@@ -93,7 +93,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@+id/event_plan_date_poll_recyclerview" />
 
-    <Button
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         android:theme="@style/Theme.Glom.Button.Raised.Colored"
         android:id="@+id/event_plan_date_poll_status_button"
         android:layout_width="0dp"
@@ -104,7 +104,7 @@
         app:layout_constraintEnd_toStartOf="@+id/event_plan_date_select_poll_button"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <Button
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         android:theme="@style/Theme.Glom.Button.Raised.Colored"
         android:id="@+id/event_plan_date_select_poll_button"
         android:layout_width="0dp"

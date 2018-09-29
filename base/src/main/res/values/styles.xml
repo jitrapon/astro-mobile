@@ -2,7 +2,7 @@
     <!-- Root styles that vary by API level -->
 
     <!-- Prevents crash on certain devices to namespace conflict -->
-    <style name="FrameworkRoot.Theme" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="FrameworkRoot.Theme" parent="Theme.MaterialComponents.Light.NoActionBar" />
 
     <style name="Theme.Glom" parent="FrameworkRoot.Theme">
         <item name="colorPrimary">@color/lightish_red</item>
