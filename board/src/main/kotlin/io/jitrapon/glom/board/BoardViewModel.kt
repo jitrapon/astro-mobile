@@ -1,9 +1,8 @@
 package io.jitrapon.glom.board
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
-import android.support.v4.util.ArrayMap
-import android.support.v7.util.DiffUtil
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.model.*
@@ -128,7 +127,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Handle changes to board item list, applying DiffUtil if necessary
      */
-    private fun onBoardItemChanges(data: ArrayMap<*, List<BoardItem>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
+    private fun onBoardItemChanges(data: androidx.collection.ArrayMap<*, List<BoardItem>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
         errorIdCounter.set(0)
 
         runAsync({
@@ -381,7 +380,7 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Converts the BoardItem domain model to a list of BoardItemUIModel
      */
-    private fun ArrayMap<*, List<BoardItem>>.toUiModel(): List<BoardItemUiModel> {
+    private fun androidx.collection.ArrayMap<*, List<BoardItem>>.toUiModel(): List<BoardItemUiModel> {
         if (isEmpty || (keys.size == 1 && this[keyAt(0)]!!.isEmpty())) return ArrayList()
 
         val map = this

@@ -2,10 +2,6 @@ package io.jitrapon.glom.base.ui.widget
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.support.annotation.StyleRes
-import android.support.design.widget.TextInputLayout
-import android.support.v4.view.ViewCompat
-import android.support.v4.view.animation.FastOutSlowInInterpolator
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.view.View
@@ -13,6 +9,9 @@ import android.view.ViewGroup
 import android.view.animation.Interpolator
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import com.google.android.material.textfield.TextInputLayout
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.animate
 
@@ -48,24 +47,12 @@ class GlomTextInputLayout : TextInputLayout {
         super.addView(child, index, params)
         if (child is EditText) {
             if (!TextUtils.isEmpty(mHelperText)) {
-                setHelperText(mHelperText!!)
+                helperText = mHelperText!!
             }
         }
     }
 
-    fun getHelperTextAppearance(): Int {
-        return mHelperTextAppearance
-    }
-
-    fun setHelperTextAppearance(@StyleRes resId: Int) {
-        mHelperTextAppearance = resId
-    }
-
-    fun setHelperTextColor(color: ColorStateList) {
-        mHelperTextColor = color
-    }
-
-    fun setHelperTextEnabled(enabled: Boolean) {
+    override fun setHelperTextEnabled(enabled: Boolean) {
         if (mHelperTextEnabled == enabled) return
         if (enabled && mErrorEnabled) {
             isErrorEnabled = false
@@ -102,7 +89,7 @@ class GlomTextInputLayout : TextInputLayout {
         }
     }
 
-    fun setHelperText(helperText: CharSequence?) {
+    override fun setHelperText(helperText: CharSequence?) {
         mHelperText = helperText
         if (!mHelperTextEnabled) {
             if (TextUtils.isEmpty(mHelperText)) return

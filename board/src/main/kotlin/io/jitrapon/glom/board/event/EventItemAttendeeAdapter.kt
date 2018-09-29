@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board.event
 
 import android.app.Activity
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +20,7 @@ import io.jitrapon.glom.board.R
 class EventItemAttendeeAdapter(private val activity: Activity,
                                private val visibleItemCount: Int = 3,
                                private val userLayoutId: Int,
-                               private val otherLayoutId: Int) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+                               private val otherLayoutId: Int) : PartialRecyclerViewAdapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
     private var users: List<UserUiModel> = ArrayList()
 
@@ -43,23 +43,23 @@ class EventItemAttendeeAdapter(private val activity: Activity,
         if (it.isEmpty()) 0 else it.size
     }
 
-    override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder =
+    override fun onCreateMoreViewHolder(parent: ViewGroup): androidx.recyclerview.widget.RecyclerView.ViewHolder =
             MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(otherLayoutId, parent, false))
 
-    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder =
             AvatarViewHolder(LayoutInflater.from(parent.context).inflate(userLayoutId, parent, false))
 
     override fun getOtherItemViewType(position: Int): Int = TYPE_AVATAR
 
-    override fun onBindMoreItemViewHolder(holder: RecyclerView.ViewHolder, remainingItemCount: Int) {
+    override fun onBindMoreItemViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, remainingItemCount: Int) {
         (holder as MoreItemViewHolder).updateCount(remainingItemCount)
     }
 
-    override fun onBindOtherItemViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindOtherItemViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         (holder as AvatarViewHolder).setUser(users[position])
     }
 
-    inner class MoreItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class MoreItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val text: TextView = itemView.findViewById(R.id.remaining_count_text)
 
@@ -70,7 +70,7 @@ class EventItemAttendeeAdapter(private val activity: Activity,
         }
     }
 
-    inner class AvatarViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+    inner class AvatarViewHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val image: ImageView = itemView.findViewById(R.id.user_avatar_image)
         val username: TextView = itemView.findViewById(R.id.user_avatar_text)

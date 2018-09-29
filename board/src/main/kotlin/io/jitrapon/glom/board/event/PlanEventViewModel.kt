@@ -1,8 +1,8 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
-import android.support.v4.util.ArrayMap
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.collection.ArrayMap
 import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
@@ -547,7 +547,7 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     private fun refreshPlacePolls(result: List<EventPlacePoll>) {
-        val pollPlaceIdMap = ArrayMap<String, String>()
+        val pollPlaceIdMap = androidx.collection.ArrayMap<String, String>()
         val event = interactor.event
         observablePlacePlan.value = placePlan.apply {
             pollChangedIndices = null
@@ -576,7 +576,7 @@ class PlanEventViewModel : BaseViewModel() {
     }
 
     private fun refreshAndSelectPlacePoll(result: List<EventPlacePoll>) {
-        val pollPlaceIdMap = ArrayMap<String, String>()
+        val pollPlaceIdMap = androidx.collection.ArrayMap<String, String>()
         val event = interactor.event
 
         placePlan.placePolls.clear()
@@ -619,7 +619,7 @@ class PlanEventViewModel : BaseViewModel() {
         loadPlaceInfo(pollPlaceIdMap)
     }
 
-    private fun loadPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>) {
+    private fun loadPlaceInfo(pollPlaceIdMap: androidx.collection.ArrayMap<String, String>) {
         interactor.loadPollPlaceInfo(pollPlaceIdMap) {
             when (it) {
                 is AsyncSuccessResult -> {

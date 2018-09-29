@@ -1,10 +1,8 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.Observer
-import android.support.v4.app.FragmentActivity
-import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
-import androidx.os.bundleOf
+import androidx.core.os.bundleOf
+import androidx.lifecycle.Observer
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
@@ -50,7 +48,7 @@ class PlanEventDateFragment : BaseFragment() {
      * Create this fragment's ViewModel instance. The instance is reused from the one
      * instantiated with this fragment's activity
      */
-    override fun onCreateViewModel(activity: FragmentActivity) {
+    override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
         viewModel = obtainViewModel(PlanEventViewModel::class.java, activity)
     }
 
@@ -66,7 +64,7 @@ class PlanEventDateFragment : BaseFragment() {
         event_plan_date_poll_recyclerview.apply {
             adapter = EventPollAdapter(viewModel, TYPE_DATE_POLL)
             addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+            (itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
         }
         event_plan_date_poll_status_button.setOnClickListener {
             viewModel.toggleDatePollStatus()
@@ -116,11 +114,11 @@ class PlanEventDateFragment : BaseFragment() {
                             }
 
                             event_plan_date_vote_progressbar.hide()
-                            event_plan_date_poll_recyclerview.adapter.notifyDataSetChanged()
+                            event_plan_date_poll_recyclerview.adapter!!.notifyDataSetChanged()
                         }
                         else {
                             for (index in it.itemsChangedIndices!!) {
-                                event_plan_date_poll_recyclerview.adapter.notifyItemChanged(index)
+                                event_plan_date_poll_recyclerview.adapter!!.notifyItemChanged(index)
                             }
                         }
                     }

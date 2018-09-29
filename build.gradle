@@ -16,27 +16,26 @@ buildscript {
         minSdkVersion = 23
         minSdkInstantVersion = 21
 
-        supportLibVersion = '27.1.1'
-        constraintLayoutVersion = '1.1.2'
-        playServicesPlaceVersion = '15.0.1'
-        runnerVersion = '1.0.1'
-        rulesVersion = '1.0.1'
+        ktxVersion = '1.0.0'
+        materialVersion = '1.0.0'
+        cardViewVersion = '1.0.0'
+        constraintLayoutVersion = '2.0.0-alpha2'
+        lifecycleVersion = '2.0.0'
+        roomVersion = '2.0.0-rc01'
+        pagingVersion = '2.0.0-rc01'
 
-        archLifecycleVersion = '1.1.1'
-        archRoomVersion = '1.1.1'
-        archPagingVersion = '1.0.1'
+        playServicesPlaceVersion = '15.0.1'
 
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'
-        glideVersion = '4.4.0'
+        glideVersion = '4.8.0'
         retrofitVersion = '2.4.0'
         instantAppVersion = '1.1.0'
         rxJavaVersion = '2.2.0'
         rxAndroidVersion = '2.1.0'
         okhttp3Version = '3.10.0'
         timberVersion = '4.6.0'
-        lottieVersion = '2.5.4'
-        androidktxVersion = '0.2'
+        lottieVersion = '2.8.0'
 
         junitVersion = '4.12'
         espressoVersion = '3.0.1'

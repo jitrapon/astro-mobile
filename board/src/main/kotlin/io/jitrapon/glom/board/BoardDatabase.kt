@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board
 
-import android.arch.persistence.room.Database
-import android.arch.persistence.room.RoomDatabase
+import androidx.room.Database
+import androidx.room.RoomDatabase
 import io.jitrapon.glom.board.event.EventAttendeeEntity
 import io.jitrapon.glom.board.event.EventItemDao
 import io.jitrapon.glom.board.event.EventItemEntity

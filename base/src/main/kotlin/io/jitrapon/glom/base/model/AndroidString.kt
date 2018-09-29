@@ -1,6 +1,6 @@
 package io.jitrapon.glom.base.model
 
-import android.support.annotation.StringRes
+import androidx.annotation.StringRes
 import java.util.*
 
 /**

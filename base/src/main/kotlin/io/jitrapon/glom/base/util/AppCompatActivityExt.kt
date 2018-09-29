@@ -1,17 +1,18 @@
 package io.jitrapon.glom.base.util
 
-import android.arch.lifecycle.ViewModel
-import android.arch.lifecycle.ViewModelProvider
-import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.net.Uri
-import android.support.annotation.IdRes
-import android.support.annotation.Size
-import android.support.v4.app.*
-import android.support.v7.app.ActionBar
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
 import android.view.View
+import androidx.annotation.IdRes
+import androidx.annotation.Size
+import androidx.appcompat.app.ActionBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -31,7 +32,7 @@ fun AppCompatActivity.setupActionBar(toolbar: Toolbar, action: ActionBar.() -> U
  * Adds a fragment into the container ViewGroup in this activity, specify toBackStack = true
  * to indicate that this transaction will be remembered, and back behavior is applied
  */
-fun AppCompatActivity.addFragment(@IdRes container: Int, fragment: Fragment, fragmentTag: String? = null,
+fun AppCompatActivity.addFragment(@IdRes container: Int, fragment: androidx.fragment.app.Fragment, fragmentTag: String? = null,
                                   toBackStack: Boolean = false, stateName: String? = null, @Size(4) transitionAnim: Array<Int>? = null) {
     supportFragmentManager.transact {
         transitionAnim?.let {
@@ -51,7 +52,7 @@ fun <T : ViewModel> AppCompatActivity.obtainViewModel(viewModelClass: Class<T>) 
 /**
  * Runs a FragmentTransaction, then calls commit().
  */
-private inline fun FragmentManager.transact(action: FragmentTransaction.() -> Unit) {
+private inline fun androidx.fragment.app.FragmentManager.transact(action: androidx.fragment.app.FragmentTransaction.() -> Unit) {
     beginTransaction().apply {
         action()
     }.commit()
@@ -91,7 +92,7 @@ fun <T> AppCompatActivity.startActivity(clazz: Class<T>, resultCode: Int?, actio
             }, sharedElements.let { elements ->
                 if (elements.isNullOrEmpty()) null
                 else ActivityOptionsCompat.makeSceneTransitionAnimation(this, *(sharedElements!!.map {
-                    android.support.v4.util.Pair.create(it.first, it.second)
+                    androidx.core.util.Pair.create(it.first, it.second)
                 }.toTypedArray())).toBundle()
             })
         }
@@ -101,7 +102,7 @@ fun <T> AppCompatActivity.startActivity(clazz: Class<T>, resultCode: Int?, actio
             }, rs, sharedElements.let { elements ->
                 if (elements.isNullOrEmpty()) null
                 else ActivityOptionsCompat.makeSceneTransitionAnimation(this, *(sharedElements!!.map {
-                    android.support.v4.util.Pair.create(it.first, it.second)
+                    androidx.core.util.Pair.create(it.first, it.second)
                 }.toTypedArray())).toBundle()
             })
         }

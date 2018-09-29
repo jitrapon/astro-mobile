@@ -1,9 +1,7 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.Observer
-import android.support.v4.app.FragmentActivity
-import android.support.v7.widget.GridLayoutManager
 import android.view.View
+import androidx.lifecycle.Observer
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.*
@@ -29,13 +27,13 @@ class PlanEventOverviewFragment : BaseFragment() {
 
     override fun getLayoutId(): Int = R.layout.plan_event_overview_fragment
 
-    override fun onCreateViewModel(activity: FragmentActivity) {
+    override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
         viewModel = obtainViewModel(PlanEventViewModel::class.java, activity)
     }
 
     override fun onSetupView(view: View) {
         event_plan_attendee_recycler_view.apply {
-            layoutManager = GridLayoutManager(context!!, 3)
+            layoutManager = androidx.recyclerview.widget.GridLayoutManager(context!!, 3)
             adapter = EventItemAttendeeAdapter(activity!!, 1000000,
                     R.layout.user_avatar_with_name_large, R.layout.remaining_indicator_large)
             setHasFixedSize(true)
@@ -87,7 +85,7 @@ class PlanEventOverviewFragment : BaseFragment() {
             getObservableAttendees().observe(this@PlanEventOverviewFragment, Observer {
                 it?.let {
                     event_plan_attendee_recycler_view.apply {
-                        (layoutManager as GridLayoutManager).spanCount = getColumnCount(it.size)
+                        (layoutManager as androidx.recyclerview.widget.GridLayoutManager).spanCount = getColumnCount(it.size)
                         (adapter as EventItemAttendeeAdapter).setItems(it)
                     }
                 }

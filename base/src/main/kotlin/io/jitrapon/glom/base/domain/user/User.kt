@@ -19,8 +19,8 @@ data class User(val userType: Int,
 
     constructor(parcel: Parcel) : this(
             parcel.readInt(),
-            parcel.readString(),
-            parcel.readString(),
+            parcel.readString()!!,
+            parcel.readString()!!,
             parcel.readString(),
             parcel.readLong().let {
                 if (it == -1L) null

@@ -3,13 +3,13 @@ package io.jitrapon.glom.base.util
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.content.Context
-import android.support.annotation.ColorRes
-import android.support.design.widget.Snackbar
 import android.text.TextUtils
 import android.view.View
 import android.view.View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION
 import android.view.ViewPropertyAnimator
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.ColorRes
+import com.google.android.material.snackbar.Snackbar
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.MessageLevel

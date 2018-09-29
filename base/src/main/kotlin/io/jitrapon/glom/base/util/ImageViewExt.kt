@@ -6,11 +6,11 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.support.annotation.ColorInt
-import android.support.annotation.DrawableRes
-import android.support.annotation.RawRes
-import android.support.v4.app.Fragment
-import android.support.v4.widget.ImageViewCompat
+import androidx.annotation.ColorInt
+import androidx.annotation.DrawableRes
+import androidx.annotation.RawRes
+import androidx.fragment.app.Fragment
+import androidx.core.widget.ImageViewCompat
 import android.widget.ImageView
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
@@ -37,7 +37,7 @@ enum class Transformation {
 /**
  * Loads an image in a fragment from a URL, with an optional placeholder and applies a transformation
  */
-fun ImageView.loadFromUrl(fragment: Fragment, url: String?, @DrawableRes placeholder: Int? = null,
+fun ImageView.loadFromUrl(fragment: androidx.fragment.app.Fragment, url: String?, @DrawableRes placeholder: Int? = null,
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
             .load(url)
@@ -144,7 +144,7 @@ fun ImageView.loadFromPlaceId(context: Context, placeId: String?, @DrawableRes p
             .into(this)
 }
 
-fun ImageView.loadFromRaw(fragment: Fragment, @RawRes resId: Int, @DrawableRes placeholder: Int? = null,
+fun ImageView.loadFromRaw(fragment: androidx.fragment.app.Fragment, @RawRes resId: Int, @DrawableRes placeholder: Int? = null,
                           @DrawableRes error: Int? = null, fallback: Drawable = ColorDrawable(Color.BLACK), transformation: Transformation = Transformation.NONE) {
     GlideApp.with(fragment)
             .load(resId)
@@ -173,7 +173,7 @@ fun ImageView.loadFromResource(@DrawableRes resId: Int) {
 /**
  * Recycles any resources manually
  */
-fun ImageView.clear(fragment: Fragment) {
+fun ImageView.clear(fragment: androidx.fragment.app.Fragment) {
     GlideApp.with(fragment).clear(this)
 }
 

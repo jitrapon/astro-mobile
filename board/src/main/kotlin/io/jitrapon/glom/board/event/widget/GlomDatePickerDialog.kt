@@ -3,7 +3,7 @@ package io.jitrapon.glom.board.event.widget
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.DialogInterface
-import android.support.v7.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.WindowManager
 import io.jitrapon.glom.R

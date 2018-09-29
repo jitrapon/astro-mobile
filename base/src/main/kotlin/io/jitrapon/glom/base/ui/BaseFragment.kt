@@ -1,17 +1,15 @@
 package io.jitrapon.glom.base.ui
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.Observer
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentActivity
-import android.support.v4.widget.SwipeRefreshLayout
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
@@ -30,10 +28,10 @@ import javax.inject.Inject
  *
  * @author Jitrapon Tiachunpun
  */
-abstract class BaseFragment : Fragment() {
+abstract class BaseFragment : androidx.fragment.app.Fragment() {
 
     /* this fragment's swipe refresh layout, if provided */
-    private var refreshLayout: SwipeRefreshLayout? = null
+    private var refreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
 
     /* shared handler object */
     val handler: Handler by lazy {
@@ -97,7 +95,7 @@ abstract class BaseFragment : Fragment() {
      * Swipe refresh listener that is tied to the ViewActionHandler
      */
     private val onRefreshListener by lazy {
-        SwipeRefreshLayout.OnRefreshListener {
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener {
             onRefresh(0L)
         }
     }
@@ -111,7 +109,7 @@ abstract class BaseFragment : Fragment() {
      * Child fragment class should override this to indicate that this fragment is swipe-refreshable and
      * contains a SwipeRefreshLayout in its layout xml file. Default to NULL
      */
-    open fun getSwipeRefreshLayout(): SwipeRefreshLayout? = null
+    open fun getSwipeRefreshLayout(): androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
 
     /**
      * Called when a RefreshLayout has been triggered manually by the user. This is a good time
@@ -122,7 +120,7 @@ abstract class BaseFragment : Fragment() {
     /**
      * Called when a ViewModel needs to be initialized for use later
      */
-    open fun onCreateViewModel(activity: FragmentActivity) {}
+    open fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {}
 
     /**
      * Override this method to perform all necessary view initializations in the fragment, if any

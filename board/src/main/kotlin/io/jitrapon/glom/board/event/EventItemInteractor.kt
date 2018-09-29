@@ -1,9 +1,9 @@
 package io.jitrapon.glom.board.event
 
-import android.support.v4.util.ArrayMap
+import android.annotation.SuppressLint
 import android.text.TextUtils
 import android.util.SparseArray
-import androidx.util.set
+import androidx.core.util.set
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
@@ -29,6 +29,7 @@ import java.util.*
  *
  * Created by Jitrapon
  */
+@SuppressLint("CheckResult")
 class EventItemInteractor(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor,
                           private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
 
@@ -126,7 +127,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     //endregion
     //region save operations
 
-    /**
+            /**
      * Saves the current state of the item and returns
      * the new item, along with a flag indicating if the item has been modified
      */
@@ -217,8 +218,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         fields[LOCATION] = locationText
     }
 
-    fun setItemLocation(location: EventLocation?) {
-        isItemModified = true
+    fun setItemLocation(location: EventLocation?, modify: Boolean = true) {
+        isItemModified = modify
 
         event.itemInfo.let {
             it.location = location
@@ -442,8 +443,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 })
     }
 
-    fun loadPollPlaceInfo(pollPlaceIdMap: ArrayMap<String, String>,
-                          onLoadPlaceDetailsComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
+    fun loadPollPlaceInfo(pollPlaceIdMap: androidx.collection.ArrayMap<String, String>,
+                          onLoadPlaceDetailsComplete: (AsyncResult<androidx.collection.ArrayMap<String, Place>>) -> Unit) {
         if (placeProvider == null) {
             onLoadPlaceDetailsComplete(AsyncErrorResult(Exception("Place provider implementation is NULL")))
             return
@@ -457,7 +458,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ result ->
                         if (pollPlaceIdMap.size == result.size) {
-                            onLoadPlaceDetailsComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                            onLoadPlaceDetailsComplete(AsyncSuccessResult(androidx.collection.ArrayMap<String, Place>().apply {
                                 for (i in result.indices) {
                                     val pollId = pollPlaceIdMap.keyAt(i)
                                     val placeInfo = result[i]

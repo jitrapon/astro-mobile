@@ -1,6 +1,6 @@
 package io.jitrapon.glom.base.domain.user
 
-import android.support.v4.util.ArrayMap
+import androidx.collection.ArrayMap
 import io.jitrapon.glom.base.domain.BaseDatabase
 import io.reactivex.Flowable
 
@@ -8,7 +8,7 @@ class UserLocalDataSource(database: BaseDatabase) : UserDataSource {
 
     /* currently active circle in which users are in */
     private var circleId: String? = null
-    private var inMemoryUsers: ArrayMap<String, User> = ArrayMap()
+    private var inMemoryUsers: androidx.collection.ArrayMap<String, User> = androidx.collection.ArrayMap()
 
     /* DAO access object to users */
     private val userDao: UserDao = database.userDao()

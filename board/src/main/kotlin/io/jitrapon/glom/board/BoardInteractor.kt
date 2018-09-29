@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board
 
 import android.os.Parcel
-import android.support.v4.util.ArrayMap
+import androidx.collection.ArrayMap
 import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
@@ -72,7 +72,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Loading of items will be executed on the IO thread pool, while processing items will be executed
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
-    fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit) {
+    fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, androidx.collection.ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         val circleId = circleInteractor.getActiveCircleId()
         Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh), userInteractor.getUsers(circleId, refresh),
                 BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
@@ -99,7 +99,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     /**
      * Adds a new board item to the list, and process it to be grouped appropriately
      */
-    fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+    fun addItem(item: BoardItem, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
         boardDataSource.createItem(item, false)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
@@ -139,7 +139,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     /**
      * Deletes the specified board item to the list
      */
-    fun deleteItemLocal(itemId: String, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
+    fun deleteItemLocal(itemId: String, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
         boardDataSource.deleteItem(itemId, false)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
@@ -210,7 +210,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      *                  If specified, it will use that instead.
      */
     fun loadItemPlaceInfo(placeProvider: PlaceProvider?, itemIdsWithPlace: List<String>?,
-                          onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit) {
+                          onComplete: (AsyncResult<androidx.collection.ArrayMap<String, Place>>) -> Unit) {
         if (placeProvider == null) {
             onComplete(AsyncErrorResult(Exception("Place provider implmentation is NULL")))
             return
@@ -249,7 +249,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     if (itemIds.size == it.size) {
-                        onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                        onComplete(AsyncSuccessResult(androidx.collection.ArrayMap<String, Place>().apply {
                             for (i in itemIds.indices) {
                                 put(itemIds[i], it[i])
                             }
@@ -281,10 +281,10 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.
      * This function call should be run in a background thread.
      */
-    private fun processItems(board: Board): Flowable<Pair<Board, ArrayMap<*, List<BoardItem>>>> {
+    private fun processItems(board: Board): Flowable<Pair<Board, androidx.collection.ArrayMap<*, List<BoardItem>>>> {
         val map = when (itemFilterType) {
             ItemFilterType.EVENTS_BY_WEEK -> {
-                ArrayMap<Int?, List<BoardItem>>().apply {
+                androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
                     if (board.items.isEmpty()) put(null, board.items)
 
                     val now = Calendar.getInstance().apply { time = Date() }
@@ -328,7 +328,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 }
             }
             else -> {
-                ArrayMap<Int?, List<BoardItem>>().apply {
+                androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
                     put(null, ArrayList())
                 }
             }

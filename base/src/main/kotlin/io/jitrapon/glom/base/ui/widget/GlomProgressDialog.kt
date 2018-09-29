@@ -4,7 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.view.LayoutInflater
-import androidx.content.systemService
+import androidx.core.content.getSystemService
 import io.jitrapon.glom.R
 
 /**
@@ -17,7 +17,7 @@ class GlomProgressDialog {
     private var dialog: Dialog? = null
 
     fun show(context: Context, onCancelListener: DialogInterface.OnCancelListener? = null): Dialog {
-        val view = context.systemService<LayoutInflater>().inflate(R.layout.progress_dialog, null)
+        val view = context.getSystemService<LayoutInflater>()!!.inflate(R.layout.progress_dialog, null)
         return Dialog(context, R.style.Theme_Glom_ProgressDialog).apply {
             setContentView(view)
             onCancelListener.let {

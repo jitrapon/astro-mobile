@@ -1,13 +1,13 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
 import android.text.Editable
 import android.text.SpannableStringBuilder
 import android.text.SpannedString
 import android.text.TextUtils
-import androidx.text.bold
-import androidx.text.buildSpannedString
+import androidx.core.text.bold
+import androidx.core.text.buildSpannedString
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.component.PlaceProvider

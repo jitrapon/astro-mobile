@@ -2,7 +2,7 @@ package io.jitrapon.glom.board.event.widget
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.support.v7.widget.AppCompatTextView
+import androidx.appcompat.widget.AppCompatTextView
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View

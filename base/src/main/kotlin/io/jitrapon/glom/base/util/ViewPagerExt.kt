@@ -1,11 +1,11 @@
 package io.jitrapon.glom.base.util
 
-import android.support.design.widget.TabLayout
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentPagerAdapter
-import android.support.v4.view.ViewPager
-import android.support.v7.app.AppCompatActivity
+import com.google.android.material.tabs.TabLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentPagerAdapter
+import androidx.viewpager.widget.ViewPager
+import androidx.appcompat.app.AppCompatActivity
 import android.view.ViewGroup
 
 /**
@@ -14,11 +14,11 @@ import android.view.ViewGroup
  * @author Jitrapon Tiachunpun
  */
 
-fun ViewPager.createWithFragments(activity: AppCompatActivity, fragments: Array<Fragment>, titles: Array<String>? = null,
-                     tabLayout: TabLayout? = null) {
-    adapter = object : FragmentPagerAdapter(activity.supportFragmentManager) {
+fun androidx.viewpager.widget.ViewPager.createWithFragments(activity: AppCompatActivity, fragments: Array<androidx.fragment.app.Fragment>, titles: Array<String>? = null,
+                                                            tabLayout: TabLayout? = null) {
+    adapter = object : androidx.fragment.app.FragmentPagerAdapter(activity.supportFragmentManager) {
 
-        override fun getItem(position: Int): Fragment = fragments[position]
+        override fun getItem(position: Int): androidx.fragment.app.Fragment = fragments[position]
 
         override fun getCount(): Int = fragments.size
 
@@ -43,19 +43,19 @@ fun ViewPager.createWithFragments(activity: AppCompatActivity, fragments: Array<
     tabLayout?.setupWithViewPager(this)
 }
 
-inline fun <reified T> ViewPager.getFragmentAtPosition(fragmentManager: FragmentManager, position: Int): T? {
+inline fun <reified T> androidx.viewpager.widget.ViewPager.getFragmentAtPosition(fragmentManager: androidx.fragment.app.FragmentManager, position: Int): T? {
     return fragmentManager.findFragmentByTag("android:switcher:${this.id}:$position") as? T
 }
 
-inline fun ViewPager.doOnPageSelected(crossinline action: (position: Int) -> Unit) {
-    this.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+inline fun androidx.viewpager.widget.ViewPager.doOnPageSelected(crossinline action: (position: Int) -> Unit) {
+    this.addOnPageChangeListener(object : androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener() {
         override fun onPageSelected(position: Int) {
             action(position)
         }
     })
 }
 
-inline fun <reified T> ViewPager.doOnFragmentSelected(fm: FragmentManager, crossinline action: (fragment: T) -> Unit) {
+inline fun <reified T> androidx.viewpager.widget.ViewPager.doOnFragmentSelected(fm: androidx.fragment.app.FragmentManager, crossinline action: (fragment: T) -> Unit) {
     this.doOnPageSelected {
         this@doOnFragmentSelected.getFragmentAtPosition<T>(fm, it)?.let {
             action(it)

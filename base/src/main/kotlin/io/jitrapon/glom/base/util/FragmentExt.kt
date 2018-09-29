@@ -1,16 +1,16 @@
 package io.jitrapon.glom.base.util
 
-import android.arch.lifecycle.ViewModel
-import android.arch.lifecycle.ViewModelProvider
-import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.content.Intent.ACTION_VIEW
 import android.net.Uri
-import android.support.annotation.ColorRes
-import android.support.v4.app.ActivityOptionsCompat
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentActivity
 import android.view.View
+import androidx.annotation.ColorRes
+import androidx.core.app.ActivityOptionsCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -35,9 +35,9 @@ fun Fragment.showSnackbar(level: Int, message: AndroidString, actionMessage: And
 }
 
 fun Fragment.showAlertDialog(title: AndroidString?, message: AndroidString, positiveOptionText: AndroidString?,
-                             onPositiveOptionClicked: (() -> Unit)?, negativeOptionText: AndroidString?,
-                             onNegativeOptionClicked: (() -> Unit)?, isCancelable: Boolean,
-                             onCancel: (() -> Unit)?) {
+                                                   onPositiveOptionClicked: (() -> Unit)?, negativeOptionText: AndroidString?,
+                                                   onNegativeOptionClicked: (() -> Unit)?, isCancelable: Boolean,
+                                                   onCancel: (() -> Unit)?) {
     activity?.showAlertDialog(title, message, positiveOptionText, onPositiveOptionClicked, negativeOptionText, onNegativeOptionClicked,
             isCancelable, onCancel)
 }
@@ -56,7 +56,7 @@ fun Fragment.color(@ColorRes colorRes: Int) = context?.color(colorRes)
  * Start an activity specifying destination class and optional block of code to run
  */
 fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Intent.() -> Unit)? = null,
-                               sharedElements: List<Pair<View, String>>? = null, animTransition: Pair<Int, Int>? = null) {
+                                                     sharedElements: List<Pair<View, String>>? = null, animTransition: Pair<Int, Int>? = null) {
     activity?.let {
         resultCode.let { resultCode ->
             if (resultCode == null) {
@@ -65,7 +65,7 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                 }, sharedElements.let { elements ->
                     if (elements.isNullOrEmpty()) null
                     else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.map {
-                        android.support.v4.util.Pair.create(it.first, it.second)
+                        androidx.core.util.Pair.create(it.first, it.second)
                     }.toTypedArray())).toBundle()
                 })
             }
@@ -75,7 +75,7 @@ fun <T> Fragment.startActivity(clazz: Class<T>, resultCode: Int?, action: (Inten
                 }, resultCode, sharedElements.let { elements ->
                     if (elements.isNullOrEmpty()) null
                     else ActivityOptionsCompat.makeSceneTransitionAnimation(it, *(sharedElements!!.map {
-                        android.support.v4.util.Pair.create(it.first, it.second)
+                        androidx.core.util.Pair.create(it.first, it.second)
                     }.toTypedArray())).toBundle()
                 })
             }

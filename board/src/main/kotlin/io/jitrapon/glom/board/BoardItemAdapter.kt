@@ -1,10 +1,6 @@
 package io.jitrapon.glom.board
 
 import android.content.res.Configuration
-import android.support.v4.app.Fragment
-import android.support.v7.widget.CardView
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,14 +24,14 @@ import io.jitrapon.glom.board.event.EventItemViewModel
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: Fragment, private val orientation: Int) :
-        RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: androidx.fragment.app.Fragment, private val orientation: Int) :
+        androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>(),
         StickyHeaders,
         StickyHeaders.ViewSetup,
         ItemTouchHelperCallback.OnItemChangedListener {
 
     /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
-    private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool = RecyclerView.RecycledViewPool()
+    private val attendeesRecycledViewPool: androidx.recyclerview.widget.RecyclerView.RecycledViewPool = androidx.recyclerview.widget.RecyclerView.RecycledViewPool()
 
     companion object {
 
@@ -55,7 +51,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     /**
      * Bind view holder without payloads containing individual payloads
      */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -69,7 +65,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * @param payloads A non-null list of merged payloads. Can be empty list if requires full
      *                 update.
      */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
+    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -121,7 +117,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     override fun getItemCount(): Int = viewModel.getBoardItemCount()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::viewItemDetail)
@@ -155,7 +151,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     //endregion
     //region view holder classes
 
-    inner class HeaderItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class HeaderItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val text: TextView = itemView.findViewById(R.id.board_item_header_text)
     }
@@ -165,26 +161,26 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * The map is then initialized with LatLng that is stored as the tag of the MapView.
      * This ensures that the map is initialised with the latest data that it should display.
      */
-    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
-                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) : RecyclerView.ViewHolder(itemView) {
+    inner class EventItemViewHolder(itemView: View, attendeesPool: androidx.recyclerview.widget.RecyclerView.RecycledViewPool,
+                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         var itemId: String? = null
         private val title: TextView = itemView.findViewById(R.id.event_card_title)
-        private val cardView: CardView = itemView.findViewById(R.id.event_card_root_view)
+        private val cardView: androidx.cardview.widget.CardView = itemView.findViewById(R.id.event_card_root_view)
         private val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         private val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         private val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)
         private val location: TextView = itemView.findViewById(R.id.event_card_location)
         private val mapView: ImageView = itemView.findViewById(R.id.event_card_map)
-        private val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
+        private val attendees: androidx.recyclerview.widget.RecyclerView = itemView.findViewById(R.id.event_card_attendees)
         private val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
         private val syncStatus: ImageView = itemView.findViewById(R.id.event_card_sync_status)
         private val planStatus: ImageButton = itemView.findViewById(R.id.event_card_plan_button)
 
         init {
             attendees.apply {
-                recycledViewPool = attendeesPool
-                (layoutManager as LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
+                setRecycledViewPool(attendeesPool)
+                (layoutManager as androidx.recyclerview.widget.LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
                 adapter = EventCardAttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))

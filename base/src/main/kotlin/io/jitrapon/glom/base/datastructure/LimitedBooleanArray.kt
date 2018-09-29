@@ -1,8 +1,8 @@
 package io.jitrapon.glom.base.datastructure
 
 import android.util.SparseBooleanArray
-import androidx.util.forEach
-import androidx.util.set
+import androidx.core.util.forEach
+import androidx.core.util.set
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingDeque
 

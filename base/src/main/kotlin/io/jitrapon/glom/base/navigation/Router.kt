@@ -4,8 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.support.annotation.Size
-import android.support.v4.app.Fragment
+import androidx.annotation.Size
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.finish
@@ -48,7 +47,7 @@ object Router {
                         from.overridePendingTransition(it[0], it[1])
                     }
                 }
-                else if (from is Fragment) from.finish()
+                else if (from is androidx.fragment.app.Fragment) from.finish()
             }
         }
     }

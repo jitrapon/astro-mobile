@@ -1,10 +1,10 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.Observer
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.support.v4.content.ContextCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.*

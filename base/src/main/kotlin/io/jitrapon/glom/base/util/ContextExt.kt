@@ -2,14 +2,14 @@ package io.jitrapon.glom.base.util
 
 import android.content.Context
 import android.content.res.Configuration
-import android.support.annotation.ColorInt
-import android.support.annotation.ColorRes
-import android.support.annotation.DimenRes
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
 import android.text.TextUtils
 import android.util.TypedValue
 import android.widget.Toast
+import androidx.annotation.ColorInt
+import androidx.annotation.ColorRes
+import androidx.annotation.DimenRes
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 

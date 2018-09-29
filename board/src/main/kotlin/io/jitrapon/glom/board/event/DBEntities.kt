@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.persistence.room.*
-import android.arch.persistence.room.ForeignKey.CASCADE
+import androidx.room.*
+import androidx.room.ForeignKey.CASCADE
 
 @Entity(tableName = "events")
 data class EventItemEntity(

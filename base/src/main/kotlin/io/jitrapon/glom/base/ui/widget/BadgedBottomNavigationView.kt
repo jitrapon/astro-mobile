@@ -4,8 +4,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.support.annotation.IntRange
-import android.support.design.widget.BottomNavigationView
+import androidx.annotation.IntRange
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.util.AttributeSet
 import android.view.ViewGroup
 import android.view.ViewTreeObserver

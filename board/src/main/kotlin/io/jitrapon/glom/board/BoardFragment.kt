@@ -1,16 +1,14 @@
 package io.jitrapon.glom.board
 
 import android.app.Activity
-import android.arch.lifecycle.Observer
 import android.content.Intent
-import android.support.v4.app.FragmentActivity
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.widget.DefaultItemAnimator
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.SimpleItemAnimator
-import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.View
 import android.widget.ProgressBar
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -47,7 +45,7 @@ class BoardFragment : BaseFragment() {
     /**
      * Returns the SwipeRefreshLayout in this fragment's XML layout
      */
-    override fun getSwipeRefreshLayout(): SwipeRefreshLayout? = board_refresh_layout
+    override fun getSwipeRefreshLayout(): androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = board_refresh_layout
 
     /**
      * Returns the progress bar for when this view is empty
@@ -57,7 +55,7 @@ class BoardFragment : BaseFragment() {
     /**
      * Create this fragment's ViewModel instance
      */
-    override fun onCreateViewModel(activity: FragmentActivity) {
+    override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
         viewModel = obtainViewModel(BoardViewModel::class.java)
     }
 
@@ -126,17 +124,17 @@ class BoardFragment : BaseFragment() {
                         // if this list is not null, force update specific items
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
-                                board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
+                                board_recycler_view.adapter!!.notifyItemChanged(it.first, it.second)
                             }
                         }
                         else {
                             // perform full recyclerview updates only when diff results is not available
                             it.diffResult.let {
                                 if (it == null) {
-                                    board_recycler_view.adapter.notifyDataSetChanged()
+                                    board_recycler_view.adapter!!.notifyDataSetChanged()
                                 }
                                 else {
-                                    it.dispatchUpdatesTo(board_recycler_view.adapter)
+                                    it.dispatchUpdatesTo(board_recycler_view.adapter!!)
                                 }
                             }
                         }
@@ -152,7 +150,7 @@ class BoardFragment : BaseFragment() {
                         // dispatch any pending updates to items if available
                         if (!it.itemsChangedIndices.isNullOrEmpty()) {
                             it.itemsChangedIndices?.forEach {
-                                board_recycler_view.adapter.notifyItemChanged(it.first, it.second)
+                                board_recycler_view.adapter!!.notifyItemChanged(it.first, it.second)
                             }
                         }
                         else {
@@ -250,12 +248,12 @@ class BoardFragment : BaseFragment() {
      */
     private fun createRecycledPool(recyclerView: RecyclerView, poolCount: Int) {
         recyclerView.apply {
-            recycledViewPool = RecyclerView.RecycledViewPool().apply {
+            setRecycledViewPool(RecyclerView.RecycledViewPool().apply {
                 setMaxRecycledViews(BoardItemUiModel.TYPE_EVENT, poolCount)
                 for (i in 0..poolCount) {
-                    putRecycledView(adapter.createViewHolder(board_recycler_view, BoardItemUiModel.TYPE_EVENT))
+                    putRecycledView(adapter!!.createViewHolder(board_recycler_view, BoardItemUiModel.TYPE_EVENT))
                 }
-            }
+            })
         }
     }
 }

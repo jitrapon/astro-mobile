@@ -15,7 +15,7 @@ class SavedState : Parcelable {
     constructor()
 
     constructor(parcel: Parcel) {
-        superState = parcel.readParcelable(SavedState::class.java.classLoader)
+        superState = parcel.readParcelable(SavedState::class.java.classLoader)!!
         pendingScrollPosition = parcel.readInt()
         pendingScrollOffset = parcel.readInt()
     }

@@ -1,14 +1,13 @@
 package io.jitrapon.glom.base.ui
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.os.Handler
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
@@ -29,7 +28,7 @@ import javax.inject.Inject
 abstract class BaseActivity : AppCompatActivity() {
 
     /* this activity 's swipe refresh layout, if provided */
-    private var refreshLayout: SwipeRefreshLayout? = null
+    private var refreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
 
     /* subclass should overwrite this variable for naming the activity */
     var tag: String = "base"

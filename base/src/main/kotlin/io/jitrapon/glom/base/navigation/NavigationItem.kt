@@ -1,8 +1,8 @@
 package io.jitrapon.glom.base.navigation
 
-import android.support.annotation.DrawableRes
-import android.support.annotation.IdRes
-import android.support.annotation.StringRes
+import androidx.annotation.DrawableRes
+import androidx.annotation.IdRes
+import androidx.annotation.StringRes
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.UiActionModel
 

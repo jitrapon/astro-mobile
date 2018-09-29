@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board
 
-import android.support.v7.util.DiffUtil
+import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.model.UiModel
 
 /**

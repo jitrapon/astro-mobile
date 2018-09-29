@@ -1,6 +1,5 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.Observer
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +9,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
+import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -27,7 +27,6 @@ import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
 import io.jitrapon.glom.board.event.widget.DateTimePicker
 import io.jitrapon.glom.board.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
-
 
 
 /**
@@ -113,8 +112,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_title.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 event_item_title_til.apply {
-                    setHelperTextEnabled(true)
-                    setHelperText(getString(R.string.event_item_name_helper))
+                    isHelperTextEnabled = true
+                    helperText = getString(R.string.event_item_name_helper)
                 }
             }
             else {

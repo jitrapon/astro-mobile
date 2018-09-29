@@ -23,11 +23,11 @@ data class Circle(val circleId: String,
                   override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(
+            parcel.readString()!!,
+            parcel.readString()!!,
             parcel.readString(),
             parcel.readString(),
-            parcel.readString(),
-            parcel.readString(),
-            parcel.createStringArrayList(),
+            parcel.createStringArrayList()!!,
             parcel.readParcelable(RepeatInfo::class.java.classLoader),
             ArrayList<PlaceInfo>().apply {
                 parcel.readTypedList(this, PlaceInfo)

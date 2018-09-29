@@ -1,7 +1,6 @@
 package io.jitrapon.glom.base.ui.widget.recyclerview
 
 import android.graphics.Rect
-import android.support.v7.widget.RecyclerView
 import android.view.View
 
 /**
@@ -10,11 +9,11 @@ import android.view.View
  *
  * Created by Jitrapon
  */
-class HorizontalSpaceItemDecoration(private val spacing: Int, private val centerFirstItem: Boolean = false) : RecyclerView.ItemDecoration() {
+class HorizontalSpaceItemDecoration(private val spacing: Int, private val centerFirstItem: Boolean = false) : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
 
-    override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+    override fun getItemOffsets(outRect: Rect, view: View, parent: androidx.recyclerview.widget.RecyclerView, state: androidx.recyclerview.widget.RecyclerView.State) {
         val position = parent.getChildAdapterPosition(view)
-        if (position != parent.adapter.itemCount - 1) {
+        if (position != parent.adapter!!.itemCount - 1) {
             outRect.right = spacing
         }
         if (position == 0 && centerFirstItem) {

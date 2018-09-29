@@ -1,7 +1,7 @@
 package io.jitrapon.glom.base.domain
 
-import android.arch.persistence.room.Database
-import android.arch.persistence.room.RoomDatabase
+import androidx.room.Database
+import androidx.room.RoomDatabase
 import io.jitrapon.glom.base.domain.user.UserCircleEntity
 import io.jitrapon.glom.base.domain.user.UserDao
 import io.jitrapon.glom.base.domain.user.UserEntity

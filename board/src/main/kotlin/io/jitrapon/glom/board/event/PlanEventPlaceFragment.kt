@@ -1,10 +1,8 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.lifecycle.Observer
-import android.support.v4.app.FragmentActivity
-import android.support.v7.widget.SimpleItemAnimator
 import android.view.View
-import androidx.os.bundleOf
+import androidx.core.os.bundleOf
+import androidx.lifecycle.Observer
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -43,7 +41,7 @@ class PlanEventPlaceFragment : BaseFragment() {
      * Create this fragment's ViewModel instance. The instance is reused from the one
      * instantiated with this fragment's activity
      */
-    override fun onCreateViewModel(activity: FragmentActivity) {
+    override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
         viewModel = obtainViewModel(PlanEventViewModel::class.java, activity)
     }
 
@@ -55,7 +53,7 @@ class PlanEventPlaceFragment : BaseFragment() {
         event_plan_place_poll_recyclerview.apply {
             adapter = EventPollAdapter(viewModel, TYPE_PLACE_POLL)
             addItemDecoration(VerticalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_poll_vertical_offset)))
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+            (itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
         }
         event_plan_place_poll_status_button.setOnClickListener {
             viewModel.togglePlacePollStatus()
@@ -66,7 +64,7 @@ class PlanEventPlaceFragment : BaseFragment() {
         event_plan_place_card_recyclerview.apply {
             adapter = EventPollAdapter(viewModel, TYPE_PLACE_CARD)
             addItemDecoration(HorizontalSpaceItemDecoration(context!!.dimen(R.dimen.event_plan_place_card_offset), true))
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+            (itemAnimator as androidx.recyclerview.widget.SimpleItemAnimator).supportsChangeAnimations = false
         }
 
         // if this is the first page the user sees, load the plan immediately
@@ -94,21 +92,21 @@ class PlanEventPlaceFragment : BaseFragment() {
 
                         // update the place polls
                         if (it.pollChangedIndices.isNullOrEmpty()) {
-                            event_plan_place_poll_recyclerview.adapter.notifyDataSetChanged()
+                            event_plan_place_poll_recyclerview.adapter!!.notifyDataSetChanged()
                         }
                         else {
                             for (index in it.pollChangedIndices!!) {
-                                event_plan_place_poll_recyclerview.adapter.notifyItemChanged(index)
+                                event_plan_place_poll_recyclerview.adapter!!.notifyItemChanged(index)
                             }
                         }
 
                         // update the card suggestions
                         if (it.cardChangedIndices.isNullOrEmpty()) {
-                            event_plan_place_card_recyclerview.adapter.notifyDataSetChanged()
+                            event_plan_place_card_recyclerview.adapter!!.notifyDataSetChanged()
                         }
                         else {
                             for (index in it.cardChangedIndices!!) {
-                                event_plan_place_card_recyclerview.adapter.notifyItemChanged(index)
+                                event_plan_place_card_recyclerview.adapter!!.notifyItemChanged(index)
                             }
                         }
                     }

@@ -1,7 +1,7 @@
 package io.jitrapon.glom.base
 
 import android.os.Bundle
-import android.support.design.widget.BottomNavigationView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.navigation.NavigationItem
 import io.jitrapon.glom.base.navigation.Router

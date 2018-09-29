@@ -1,6 +1,6 @@
 package io.jitrapon.glom.base.ui.widget.recyclerview
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.ViewGroup
 
 /**
@@ -8,7 +8,7 @@ import android.view.ViewGroup
  *
  * Created by Jitrapon
 */
-abstract class PartialRecyclerViewAdapter<T> : RecyclerView.Adapter<T>() where T : RecyclerView.ViewHolder {
+abstract class PartialRecyclerViewAdapter<T> : androidx.recyclerview.widget.RecyclerView.Adapter<T>() where T : androidx.recyclerview.widget.RecyclerView.ViewHolder {
 
     /**
      * Child class should return the view type integer to represent the more item type

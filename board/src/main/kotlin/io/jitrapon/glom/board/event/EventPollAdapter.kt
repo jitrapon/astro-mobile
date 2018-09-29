@@ -1,6 +1,5 @@
 package io.jitrapon.glom.board.event
 
-import android.support.v7.widget.RecyclerView
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
@@ -17,13 +16,13 @@ const val TYPE_PLACE_POLL = 1
 const val TYPE_PLACE_CARD = 2
 const val TYPE_ADD_PLACE_POLL = 3
 
-class EventPollAdapter(private val viewModel: PlanEventViewModel, private val itemType: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class EventPollAdapter(private val viewModel: PlanEventViewModel, private val itemType: Int) : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
     override fun getItemViewType(position: Int): Int = if (itemType == TYPE_PLACE_POLL) {
         if (viewModel.isAddPlacePollButton(position)) TYPE_ADD_PLACE_POLL else TYPE_PLACE_POLL
     } else itemType
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
         return when (viewType) {
             TYPE_DATE_POLL -> EventDatePollViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.plan_event_date_poll, parent, false), viewModel::toggleDatePoll)
@@ -44,7 +43,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         else -> 0
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is EventDatePollViewHolder -> viewModel.getDatePollItem(position).let {
                 holder.date.apply {
@@ -109,7 +108,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         }
     }
 
-    inner class EventDatePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
+    inner class EventDatePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val date: TextView = itemView.findViewById(R.id.event_plan_date_poll_date)
         val time: TextView = itemView.findViewById(R.id.event_plan_date_poll_time)
@@ -123,7 +122,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         }
     }
 
-    inner class EventPlacePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit, onItemInfoClicked: (Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
+    inner class EventPlacePollViewHolder(itemView: View, onItemClicked: (Int) -> Unit, onItemInfoClicked: (Int) -> Unit) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val title: TextView = itemView.findViewById(R.id.event_plan_place_poll_name)
         val subtitle: TextView = itemView.findViewById(R.id.event_plan_place_poll_subtitle)
@@ -141,7 +140,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         }
     }
 
-    inner class EventPlaceCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class EventPlaceCardViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val image: ImageView = itemView.findViewById(R.id.event_plan_place_card_image)
         val name: TextView = itemView.findViewById(R.id.event_plan_place_card_name)
@@ -149,7 +148,7 @@ class EventPollAdapter(private val viewModel: PlanEventViewModel, private val it
         val button: GlomButton = itemView.findViewById(R.id.event_plan_place_card_button)
     }
 
-    inner class EventAddPlacePollViewHolder(itemView: View, onItemClicked: () -> Unit) : RecyclerView.ViewHolder(itemView) {
+    inner class EventAddPlacePollViewHolder(itemView: View, onItemClicked: () -> Unit) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         init {
             itemView.setOnClickListener {

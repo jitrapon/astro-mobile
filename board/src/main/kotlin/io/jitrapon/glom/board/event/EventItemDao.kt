@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board.event
 
-import android.arch.persistence.room.*
+import androidx.room.*
 import io.reactivex.Single
 
 @Dao

@@ -72,18 +72,18 @@ dependencies {
 
     // kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.kotlinVersion"
-    api ("androidx.core:core-ktx:$rootProject.androidktxVersion") {
+    api ("androidx.core:core-ktx:$rootProject.ktxVersion") {
         exclude group: 'org.jetbrains.kotlin'
     }
 
     // support library
-    api("com.android.support:design:$rootProject.supportLibVersion") {
+    api("com.google.android.material:material:$rootProject.materialVersion") {
         force = true
     }
-    api("com.android.support:cardview-v7:$rootProject.supportLibVersion") {
+    api("androidx.cardview:cardview:$rootProject.cardViewVersion") {
         force = true
     }
-    api "com.android.support.constraint:constraint-layout:$rootProject.constraintLayoutVersion"
+    api "androidx.constraintlayout:constraintlayout:$rootProject.constraintLayoutVersion"
 
     // media loading
     api ("com.github.bumptech.glide:glide:$rootProject.glideVersion") {
@@ -99,22 +99,19 @@ dependencies {
 
     // architecture components
     // ViewModel and LiveData
-    api "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
-    kapt "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
-    // Java8 support for Lifecycles
-    implementation "android.arch.lifecycle:common-java8:$rootProject.archLifecycleVersion"
-    // Test helpers for LiveData
-    testImplementation "android.arch.core:core-testing:$rootProject.archLifecycleVersion"
+    api "androidx.lifecycle:lifecycle-extensions:$rootProject.lifecycleVersion"
+    kapt "androidx.lifecycle:lifecycle-compiler:$rootProject.lifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$rootProject.lifecycleVersion"
+    testImplementation "androidx.arch.core:core-testing:$rootProject.lifecycleVersion"
 
     // room
-    api "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
-    api "android.arch.persistence.room:rxjava2:$rootProject.archRoomVersion"
-    kapt "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
-
-    testImplementation "android.arch.persistence.room:testing:$rootProject.archRoomVersion"
+    api "androidx.room:room-runtime:$rootProject.roomVersion"
+    api "androidx.room:room-rxjava2:$rootProject.roomVersion"
+    kapt "androidx.room:room-compiler:$rootProject.roomVersion"
+    testImplementation "androidx.room:room-testing:$rootProject.roomVersion"
 
     // paging
-    api "android.arch.paging:runtime:$rootProject.archPagingVersion"
+    api "androidx.paging:paging-runtime:$rootProject.pagingVersion"
 
     // dagger
     api "com.google.dagger:dagger:$rootProject.daggerVersion"
@@ -150,8 +147,8 @@ dependencies {
 
     // testing
     testImplementation "junit:junit:$rootProject.junitVersion"
-    androidTestImplementation("com.android.support.test.espresso:espresso-core:$rootProject.espressoVersion", {
-        exclude group: 'com.android.support', module: 'support-annotations'
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0-alpha4', {
+        exclude group: 'androidx.annotations', module: 'annotations'
     })
 
     // logging

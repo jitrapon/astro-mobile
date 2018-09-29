@@ -1,7 +1,7 @@
 package io.jitrapon.glom.base
 
 import android.app.Application
-import android.support.v7.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.gms.maps.MapsInitializer
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.util.AppLogger

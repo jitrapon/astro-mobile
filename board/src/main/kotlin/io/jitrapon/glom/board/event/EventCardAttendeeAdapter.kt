@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board.event
 
-import android.support.v4.app.Fragment
-import android.support.v7.widget.RecyclerView
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,9 +18,9 @@ import io.jitrapon.glom.board.R
  *
  * Created by Jitrapon
  */
-class EventCardAttendeeAdapter(private val fragment: Fragment,
+class EventCardAttendeeAdapter(private val fragment: androidx.fragment.app.Fragment,
                                private var attendees: List<String?>? = null,
-                               private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<RecyclerView.ViewHolder>() {
+                               private val visibleItemCount: Int = 3) : PartialRecyclerViewAdapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
     companion object {
 
@@ -41,25 +41,25 @@ class EventCardAttendeeAdapter(private val fragment: Fragment,
         if (it.isNullOrEmpty()) 0 else it!!.size
     }
 
-    override fun onCreateMoreViewHolder(parent: ViewGroup): RecyclerView.ViewHolder =
+    override fun onCreateMoreViewHolder(parent: ViewGroup): androidx.recyclerview.widget.RecyclerView.ViewHolder =
             MoreItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.remaining_indicator_small, parent, false))
 
-    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+    override fun onCreateOtherViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder =
             AvatarViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_avatar_small, parent, false))
 
     override fun getOtherItemViewType(position: Int): Int = TYPE_AVATAR
 
-    override fun onBindMoreItemViewHolder(holder: RecyclerView.ViewHolder, remainingItemCount: Int) {
+    override fun onBindMoreItemViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, remainingItemCount: Int) {
         (holder as MoreItemViewHolder).updateCount(remainingItemCount)
     }
 
-    override fun onBindOtherItemViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindOtherItemViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         attendees?.let {
             (holder as AvatarViewHolder).setAvatar(it[position])
         }
     }
 
-    inner class MoreItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class MoreItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val text: TextView = itemView.findViewById(R.id.remaining_count_text)
 
@@ -70,7 +70,7 @@ class EventCardAttendeeAdapter(private val fragment: Fragment,
         }
     }
 
-    inner class AvatarViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+    inner class AvatarViewHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
         val image: ImageView = itemView.findViewById(R.id.avatar_image)
 

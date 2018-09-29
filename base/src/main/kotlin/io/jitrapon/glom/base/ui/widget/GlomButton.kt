@@ -1,8 +1,8 @@
 package io.jitrapon.glom.base.ui.widget
 
 import android.content.Context
-import android.support.v7.widget.AppCompatButton
 import android.util.AttributeSet
+import androidx.appcompat.widget.AppCompatButton
 import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.getString
