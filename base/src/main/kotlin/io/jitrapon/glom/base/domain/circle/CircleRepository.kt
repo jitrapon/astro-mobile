@@ -16,11 +16,10 @@ class CircleRepository(private val remoteDataSource: CircleDataSource) : Reposit
         circle = circle ?: Circle(id, "my circle", null, null, ArrayList(), null, ArrayList())
         return load(refresh,
                 Flowable.just(circle),
-                remoteDataSource.getCircle(id, refresh),
-                {
-                    circle = it
-                    Flowable.just(circle)
-                }
-        )
+                remoteDataSource.getCircle(id, refresh)
+        ) {
+            circle = it
+            Flowable.just(circle)
+        }
     }
 }

@@ -5,10 +5,13 @@ import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import io.jitrapon.glom.BuildConfig
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.withinDuration
+import retrofit2.HttpException
+import java.io.IOException
 import java.util.*
 
 /* time in seconds before data is refreshed automatically */
@@ -96,10 +99,16 @@ abstract class BaseViewModel : ViewModel() {
      */
     fun handleError(throwable: Throwable, showAsToast: Boolean = false) {
         AppLogger.e(throwable)
+
+        val errorMessage = when (throwable) {
+            is IOException -> AndroidString(R.string.error_network)
+            is HttpException -> if (BuildConfig.DEBUG) AndroidString(text = throwable.response().message()) else AndroidString(R.string.error_generic)
+            else -> AndroidString(R.string.error_generic)
+        }
         observableViewAction.execute(arrayOf(
                 Loading(false),
-                if (showAsToast) Toast(AndroidString(R.string.error_generic))
-                else Snackbar(AndroidString(R.string.error_generic), level = MessageLevel.ERROR)
+                if (showAsToast) Toast(errorMessage)
+                else Snackbar(errorMessage, level = MessageLevel.ERROR)
         ))
     }
 

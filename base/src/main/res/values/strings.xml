@@ -3,7 +3,8 @@
     <string name="application_name">Glom</string>
 
     <!-- error messages -->
-    <string name="error_generic">Well, this is embarrassing. Sorry but something went wrong, I\'m notifying my developer right now!</string>
+    <string name="error_generic">Oh no, something went wrong!</string>
+    <string name="error_network">There is a problem reaching the server. Please check your connection and try again.</string>
 
     <!-- bottom navigation view -->
     <string name="main_nav_item_board_title">Board</string>
