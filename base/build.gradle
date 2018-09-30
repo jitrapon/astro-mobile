@@ -41,17 +41,20 @@ android {
 
     buildTypes {
         debug {
-            minifyEnabled false
-            ext.enableCrashlytics = false           //TODO need to disable the Crashlytics kit at runtime
-            ext.alwaysUpdateBuildId = false
+            minifyEnabled true
+            useProguard false
             debuggable true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
+
+            ext.enableCrashlytics = false
+            ext.alwaysUpdateBuildId = false
 
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
             resValue "string", "server_url", "http://192.168.1.35:8080/"
         }
         release {
             minifyEnabled true
-            crunchPngs false
+            crunchPngs true
             debuggable false
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'

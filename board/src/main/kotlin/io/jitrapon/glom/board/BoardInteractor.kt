@@ -1,7 +1,6 @@
 package io.jitrapon.glom.board
 
 import android.os.Parcel
-import androidx.collection.ArrayMap
 import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
