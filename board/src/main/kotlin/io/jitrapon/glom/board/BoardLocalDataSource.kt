@@ -54,7 +54,10 @@ class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: 
                 }
             }
             if (eventEntities.isNotEmpty()) eventDao.insertOrReplaceEvents(*eventEntities.toTypedArray())
-            board
+        }.flatMap {
+            eventDao.getEventsInCircle(board.circleId)
+                    .map { it.toBoard(board.circleId, userInteractor.getCurrentUserId()) }
+                    .toFlowable()
         }.doOnNext {
             synchronized(lock) {
                 inMemoryBoard = it
