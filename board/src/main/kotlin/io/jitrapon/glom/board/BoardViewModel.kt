@@ -10,7 +10,11 @@ import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
-import io.jitrapon.glom.board.event.EventItemUiModel
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.BoardItemDiffCallback
+import io.jitrapon.glom.board.item.BoardItemUiModel
+import io.jitrapon.glom.board.item.BoardItemViewModelStore
+import io.jitrapon.glom.board.item.event.EventItemUiModel
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject

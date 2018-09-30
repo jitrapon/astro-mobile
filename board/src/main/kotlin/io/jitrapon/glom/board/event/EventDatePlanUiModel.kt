@@ -1,7 +1,0 @@
-package io.jitrapon.glom.board.event
-
-import io.jitrapon.glom.base.model.UiModel
-
-data class EventDatePlanUiModel(val datePolls: MutableList<EventDatePollUiModel>,
-                                var itemsChangedIndices: List<Int>?,
-                                override var status: UiModel.Status) : UiModel

@@ -2,6 +2,8 @@ package io.jitrapon.glom.board
 
 import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.BoardItemUiModel
 
 /**
  * UiModel that controls visual representation of the board with items

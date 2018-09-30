@@ -14,9 +14,12 @@ import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
-import io.jitrapon.glom.board.event.EventItem
-import io.jitrapon.glom.board.event.EventItemActivity
-import io.jitrapon.glom.board.event.PlanEventActivity
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.BoardItemAdapter
+import io.jitrapon.glom.board.item.BoardItemUiModel
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.EventItemActivity
+import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**

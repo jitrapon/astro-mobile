@@ -6,7 +6,7 @@ import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.board.event.*
+import io.jitrapon.glom.board.item.event.*
 
 @Module
 class BoardModule {

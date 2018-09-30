@@ -2,9 +2,11 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
-import io.jitrapon.glom.board.event.EventItem
-import io.jitrapon.glom.board.event.deserialize
-import io.jitrapon.glom.board.event.serializeInfo
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.BoardItemRequest
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.deserialize
+import io.jitrapon.glom.board.item.event.serializeInfo
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*

@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.board.item.BoardItemRequest
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import retrofit2.http.*

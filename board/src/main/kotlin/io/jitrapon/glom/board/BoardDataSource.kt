@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.board.item.BoardItem
 import io.reactivex.Completable
 import io.reactivex.Flowable
 

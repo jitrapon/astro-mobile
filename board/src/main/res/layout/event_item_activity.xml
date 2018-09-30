@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".event.EventItemActivity" >
+    tools:context=".item.event.EventItemActivity" >
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -98,7 +98,7 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_clock_icon"
                     app:srcCompat="@drawable/ic_time" />
 
-                <io.jitrapon.glom.board.event.widget.GlomTextView
+                <io.jitrapon.glom.board.item.event.widget.GlomTextView
                     android:id="@+id/event_item_start_time"
                     style="@style/CardView.TextView"
                     android:paddingTop="8dp"
@@ -128,7 +128,7 @@
                     app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_end_time" />
 
-                <io.jitrapon.glom.board.event.widget.GlomTextView
+                <io.jitrapon.glom.board.item.event.widget.GlomTextView
                     android:id="@+id/event_item_end_time"
                     style="@style/CardView.TextView"
                     android:foreground="?android:attr/selectableItemBackground"

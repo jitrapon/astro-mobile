@@ -12,8 +12,9 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.util.isNullOrEmpty
-import io.jitrapon.glom.board.event.EventInfo
-import io.jitrapon.glom.board.event.EventItem
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.event.EventInfo
+import io.jitrapon.glom.board.item.event.EventItem
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers

@@ -24,9 +24,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".event.EventItemActivity"
+        <activity android:name=".item.event.EventItemActivity"
             android:theme="@style/Theme.Glom.DialogActivity" />
-        <activity android:name=".event.PlanEventActivity"
+        <activity android:name=".item.event.plan.PlanEventActivity"
             android:theme="@style/Theme.Glom.Translucent" />
     </application>
 

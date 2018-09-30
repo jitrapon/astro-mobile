@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.board.item.BoardItemUiModel
 import java.util.*
 
 /**

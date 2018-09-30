@@ -1,7 +1,8 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.board.event.*
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.event.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
