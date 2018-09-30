@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.domain.user
 
+import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.reactivex.Flowable
 import java.util.*
 
@@ -8,7 +9,7 @@ import java.util.*
  *
  * @author Jitrapon Tiachunpun
  */
-class UserInteractor(private val dataSource: UserDataSource) {
+class UserInteractor(private val dataSource: UserDataSource): BaseInteractor() {
 
     private var signedInUserId: String? = "okpkcLsh2xURIVfRZ1aWTKCmIcI3"
 

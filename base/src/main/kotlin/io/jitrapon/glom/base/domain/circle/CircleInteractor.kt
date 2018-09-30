@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.domain.circle
 
 import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.domain.user.UserDataSource
+import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -15,7 +16,7 @@ import io.reactivex.schedulers.Schedulers
  *
  * @author Jitrapon Tiachunpun
  */
-class CircleInteractor(private val circleDataSource: CircleDataSource, private val userDataSource: UserDataSource) {
+class CircleInteractor(private val circleDataSource: CircleDataSource, private val userDataSource: UserDataSource): BaseInteractor() {
 
     private var activeCircleId: String = "dev-circle-1"
 
@@ -32,7 +33,7 @@ class CircleInteractor(private val circleDataSource: CircleDataSource, private v
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     /**

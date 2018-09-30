@@ -1,9 +1,8 @@
 package io.jitrapon.glom.board.event
 
+import android.text.TextUtils
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.collection.ArrayMap
-import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
@@ -885,6 +884,13 @@ class PlanEventViewModel : BaseViewModel() {
      * Not applicable
      */
     override fun isViewEmpty(): Boolean = false
+
+    /**
+     * Clean up any resources
+     */
+    override fun onCleared() {
+        interactor.cleanup()
+    }
 
     //region observables
 

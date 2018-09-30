@@ -7,6 +7,7 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -26,7 +27,7 @@ import java.util.*
  * @author Jitrapon Tiachunpun
  */
 class BoardInteractor(private val userInteractor: UserInteractor, private val boardDataSource: BoardDataSource,
-                      private val circleInteractor: CircleInteractor) {
+                      private val circleInteractor: CircleInteractor) : BaseInteractor() {
 
     /*
      * The number of items that was loaded
@@ -92,7 +93,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     /**
@@ -118,7 +119,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     /**
@@ -132,7 +133,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncSuccessResult(item))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     /**
@@ -157,7 +158,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     fun deleteItemRemote(itemId: String, onComplete: (AsyncResult<Unit>) -> Unit) {
@@ -168,7 +169,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun createEmptyItem(itemType: Int): BoardItem {
@@ -193,7 +194,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     onComplete(AsyncSuccessResult(item))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun hasPlaceInfo(item: BoardItem): Boolean {
@@ -260,7 +261,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     }
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     /**

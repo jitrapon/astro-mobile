@@ -28,7 +28,7 @@ android {
 
     buildTypes {
         debug {
-//            applicationIdSuffix rootProject.debugApplicationId
+//            applicationIdSuffix rootProject.debugIdSuffix
             minifyEnabled false
             useProguard false
             debuggable true

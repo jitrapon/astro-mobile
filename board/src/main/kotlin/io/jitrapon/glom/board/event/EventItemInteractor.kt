@@ -1,6 +1,5 @@
 package io.jitrapon.glom.board.event
 
-import android.annotation.SuppressLint
 import android.text.TextUtils
 import android.util.SparseArray
 import androidx.core.util.set
@@ -10,6 +9,7 @@ import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -29,9 +29,8 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-@SuppressLint("CheckResult")
 class EventItemInteractor(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor,
-                          private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource) {
+                          private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource): BaseInteractor() {
 
     /* place provider use for providing place info */
     private var placeProvider: PlaceProvider? = null
@@ -154,7 +153,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(event to temp))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     //endregion
@@ -190,7 +189,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                             }
                         }, {
                             onComplete(AsyncErrorResult(it))
-                        })
+                        }).autoDispose()
             }
         }
     }
@@ -291,7 +290,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     //endregion
@@ -359,7 +358,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(event.itemInfo.attendees))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
@@ -372,7 +371,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     //endregion
@@ -396,7 +395,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     fun updateDatePollCount(id: String, upvote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
@@ -410,7 +409,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun addDatePoll(startDate: Date, endDate: Date?, onComplete: (AsyncResult<List<EventDatePoll>>) -> Unit) {
@@ -424,7 +423,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(it))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     //endregion
@@ -440,7 +439,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncErrorResult(it))
                 }, {
                     //nothing yet
-                })
+                }).autoDispose()
     }
 
     fun loadPollPlaceInfo(pollPlaceIdMap: androidx.collection.ArrayMap<String, String>,
@@ -491,7 +490,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(it))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun updatePlacePollCount(id: String, upvote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
@@ -505,7 +504,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun setItemPlacePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
@@ -518,7 +517,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     fun syncItemPlace(id: String, onComplete: (AsyncResult<Unit>) -> Unit) {
@@ -537,7 +536,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                     onComplete(AsyncSuccessResult(Unit))
                 }, {
                     onComplete(AsyncErrorResult(it))
-                })
+                }).autoDispose()
     }
 
     //endregion

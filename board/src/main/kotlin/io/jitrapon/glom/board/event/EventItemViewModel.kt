@@ -747,7 +747,7 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     override fun cleanUp() {
-        //nothing yet
+        interactor.cleanup()
     }
 
     //endregion

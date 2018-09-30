@@ -428,6 +428,8 @@ class BoardViewModel : BaseViewModel() {
     override fun onCleared() {
         BoardItemViewModelStore.clear()
         BoardInjector.clear()
+        boardInteractor.cleanup()
+        circleInteractor.cleanup()
     }
 
     //endregion

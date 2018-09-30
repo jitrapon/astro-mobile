@@ -1,10 +1,10 @@
 package io.jitrapon.glom.base.viewmodel
 
+import android.os.Build
+import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import android.os.Build
-import android.os.Looper
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
@@ -21,7 +21,6 @@ const val REFRESH_INTERVAL = 3600
  *
  * Created by Jitrapon
  */
-
 abstract class BaseViewModel : ViewModel() {
 
     /* Subclass of this class should set appropriate UiActionModel to this variable to emit action to the view
