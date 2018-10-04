@@ -3,10 +3,10 @@ package io.jitrapon.glom.base.ui
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
+import androidx.appcompat.widget.Toolbar
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -14,10 +14,7 @@ import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.color
-import io.jitrapon.glom.base.util.showAlertDialog
-import io.jitrapon.glom.base.util.showSnackbar
-import io.jitrapon.glom.base.util.showToast
+import io.jitrapon.glom.base.util.*
 import javax.inject.Inject
 
 /**
@@ -28,10 +25,10 @@ import javax.inject.Inject
  *
  * @author Jitrapon Tiachunpun
  */
-abstract class BaseFragment : androidx.fragment.app.Fragment() {
+abstract class BaseFragment : Fragment() {
 
     /* this fragment's swipe refresh layout, if provided */
-    private var refreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
+    private var refreshLayout: SwipeRefreshLayout? = null
 
     /* shared handler object */
     val handler: Handler by lazy {
@@ -71,6 +68,19 @@ abstract class BaseFragment : androidx.fragment.app.Fragment() {
         onCreateViewModel(activity!!)
         onSetupView(view)
         onSubscribeToObservables()
+        getToolbar()?.let {
+            setupActionBar(it) {}
+            getToolbarMenuId()?.let { _ ->
+                setHasOptionsMenu(true)
+            }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        getToolbarMenuId()?.let {
+            inflater.inflate(it, menu)
+        }
     }
 
     /**
@@ -104,6 +114,16 @@ abstract class BaseFragment : androidx.fragment.app.Fragment() {
      * Child fragment class must return the layout ID resource to be inflated
      */
     abstract fun getLayoutId(): Int
+
+    /**
+     * Returns a toolbar if this fragment should participate in creating a toolbar
+     */
+    open fun getToolbar(): Toolbar? = null
+
+    /**
+     * Returns the menu resource of the toolbar
+     */
+    open fun getToolbarMenuId(): Int? = null
 
     /**
      * Child fragment class should override this to indicate that this fragment is swipe-refreshable and

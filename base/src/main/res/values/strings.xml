@@ -6,6 +6,9 @@
     <string name="error_generic">Oh no, something went wrong!</string>
     <string name="error_network">There is a problem reaching the server. Please check your connection and try again.</string>
 
+    <!-- app bar menu -->
+    <string name="main_app_bar_account_menu">Account</string>
+
     <!-- bottom navigation view -->
     <string name="main_nav_item_board_title">Board</string>
     <string name="main_nav_item_map_title">Map</string>

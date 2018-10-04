@@ -116,4 +116,9 @@ abstract class BaseViewModel : ViewModel() {
      * Returns true if the current view has no data to show
      */
     abstract fun isViewEmpty(): Boolean
+
+    /**
+     * Shows user profile information
+     */
+    open fun showUserProfile() {}
 }

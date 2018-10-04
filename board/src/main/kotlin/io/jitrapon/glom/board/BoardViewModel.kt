@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
@@ -33,6 +34,9 @@ class BoardViewModel : BaseViewModel() {
 
     @Inject
     lateinit var circleInteractor: CircleInteractor
+
+    @Inject
+    lateinit var userInteractor: UserInteractor
 
     /* live data for the board items */
     internal val observableBoard = MutableLiveData<BoardUiModel>()
@@ -424,6 +428,10 @@ class BoardViewModel : BaseViewModel() {
         return BoardItemViewModelStore.obtainViewModelForItem(this::class.java).let {
             it?.toUiModel(this, status) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
         }
+    }
+
+    override fun showUserProfile() {
+        userInteractor.debug()
     }
 
     /**

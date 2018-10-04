@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.view.View
 import android.widget.ProgressBar
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -56,6 +57,11 @@ class BoardFragment : BaseFragment() {
     override fun getEmptyLoadingView() = board_progressbar as ProgressBar
 
     /**
+     * Returns the toolbar that this fragment will manage
+     */
+    override fun getToolbar(): Toolbar? = toolbar
+
+    /**
      * Create this fragment's ViewModel instance
      */
     override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
@@ -86,6 +92,10 @@ class BoardFragment : BaseFragment() {
         // main fab click listener
         board_fab.setOnClickListener {
             viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
+        }
+
+        toolbar_profile_menu.setOnClickListener {
+            viewModel.showUserProfile()
         }
     }
 

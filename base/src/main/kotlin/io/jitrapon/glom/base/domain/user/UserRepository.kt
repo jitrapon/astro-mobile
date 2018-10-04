@@ -26,4 +26,8 @@ class UserRepository(private val remoteDataSource: UserDataSource, private val l
     override fun saveUsers(users: List<User>): Flowable<List<User>> {
         throw NotImplementedError()
     }
+
+    override fun getCurrentUserId(): String? {
+        return localDataSource.getCurrentUserId()
+    }
 }

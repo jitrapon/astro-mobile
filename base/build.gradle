@@ -161,6 +161,7 @@ dependencies {
     api "com.airbnb.android:lottie:$rootProject.lottieVersion"
 
     // modules
+    feature project(':auth')
     feature project(':board')
     feature project(":map")
     feature project(":explore")

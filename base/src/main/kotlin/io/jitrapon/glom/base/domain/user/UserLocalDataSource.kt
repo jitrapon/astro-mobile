@@ -1,6 +1,5 @@
 package io.jitrapon.glom.base.domain.user
 
-import androidx.collection.ArrayMap
 import io.jitrapon.glom.base.domain.BaseDatabase
 import io.reactivex.Flowable
 
@@ -42,6 +41,8 @@ class UserLocalDataSource(database: BaseDatabase) : UserDataSource {
             inMemoryUsers[it]?.let(::add)
         }
     })
+
+    override fun getCurrentUserId(): String? = "okpkcLsh2xURIVfRZ1aWTKCmIcI3"
 
     private fun List<UserEntity>.toUsers(): List<User> {
         return map { User(it.type, it.id, it.name, it.avatar) }

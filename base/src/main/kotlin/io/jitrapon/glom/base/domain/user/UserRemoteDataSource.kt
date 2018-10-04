@@ -22,6 +22,10 @@ class UserRemoteDataSource : RemoteDataSource(), UserDataSource {
         throw NotImplementedError()
     }
 
+    override fun getCurrentUserId(): String? {
+        throw NotImplementedError()
+    }
+
     //region deserializer
 
     private fun UsersResponse.deserialize(): List<User> {

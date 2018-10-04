@@ -1,12 +1,12 @@
-apply plugin: 'com.android.application'
-apply plugin: 'com.getkeepsafe.dexcount'
+apply plugin: 'com.android.feature'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion rootProject.compileSdkVersion
     buildToolsVersion rootProject.buildToolsVersion
 
     defaultConfig {
-        applicationId "io.jitrapon.glom"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         versionCode rootProject.versionCode
@@ -21,36 +21,24 @@ android {
             storePassword rootProject.keystoreProperties['storePassword']
         }
     }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
     buildTypes {
-        debug {
-//            applicationIdSuffix rootProject.debugIdSuffix
-            minifyEnabled false
-            useProguard false
-            debuggable true
-            ext.enableCrashlytics = false       //TODO need to disable the Crashlytics kit at runtime
-            ext.alwaysUpdateBuildId = false
-        }
+        debug {}
         release {
-            minifyEnabled true
-            useProguard true
-            debuggable false
-            crunchPngs false
-            shrinkResources true
             signingConfig signingConfigs.release
         }
     }
 }
 
 dependencies {
-    implementation project(':board')
     implementation project(':base')
-    implementation project(':map')
-    implementation project(':explore')
-    implementation project(':profile')
-    implementation project(':auth')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.kotlinVersion"
 }

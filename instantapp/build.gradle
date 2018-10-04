@@ -29,4 +29,5 @@ dependencies {
     implementation project(':map')
     implementation project(':explore')
     implementation project(':profile')
+    implementation project(':auth')
 }

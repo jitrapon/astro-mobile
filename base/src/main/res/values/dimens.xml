@@ -6,6 +6,7 @@
 
     <!-- app bar -->
     <dimen name="app_bar_elevation">4dp</dimen>
+    <dimen name="app_bar_height">74dp</dimen>
 
     <!-- bottom navigation view -->
     <dimen name="bottom_nav_elevation">8dp</dimen>

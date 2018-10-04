@@ -5,6 +5,9 @@ import android.content.Intent.ACTION_VIEW
 import android.net.Uri
 import android.view.View
 import androidx.annotation.ColorRes
+import androidx.appcompat.app.ActionBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -94,5 +97,14 @@ fun Fragment.startActivity(url: String) {
         startActivity(Intent(ACTION_VIEW).apply {
             data = Uri.parse(url)
         })
+    }
+}
+
+fun Fragment.setupActionBar(toolbar: Toolbar, action: ActionBar.() -> Unit) {
+    (activity as? AppCompatActivity)?.let {
+        it.setSupportActionBar(toolbar)
+        it.supportActionBar?.run {
+            action()
+        }
     }
 }
