@@ -42,8 +42,6 @@ class UserLocalDataSource(database: BaseDatabase) : UserDataSource {
         }
     })
 
-    override fun getCurrentUserId(): String? = "okpkcLsh2xURIVfRZ1aWTKCmIcI3"
-
     private fun List<UserEntity>.toUsers(): List<User> {
         return map { User(it.type, it.id, it.name, it.avatar) }
     }

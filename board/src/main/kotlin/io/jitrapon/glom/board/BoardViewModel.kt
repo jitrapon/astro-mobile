@@ -431,7 +431,7 @@ class BoardViewModel : BaseViewModel() {
     }
 
     override fun showUserProfile() {
-        userInteractor.debug()
+
     }
 
     /**

@@ -6,6 +6,7 @@ import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.BuildConfig
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.domain.user.account.AccountDataSource
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -23,7 +24,7 @@ import javax.inject.Singleton
  *
  * Created by Jitrapon
  */
-@Module(includes = [BaseModule::class])
+@Module(includes = [BaseModule::class, BaseDomainModule::class])
 class NetModule {
 
     @Provides
@@ -36,7 +37,7 @@ class NetModule {
 
     @Provides
     @Named("apiToken")
-    fun provideApiToken(): String? = null
+    fun provideApiToken(@Named("accountLocalDataSource") dataSource: AccountDataSource): String? = dataSource.getAccount()?.idToken
 
     @Provides
     @Named("headerInterceptor")
