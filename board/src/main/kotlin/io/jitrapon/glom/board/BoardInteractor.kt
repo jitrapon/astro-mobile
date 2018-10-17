@@ -79,6 +79,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
                     board to users
                 })
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .flatMap {
@@ -176,7 +177,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     fun createEmptyItem(itemType: Int): BoardItem {
         val now = Date()
         val owners = ArrayList<String>().apply {
-            userInteractor.getCurrentUserId()?.let (::add)
+            userId?.let (::add)
         }
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,

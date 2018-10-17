@@ -13,7 +13,7 @@ class UserInteractor(private val dataSource: UserDataSource): BaseInteractor() {
 
     fun getUsers(circleId: String, refresh: Boolean): Flowable<List<User>> = dataSource.getUsers(circleId, refresh)
 
-    fun getCurrentUserId(): String? = accountInteractor.getUserId()
+    fun getCurrentUserId(): String? = userId
 
     fun getUsersFromIds(userIds: List<String>): List<User?>? {
         return ArrayList<User?>().apply {

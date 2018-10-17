@@ -11,7 +11,10 @@ import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.circle.CircleRemoteDataSource
 import io.jitrapon.glom.base.domain.circle.CircleRepository
 import io.jitrapon.glom.base.domain.user.*
-import io.jitrapon.glom.base.domain.user.account.*
+import io.jitrapon.glom.base.domain.user.account.AccountDataSource
+import io.jitrapon.glom.base.domain.user.account.AccountLocalDataSource
+import io.jitrapon.glom.base.domain.user.account.AccountRemoteDataSource
+import io.jitrapon.glom.base.domain.user.account.AccountRepository
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -48,8 +51,4 @@ class BaseDomainModule {
     @Singleton
     @Named("accountRepository")
     fun provideAccountRepository(@Named("accountLocalDataSource") localDataSource: AccountDataSource): AccountDataSource = AccountRepository(localDataSource, AccountRemoteDataSource())
-
-    @Provides
-    @Singleton
-    fun provideAccountInteractor(@Named("accountRepository") dataSource: AccountDataSource): AccountInteractor = AccountInteractor(dataSource)
 }

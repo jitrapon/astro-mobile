@@ -85,7 +85,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
             eventItemDataSource.initWith(it)
             note = it.itemInfo.note
-            isUserAnOwner = item.owners.contains(getCurrentUserId())
+            isUserAnOwner = item.owners.contains(userId)
             initialized = true
         }
     }
@@ -306,7 +306,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     /**
      * Returns the currently signed in user ID
      */
-    fun getCurrentUserId(): String? = userInteractor.getCurrentUserId()
+    fun getCurrentUserId(): String? = userId
 
     /**
      * Joins the current user to an event
@@ -314,7 +314,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
     fun setItemAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
-        val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return
@@ -341,7 +340,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
-        val userId = userInteractor.getCurrentUserId()
         if (TextUtils.isEmpty(userId)) {
             onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
             return

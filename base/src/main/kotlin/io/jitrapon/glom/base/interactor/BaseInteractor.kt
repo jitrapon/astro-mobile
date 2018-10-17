@@ -1,10 +1,14 @@
 package io.jitrapon.glom.base.interactor
 
 import io.jitrapon.glom.base.di.ObjectGraph
-import io.jitrapon.glom.base.domain.user.account.AccountInteractor
+import io.jitrapon.glom.base.domain.user.account.AccountDataSource
+import io.reactivex.Flowable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import retrofit2.HttpException
+import java.net.HttpURLConnection
 import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * Base class for all interactors. Provides all child classes with common RX instances. Also shares common
@@ -17,11 +21,33 @@ open class BaseInteractor {
     /* shared instance of composite disposable to dispose Disposable instances not disposed automatically */
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
 
-    @Inject
-    lateinit var accountInteractor: AccountInteractor
+    @field:[Inject Named("accountRepository")]
+    lateinit var accountDataSource: AccountDataSource
 
     init {
         ObjectGraph.component.inject(this)
+    }
+
+    /* convenience properties for accessing the user ID */
+    val userId: String?
+        get() = accountDataSource.getAccount()?.userId
+
+    /**
+     * Check if the flowable's throwable is of type UnauthorizedException, if so perform
+     * a token refresh, otherwise propogate the error to a new Flowable instance.
+     */
+    fun errorIsUnauthorized(error: Flowable<Throwable>): Flowable<Any> {
+        return error.flatMap {
+            when (it) {
+                is HttpException -> {
+                    if (it.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                        accountDataSource.refreshToken()
+                    }
+                    else Flowable.error(it)
+                }
+                else -> Flowable.error(it)
+            }
+        }
     }
 
     /**
