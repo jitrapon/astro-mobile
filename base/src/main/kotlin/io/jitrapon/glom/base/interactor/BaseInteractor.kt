@@ -34,7 +34,7 @@ open class BaseInteractor {
 
     /* whether or not user is signed in */
     val isSignedIn: Boolean
-        get() = accountDataSource.getAccount() != null
+        get() = accountDataSource.getAccount()?.userId != null
 
     /**
      * Check if the flowable's throwable is of type UnauthorizedException, if so perform
