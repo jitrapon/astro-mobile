@@ -32,6 +32,10 @@ open class BaseInteractor {
     val userId: String?
         get() = accountDataSource.getAccount()?.userId
 
+    /* whether or not user is signed in */
+    val isSignedIn: Boolean
+        get() = accountDataSource.getAccount() != null
+
     /**
      * Check if the flowable's throwable is of type UnauthorizedException, if so perform
      * a token refresh, otherwise propogate the error to a new Flowable instance.
@@ -41,7 +45,7 @@ open class BaseInteractor {
             when (it) {
                 is HttpException -> {
                     if (it.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                        accountDataSource.refreshToken()
+                        Flowable.just(accountDataSource.refreshToken().blockingFirst())
                     }
                     else Flowable.error(it)
                 }

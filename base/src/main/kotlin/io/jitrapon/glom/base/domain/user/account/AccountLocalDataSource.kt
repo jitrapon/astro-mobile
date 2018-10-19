@@ -24,7 +24,7 @@ class AccountLocalDataSource(accountManager: AccountManager) : AccountDataSource
     }
 
     override fun refreshToken(refreshToken: String?): Flowable<AccountInfo> {
-        throw NotImplementedError()
+        return Flowable.just(inMemoryAccount)
     }
 
     override fun updateAccount(account: AccountInfo): Flowable<AccountInfo> {

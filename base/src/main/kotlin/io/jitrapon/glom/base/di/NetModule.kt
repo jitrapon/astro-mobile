@@ -36,14 +36,11 @@ class NetModule {
     }
 
     @Provides
-    @Named("apiToken")
-    fun provideApiToken(@Named("accountLocalDataSource") dataSource: AccountDataSource): String? = dataSource.getAccount()?.idToken
-
-    @Provides
     @Named("headerInterceptor")
-    internal fun provideHttpClientHeaderInterceptor(@Named("apiToken") token: String?): Interceptor = Interceptor { chain ->
+    internal fun provideHttpClientHeaderInterceptor(@Named("accountLocalDataSource") dataSource: AccountDataSource): Interceptor = Interceptor { chain ->
         chain.request().newBuilder().let {
             it.addHeader("Content-Type", "application/json")
+            val token = dataSource.getAccount()?.idToken
             if (!token.isNullOrEmpty()) it.addHeader("Authorization", "Bearer $token")
             chain.proceed(it.build())
         }
