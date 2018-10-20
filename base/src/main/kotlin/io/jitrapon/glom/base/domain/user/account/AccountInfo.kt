@@ -11,20 +11,23 @@ import java.util.*
  * Created by Jitrapon
  */
 data class AccountInfo(val userId: String,
-                       val refreshToken: String?,
-                       val idToken: String?,
+                       val refreshToken: String,
+                       val idToken: String,
+                       val expiresIn: Long,
                        override var retrievedTime: Date? = null,
                        override val error: Throwable? = null) : DataModel {
 
     constructor(parcel: Parcel) : this(
             parcel.readString()!!,
-            parcel.readString(),
-            parcel.readString())
+            parcel.readString()!!,
+            parcel.readString()!!,
+            parcel.readLong())
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(userId)
         parcel.writeString(refreshToken)
         parcel.writeString(idToken)
+        parcel.writeLong(expiresIn)
     }
 
     override fun describeContents(): Int {

@@ -89,8 +89,6 @@ class BoardViewModel : BaseViewModel() {
     init {
         BoardInjector.getComponent().inject(this)
 
-        loadActiveCircleInfo()
-
         boardInteractor.apply {
             setItemType(BoardItem.TYPE_EVENT)
             setFilteringType(itemFilterType)
@@ -359,25 +357,6 @@ class BoardViewModel : BaseViewModel() {
             when (it) {
                 is AsyncSuccessResult -> observableViewAction.value = Snackbar(AndroidString(R.string.board_item_deleted), level = MessageLevel.SUCCESS)
                 is AsyncErrorResult -> handleError(it.error)
-            }
-        }
-    }
-
-    //endregion
-    //region circle actions
-
-    /**
-     * Loads information about this circle, specifically name, avatar, and places
-     */
-    private fun loadActiveCircleInfo() {
-        circleInteractor.loadCircle(true) {
-            when (it) {
-                is AsyncSuccessResult -> {
-                    //TODO display circle info in board
-                }
-                is AsyncErrorResult -> {
-                    handleError(it.error)
-                }
             }
         }
     }

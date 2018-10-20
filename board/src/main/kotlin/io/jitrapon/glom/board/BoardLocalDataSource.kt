@@ -54,6 +54,10 @@ class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: 
                 }
             }
             if (eventEntities.isNotEmpty()) eventDao.insertOrReplaceEvents(*eventEntities.toTypedArray())
+
+            // find items that should be deleted
+            val itemsInDB = eventDao.getEventsInCircle(board.circleId).blockingGet()
+            deleteItemsNotFoundInNewBoard(eventEntities, itemsInDB.toMutableList())
         }.flatMap {
             eventDao.getEventsInCircle(board.circleId)
                     .map { it.toBoard(board.circleId, userInteractor.getCurrentUserId()) }
@@ -63,6 +67,19 @@ class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: 
                 inMemoryBoard = it
             }
         }
+    }
+
+    private fun deleteItemsNotFoundInNewBoard(newItems: List<EventItemFullEntity>, itemsInDB: MutableList<EventItemFullEntity>) {
+        val newItemsIdSet: HashSet<String> = HashSet<String>().apply {
+            newItems.forEach { add(it.entity.id) }
+        }
+        val iter = itemsInDB.iterator()
+        while (iter.hasNext()) {
+            iter.next().let {
+                if (newItemsIdSet.contains(it.entity.id)) iter.remove()
+            }
+        }
+        eventDao.deleteEvents(*itemsInDB.toTypedArray())
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {

@@ -1,6 +1,5 @@
 package io.jitrapon.glom.base.domain.user.account
 
-import io.reactivex.Completable
 import io.reactivex.Flowable
 
 /**
@@ -12,10 +11,8 @@ interface AccountDataSource {
 
     fun getAccount(): AccountInfo?
 
-    fun saveAccount(userId: String, idToken: String?): Completable
-
     fun refreshToken(refreshToken: String? = null): Flowable<AccountInfo>
 
-    fun updateAccount(account: AccountInfo): Flowable<AccountInfo>
+    fun saveAccount(account: AccountInfo): Flowable<AccountInfo>
 }
 

@@ -1,7 +1,6 @@
 package io.jitrapon.glom.base.domain.user.account
 
 import io.jitrapon.glom.base.repository.Repository
-import io.reactivex.Completable
 import io.reactivex.Flowable
 
 /**
@@ -13,18 +12,14 @@ class AccountRepository(private val localDataSource: AccountDataSource,
 
     override fun getAccount(): AccountInfo? = localDataSource.getAccount()
 
-    override fun saveAccount(userId: String, idToken: String?): Completable {
-        throw NotImplementedError()
-    }
-
     override fun refreshToken(refreshToken: String?): Flowable<AccountInfo> {
         return load(true,
                 localDataSource.refreshToken(),
                 remoteDataSource.refreshToken(localDataSource.getAccount()?.refreshToken),
-                localDataSource::updateAccount)
+                localDataSource::saveAccount)
     }
 
-    override fun updateAccount(account: AccountInfo): Flowable<AccountInfo> {
+    override fun saveAccount(account: AccountInfo): Flowable<AccountInfo> {
         throw NotImplementedError()
     }
 }

@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.text.TextUtils
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.domain.user.UserInteractor
@@ -18,7 +19,7 @@ import io.jitrapon.glom.board.item.event.EventItem
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.BiFunction
+import io.reactivex.functions.Function3
 import io.reactivex.schedulers.Schedulers
 import java.util.*
 
@@ -75,9 +76,11 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, androidx.collection.ArrayMap<*, List<BoardItem>>>>) -> Unit) {
         val circleId = circleInteractor.getActiveCircleId()
-        Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh), userInteractor.getUsers(circleId, refresh),
-                BiFunction<Board, List<User>, Pair<Board, List<User>>> { board, users ->
-                    board to users
+        Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh).subscribeOn(Schedulers.io()),
+                userInteractor.getUsers(circleId, refresh).subscribeOn(Schedulers.io()),
+                circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),
+                Function3<Board, List<User>, Circle, Triple<Board, List<User>, Circle>> { board, users, circle ->
+                    Triple(board, users, circle)
                 })
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())

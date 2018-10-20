@@ -30,6 +30,13 @@ interface EventItemDao {
         }
     }
 
+    @Transaction
+    fun deleteEvents(vararg events: EventItemFullEntity) {
+        for (event in events) {
+            deleteEventById(event.entity.id)
+        }
+    }
+
     @Query("DELETE FROM events WHERE id = :itemId")
     fun deleteEventById(itemId: String)
 
