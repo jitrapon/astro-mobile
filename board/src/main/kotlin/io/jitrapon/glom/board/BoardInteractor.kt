@@ -78,7 +78,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
         val circleId = circleInteractor.getActiveCircleId()
         Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh).subscribeOn(Schedulers.io()),
                 userInteractor.getUsers(circleId, refresh).subscribeOn(Schedulers.io()),
-                circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),
+                circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),                      // must subscribe to achieve true parallelism
                 Function3<Board, List<User>, Circle, Triple<Board, List<User>, Circle>> { board, users, circle ->
                     Triple(board, users, circle)
                 })
