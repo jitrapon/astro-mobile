@@ -95,7 +95,7 @@ class BoardFragment : BaseFragment() {
         }
 
         toolbar_profile_menu.setOnClickListener {
-            viewModel.showUserProfile()
+            viewModel.showUserSettings()
         }
     }
 

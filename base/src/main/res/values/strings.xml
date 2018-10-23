@@ -20,4 +20,8 @@
     <string name="date_picker_set_time_button">set time</string>
     <string name="pick_date_button">pick date</string>
     <string name="done_button">done</string>
+
+    <!-- auth -->
+    <string name="signin_success">Signed in successfully</string>
+    <string name="signin_error">Failed to save login credentials</string>
 </resources>

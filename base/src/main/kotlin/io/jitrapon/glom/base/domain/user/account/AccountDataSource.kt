@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.domain.user.account
 
+import io.reactivex.Completable
 import io.reactivex.Flowable
 
 /**
@@ -8,6 +9,8 @@ import io.reactivex.Flowable
  * Created by Jitrapon
  */
 interface AccountDataSource {
+    
+    fun initAccount(): Completable
 
     fun getAccount(): AccountInfo?
 
@@ -15,4 +18,6 @@ interface AccountDataSource {
 
     fun saveAccount(account: AccountInfo): Flowable<AccountInfo>
 }
+
+class InvalidRefreshTokenException : Exception("Refresh token is invalid or missing")
 

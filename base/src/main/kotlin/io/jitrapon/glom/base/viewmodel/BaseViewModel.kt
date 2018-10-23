@@ -120,5 +120,5 @@ abstract class BaseViewModel : ViewModel() {
     /**
      * Shows user profile information
      */
-    open fun showUserProfile() {}
+    open fun showUserSettings() {}
 }

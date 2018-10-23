@@ -97,6 +97,18 @@ class BoardViewModel : BaseViewModel() {
         loadBoard(false)
     }
 
+    //region shared app bar
+
+    override fun showUserSettings() {
+        boardInteractor.testSaveDebugAccount({
+            observableViewAction.value = Snackbar(AndroidString(R.string.signin_success), level = MessageLevel.SUCCESS)
+        }, {
+           handleError(it)
+        })
+    }
+
+    //endregion
+
     //region board actions
 
     /**
@@ -409,10 +421,6 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
-    override fun showUserProfile() {
-
-    }
-
     /**
      * Clean up any resources
      */
@@ -440,6 +448,11 @@ class BoardViewModel : BaseViewModel() {
      * Returns an observable that if set, becomes the currently selected item
      */
     fun getObservableBoardItem(): LiveData<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>> = observableBoardItem
+
+    /**
+     * Observable navigation events
+     */
+    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     //endregion
     //region view states
@@ -469,11 +482,6 @@ class BoardViewModel : BaseViewModel() {
      * Returns a specific Board UI item model
      */
     fun getBoardItemUiModel(position: Int): BoardItemUiModel? = boardUiModel.items.get(position, null)
-
-    /**
-     * Observable navigation events
-     */
-    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     //endregion
 }

@@ -2,9 +2,13 @@ package io.jitrapon.glom.base.interactor
 
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
+import io.jitrapon.glom.base.domain.user.account.AccountLocalDataSource
+import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.Flowable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import retrofit2.HttpException
 import java.net.HttpURLConnection
 import javax.inject.Inject
@@ -26,6 +30,16 @@ open class BaseInteractor {
 
     init {
         ObjectGraph.component.inject(this)
+
+        //TODO should only be called once for splash screen activity's interactor
+        accountDataSource.initAccount()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    AppLogger.i("Initialized account complete")
+                }, {
+                    AppLogger.e(it)
+                }).autoDispose()
     }
 
     /* convenience properties for accessing the user ID */
@@ -66,5 +80,18 @@ open class BaseInteractor {
      */
     fun Disposable.autoDispose() {
         compositeDisposable.add(this)
+    }
+
+    fun testSaveDebugAccount(onComplete: () -> Unit, onError: (Throwable) -> Unit) {
+        accountDataSource.saveAccount(AccountLocalDataSource.debugAccount)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete()
+                }, {
+                    onError(it)
+                }, {
+                    //not handled
+                }).autoDispose()
     }
 }

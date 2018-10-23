@@ -45,7 +45,7 @@ class BaseDomainModule {
     @Provides
     @Singleton
     @Named("accountLocalDataSource")
-    fun providesLocalAccountDataSource(accountManager: AccountManager): AccountDataSource = AccountLocalDataSource(accountManager)
+    fun providesLocalAccountDataSource(accountManager: AccountManager, application: Application): AccountDataSource = AccountLocalDataSource(accountManager, application)
 
     @Provides
     @Singleton
