@@ -25,6 +25,7 @@ buildscript {
         pagingVersion = '2.0.0-rc01'
 
         playServicesPlaceVersion = '15.0.1'
+        playServicesAuthVersion = '15.0.1'
 
         daggerVersion = '2.15'
         facebookSdkVersion = '[4,5)'

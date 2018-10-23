@@ -122,11 +122,6 @@ dependencies {
     api "com.google.dagger:dagger:$rootProject.daggerVersion"
     kapt "com.google.dagger:dagger-compiler:$rootProject.daggerVersion"
 
-    // facebook
-    implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {
-        exclude group: 'com.android.support'
-    }
-
     // reactive
     api "io.reactivex.rxjava2:rxjava:$rootProject.rxJavaVersion"
     api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroidVersion"
