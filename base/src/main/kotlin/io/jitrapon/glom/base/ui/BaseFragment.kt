@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.*
+import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -29,6 +30,9 @@ abstract class BaseFragment : Fragment() {
 
     /* this fragment's swipe refresh layout, if provided */
     private var refreshLayout: SwipeRefreshLayout? = null
+
+    /* this fragment's appbar profile menu icon */
+    private var profileMenuIcon: ImageView? = null
 
     /* shared handler object */
     val handler: Handler by lazy {
@@ -74,6 +78,12 @@ abstract class BaseFragment : Fragment() {
                 setHasOptionsMenu(true)
             }
         }
+        getProfileMenuIcon()?.apply {
+            profileMenuIcon = this
+            setOnClickListener {
+                onProfileMenuClicked()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -102,6 +112,24 @@ abstract class BaseFragment : Fragment() {
     }
 
     /**
+     * Common observer for profile menu icon
+     */
+    private val menuProfileViewObserver: Observer<ImageButtonUiModel> = Observer {
+        it?.let {
+            if (context != null) {
+                val placeHolderDrawable = context!!.drawable(it.placeHolder)!!
+                profileMenuIcon?.loadFromUrl(
+                        this@BaseFragment,
+                        it.imageUrl,
+                        it.placeHolder,
+                        it.placeHolder,
+                        placeHolderDrawable,
+                        Transformation.CIRCLE_CROP)
+            }
+        }
+    }
+
+    /**
      * Swipe refresh listener that is tied to the ViewActionHandler
      */
     private val onRefreshListener by lazy {
@@ -124,6 +152,12 @@ abstract class BaseFragment : Fragment() {
      * Returns the menu resource of the toolbar
      */
     open fun getToolbarMenuId(): Int? = null
+
+    /**
+     * Child fragment class should override this to indicate that this fragment has a profile
+     * menu icon
+     */
+    open fun getProfileMenuIcon(): ImageView? = null
 
     /**
      * Child fragment class should override this to indicate that this fragment is swipe-refreshable and
@@ -157,6 +191,13 @@ abstract class BaseFragment : Fragment() {
      */
     protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
         observableViewAction.observe(this, viewActionHandler)
+    }
+
+    /**
+     * Should be called by child class to handle app bar menu view observables
+     */
+    protected fun subscribeToAppBarObservable(profileMenuObservable: LiveData<ImageButtonUiModel>?) {
+        profileMenuObservable?.observe(this, menuProfileViewObserver)
     }
 
     /**
@@ -212,4 +253,9 @@ abstract class BaseFragment : Fragment() {
             block(handler)
         }, delay)
     }
+
+    /**
+     * Override to handle click event of the provided profile menu
+     */
+    open fun onProfileMenuClicked() {}
 }

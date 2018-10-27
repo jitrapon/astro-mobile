@@ -15,6 +15,15 @@ class UserInteractor(private val dataSource: UserDataSource): BaseInteractor() {
 
     fun getCurrentUserId(): String? = userId
 
+    fun getCurrentUserAvatar(): String? {
+        return userId.let {
+            if (it == null) null
+            else {
+                dataSource.getUsers(listOf(it)).blockingFirst().firstOrNull()?.avatar
+            }
+        }
+    }
+
     fun getUsersFromIds(userIds: List<String>): List<User?>? {
         return ArrayList<User?>().apply {
             dataSource.getUsers(userIds).blockingFirst().map {

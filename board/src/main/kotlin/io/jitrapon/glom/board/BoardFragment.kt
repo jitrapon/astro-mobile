@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import android.app.Activity
 import android.content.Intent
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
@@ -62,6 +63,11 @@ class BoardFragment : BaseFragment() {
     override fun getToolbar(): Toolbar? = toolbar
 
     /**
+     * Returns the toolbar's profile menu
+     */
+    override fun getProfileMenuIcon(): ImageView? = appbar_profile_menu
+
+    /**
      * Create this fragment's ViewModel instance
      */
     override fun onCreateViewModel(activity: androidx.fragment.app.FragmentActivity) {
@@ -93,10 +99,6 @@ class BoardFragment : BaseFragment() {
         board_fab.setOnClickListener {
             viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
         }
-
-        toolbar_profile_menu.setOnClickListener {
-            viewModel.showUserSettings()
-        }
     }
 
     /**
@@ -104,6 +106,7 @@ class BoardFragment : BaseFragment() {
      */
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
+        subscribeToAppBarObservable(viewModel.getObservableProfileMenuIcon())
 
         // observes board and its items
         viewModel.getObservableBoard().observe(this, Observer {
@@ -239,6 +242,10 @@ class BoardFragment : BaseFragment() {
                 viewModel.syncItem(it, false)
             }
         }
+    }
+
+    override fun onProfileMenuClicked() {
+        viewModel.showUserProfileSettings()
     }
 
     /**

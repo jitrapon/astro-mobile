@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import io.jitrapon.glom.R
@@ -101,3 +102,8 @@ fun Context.colorPrimary(): Int {
  * Returns true if the current orientation is landscape
  */
 fun Context.isLandscape(): Boolean = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+/**
+ * Converts a res ID to a Drawable resource
+ */
+fun Context.drawable(@DrawableRes resId: Int) = ContextCompat.getDrawable(this, resId)

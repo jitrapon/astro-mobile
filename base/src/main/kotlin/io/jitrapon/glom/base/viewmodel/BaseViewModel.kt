@@ -31,6 +31,9 @@ abstract class BaseViewModel : ViewModel() {
         a series of actions */
     val observableViewAction = LiveEvent<UiActionModel>()
 
+    /* Shared main app bar profile menu icn */
+    private val observableProfileMenuIcon = MutableLiveData<ImageButtonUiModel>()
+
     /* List that caches LiveData instances that have not been dispatched to the observer because
        there are no active observers
      */
@@ -46,6 +49,11 @@ abstract class BaseViewModel : ViewModel() {
      * Returns the observable view actions to be observed by the View
      */
     fun getObservableViewAction(): LiveData<UiActionModel> = observableViewAction
+
+    /**
+     * Returns the observable profile menu icon
+     */
+    fun getObservableProfileMenuIcon(): LiveData<ImageButtonUiModel> = observableProfileMenuIcon
 
     /**
      * Generic load function to execute long running blocking operation.
@@ -118,7 +126,19 @@ abstract class BaseViewModel : ViewModel() {
     abstract fun isViewEmpty(): Boolean
 
     /**
+     * Called this in child class to properly set the profile menu icon
+     */
+    protected fun setUserProfileIcon(imageUrl: String?) {
+        observableProfileMenuIcon.value = ImageButtonUiModel(
+                imageUrl,
+                R.drawable.ic_empty_account,
+                R.drawable.ic_empty_account)
+    }
+
+    /**
      * Shows user profile information
      */
-    open fun showUserSettings() {}
+    fun showUserProfileSettings() {
+
+    }
 }

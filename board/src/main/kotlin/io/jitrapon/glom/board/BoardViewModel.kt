@@ -97,18 +97,6 @@ class BoardViewModel : BaseViewModel() {
         loadBoard(false)
     }
 
-    //region shared app bar
-
-    override fun showUserSettings() {
-        boardInteractor.testSaveDebugAccount({
-            observableViewAction.value = Snackbar(AndroidString(R.string.signin_success), level = MessageLevel.SUCCESS)
-        }, {
-           handleError(it)
-        })
-    }
-
-    //endregion
-
     //region board actions
 
     /**
@@ -125,7 +113,11 @@ class BoardViewModel : BaseViewModel() {
 
         loadData(refresh, boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
-                is AsyncSuccessResult -> onBoardItemChanges(it.result.second, listOf())
+                is AsyncSuccessResult -> {
+                    onBoardItemChanges(it.result.second, listOf())
+
+                    setUserProfileIcon(userInteractor.getCurrentUserAvatar())
+                }
                 is AsyncErrorResult -> {
                     handleError(it.error)
 
