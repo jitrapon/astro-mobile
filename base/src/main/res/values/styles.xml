@@ -7,7 +7,7 @@
     <style name="Theme.Glom" parent="FrameworkRoot.Theme">
         <item name="colorPrimary">@color/lightish_red</item>
         <item name="colorPrimaryDark">@color/reddish</item>
-        <item name="colorAccent">@color/reddish</item>
+        <item name="colorAccent">@color/lightish_red</item>
 
         <item name="windowActionBar">false</item>
         <item name="android:windowBackground">@color/background</item>
@@ -27,6 +27,8 @@
         <item name="android:textAppearanceSmall">@style/TextAppearance.H4</item>
         <item name="android:textAppearanceMedium">@style/TextAppearance.H3</item>
         <item name="android:textAppearanceLarge">@style/TextAppearance.H1</item>
+
+        <item name="android:navigationBarColor">@color/black</item>
     </style>
 
     <style name="Theme.Glom.DialogActivity" parent="Theme.Glom">

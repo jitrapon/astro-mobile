@@ -73,7 +73,9 @@ abstract class BaseFragment : Fragment() {
         onSetupView(view)
         onSubscribeToObservables()
         getToolbar()?.let {
-            setupActionBar(it) {}
+            setupActionBar(it) {
+                title = null
+            }
             getToolbarMenuId()?.let { _ ->
                 setHasOptionsMenu(true)
             }

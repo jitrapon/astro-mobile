@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.google.android.material.appbar.AppBarLayout
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -99,6 +100,10 @@ class BoardFragment : BaseFragment() {
         board_fab.setOnClickListener {
             viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
         }
+
+        board_appbar_layout.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
+
+        })
     }
 
     /**

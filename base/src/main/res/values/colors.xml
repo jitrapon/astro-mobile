@@ -25,4 +25,5 @@
     <color name="warning_orange">#EF8200</color>
     <color name="success_green">#00C853</color>
     <color name="card_background">@color/white</color>
+    <color name="black">#000</color>
 </resources>
