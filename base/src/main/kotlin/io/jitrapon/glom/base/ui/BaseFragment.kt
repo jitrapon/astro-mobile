@@ -14,6 +14,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
+import io.jitrapon.glom.base.domain.user.User
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import javax.inject.Inject
@@ -259,5 +260,7 @@ abstract class BaseFragment : Fragment() {
     /**
      * Override to handle click event of the provided profile menu
      */
-    open fun onProfileMenuClicked() {}
+    open fun onProfileMenuClicked() {
+
+    }
 }

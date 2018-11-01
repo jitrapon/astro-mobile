@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" >
+
+    <ImageView
+        android:id="@+id/profile_menu_sheet_user_avatar"
+        android:layout_width="@dimen/avatar_normal"
+        android:layout_height="@dimen/avatar_normal"
+        android:layout_marginStart="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="24dp"
+        tools:src="@drawable/ic_empty_account" />
+
+    <TextView
+        style="@style/TextAppearance.H3"
+        android:id="@+id/profile_menu_sheet_user_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="john doe"
+        app:layout_constraintStart_toEndOf="@+id/profile_menu_sheet_user_avatar"
+        app:layout_constraintTop_toTopOf="@+id/profile_menu_sheet_user_avatar"
+        app:layout_constraintBottom_toBottomOf="@+id/profile_menu_sheet_user_avatar"
+        android:layout_marginStart="24dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/profile_menu_sheet_auth_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="log in"
+        app:layout_constraintTop_toTopOf="@+id/profile_menu_sheet_user_avatar"
+        app:layout_constraintBottom_toBottomOf="@+id/profile_menu_sheet_user_avatar"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="24dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/light_grey"
+        app:layout_constraintTop_toBottomOf="@+id/profile_menu_sheet_user_avatar"
+        android:layout_marginTop="24dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -249,10 +249,6 @@ class BoardFragment : BaseFragment() {
         }
     }
 
-    override fun onProfileMenuClicked() {
-        viewModel.showUserProfileSettings()
-    }
-
     /**
      * Callback for when the board has been manually refreshed
      */

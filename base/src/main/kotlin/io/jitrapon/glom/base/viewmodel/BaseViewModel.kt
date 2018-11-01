@@ -134,11 +134,4 @@ abstract class BaseViewModel : ViewModel() {
                 R.drawable.ic_empty_account,
                 R.drawable.ic_empty_account)
     }
-
-    /**
-     * Shows user profile information
-     */
-    fun showUserProfileSettings() {
-
-    }
 }
