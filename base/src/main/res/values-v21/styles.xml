@@ -1,0 +1,7 @@
+<resources>
+
+    <style name="Theme.Glom.BottomSheet.Dialog" parent="Theme.Glom.BottomSheet.Dialog.Base" >
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/black</item>
+    </style>
+</resources>

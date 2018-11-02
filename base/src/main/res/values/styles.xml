@@ -145,4 +145,15 @@
         <item name="android:textColor">@drawable/raised_button_white_text_color</item>
     </style>
 
+    <!-- style for all bottom sheet -->
+    <style name="Widget.Glom.Design.BottomSheet.Modal" parent="@style/Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/bg_bottom_sheet_dialog</item>
+    </style>
+
+    <style name="Theme.Glom.BottomSheet.Dialog.Base" parent="@style/Theme.MaterialComponents.Light.BottomSheetDialog" >
+        <item name="bottomSheetStyle">@style/Widget.Glom.Design.BottomSheet.Modal</item>
+    </style>
+
+    <style name="Theme.Glom.BottomSheet.Dialog" parent="Theme.Glom.BottomSheet.Dialog.Base" />
+
 </resources>

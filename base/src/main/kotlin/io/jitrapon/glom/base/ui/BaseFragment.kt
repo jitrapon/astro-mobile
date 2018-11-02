@@ -14,6 +14,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
+import io.jitrapon.glom.base.domain.user.settings.ProfileMenuBottomSheet
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
 import javax.inject.Inject
@@ -44,6 +45,11 @@ abstract class BaseFragment : Fragment() {
      */
     @Inject
     lateinit var placeProvider: PlaceProvider
+
+    /*
+     * Profile menu bottom sheet used in every screen
+     */
+    private val profileMenuBottomSheet: ProfileMenuBottomSheet by lazy { ProfileMenuBottomSheet() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -260,6 +266,6 @@ abstract class BaseFragment : Fragment() {
      * Override to handle click event of the provided profile menu
      */
     open fun onProfileMenuClicked() {
-
+        profileMenuBottomSheet.show(fragmentManager, ProfileMenuBottomSheet.TAG)
     }
 }
