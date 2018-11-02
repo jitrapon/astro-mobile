@@ -30,17 +30,40 @@
         android:id="@+id/profile_menu_sheet_auth_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="log in"
+        tools:text="log in"
         app:layout_constraintTop_toTopOf="@+id/profile_menu_sheet_user_avatar"
         app:layout_constraintBottom_toBottomOf="@+id/profile_menu_sheet_user_avatar"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginEnd="24dp"/>
 
     <View
+        android:id="@+id/profile_menu_sheet_line_divider_top"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/light_grey"
         app:layout_constraintTop_toBottomOf="@+id/profile_menu_sheet_user_avatar"
         android:layout_marginTop="24dp" />
+
+    <TextView
+        android:id="@+id/profile_menu_sheet_item_1"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_sheet_item_height"
+        app:layout_constraintTop_toBottomOf="@+id/profile_menu_sheet_line_divider_top"
+        android:gravity="center_vertical"
+        tools:text="Item Settings 1"
+        android:drawableStart="@drawable/ic_offline"
+        android:drawablePadding="24dp"
+        android:paddingStart="24dp" />
+
+    <TextView
+        android:id="@+id/profile_menu_sheet_item_2"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_sheet_item_height"
+        app:layout_constraintTop_toBottomOf="@+id/profile_menu_sheet_item_1"
+        android:gravity="center_vertical"
+        tools:text="Item Settings 2"
+        android:drawableStart="@drawable/ic_offline"
+        android:drawablePadding="24dp"
+        android:paddingStart="24dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
