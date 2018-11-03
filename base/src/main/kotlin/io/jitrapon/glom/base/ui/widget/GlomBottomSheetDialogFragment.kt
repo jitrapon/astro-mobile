@@ -7,9 +7,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.showAlertDialog
+import io.jitrapon.glom.base.util.showSnackbar
+import io.jitrapon.glom.base.util.showToast
 
 /**
  * BottomSheetDialog fragment that uses a custom theme which sets a rounded background to the dialog
@@ -34,6 +40,46 @@ abstract class GlomBottomSheetDialogFragment : BottomSheetDialogFragment() {
         onSetupView(view)
         onSubscribeToObservables()
     }
+
+    /**
+     * Should be called by child class to handle all view action observables automatically
+     */
+    protected fun subscribeToViewActionObservables(observableViewAction: LiveData<UiActionModel>) {
+        observableViewAction.observe(this, viewActionHandler)
+    }
+
+    /**
+     * Common UI Action handlers for all child fragments
+     */
+    private val viewActionHandler: Observer<UiActionModel> = Observer {
+        it?.let {
+            when (it) {
+                is Toast -> showToast(it.message)
+                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
+                is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
+                        it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                is Loading -> showLoading(it.show)
+                is EmptyLoading -> showEmptyLoading(it.show)
+                is Navigation -> navigate(it.action, it.payload)
+            }
+        }
+    }
+
+    /**
+     * Indicates that the view is loading some data. Override this function to make it behave differently
+     */
+    open fun showLoading(show: Boolean) {}
+
+    /**
+     * Indicates that the view has no data and should be showing the main loading progress bar.
+     * Override this function to make it behave differently
+     */
+    open fun showEmptyLoading(show: Boolean) {}
+
+    /**
+     * Overrides this function to allow handling of navigation events
+     */
+    open fun navigate(action: String, payload: Any?) {}
 
     /**
      * Child fragment class must return the layout ID resource to be inflated

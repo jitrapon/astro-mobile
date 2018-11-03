@@ -123,7 +123,7 @@ abstract class BaseViewModel : ViewModel() {
     /**
      * Returns true if the current view has no data to show
      */
-    abstract fun isViewEmpty(): Boolean
+    open fun isViewEmpty(): Boolean = false
 
     /**
      * Called this in child class to properly set the profile menu icon
@@ -131,7 +131,7 @@ abstract class BaseViewModel : ViewModel() {
     protected fun setUserProfileIcon(imageUrl: String?) {
         observableProfileMenuIcon.value = ImageButtonUiModel(
                 imageUrl,
-                R.drawable.ic_empty_account,
-                R.drawable.ic_empty_account)
+                R.drawable.ic_empty_account_colored,
+                R.drawable.ic_empty_account_colored)
     }
 }

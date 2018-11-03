@@ -12,20 +12,21 @@
         android:layout_marginStart="@dimen/bottom_sheet_header_item_margin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin"
-        app:srcCompat="@drawable/ic_empty_account"
-        android:tint="@color/grey" />
+        android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin" />
 
     <TextView
-        style="@style/TextAppearance.H3"
         android:id="@+id/profile_menu_bottom_sheet_user_id"
-        android:layout_width="wrap_content"
+        style="@style/TextAppearance.H3"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        tools:text="john doe"
+        android:layout_marginStart="@dimen/bottom_sheet_header_item_margin"
+        android:ellipsize="end"
+        app:layout_constraintBottom_toBottomOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintStart_toEndOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintTop_toTopOf="@+id/profile_menu_bottom_sheet_user_avatar"
-        app:layout_constraintBottom_toBottomOf="@+id/profile_menu_bottom_sheet_user_avatar"
-        android:layout_marginStart="@dimen/bottom_sheet_header_item_margin" />
+        app:layout_constraintEnd_toStartOf="@+id/profile_menu_bottom_sheet_auth_button"
+        tools:text="jitrapon tiachunpun"
+        android:maxLines="2" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Raised.Colored"
@@ -33,7 +34,7 @@
         android:id="@+id/profile_menu_bottom_sheet_auth_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text="log in"
+        tools:text="sign in"
         app:layout_constraintTop_toTopOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintBottom_toBottomOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintEnd_toEndOf="parent"

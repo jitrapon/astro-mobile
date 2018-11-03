@@ -7,6 +7,7 @@ import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.domain.user.settings.ProfileMenuViewModel
 import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.jitrapon.glom.base.ui.BaseActivity
@@ -34,4 +35,5 @@ interface BaseComponent {
     fun inject(fragment: BaseFragment)
     fun inject(module: GlomGlideModule)
     fun inject(interactor: BaseInteractor)
+    fun inject(viewModel: ProfileMenuViewModel)
 }
