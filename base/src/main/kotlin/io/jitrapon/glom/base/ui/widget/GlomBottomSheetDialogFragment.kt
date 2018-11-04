@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.ui.widget
 
 import android.app.Dialog
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +29,11 @@ abstract class GlomBottomSheetDialogFragment : BottomSheetDialogFragment() {
     override fun getTheme(): Int = R.style.Theme_Glom_BottomSheet_Dialog
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog = BottomSheetDialog(requireContext(), theme)
+
+    /* shared handler object */
+    val handler: Handler by lazy {
+        Handler()
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val contextThemeWrapper = ContextThemeWrapper(activity, R.style.Theme_Glom)
@@ -95,6 +101,15 @@ abstract class GlomBottomSheetDialogFragment : BottomSheetDialogFragment() {
      * Override this method to perform all necessary view initializations in the fragment, if any
      */
     open fun onSetupView(view: View) {}
+
+    /**
+     * Wrapper around Android's handler to delay run a Runnable on the main thread
+     */
+    inline fun delayRun(delay: Long, crossinline block: (Handler) -> Unit) {
+        handler.postDelayed({
+            block(handler)
+        }, delay)
+    }
 
     /**
      * Subscribe to LiveData and LiveEvent from the ViewModel

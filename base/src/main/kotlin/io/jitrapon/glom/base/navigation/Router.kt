@@ -16,6 +16,12 @@ import io.jitrapon.glom.base.util.finish
  */
 object Router {
 
+    const val MODULE_BOARD = "board"
+    const val MODULE_MAP = "map"
+    const val MODULE_EXPLORE = "explore"
+    const val MODULE_PROFILE = "profile"
+    const val MODULE_AUTH = "auth"
+
     /**
      * Launch a specfic activity by specifying the module under which the activity belongs to
      */
@@ -41,13 +47,13 @@ object Router {
                 }
             }
             if (shouldFinish) {
-                if (from is Activity) {
-                    from.finish()
-                    transitionAnimations?.let {
-                        from.overridePendingTransition(it[0], it[1])
-                    }
-                }
+                if (from is Activity) from.finish()
                 else if (from is androidx.fragment.app.Fragment) from.finish()
+            }
+            if (from is Activity) {
+                transitionAnimations?.let {
+                    from.overridePendingTransition(it[0], it[1])
+                }
             }
         }
     }

@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.jitrapon.glom.account" >
+    package="io.jitrapon.glom.auth" >
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+
+    <application>
+        <activity android:name=".AuthActivity"
+            android:theme="@style/Theme.Glom.Translucent" >
+
+            <intent-filter android:order="5"
+                android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="@string/instant_app_host" />
+                <data android:pathPattern="/auth" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

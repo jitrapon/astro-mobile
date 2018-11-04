@@ -3,8 +3,11 @@ package io.jitrapon.glom.base.domain.user.settings
 import android.view.View
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
+import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.navigation.Router
+import io.jitrapon.glom.base.navigation.Router.MODULE_AUTH
 import io.jitrapon.glom.base.ui.widget.GlomBottomSheetDialogFragment
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.profile_menu_bottom_sheet.*
@@ -16,6 +19,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
     companion object {
 
         const val TAG = "profile_menu_bottom_sheet_fragment"
+        const val NAVIGATE_ANIM_GRACE = 175L
     }
 
     override fun getLayoutId() = io.jitrapon.glom.R.layout.profile_menu_bottom_sheet
@@ -60,5 +64,17 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
                 }
             }
         })
+    }
+
+    override fun navigate(action: String, payload: Any?) {
+        activity?.let { activity ->
+            if (action == NAVIGATE_TO_AUTHENTICATION) {
+                dismiss()
+                delayRun(NAVIGATE_ANIM_GRACE) {
+                    Router.navigate(activity, InstantApps.isInstantApp(activity), MODULE_AUTH, false,
+                            arrayOf(R.anim.slide_up, R.anim.fade_out))
+                }
+            }
+        }
     }
 }
