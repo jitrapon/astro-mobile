@@ -16,7 +16,7 @@ class AuthViewModel : BaseViewModel() {
     private val observableBackground = MutableLiveData<String?>()
 
     init {
-        observableBackground.value = "https://preview.ibb.co/ktMYqA/busy.jpg"
+        observableBackground.value = "https://image.ibb.co/jxh4Xq/busy-30.jpg"
     }
 
     fun getObservableBackground(): LiveData<String?> = observableBackground
