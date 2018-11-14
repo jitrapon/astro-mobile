@@ -144,6 +144,11 @@
         <item name="colorButtonNormal">@color/warm_grey</item>
         <item name="android:textColor">@drawable/raised_button_white_text_color</item>
     </style>
+    <style name="Theme.Glom.Button.Raised.White.Round" parent="Theme.Glom.Button.Raised.White" >
+        <item name="android:background">@drawable/rounded_corner_background</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">?colorPrimary</item>
+    </style>
 
     <!-- style for all bottom sheet -->
     <style name="Widget.Glom.Design.BottomSheet.Modal" parent="@style/Widget.Design.BottomSheet.Modal">
