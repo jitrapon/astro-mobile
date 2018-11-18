@@ -5,7 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.ButtonUiModel
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import javax.inject.Inject
 
@@ -53,7 +56,7 @@ class ProfileMenuViewModel : BaseViewModel() {
 
     fun signInOrSignOut() {
         if (userInteractor.isSignedIn) {
-            observableViewAction.value = Toast(AndroidString(text = "TODO"))
+            observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)
         }
         else {
             observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)

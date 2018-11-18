@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">account</string>
-    <string name="auth_email_login">Continue with Email</string>
+    <string name="auth_email_continue">Continue with Email</string>
+    <string name="auth_email_login">LOGIN</string>
     <string name="auth_provider_divider">OR CONTINUE WITH</string>
+    <string name="auth_email_hint">Email</string>
+    <string name="auth_password_hint">Password</string>
 </resources>

@@ -13,5 +13,7 @@
 
     <declare-styleable name="TitledLineSeperator">
         <attr name="title" format="string"/>
+        <attr name="titleColor" format="color"/>
+        <attr name="lineColor" format="color"/>
     </declare-styleable>
 </resources>

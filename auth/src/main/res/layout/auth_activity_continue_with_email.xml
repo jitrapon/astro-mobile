@@ -31,19 +31,18 @@
         android:id="@+id/auth_email_input_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/auth_provider_divider"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
-        android:hint="@string/auth_email_hint"
-        android:layout_marginBottom="8dp" >
+        android:hint="@string/auth_email_hint" >
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/auth_email_edit_text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textEmailAddress" />
+            android:layout_height="wrap_content" />
 
     </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
@@ -51,13 +50,13 @@
         android:id="@+id/auth_password_input_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/auth_provider_divider"
+        app:layout_constraintTop_toBottomOf="@+id/auth_email_input_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
         android:hint="@string/auth_password_hint"
-        android:layout_marginBottom="8dp" >
+        android:layout_marginTop="8dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/auth_password_edit_text"
@@ -67,19 +66,17 @@
 
     </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
-    z<io.jitrapon.glom.base.ui.widget.GlomButton
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
         android:foreground="?android:attr/selectableItemBackground"
         android:id="@+id/auth_continue_with_email"
-        android:layout_width="0dp"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
-        android:text="@string/auth_email_continue"
+        android:text="@string/auth_email_login"
         app:layout_constraintBottom_toTopOf="@+id/auth_provider_divider"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
         android:layout_marginBottom="18dp" />
 
