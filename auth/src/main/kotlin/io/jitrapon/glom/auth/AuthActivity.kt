@@ -32,7 +32,7 @@ class AuthActivity : BaseActivity() {
         auth_email_input_layout.hide()
         auth_password_input_layout.hide()
         auth_continue_with_email.setOnClickListener {
-            invalidateLayoutToEmail()
+            viewModel.continueWithEmail()
         }
     }
 
@@ -49,11 +49,13 @@ class AuthActivity : BaseActivity() {
                         Transformation.CENTER_CROP,
                         800)
         })
+
+        viewModel.getObservableExpandEmailEvent().observe(this@AuthActivity, Observer { expandEmailLayout() })
     }
 
     //endregion
 
-    private fun invalidateLayoutToEmail() {
+    private fun expandEmailLayout() {
         auth_email_input_layout.show()
         auth_password_input_layout.show()
         auth_continue_with_email.text = getString(R.string.auth_email_login)

@@ -37,13 +37,15 @@
         android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
         android:hint="@string/auth_email_hint"
-        android:layout_marginBottom="8dp" >
+        android:layout_marginBottom="8dp"
+        android:theme="@style/Widget.Glom.TextInputLayout.White" >
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/auth_email_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textEmailAddress" />
+            android:inputType="textEmailAddress"
+            android:textColor="@color/white" />
 
     </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
@@ -57,17 +59,32 @@
         android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
         android:hint="@string/auth_password_hint"
-        android:layout_marginBottom="8dp" >
+        android:layout_marginBottom="8dp"
+        android:theme="@style/Widget.Glom.TextInputLayout.White"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="@color/white" >
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/auth_password_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword" />
+            android:inputType="textPassword"
+            android:textColor="@color/white" />
 
     </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
-    z<io.jitrapon.glom.base.ui.widget.GlomButton
+    <TextView
+        style="@style/TextAppearance.H5"
+        android:id="@+id/auth_forgot_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/auth_forgot_password"
+        app:layout_constraintTop_toBottomOf="@+id/auth_password_input_layout"
+        app:layout_constraintEnd_toEndOf="@+id/auth_password_input_layout"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
@@ -82,6 +99,23 @@
         android:layout_marginStart="42dp"
         android:layout_marginEnd="42dp"
         android:layout_marginBottom="18dp" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        style="@style/Widget.Glom.Button.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+        android:background="@drawable/rounded_corner_background_transparent"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:id="@+id/auth_create_account"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/auth_create_account"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/auth_provider_divider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/auth_continue_with_email"
+        android:layout_marginStart="42dp"
+        android:layout_marginBottom="18dp"
+        android:visibility="gone" />
 
     <io.jitrapon.glom.base.ui.widget.TitledLineSeperator
         android:id="@+id/auth_provider_divider"

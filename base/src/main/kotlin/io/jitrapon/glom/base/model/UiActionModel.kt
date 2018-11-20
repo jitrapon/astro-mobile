@@ -25,6 +25,8 @@ class Navigation(val action: String, val payload: Any?) : UiActionModel
 
 class ReloadData(val delay: Long) : UiActionModel
 
+class LayoutChange: UiActionModel
+
 object MessageLevel {
 
     const val INFO = 0

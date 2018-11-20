@@ -5,4 +5,6 @@
     <string name="auth_provider_divider">OR CONTINUE WITH</string>
     <string name="auth_email_hint">Email</string>
     <string name="auth_password_hint">Password</string>
+    <string name="auth_forgot_password">Forgot Password?</string>
+    <string name="auth_create_account">Sign up</string>
 </resources>

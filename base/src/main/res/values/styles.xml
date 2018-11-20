@@ -161,4 +161,14 @@
 
     <style name="Theme.Glom.BottomSheet.Dialog" parent="Theme.Glom.BottomSheet.Dialog.Base" />
 
+    <!-- style for white text hint apperance -->
+    <style name="Widget.Glom.TextInputLayout.White" parent="Widget.Design.TextInputLayout" >
+        <!-- hint color and label color in FALSE state -->
+        <item name="android:textColorHint">@color/white</item>
+        <!-- label color in TRUE state and bar color FALSE and TRUE State -->
+        <item name="colorAccent">@color/white</item>
+        <item name="colorControlNormal">@color/white</item>
+        <item name="colorControlActivated">@color/white</item>
+    </style>
+
 </resources>
