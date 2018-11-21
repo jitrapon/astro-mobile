@@ -8,7 +8,9 @@ import android.transition.TransitionManager
 import android.transition.TransitionSet
 import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
@@ -32,7 +34,21 @@ class AuthActivity : BaseActivity() {
         auth_email_input_layout.hide()
         auth_password_input_layout.hide()
         auth_continue_with_email.setOnClickListener {
-            viewModel.continueWithEmail()
+            var email: CharArray? = null
+            var password: CharArray? = null
+            auth_email_edit_text.length().let { count ->
+                if (count > 0) {
+                    email = CharArray(count)
+                    auth_email_edit_text.text?.getChars(0, count, email, 0)
+                }
+            }
+            auth_password_edit_text.length().let { count ->
+                if (count > 0) {
+                    password = CharArray(count)
+                    auth_password_edit_text.text?.getChars(0, count, password, 0)
+                }
+            }
+            viewModel.continueWithEmail(email, password)
         }
     }
 
@@ -50,12 +66,22 @@ class AuthActivity : BaseActivity() {
                         800)
         })
 
-        viewModel.getObservableExpandEmailEvent().observe(this@AuthActivity, Observer { expandEmailLayout() })
+        viewModel.getObservableAuth().observe(this@AuthActivity, Observer {
+            it?.let {
+                auth_email_input_layout.error = getString(it.emailError)
+                auth_password_input_layout.error = getString(it.passwordError)
+                if (it.showEmailExpandableLayout) {
+                    expandEmailLayout()
+                }
+            }
+        })
     }
 
     //endregion
 
     private fun expandEmailLayout() {
+        if (auth_email_input_layout.isVisible && auth_password_input_layout.isVisible) return
+
         auth_email_input_layout.show()
         auth_password_input_layout.show()
         auth_continue_with_email.text = getString(R.string.auth_email_login)
