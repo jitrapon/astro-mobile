@@ -2,10 +2,16 @@ package io.jitrapon.glom.auth
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.Loading
+import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import java.util.Arrays
+import javax.inject.Inject
 
 /**
  * Created by Jitrapon
@@ -19,7 +25,12 @@ class AuthViewModel : BaseViewModel() {
     private val observableAuth = MutableLiveData<AuthUiModel>()
     private val authUiModel: AuthUiModel = AuthUiModel(false)
 
+    @Inject
+    lateinit var authInteractor: AuthInteractor
+
     init {
+        AuthInjector.getComponent().inject(this)
+
         observableBackground.value = "https://image.ibb.co/jxh4Xq/busy-30.jpg"
     }
 
@@ -36,6 +47,22 @@ class AuthViewModel : BaseViewModel() {
                     emailError = null
                     passwordError = null
                 }
+
+                observableViewAction.value = Loading(true)
+
+                authInteractor.signInWithEmailPassword(email!!, password!!) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            observableViewAction.execute(
+                                arrayOf(Loading(false), Navigation(NAVIGATE_TO_MAIN, null))
+                            )
+                        }
+                        is AsyncErrorResult -> handleError(it.error)
+                    }
+
+                    Arrays.fill(email, ' ')
+                    Arrays.fill(password, ' ')
+                }
             }
             else {
                 observableAuth.value = authUiModel.apply {
@@ -45,13 +72,10 @@ class AuthViewModel : BaseViewModel() {
                 }
             }
         }
+    }
 
-        email?.let {
-            Arrays.fill(it, ' ')
-        }
-        password?.let {
-            Arrays.fill(it, ' ')
-        }
+    override fun onCleared() {
+        AuthInjector.clear()
     }
 
     //region observable getters

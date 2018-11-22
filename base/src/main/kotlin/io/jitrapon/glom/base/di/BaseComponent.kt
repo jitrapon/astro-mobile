@@ -7,11 +7,13 @@ import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.domain.user.account.AccountDataSource
 import io.jitrapon.glom.base.domain.user.settings.ProfileMenuViewModel
 import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.ui.BaseFragment
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -29,6 +31,8 @@ interface BaseComponent {
     fun userInteractor(): UserInteractor
     fun circleDataSource(): CircleDataSource
     fun circleInteractor(): CircleInteractor
+    @Named("accountRepository")
+    fun accountDataSource(): AccountDataSource
 
     fun inject(dataSource: RemoteDataSource)
     fun inject(activity: BaseActivity)

@@ -7,6 +7,8 @@ import io.jitrapon.glom.base.navigation.NavigationItem
 import io.jitrapon.glom.base.navigation.Router
 import io.jitrapon.glom.base.ui.BaseActivity
 
+const val NAVIGATE_TO_MAIN = "action.navigate.main"
+
 /**
  * Base Activity class for the main entry point of the application. Contains shared activity logic
  * for other feature modules. This activity will, by default, launch an Intent to other Activities

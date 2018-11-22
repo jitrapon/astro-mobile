@@ -11,3 +11,6 @@ data class AccountInfoResponse(@field:Json(name = "id_token") val idToken: Strin
                                @field:Json(name = "refresh_token") val refreshToken: String,
                                @field:Json(name = "expires_in") val expireTime: Long,
                                @field:Json(name = "user_id") val userId: String)
+
+data class SignInEmailPasswordRequest(@field:Json(name = "email") private val email: String,
+                                      @field:Json(name = "password") private val password: String)

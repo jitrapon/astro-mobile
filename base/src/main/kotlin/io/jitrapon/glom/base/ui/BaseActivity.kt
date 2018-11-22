@@ -12,6 +12,7 @@ import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
@@ -41,6 +42,11 @@ abstract class BaseActivity : AppCompatActivity() {
     /* shared handler object */
     val handler: Handler by lazy {
         Handler()
+    }
+
+    /* base theme full-screen loading progress dialog */
+    val progressDialog: GlomProgressDialog by lazy {
+        GlomProgressDialog()
     }
 
     /* shared google place provider */

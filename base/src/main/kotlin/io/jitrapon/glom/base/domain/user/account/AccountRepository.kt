@@ -27,4 +27,11 @@ class AccountRepository(private val localDataSource: AccountDataSource,
     override fun saveAccount(account: AccountInfo): Flowable<AccountInfo> {
         return localDataSource.saveAccount(account)
     }
+
+    override fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo> {
+        return load(true,
+            localDataSource.signInWithEmailPassword(email, password),
+            remoteDataSource.signInWithEmailPassword(email, password),
+            localDataSource::saveAccount)
+    }
 }

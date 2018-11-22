@@ -76,6 +76,10 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
         }
     }
 
+    override fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo> {
+        return Flowable.empty()
+    }
+
     @Suppress("IMPLICIT_CAST_TO_ANY")
     private fun createOrUpdateAccountInAccountManager(account: AccountInfo) {
         accountManager.getAccountsByType(accountType).firstOrNull().let {

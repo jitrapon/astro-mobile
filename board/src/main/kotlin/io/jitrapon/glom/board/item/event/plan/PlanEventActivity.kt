@@ -24,10 +24,6 @@ class PlanEventActivity : BaseActivity() {
 
     private lateinit var viewModel: PlanEventViewModel
 
-    private val progressDialog: GlomProgressDialog by lazy {
-        GlomProgressDialog()
-    }
-
     private val placePicker: PlacePicker by lazy { PlacePicker() }
 
     //region lifecycle

@@ -79,6 +79,15 @@ class AuthActivity : BaseActivity() {
 
     //endregion
 
+    override fun showLoading(show: Boolean) {
+        if (show) {
+            progressDialog.show(this)
+        }
+        else {
+            progressDialog.dismiss()
+        }
+    }
+
     private fun expandEmailLayout() {
         if (auth_email_input_layout.isVisible && auth_password_input_layout.isVisible) return
 

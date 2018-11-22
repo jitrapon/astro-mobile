@@ -25,4 +25,11 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
     override fun saveAccount(account: AccountInfo): Flowable<AccountInfo> {
         throw NotImplementedError()
     }
+
+    override fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo> {
+        return api.signInWithEmailPassword("http://192.168.1.35:8081/auth/signin?type=password",
+            SignInEmailPasswordRequest(String(email), String(password))).map {
+            AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime)
+        }
+    }
 }

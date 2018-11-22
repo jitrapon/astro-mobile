@@ -13,4 +13,8 @@ interface AccountApi {
     @POST
     fun refreshIdToken(@Url url: String,
                        @Body request: RefreshIdTokenRequest): Flowable<AccountInfoResponse>
+
+    @POST
+    fun signInWithEmailPassword(@Url url: String,
+                                @Body request: SignInEmailPasswordRequest): Flowable<AccountInfoResponse>
 }
