@@ -81,7 +81,7 @@ class AuthActivity : BaseActivity() {
 
     override fun showLoading(show: Boolean) {
         if (show) {
-            progressDialog.show(this)
+            progressDialog.show(this, false)
         }
         else {
             progressDialog.dismiss()

@@ -16,17 +16,12 @@ class GlomProgressDialog {
 
     private var dialog: Dialog? = null
 
-    fun show(context: Context, onCancelListener: DialogInterface.OnCancelListener? = null): Dialog {
+    fun show(context: Context, cancelable: Boolean = true, onCancelListener: DialogInterface.OnCancelListener? = null): Dialog {
         val view = context.getSystemService<LayoutInflater>()!!.inflate(R.layout.progress_dialog, null)
         return Dialog(context, R.style.Theme_Glom_ProgressDialog).apply {
             setContentView(view)
-            onCancelListener.let {
-                if (it == null) {
-                    setCancelable(true)
-                    setOnCancelListener(onCancelListener)
-                }
-                else setCancelable(false)
-            }
+            setOnCancelListener(onCancelListener)
+            setCancelable(cancelable)
             setCanceledOnTouchOutside(false)
             show()
             dialog = this
