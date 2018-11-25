@@ -8,6 +8,7 @@ import io.jitrapon.glom.base.navigation.Router
 import io.jitrapon.glom.base.ui.BaseActivity
 
 const val NAVIGATE_TO_MAIN = "action.navigate.main"
+const val AUTH_REQUEST_CODE = 2000
 
 /**
  * Base Activity class for the main entry point of the application. Contains shared activity logic

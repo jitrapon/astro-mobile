@@ -32,4 +32,8 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
             AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime)
         }
     }
+
+    override fun signOut(): Completable {
+        return api.signOut("http://192.168.1.35:8081/token/revoke")
+    }
 }

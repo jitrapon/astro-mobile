@@ -1,10 +1,12 @@
 package io.jitrapon.glom.base.domain.user.settings
 
+import android.content.DialogInterface
 import android.view.View
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import com.google.android.instantapps.InstantApps
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.AUTH_REQUEST_CODE
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.navigation.Router
 import io.jitrapon.glom.base.navigation.Router.MODULE_AUTH
@@ -15,6 +17,8 @@ import kotlinx.android.synthetic.main.profile_menu_bottom_sheet.*
 class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
 
     private lateinit var viewModel: ProfileMenuViewModel
+
+    private var onDismissHandler: ((Boolean) -> Unit)? = null
 
     companion object {
 
@@ -72,9 +76,19 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
                 dismiss()
                 delayRun(NAVIGATE_ANIM_GRACE) {
                     Router.navigate(activity, InstantApps.isInstantApp(activity), MODULE_AUTH, false,
-                            arrayOf(R.anim.slide_up, R.anim.fade_out))
+                            arrayOf(R.anim.slide_up, R.anim.fade_out), AUTH_REQUEST_CODE)
                 }
             }
         }
+    }
+
+    override fun onDismiss(dialog: DialogInterface?) {
+        super.onDismiss(dialog)
+
+        onDismissHandler?.invoke((viewModel.isSignedIn()))
+    }
+
+    fun setOnDismissHandler(handler: (isSignedIn: Boolean) -> Unit) {
+        onDismissHandler = handler
     }
 }

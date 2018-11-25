@@ -25,35 +25,36 @@ object Router {
     /**
      * Launch a specfic activity by specifying the module under which the activity belongs to
      */
-    fun navigate(from: Context?, isInstantApp: Boolean, toModule: String?,
-                 shouldFinish: Boolean = false, @Size(2) transitionAnimations: Array<Int>? = null) {
+    fun navigate(from: Activity?, isInstantApp: Boolean, toModule: String?,
+                 shouldFinish: Boolean = false, @Size(2) transitionAnimations: Array<Int>? = null, requestCode: Int? = null) {
         toModule ?: return
         from?.let {
             if (isInstantApp) {
-                it.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                        "https://${it.getString(R.string.instant_app_host)}/${toModule.toLowerCase()}")).apply {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(
+                    "https://${it.getString(R.string.instant_app_host)}/${toModule.toLowerCase()}")).apply {
                     `package` = from.packageName
                     addCategory(Intent.CATEGORY_BROWSABLE)
-                })
+                }
+                if (requestCode == null) it.startActivity(intent)
+                else it.startActivityForResult(intent, requestCode)
             }
             else {
                 val module = toModule.toLowerCase()
                 val className = "io.jitrapon.glom.$module.${module.capitalize()}Activity"
                 try {
-                    it.startActivity(Intent(it, Class.forName(className)))
+                    val intent = Intent(it, Class.forName(className))
+                    if (requestCode == null) it.startActivity(intent)
+                    else it.startActivityForResult(intent, requestCode)
                 }
                 catch (ex: Exception) {
                     AppLogger.w("Failed to launch module '$module'. Could not find class $className")
                 }
             }
             if (shouldFinish) {
-                if (from is Activity) from.finish()
-                else if (from is androidx.fragment.app.Fragment) from.finish()
+                from.finish()
             }
-            if (from is Activity) {
-                transitionAnimations?.let {
-                    from.overridePendingTransition(it[0], it[1])
-                }
+            transitionAnimations?.let {
+                from.overridePendingTransition(it[0], it[1])
             }
         }
     }

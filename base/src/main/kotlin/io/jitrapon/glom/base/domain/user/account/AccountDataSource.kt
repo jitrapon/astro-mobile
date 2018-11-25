@@ -19,6 +19,8 @@ interface AccountDataSource {
     fun saveAccount(account: AccountInfo): Flowable<AccountInfo>
 
     fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo>
+
+    fun signOut(): Completable
 }
 
 class InvalidRefreshTokenException : Exception("Refresh token is invalid or missing")

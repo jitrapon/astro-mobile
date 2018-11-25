@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.appbar.AppBarLayout
+import io.jitrapon.glom.base.AUTH_REQUEST_CODE
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -20,6 +21,7 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemAdapter
 import io.jitrapon.glom.board.item.BoardItemUiModel
+import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemActivity
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
@@ -201,7 +203,7 @@ class BoardFragment : BaseFragment() {
                     else -> null
                 }
                 launchOption?.let { (activity, boardItem) ->
-                    startActivity(activity, Const.EDIT_ITEM_RESULT_CODE, {
+                    startActivity(activity, Const.EDIT_ITEM_REQUEST_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem)
                         putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem)
                     }, sharedElements)
@@ -215,7 +217,7 @@ class BoardFragment : BaseFragment() {
                 if (it.action == Const.NAVIGATE_TO_EVENT_PLAN) {
                     val (boardItem, isNewItem) = it.payload as Pair<*, *>
 
-                    startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_RESULT_CODE, {
+                    startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_REQUEST_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
                         putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
                     }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
@@ -225,7 +227,7 @@ class BoardFragment : BaseFragment() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == Const.EDIT_ITEM_RESULT_CODE) {
+        if (requestCode == Const.EDIT_ITEM_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
                 try {
                     data?.getParcelableExtra<BoardItem>(Const.EXTRA_BOARD_ITEM)?.let {
@@ -242,9 +244,14 @@ class BoardFragment : BaseFragment() {
                 }
             }
         }
-        else if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
+        else if (requestCode == Const.PLAN_EVENT_REQUEST_CODE) {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
                 viewModel.syncItem(it, false)
+            }
+        }
+        else if (requestCode == AUTH_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                onRefresh(100L)
             }
         }
     }
@@ -276,5 +283,12 @@ class BoardFragment : BaseFragment() {
                 }
             })
         }
+    }
+
+    /**
+     * Sign in state has changed from other view
+     */
+    override fun onSignInStateChanged(isSignedIn: Boolean) {
+        onRefresh(100L)
     }
 }

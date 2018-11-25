@@ -407,7 +407,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                     if (it.action == NAVIGATE_TO_EVENT_PLAN) {
                         val (boardItem, isNewItem) = it.payload as Pair<*, *>
 
-                        startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_RESULT_CODE, {
+                        startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_REQUEST_CODE, {
                             putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
                             putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
                         }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
@@ -478,7 +478,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     //region other view callbacks
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == Const.PLAN_EVENT_RESULT_CODE) {
+        if (requestCode == Const.PLAN_EVENT_REQUEST_CODE) {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
                 viewModel.updateEventFromPlan()
             }

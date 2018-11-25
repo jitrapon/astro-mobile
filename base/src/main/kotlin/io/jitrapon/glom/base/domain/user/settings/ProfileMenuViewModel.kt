@@ -6,6 +6,8 @@ import io.jitrapon.glom.R
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.UiModel
@@ -24,18 +26,21 @@ class ProfileMenuViewModel : BaseViewModel() {
 
     private val observableUserLoginInfo = MutableLiveData<LoginInfoUiModel>()
 
+    private var hasSignedOut: Boolean = false
+
     init {
         ObjectGraph.component.inject(this)
 
-        loadInfo()
+        updateInfo()
     }
 
-    private fun loadInfo() {
+    private fun updateInfo(isLoading: Boolean = false) {
         observableUserLoginInfo.value = LoginInfoUiModel(
                 getLoginUserId(userInteractor.userId),
                 userInteractor.getCurrentUserAvatar(),
-                getLoginButtonState(userInteractor.isSignedIn),
-                getLoginInfoState(userInteractor.isSignedIn)
+                if (isLoading) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), UiModel.Status.LOADING)
+                        else getLoginButtonState(userInteractor.isSignedIn),
+                if (isLoading) UiModel.Status.LOADING else getLoginInfoState(userInteractor.isSignedIn)
         )
     }
 
@@ -56,12 +61,23 @@ class ProfileMenuViewModel : BaseViewModel() {
 
     fun signInOrSignOut() {
         if (userInteractor.isSignedIn) {
-            observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)
+            updateInfo(true)
+
+            userInteractor.signOut {
+                updateInfo(false)
+
+                hasSignedOut = true
+                if (it is AsyncErrorResult) {
+                    //TODO show warning
+                }
+            }
         }
         else {
             observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)
         }
     }
+
+    fun isSignedIn() = userInteractor.isSignedIn
 
     //region getters for observables
 

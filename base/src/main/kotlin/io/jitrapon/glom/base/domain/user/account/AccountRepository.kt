@@ -34,4 +34,8 @@ class AccountRepository(private val localDataSource: AccountDataSource,
             remoteDataSource.signInWithEmailPassword(email, password),
             localDataSource::saveAccount)
     }
+
+    override fun signOut(): Completable {
+        return delete(localDataSource.signOut(), remoteDataSource.signOut(), true)
+    }
 }

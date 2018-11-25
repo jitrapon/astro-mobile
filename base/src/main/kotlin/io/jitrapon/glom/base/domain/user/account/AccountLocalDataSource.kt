@@ -99,4 +99,13 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
             }
         }
     }
+
+    override fun signOut(): Completable {
+        return Completable.fromAction {
+            val account = accountManager.getAccountsByType(accountType).firstOrNull()
+            account ?: return@fromAction
+
+            accountManager.removeAccountExplicitly(account)
+        }
+    }
 }

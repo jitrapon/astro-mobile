@@ -3,6 +3,9 @@ package io.jitrapon.glom.base.interactor
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
 import io.jitrapon.glom.base.domain.user.account.AccountLocalDataSource
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -82,16 +85,17 @@ open class BaseInteractor {
         compositeDisposable.add(this)
     }
 
-    fun testSaveDebugAccount(onComplete: () -> Unit, onError: (Throwable) -> Unit) {
-        accountDataSource.saveAccount(AccountLocalDataSource.debugAccount)
+    /**
+     * Signs out user by invalidating remote and local user credentials
+     */
+    fun signOut(onComplete: (AsyncResult<Unit>) -> Unit) {
+        accountDataSource.signOut()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    onComplete()
+                    onComplete(AsyncSuccessResult(Unit))
                 }, {
-                    onError(it)
-                }, {
-                    //not handled
+                    onComplete(AsyncErrorResult(it))
                 }).autoDispose()
     }
 }

@@ -266,6 +266,14 @@ abstract class BaseFragment : Fragment() {
      * Override to handle click event of the provided profile menu
      */
     open fun onProfileMenuClicked() {
-        profileMenuBottomSheet.show(fragmentManager, ProfileMenuBottomSheet.TAG)
+        profileMenuBottomSheet.apply {
+            setOnDismissHandler(this@BaseFragment::onSignInStateChanged)
+            show(fragmentManager, ProfileMenuBottomSheet.TAG)
+        }
     }
+
+    /**
+     * Called when sign in state changes from user signing in or out
+     */
+    open fun onSignInStateChanged(isSignedIn: Boolean) {}
 }

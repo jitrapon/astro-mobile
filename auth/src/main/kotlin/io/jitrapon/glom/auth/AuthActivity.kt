@@ -113,6 +113,7 @@ class AuthActivity : BaseActivity() {
 
     override fun navigate(action: String, payload: Any?) {
         if (action == NAVIGATE_TO_MAIN) {
+            setResult(RESULT_OK)
             finish()
         }
     }
