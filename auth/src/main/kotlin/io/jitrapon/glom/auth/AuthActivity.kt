@@ -10,7 +10,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
-import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
@@ -108,6 +108,12 @@ class AuthActivity : BaseActivity() {
                 clone(this@AuthActivity, R.layout.auth_activity_continue_with_email)
                 applyTo(auth_constraint_layout)
             }
+        }
+    }
+
+    override fun navigate(action: String, payload: Any?) {
+        if (action == NAVIGATE_TO_MAIN) {
+            finish()
         }
     }
 }
