@@ -268,7 +268,7 @@ abstract class BaseFragment : Fragment() {
     open fun onProfileMenuClicked() {
         profileMenuBottomSheet.apply {
             setOnDismissHandler(this@BaseFragment::onSignInStateChanged)
-            show(fragmentManager, ProfileMenuBottomSheet.TAG)
+            show(this@BaseFragment.fragmentManager, ProfileMenuBottomSheet.TAG)
         }
     }
 
