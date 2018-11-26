@@ -288,7 +288,7 @@ class BoardFragment : BaseFragment() {
     /**
      * Sign in state has changed from other view
      */
-    override fun onSignInStateChanged(isSignedIn: Boolean) {
+    override fun onSignOut() {
         onRefresh(100L)
     }
 }

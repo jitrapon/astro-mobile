@@ -10,6 +10,7 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.Toast
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import javax.inject.Inject
@@ -26,7 +27,8 @@ class ProfileMenuViewModel : BaseViewModel() {
 
     private val observableUserLoginInfo = MutableLiveData<LoginInfoUiModel>()
 
-    private var hasSignedOut: Boolean = false
+    var hasSignedOut: Boolean = false
+        private set
 
     init {
         ObjectGraph.component.inject(this)
@@ -67,8 +69,9 @@ class ProfileMenuViewModel : BaseViewModel() {
                 updateInfo(false)
 
                 hasSignedOut = true
-                if (it is AsyncErrorResult) {
-                    //TODO show warning
+                when (it) {
+                    is AsyncSuccessResult -> observableViewAction.value = Toast(AndroidString(R.string.auth_sign_out_success))
+                    is AsyncErrorResult -> observableViewAction.value = Toast(AndroidString(R.string.auth_sign_out_success_with_warning))
                 }
             }
         }
@@ -76,8 +79,6 @@ class ProfileMenuViewModel : BaseViewModel() {
             observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)
         }
     }
-
-    fun isSignedIn() = userInteractor.isSignedIn
 
     //region getters for observables
 

@@ -18,7 +18,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
 
     private lateinit var viewModel: ProfileMenuViewModel
 
-    private var onDismissHandler: ((Boolean) -> Unit)? = null
+    private var onDismissHandler: (() -> Unit)? = null
 
     companion object {
 
@@ -85,10 +85,10 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
     override fun onDismiss(dialog: DialogInterface?) {
         super.onDismiss(dialog)
 
-        onDismissHandler?.invoke((viewModel.isSignedIn()))
+        if (viewModel.hasSignedOut) onDismissHandler?.invoke()
     }
 
-    fun setOnDismissHandler(handler: (isSignedIn: Boolean) -> Unit) {
+    fun setOnDismissHandler(handler: () -> Unit) {
         onDismissHandler = handler
     }
 }

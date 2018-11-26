@@ -25,4 +25,6 @@
     <string name="auth_not_signed_in_label">Not Signed In</string>
     <string name="auth_sign_in_label">Sign in</string>
     <string name="auth_sign_out_label">Sign out</string>
+    <string name="auth_sign_out_success">Signed out successfully</string>
+    <string name="auth_sign_out_success_with_warning">Signed out</string>
 </resources>

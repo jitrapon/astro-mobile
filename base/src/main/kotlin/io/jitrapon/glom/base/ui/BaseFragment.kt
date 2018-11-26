@@ -267,7 +267,7 @@ abstract class BaseFragment : Fragment() {
      */
     open fun onProfileMenuClicked() {
         profileMenuBottomSheet.apply {
-            setOnDismissHandler(this@BaseFragment::onSignInStateChanged)
+            setOnDismissHandler(this@BaseFragment::onSignOut)
             show(this@BaseFragment.fragmentManager, ProfileMenuBottomSheet.TAG)
         }
     }
@@ -275,5 +275,5 @@ abstract class BaseFragment : Fragment() {
     /**
      * Called when sign in state changes from user signing in or out
      */
-    open fun onSignInStateChanged(isSignedIn: Boolean) {}
+    open fun onSignOut() {}
 }
