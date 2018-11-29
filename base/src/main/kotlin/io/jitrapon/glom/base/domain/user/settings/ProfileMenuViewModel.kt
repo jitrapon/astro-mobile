@@ -76,6 +76,8 @@ class ProfileMenuViewModel : BaseViewModel() {
             }
         }
         else {
+            hasSignedOut = false
+
             observableViewAction.value = Navigation(NAVIGATE_TO_AUTHENTICATION, null)
         }
     }

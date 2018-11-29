@@ -249,11 +249,6 @@ class BoardFragment : BaseFragment() {
                 viewModel.syncItem(it, false)
             }
         }
-        else if (requestCode == AUTH_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                onRefresh(100L)
-            }
-        }
     }
 
     /**

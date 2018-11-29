@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -41,6 +42,13 @@ fun AppCompatActivity.addFragment(@IdRes container: Int, fragment: androidx.frag
         replace(container, fragment, fragmentTag)
         if (toBackStack) addToBackStack(stateName)
     }
+}
+
+/**
+ * Finds a specific fragment given its tag
+ */
+fun AppCompatActivity.findFragment(fragmentTag: String): Fragment? {
+    return supportFragmentManager.findFragmentByTag(fragmentTag)
 }
 
 /**

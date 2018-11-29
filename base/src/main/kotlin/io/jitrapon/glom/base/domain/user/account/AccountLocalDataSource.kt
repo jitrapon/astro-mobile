@@ -106,6 +106,7 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
             account ?: return@fromAction
 
             accountManager.removeAccountExplicitly(account)
+            inMemoryAccount = null
         }
     }
 }
