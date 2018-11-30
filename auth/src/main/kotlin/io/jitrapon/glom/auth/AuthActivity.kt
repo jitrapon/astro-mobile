@@ -1,5 +1,6 @@
 package io.jitrapon.glom.auth
 
+import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.transition.ChangeBounds
@@ -10,10 +11,18 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
+import com.google.android.gms.auth.api.credentials.Credential
+import com.google.android.gms.auth.api.credentials.CredentialPickerConfig
+import com.google.android.gms.auth.api.credentials.Credentials
+import com.google.android.gms.auth.api.credentials.CredentialsClient
+import com.google.android.gms.auth.api.credentials.HintRequest
+import com.google.android.gms.auth.api.credentials.IdentityProviders
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
+
+const val REQUEST_CODE_CREDENTIALS_HINT = 1000
 
 /**
  * This activity is the main entry to the auth screen. Supports login and sign up flow.
@@ -23,6 +32,10 @@ import kotlinx.android.synthetic.main.auth_activity.*
 class AuthActivity : BaseActivity() {
 
     private lateinit var viewModel: AuthViewModel
+
+    private val credentialsClient by lazy {
+        Credentials.getClient(this)
+    }
 
     //region activity lifecycle
 
@@ -75,6 +88,22 @@ class AuthActivity : BaseActivity() {
                 }
             }
         })
+        viewModel.getCredentialPickerUiModel().observe(this@AuthActivity, Observer {
+            it?.let(::showHintCrendentials)
+        })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        // upon selecting a credential from the hint picker, pre-fill the selected email
+        if (requestCode == REQUEST_CODE_CREDENTIALS_HINT) {
+            if (resultCode == RESULT_OK) {
+                (data?.getParcelableExtra(Credential.EXTRA_KEY) as? Credential)?.let {
+                    auth_email_edit_text.setText(it.id)
+                }
+            }
+        }
     }
 
     //endregion
@@ -108,6 +137,23 @@ class AuthActivity : BaseActivity() {
                 clone(this@AuthActivity, R.layout.auth_activity_continue_with_email)
                 applyTo(auth_constraint_layout)
             }
+        }
+    }
+
+    private fun showHintCrendentials(credentialPickerUiModel: CredentialPickerUiModel) {
+        try {
+            val hintRequest = HintRequest.Builder()
+                .setHintPickerConfig(
+                    CredentialPickerConfig.Builder().setShowCancelButton(credentialPickerUiModel.showCancelButton).build()
+                )
+                .setEmailAddressIdentifierSupported(credentialPickerUiModel.isEmailAddressIdentifierSupported)
+                .setAccountTypes(IdentityProviders.GOOGLE, IdentityProviders.FACEBOOK)
+                .build()
+            val intent = credentialsClient.getHintPickerIntent(hintRequest)
+            startIntentSenderForResult(intent.intentSender, REQUEST_CODE_CREDENTIALS_HINT, null, 0, 0, 0)
+        }
+        catch (ex: Exception) {
+            AppLogger.e(ex)
         }
     }
 

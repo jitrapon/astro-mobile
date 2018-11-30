@@ -6,10 +6,12 @@ import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.LiveEvent
 import io.jitrapon.glom.base.model.Loading
 import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
+import io.jitrapon.glom.base.viewmodel.run
 import java.util.Arrays
 import javax.inject.Inject
 
@@ -25,6 +27,9 @@ class AuthViewModel : BaseViewModel() {
     private val observableAuth = MutableLiveData<AuthUiModel>()
     private val authUiModel: AuthUiModel = AuthUiModel(false)
 
+    /* observable sign-in hints in case of email address */
+    private val observableCredentialPicker = LiveEvent<CredentialPickerUiModel>()
+
     @Inject
     lateinit var authInteractor: AuthInteractor
 
@@ -36,7 +41,12 @@ class AuthViewModel : BaseViewModel() {
 
     fun continueWithEmail(email: CharArray? = null, password: CharArray? = null) {
         if (!authUiModel.showEmailExpandableLayout) {
-            observableAuth.value = authUiModel.apply { showEmailExpandableLayout = true }
+            // expand menu and show credential hints
+            arrayOf({
+                observableAuth.value = authUiModel.apply { showEmailExpandableLayout = true }
+            }, {
+                observableCredentialPicker.value = CredentialPickerUiModel(true, true)
+            }).run(500L)
         }
         else {
             val emailIsEmpty = email == null || email.isEmpty()
@@ -83,6 +93,8 @@ class AuthViewModel : BaseViewModel() {
     fun getObservableBackground(): LiveData<String?> = observableBackground
 
     fun getObservableAuth(): LiveData<AuthUiModel> = observableAuth
+
+    fun getCredentialPickerUiModel(): LiveData<CredentialPickerUiModel> = observableCredentialPicker
 
     //endregion
 }
