@@ -267,6 +267,7 @@ class AuthActivity : BaseActivity() {
                                 }
                             }
                             else {
+                                exception.let(AppLogger::e)
                                 viewModel.onSaveCredentialCompleted()
                             }
                         }
