@@ -298,7 +298,11 @@ class AuthActivity : BaseActivity() {
         }
         credential ?: return
 
-        credentialsClient.delete(credential)
+        credentialsClient.delete(credential).addOnCompleteListener {
+            if (!it.isSuccessful) {
+                it.exception?.let(AppLogger::e)
+            }
+        }
     }
 
     private fun onCredentialRetrieved(credential: Credential) {
