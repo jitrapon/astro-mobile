@@ -1,11 +1,12 @@
 package io.jitrapon.glom.base.interactor
 
+import com.squareup.moshi.Moshi
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
-import io.jitrapon.glom.base.domain.user.account.AccountLocalDataSource
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.ErrorResponse
 import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -30,6 +31,9 @@ open class BaseInteractor {
 
     @field:[Inject Named("accountRepository")]
     lateinit var accountDataSource: AccountDataSource
+
+    @Inject
+    lateinit var moshi: Moshi
 
     init {
         ObjectGraph.component.inject(this)
@@ -64,9 +68,30 @@ open class BaseInteractor {
                     if (it.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
                         Flowable.just(accountDataSource.refreshToken().blockingFirst())
                     }
-                    else Flowable.error(it)
+                    else Flowable.error(it.serialize())
                 }
                 else -> Flowable.error(it)
+            }
+        }
+    }
+
+    /**
+     * Converts a HttpException into an Exception whose cause is the HttpException with a message
+     * serialized from the error body
+     */
+    private fun HttpException.serialize(): Exception {
+        return response()?.errorBody()?.string().let {
+            if (it == null) Exception(null, this)
+            else {
+                var errorMessage: String? = null
+                try {
+                    val adapter = moshi.adapter(ErrorResponse::class.java)
+                    errorMessage = adapter.fromJson(it)?.error
+                }
+                catch (ex: Exception) {
+                    AppLogger.e(ex)
+                }
+                Exception(errorMessage, this)
             }
         }
     }

@@ -1,8 +1,10 @@
 package io.jitrapon.glom.base.model
 
+import com.squareup.moshi.Json
+
 /**
  * Common error response JSON from remote source
  *
  * @author Jitrapon Tiachunpun
  */
-data class ErrorResponse(val error: String? /* optional error message */)
+data class ErrorResponse(@field: Json(name = "message") val error: String? /* optional error message */)

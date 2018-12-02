@@ -1,6 +1,7 @@
 package io.jitrapon.glom.auth
 
 import android.content.Intent
+import android.content.IntentSender
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.transition.ChangeBounds
@@ -11,18 +12,21 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
-import com.google.android.gms.auth.api.credentials.Credential
-import com.google.android.gms.auth.api.credentials.CredentialPickerConfig
-import com.google.android.gms.auth.api.credentials.Credentials
-import com.google.android.gms.auth.api.credentials.CredentialsClient
-import com.google.android.gms.auth.api.credentials.HintRequest
-import com.google.android.gms.auth.api.credentials.IdentityProviders
+import com.google.android.gms.auth.api.credentials.*
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes.RESOLUTION_REQUIRED
+import com.google.android.gms.common.api.ResolvableApiException
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
 
+
 const val REQUEST_CODE_CREDENTIALS_HINT = 1000
+const val REQUEST_CODE_RESOLVE_CREDENTIALS = 1001
+const val REQUEST_CODE_SAVE_CREDENTIALS = 1002
 
 /**
  * This activity is the main entry to the auth screen. Supports login and sign up flow.
@@ -34,7 +38,9 @@ class AuthActivity : BaseActivity() {
     private lateinit var viewModel: AuthViewModel
 
     private val credentialsClient by lazy {
-        Credentials.getClient(this)
+        Credentials.getClient(this, CredentialsOptions.Builder()
+                .forceEnableSaveDialog()
+                .build())
     }
 
     //region activity lifecycle
@@ -72,14 +78,14 @@ class AuthActivity : BaseActivity() {
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.observableViewAction)
 
-        viewModel.getObservableBackground().observe(this@AuthActivity, Observer {
+        viewModel.getObservableBackground().observe(this, Observer {
                 auth_scrolling_background.loadFromUrl(this@AuthActivity, it, null, null,
                         ColorDrawable(color(R.color.white)),
                         Transformation.CENTER_CROP,
                         800)
         })
 
-        viewModel.getObservableAuth().observe(this@AuthActivity, Observer {
+        viewModel.getObservableAuth().observe(this, Observer {
             it?.let {
                 auth_email_input_layout.error = getString(it.emailError)
                 auth_password_input_layout.error = getString(it.passwordError)
@@ -88,8 +94,24 @@ class AuthActivity : BaseActivity() {
                 }
             }
         })
-        viewModel.getCredentialPickerUiModel().observe(this@AuthActivity, Observer {
+
+        viewModel.getCredentialPickerUiModel().observe(this, Observer {
             it?.let(::showHintCrendentials)
+        })
+
+        viewModel.getCredentialRequestUiModel().observe(this, Observer {
+            it?.let(::requestCredentials)
+        })
+
+        viewModel.getCredentialSaveUiModel().observe(this, Observer {
+            it?.let {
+                if (it.shouldDelete) {
+                    deleteCredential(it)
+                }
+                else {
+                    saveCredentials(it)
+                }
+            }
         })
     }
 
@@ -103,6 +125,19 @@ class AuthActivity : BaseActivity() {
                     auth_email_edit_text.setText(it.id)
                 }
             }
+        }
+        else if (requestCode == REQUEST_CODE_RESOLVE_CREDENTIALS) {
+            if (resultCode == RESULT_OK) {
+                (data?.getParcelableExtra(Credential.EXTRA_KEY) as? Credential)?.let {
+                    onCredentialRetrieved(it)
+                }
+            }
+            else {
+                showSnackbar(MessageLevel.WARNING, AndroidString(R.string.auth_credentials_read_failed))
+            }
+        }
+        else if (requestCode == REQUEST_CODE_SAVE_CREDENTIALS) {
+            viewModel.onSaveCredentialCompleted()
         }
     }
 
@@ -154,6 +189,134 @@ class AuthActivity : BaseActivity() {
         }
         catch (ex: Exception) {
             AppLogger.e(ex)
+        }
+    }
+
+    private fun requestCredentials(credentialRequestUiModel: CredentialRequestUiModel) {
+        val request = CredentialRequest.Builder()
+                .setPasswordLoginSupported(credentialRequestUiModel.isPasswordLoginSupported)
+                .setAccountTypes(IdentityProviders.GOOGLE, IdentityProviders.FACEBOOK)
+                .build()
+        credentialsClient.request(request).addOnCompleteListener {
+            if (it.isSuccessful) {
+                onCredentialRetrieved(it.result.credential)
+            }
+            else {
+                val exception = it.exception
+                when (exception) {
+                    // when user input is required to select a credential,
+                    // the request() task will fail with a ResolvableApiException.
+                    // Check that getStatusCode() returns RESOLUTION_REQUIRED
+                    is ResolvableApiException -> {
+                        if (exception.statusCode == RESOLUTION_REQUIRED) {
+                            try {
+                                exception.startResolutionForResult(this, REQUEST_CODE_RESOLVE_CREDENTIALS)
+                            }
+                            catch (ex: IntentSender.SendIntentException) {
+                                AppLogger.e(ex)
+                            }
+                        }
+                    }
+                    is ApiException -> AppLogger.e(exception)
+                }
+            }
+        }
+    }
+
+    private fun saveCredentials(credentialSaveUiModel: CredentialSaveUiModel) {
+        val credential = when (credentialSaveUiModel.accountType) {
+            AccountType.PASSWORD -> {
+                if (credentialSaveUiModel.email == null) {
+                    viewModel.onSaveCredentialCompleted()
+                    return
+                }
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                        .setPassword(if (credentialSaveUiModel.password == null) null else String(credentialSaveUiModel.password))
+                        .build()
+            }
+            AccountType.GOOGLE -> {
+                null
+            }
+            AccountType.FACEBOOK -> {
+                null
+            }
+        }
+        credential ?: viewModel.onSaveCredentialCompleted()
+
+        credentialsClient.save(credential!!).addOnCompleteListener {
+            when {
+                it.isSuccessful -> viewModel.onSaveCredentialCompleted()
+                it.isCanceled -> viewModel.onSaveCredentialCompleted()
+                else -> {
+                    val exception = it.exception
+                    when (exception) {
+                        is ResolvableApiException -> {
+                            // If the user chooses not to save credentials,
+                            // the user won't be prompted again to save any account's credentials for the app.
+                            // If you call CredentialsClient.save() after a user has opted out, its result will have a status code of CANCELED.
+                            // The user can opt in later from the Google Settings app, in the Smart Lock for Passwords section.
+                            // The user must enable credential saving for all accounts to be prompted to save credentials next time.
+                            if (exception.statusCode == RESOLUTION_REQUIRED) {
+                                try {
+                                    exception.startResolutionForResult(this, REQUEST_CODE_SAVE_CREDENTIALS)
+                                }
+                                catch (ex: IntentSender.SendIntentException) {
+                                    AppLogger.e(ex)
+                                    viewModel.onSaveCredentialCompleted()
+                                }
+                            }
+                            else {
+                                viewModel.onSaveCredentialCompleted()
+                            }
+                        }
+                        else -> {
+                            exception?.let(AppLogger::e)
+                            viewModel.onSaveCredentialCompleted()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun deleteCredential(credentialSaveUiModel: CredentialSaveUiModel) {
+        val credential = when (credentialSaveUiModel.accountType) {
+            AccountType.PASSWORD -> {
+                credentialSaveUiModel.email ?: return
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                        .setPassword(if (credentialSaveUiModel.password == null) null else String(credentialSaveUiModel.password))
+                        .build()
+            }
+            AccountType.GOOGLE -> {
+                null
+            }
+            AccountType.FACEBOOK -> {
+                null
+            }
+        }
+        credential ?: return
+
+        credentialsClient.delete(credential)
+    }
+
+    private fun onCredentialRetrieved(credential: Credential) {
+        credential.accountType.let {
+            // email / password
+            if (it == null) {
+                if (credential.password != null) {
+                    val email = CharArray(credential.id.length)
+                    val password = CharArray(credential.password!!.length)
+                    viewModel.signInWithPassword(email, password)
+                }
+            }
+            else if (it == IdentityProviders.GOOGLE) {
+
+            }
+            else if (it == IdentityProviders.FACEBOOK) {
+
+            }
         }
     }
 

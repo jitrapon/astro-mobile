@@ -67,6 +67,7 @@ class NetModule {
     }
 
     @Provides
+    @Singleton
     fun provideMoshi(): Moshi {
         // add all JsonAdapter factory here
         return Moshi.Builder().build()

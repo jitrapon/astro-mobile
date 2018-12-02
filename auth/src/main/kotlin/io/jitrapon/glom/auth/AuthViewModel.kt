@@ -3,16 +3,11 @@ package io.jitrapon.glom.auth
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.LiveEvent
-import io.jitrapon.glom.base.model.Loading
-import io.jitrapon.glom.base.model.Navigation
-import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.run
-import java.util.Arrays
+import retrofit2.HttpException
+import java.util.*
 import javax.inject.Inject
 
 /**
@@ -30,6 +25,12 @@ class AuthViewModel : BaseViewModel() {
     /* observable sign-in hints in case of email address */
     private val observableCredentialPicker = LiveEvent<CredentialPickerUiModel>()
 
+    /* observable smart lock auto-login request */
+    private val observableCredentialRequest = LiveEvent<CredentialRequestUiModel>()
+
+    /* observable smart lock save request */
+    private val observableCredentialSave = LiveEvent<CredentialSaveUiModel>()
+
     @Inject
     lateinit var authInteractor: AuthInteractor
 
@@ -37,6 +38,8 @@ class AuthViewModel : BaseViewModel() {
         AuthInjector.getComponent().inject(this)
 
         observableBackground.value = "https://image.ibb.co/jxh4Xq/busy-30.jpg"
+
+        requestCredential()
     }
 
     fun continueWithEmail(email: CharArray? = null, password: CharArray? = null) {
@@ -58,21 +61,7 @@ class AuthViewModel : BaseViewModel() {
                     passwordError = null
                 }
 
-                observableViewAction.value = Loading(true)
-
-                authInteractor.signInWithEmailPassword(email!!, password!!) {
-                    when (it) {
-                        is AsyncSuccessResult -> {
-                            observableViewAction.execute(
-                                arrayOf(Loading(false), Navigation(NAVIGATE_TO_MAIN, null))
-                            )
-                        }
-                        is AsyncErrorResult -> handleError(it.error)
-                    }
-
-                    Arrays.fill(email, ' ')
-                    Arrays.fill(password, ' ')
-                }
+                signInWithPassword(email!!, password!!)
             }
             else {
                 observableAuth.value = authUiModel.apply {
@@ -82,6 +71,42 @@ class AuthViewModel : BaseViewModel() {
                 }
             }
         }
+    }
+
+    fun signInWithPassword(email: CharArray, password: CharArray) {
+        observableViewAction.value = Loading(true)
+
+        authInteractor.signInWithEmailPassword(email, password) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableViewAction.value = Loading(false)
+
+                    observableCredentialSave.value = CredentialSaveUiModel(email, password, AccountType.PASSWORD)
+
+                    Arrays.fill(email, ' ')
+                    Arrays.fill(password, ' ')
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error)
+
+                    // if the cause of the error is a HttpException, delete the stored credentials
+                    if (it.error.cause is HttpException) {
+                        observableCredentialSave.value = CredentialSaveUiModel(email, password, AccountType.PASSWORD, shouldDelete = true)
+                    }
+
+                    Arrays.fill(email, ' ')
+                    Arrays.fill(password, ' ')
+                }
+            }
+        }
+    }
+
+    fun onSaveCredentialCompleted() {
+        observableViewAction.value = Navigation(NAVIGATE_TO_MAIN)
+    }
+
+    private fun requestCredential() {
+        observableCredentialRequest.value = CredentialRequestUiModel(true)
     }
 
     override fun onCleared() {
@@ -95,6 +120,10 @@ class AuthViewModel : BaseViewModel() {
     fun getObservableAuth(): LiveData<AuthUiModel> = observableAuth
 
     fun getCredentialPickerUiModel(): LiveData<CredentialPickerUiModel> = observableCredentialPicker
+
+    fun getCredentialRequestUiModel(): LiveData<CredentialRequestUiModel> = observableCredentialRequest
+
+    fun getCredentialSaveUiModel(): LiveData<CredentialSaveUiModel> = observableCredentialSave
 
     //endregion
 }

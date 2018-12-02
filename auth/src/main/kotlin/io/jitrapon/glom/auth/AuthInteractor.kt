@@ -12,6 +12,7 @@ class AuthInteractor(private val dataSource: AccountDataSource) : BaseInteractor
 
     fun signInWithEmailPassword(email: CharArray, password: CharArray, onComplete: (AsyncResult<Unit>) -> Unit) {
         dataSource.signInWithEmailPassword(email, password)
+            .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({

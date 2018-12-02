@@ -87,7 +87,7 @@ class PlanEventDateFragment : BaseFragment() {
      * Called when this fragment is ready to subscribe to ViewModel's events
      */
     override fun onSubscribeToObservables() {
-        viewModel.getObservableDatePlan().observe(this@PlanEventDateFragment, Observer {
+        viewModel.getObservableDatePlan().observe(viewLifecycleOwner, Observer {
             it?.let {
                 when (it.status) {
                     UiModel.Status.LOADING -> {
@@ -133,7 +133,7 @@ class PlanEventDateFragment : BaseFragment() {
             }
         })
 
-        viewModel.getObservableDateTimePicker().observe(this@PlanEventDateFragment, Observer {
+        viewModel.getObservableDateTimePicker().observe(viewLifecycleOwner, Observer {
             it?.let { picker ->
                 dateTimePicker.showRangePicker(picker, { (startDate, endDate) ->
                     viewModel.addDatePoll(startDate, endDate)
@@ -156,7 +156,7 @@ class PlanEventDateFragment : BaseFragment() {
             }
         })
 
-        viewModel.getObservableDateVoteStatusButton().observe(this@PlanEventDateFragment, Observer {
+        viewModel.getObservableDateVoteStatusButton().observe(viewLifecycleOwner, Observer {
             it?.let {
                 when {
                     it.status == UiModel.Status.POSITIVE -> {
@@ -188,7 +188,7 @@ class PlanEventDateFragment : BaseFragment() {
             }
         })
 
-        viewModel.getObservableDateSelectButton().observe(this@PlanEventDateFragment, Observer {
+        viewModel.getObservableDateSelectButton().observe(viewLifecycleOwner, Observer {
             it?.let { button ->
                 context?.let {
                     event_plan_date_select_poll_button.text = it.getString(button.text)

@@ -21,7 +21,7 @@ class Loading(val show: Boolean): UiActionModel
 
 class EmptyLoading(val show: Boolean): UiActionModel
 
-class Navigation(val action: String, val payload: Any?) : UiActionModel
+class Navigation(val action: String, val payload: Any? = null) : UiActionModel
 
 class ReloadData(val delay: Long) : UiActionModel
 

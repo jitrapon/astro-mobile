@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.appbar.AppBarLayout
-import io.jitrapon.glom.base.AUTH_REQUEST_CODE
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -21,7 +20,6 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemAdapter
 import io.jitrapon.glom.board.item.BoardItemUiModel
-import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemActivity
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
@@ -116,7 +114,7 @@ class BoardFragment : BaseFragment() {
         subscribeToAppBarObservable(viewModel.getObservableProfileMenuIcon())
 
         // observes board and its items
-        viewModel.getObservableBoard().observe(this, Observer {
+        viewModel.getObservableBoard().observe(viewLifecycleOwner, Observer {
             it?.let {
                 when (it.status) {
                     UiModel.Status.EMPTY -> {
@@ -186,14 +184,14 @@ class BoardFragment : BaseFragment() {
         })
 
         // observes animation
-        viewModel.getObservableAnimation().observe(this, Observer {
+        viewModel.getObservableAnimation().observe(viewLifecycleOwner, Observer {
             it?.let {
                 board_animation_view.animate(it)
             }
         })
 
         // observes new selected board item
-        viewModel.getObservableBoardItem().observe(this, Observer {
+        viewModel.getObservableBoardItem().observe(viewLifecycleOwner, Observer {
             it?.let { arg ->
                 val boardItem = arg.first
                 val sharedElements = arg.second
@@ -212,7 +210,7 @@ class BoardFragment : BaseFragment() {
         })
 
         // observers on navigation event
-        viewModel.getObservableNavigation().observe(this, Observer {
+        viewModel.getObservableNavigation().observe(viewLifecycleOwner, Observer {
             it?.let {
                 if (it.action == Const.NAVIGATE_TO_EVENT_PLAN) {
                     val (boardItem, isNewItem) = it.payload as Pair<*, *>

@@ -54,17 +54,17 @@ class PlanEventOverviewFragment : BaseFragment() {
 
     override fun onSubscribeToObservables() {
         viewModel.apply {
-            getObservableName().observe(this@PlanEventOverviewFragment, Observer {
+            getObservableName().observe(viewLifecycleOwner, Observer {
                 it?.let {
                     event_plan_name.text = context?.getString(it)
                 }
             })
-            getObservableAttendeesLabel().observe(this@PlanEventOverviewFragment, Observer {
+            getObservableAttendeesLabel().observe(viewLifecycleOwner, Observer {
                 it?.let {
                     event_plan_attendee_label.text = context?.getString(it)
                 }
             })
-            getObservableJoinButton().observe(this@PlanEventOverviewFragment, Observer {
+            getObservableJoinButton().observe(viewLifecycleOwner, Observer {
                 it?.let {
                     when {
                         it.status == UiModel.Status.POSITIVE -> event_plan_join_button.apply {
@@ -83,7 +83,7 @@ class PlanEventOverviewFragment : BaseFragment() {
                     event_plan_join_button.text = context?.getString(it.text)
                 }
             })
-            getObservableAttendees().observe(this@PlanEventOverviewFragment, Observer {
+            getObservableAttendees().observe(viewLifecycleOwner, Observer {
                 it?.let {
                     event_plan_attendee_recycler_view.apply {
                         (layoutManager as androidx.recyclerview.widget.GridLayoutManager).spanCount = getColumnCount(it.size)

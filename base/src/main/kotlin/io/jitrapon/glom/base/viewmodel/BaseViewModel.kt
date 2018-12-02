@@ -5,12 +5,10 @@ import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import io.jitrapon.glom.BuildConfig
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.withinDuration
-import retrofit2.HttpException
 import java.io.IOException
 import java.util.*
 
@@ -110,8 +108,7 @@ abstract class BaseViewModel : ViewModel() {
 
         val errorMessage = when (throwable) {
             is IOException -> AndroidString(R.string.error_network)
-            is HttpException -> if (BuildConfig.DEBUG) AndroidString(text = throwable.response().message()) else AndroidString(R.string.error_generic)
-            else -> AndroidString(R.string.error_generic)
+            else -> if (throwable.message.isNullOrBlank()) AndroidString(R.string.error_generic) else AndroidString(text = throwable.message)
         }
         observableViewAction.execute(arrayOf(
                 Loading(false),

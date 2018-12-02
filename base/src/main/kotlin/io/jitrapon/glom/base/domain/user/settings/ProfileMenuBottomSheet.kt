@@ -41,7 +41,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
-        viewModel.getObservableUserLoginInfo().observe(this, Observer {
+        viewModel.getObservableUserLoginInfo().observe(viewLifecycleOwner, Observer {
             it?.let { uiModel ->
                 val placeHolderDrawable = context!!.drawable(R.drawable.ic_empty_account_colored)!!
                 profile_menu_bottom_sheet_user_avatar.apply {

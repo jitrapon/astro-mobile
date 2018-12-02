@@ -81,7 +81,7 @@ class PlanEventPlaceFragment : BaseFragment() {
      * Called when this fragment is ready to subscribe to ViewModel's events
      */
     override fun onSubscribeToObservables() {
-        viewModel.getObservablePlacePlan().observe(this@PlanEventPlaceFragment, Observer {
+        viewModel.getObservablePlacePlan().observe(viewLifecycleOwner, Observer {
             it?.let {
                 when (it.status) {
                     UiModel.Status.LOADING -> {
@@ -117,7 +117,7 @@ class PlanEventPlaceFragment : BaseFragment() {
             }
         })
 
-        viewModel.getObservablePlaceStatusButton().observe(this@PlanEventPlaceFragment, Observer {
+        viewModel.getObservablePlaceStatusButton().observe(viewLifecycleOwner, Observer {
             it?.let {
                 when {
                     it.status == UiModel.Status.POSITIVE -> {
@@ -149,7 +149,7 @@ class PlanEventPlaceFragment : BaseFragment() {
             }
         })
 
-        viewModel.getObservablePlaceSelectButton().observe(this@PlanEventPlaceFragment, Observer {
+        viewModel.getObservablePlaceSelectButton().observe(viewLifecycleOwner, Observer {
             it?.let { button ->
                 context?.let {
                     event_plan_place_select_poll_button.text = it.getString(button.text)
