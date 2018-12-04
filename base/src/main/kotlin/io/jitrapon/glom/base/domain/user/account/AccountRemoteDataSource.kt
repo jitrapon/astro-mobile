@@ -27,13 +27,13 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
     }
 
     override fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo> {
-        return api.signInWithEmailPassword("http://192.168.1.35:8081/auth/signin?type=password",
+        return api.signInWithEmailPassword("http://www.mocky.io/v2/5c0630543300006f00e814b5/auth/signin?type=password",
             SignInEmailPasswordRequest(String(email), String(password))).map {
             AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime)
         }
     }
 
     override fun signOut(): Completable {
-        return api.signOut("http://192.168.1.35:8081/token/revoke")
+        return api.signOut("http://www.mocky.io/v2/5c0630543300006f00e814b5/token/revoke")
     }
 }

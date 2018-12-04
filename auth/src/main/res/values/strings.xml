@@ -9,5 +9,4 @@
     <string name="auth_create_account">Sign up</string>
     <string name="auth_email_empty_error">Please input this field</string>
     <string name="auth_password_empty_error">Please input this field</string>
-    <string name="auth_credentials_read_failed">Credential read failed</string>
 </resources>

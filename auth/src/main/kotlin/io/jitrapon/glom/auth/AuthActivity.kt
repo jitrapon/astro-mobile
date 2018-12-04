@@ -14,6 +14,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.google.android.gms.auth.api.credentials.*
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes.CANCELED
 import com.google.android.gms.common.api.CommonStatusCodes.RESOLUTION_REQUIRED
 import com.google.android.gms.common.api.ResolvableApiException
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
@@ -132,9 +133,6 @@ class AuthActivity : BaseActivity() {
                     onCredentialRetrieved(it)
                 }
             }
-            else {
-                showSnackbar(MessageLevel.WARNING, AndroidString(R.string.auth_credentials_read_failed))
-            }
         }
         else if (requestCode == REQUEST_CODE_SAVE_CREDENTIALS) {
             viewModel.onSaveCredentialCompleted()
@@ -226,14 +224,14 @@ class AuthActivity : BaseActivity() {
     private fun saveCredentials(credentialSaveUiModel: CredentialSaveUiModel) {
         val credential = when (credentialSaveUiModel.accountType) {
             AccountType.PASSWORD -> {
-                if (credentialSaveUiModel.email == null) {
+                if (credentialSaveUiModel.email == null || credentialSaveUiModel.password == null) {
                     viewModel.onSaveCredentialCompleted()
                     return
                 }
 
                 Credential.Builder(String(credentialSaveUiModel.email))
-                        .setPassword(if (credentialSaveUiModel.password == null) null else String(credentialSaveUiModel.password))
-                        .build()
+                    .setPassword(String(credentialSaveUiModel.password))
+                    .build()
             }
             AccountType.GOOGLE -> {
                 null
@@ -311,8 +309,8 @@ class AuthActivity : BaseActivity() {
             // email / password
             if (it == null) {
                 if (credential.password != null) {
-                    val email = CharArray(credential.id.length)
-                    val password = CharArray(credential.password!!.length)
+                    val email = credential.id.toCharArray()
+                    val password = credential.password!!.toCharArray()
                     viewModel.signInWithPassword(email, password)
                 }
             }
