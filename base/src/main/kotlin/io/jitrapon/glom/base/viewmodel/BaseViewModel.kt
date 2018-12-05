@@ -6,10 +6,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.domain.exceptions.ConnectionException
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.withinDuration
 import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 import java.util.*
 
 /* time in seconds before data is refreshed automatically */
@@ -103,17 +106,26 @@ abstract class BaseViewModel : ViewModel() {
     /**
      * Generic error handling from a response
      */
-    fun handleError(throwable: Throwable, showAsToast: Boolean = false) {
+    fun handleError(throwable: Throwable, showAsToast: Boolean = false, level: Int = MessageLevel.ERROR,
+                    observable: LiveEvent<UiActionModel>? = null) {
         AppLogger.e(throwable)
 
         val errorMessage = when (throwable) {
-            is IOException -> AndroidString(R.string.error_network)
+            is ConnectionException -> AndroidString(R.string.error_network)
             else -> if (throwable.message.isNullOrBlank()) AndroidString(R.string.error_generic) else AndroidString(text = throwable.message)
+        }
+        observable?.let {
+            it.execute(arrayOf(
+                Loading(false),
+                if (showAsToast) Toast(errorMessage)
+                else Snackbar(errorMessage, level = level)
+            ))
+            return
         }
         observableViewAction.execute(arrayOf(
                 Loading(false),
                 if (showAsToast) Toast(errorMessage)
-                else Snackbar(errorMessage, level = MessageLevel.ERROR)
+                else Snackbar(errorMessage, level = level)
         ))
     }
 

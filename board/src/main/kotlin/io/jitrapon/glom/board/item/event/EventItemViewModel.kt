@@ -256,11 +256,7 @@ class EventItemViewModel : BoardItemViewModel() {
                             boardViewModel.observableViewAction.value = Snackbar(message, level = level)
                         }
                         is AsyncErrorResult -> {
-                            AppLogger.e(it.error)
-                            boardViewModel.observableViewAction.execute(arrayOf(
-                                    Loading(false),
-                                    Snackbar(AndroidString(io.jitrapon.glom.R.string.error_generic), level = MessageLevel.ERROR)
-                            ))
+                            handleError(it.error, observable = boardViewModel.observableViewAction)
 
                             // revert the status change
                             item.apply {

@@ -3,8 +3,8 @@
     <string name="application_name">Glom</string>
 
     <!-- error messages -->
-    <string name="error_generic">Oh no, something went wrong!</string>
-    <string name="error_network">There is a problem reaching the server. Please check your connection and try again.</string>
+    <string name="error_generic">Oops…something went wrong\nEngineers are being alerted to address this!</string>
+    <string name="error_network">Failed to reach our server\nPlease check your internet connection</string>
 
     <!-- app bar menu -->
     <string name="main_app_bar_account_menu">Account</string>

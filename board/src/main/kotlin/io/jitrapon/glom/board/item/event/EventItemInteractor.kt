@@ -146,7 +146,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             }
         }.flatMapCompletable {
             eventItemDataSource.saveItem(it)
-        }.subscribeOn(Schedulers.computation())
+        }.retryWhen(::errorIsUnauthorized)
+                .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     clearSuggestionCache()
@@ -169,6 +170,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         if (!TextUtils.isEmpty(placeId)) {
             placeProvider?.let {
                 it.getPlaces(arrayOf(placeId!!))
+                        .retryWhen(::errorIsUnauthorized)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({
@@ -284,6 +286,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun syncItemDate(startDate: Date?, endDate: Date?, onComplete: (AsyncResult<Unit>) -> Unit) {
         eventItemDataSource.setDate(event, startDate, endDate)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -314,11 +317,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * @param statusCode - An int value for the new status (0 for DECLINED, 1 for MAYBE, 2 for GOING)
      */
     fun setItemAttendStatus(itemId: String, statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
-        if (TextUtils.isEmpty(userId)) {
-            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
-            return
-        }
-
         board.let {
             var item: EventItem? = null
             Single.fromCallable { it.items.find { it.itemId == itemId && it is EventItem } as EventItem }
@@ -329,6 +327,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                             else -> eventItemDataSource.leaveEvent(it)
                         }
                     }
+                    .retryWhen(::errorIsUnauthorized)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
@@ -340,16 +339,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
-        if (TextUtils.isEmpty(userId)) {
-            onComplete(AsyncErrorResult(Exception("Current user id cannot be NULL")))
-            return
-        }
-
         val item = event
         when (statusCode) {
             2 -> eventItemDataSource.joinEvent(item)
             else -> eventItemDataSource.leaveEvent(item)
-        }
+        }.retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -363,6 +357,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun setItemDatePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
         eventItemDataSource.setDatePollStatus(event, open)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -387,6 +382,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun loadDatePlan(onComplete: (AsyncResult<List<EventDatePoll>>) -> Unit) {
         eventItemDataSource.getDatePolls(event, true)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -403,6 +399,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .flatMapCompletable {
                     eventItemDataSource.updateDatePollCount(event, it.first { it.id == id }, upvote)
                 }
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -417,6 +414,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .flatMap {
                     eventItemDataSource.getDatePolls(event, true)
                 }
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -431,6 +429,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun loadPlacePlan(onComplete: (AsyncResult<List<EventPlacePoll>>) -> Unit) {
         eventItemDataSource.getPlacePolls(event, true)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -453,6 +452,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
         placeProvider?.let { placeProvider ->
             // load place details from place IDs
             placeProvider.getPlaces(placeIds)
+                    .retryWhen(::errorIsUnauthorized)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ result ->
@@ -484,6 +484,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .flatMap {
                     eventItemDataSource.getPlacePolls(event, true)
                 }
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -498,6 +499,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 .flatMapCompletable {
                     eventItemDataSource.updatePlacePollCount(event, it.first { it.id == id }, upvote)
                 }
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -509,6 +511,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun setItemPlacePollStatus(open: Boolean, onComplete: ((AsyncResult<Unit>) -> Unit)) {
         eventItemDataSource.setPlacePollStatus(event, open)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -527,6 +530,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                         eventItemDataSource.setPlace(event, poll.location)
                     }
                 }
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({

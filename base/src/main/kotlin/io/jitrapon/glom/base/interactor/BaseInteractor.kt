@@ -2,6 +2,7 @@ package io.jitrapon.glom.base.interactor
 
 import com.squareup.moshi.Moshi
 import io.jitrapon.glom.base.di.ObjectGraph
+import io.jitrapon.glom.base.domain.exceptions.ConnectionException
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
@@ -12,9 +13,13 @@ import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import io.reactivex.exceptions.CompositeException
 import io.reactivex.schedulers.Schedulers
 import retrofit2.HttpException
+import java.io.IOException
+import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -68,8 +73,15 @@ open class BaseInteractor {
                     if (it.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
                         Flowable.just(accountDataSource.refreshToken().blockingFirst())
                     }
-                    else Flowable.error(it.serialize())
+                    else Flowable.error(it.serializeErrorBody())
                 }
+                is CompositeException -> {
+                    if (it.exceptions.isNotEmpty() && it.exceptions.any { ex -> ex is ConnectException }) {
+                        Flowable.error(ConnectionException(it))
+                    }
+                    else Flowable.error(Exception(null, it))
+                }
+                is IOException, is SocketTimeoutException, is ConnectException -> Flowable.error(ConnectionException(it))
                 else -> Flowable.error(it)
             }
         }
@@ -79,7 +91,7 @@ open class BaseInteractor {
      * Converts a HttpException into an Exception whose cause is the HttpException with a message
      * serialized from the error body
      */
-    private fun HttpException.serialize(): Exception {
+    private fun HttpException.serializeErrorBody(): Exception {
         return response()?.errorBody()?.string().let {
             if (it == null) Exception(null, this)
             else {

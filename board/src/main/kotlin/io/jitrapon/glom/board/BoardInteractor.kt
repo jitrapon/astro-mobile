@@ -106,6 +106,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun addItem(item: BoardItem, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
         boardDataSource.createItem(item, false)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .andThen (
@@ -132,6 +133,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         boardDataSource.editItem(item)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -146,6 +148,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun deleteItemLocal(itemId: String, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
         boardDataSource.deleteItem(itemId, false)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .andThen (
@@ -168,6 +171,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
 
     fun deleteItemRemote(itemId: String, onComplete: (AsyncResult<Unit>) -> Unit) {
         boardDataSource.deleteItem(itemId, true)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -193,6 +197,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
 
     fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         boardDataSource.createItem(item, true)
+                .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -250,7 +255,9 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             }.toTypedArray()
         }.flatMap {
             placeProvider.getPlaces(it)
-        }.subscribeOn(Schedulers.io())
+        }
+                .retryWhen(::errorIsUnauthorized)
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     if (itemIds.size == it.size) {
