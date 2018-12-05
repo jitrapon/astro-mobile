@@ -23,5 +23,5 @@ interface AccountDataSource {
     fun signOut(): Completable
 }
 
-class InvalidRefreshTokenException : Exception("Refresh token is invalid or missing")
+class MissingRefreshTokenException : Exception()
 

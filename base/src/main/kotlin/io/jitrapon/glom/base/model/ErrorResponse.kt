@@ -7,4 +7,4 @@ import com.squareup.moshi.Json
  *
  * @author Jitrapon Tiachunpun
  */
-data class ErrorResponse(@field: Json(name = "message") val error: String? /* optional error message */)
+data class ErrorResponse(@field: Json(name = "error") val error: String? /* optional error message */)

@@ -14,3 +14,6 @@ data class AccountInfoResponse(@field:Json(name = "id_token") val idToken: Strin
 
 data class SignInEmailPasswordRequest(@field:Json(name = "email") private val email: String,
                                       @field:Json(name = "password") private val password: String)
+
+data class SignUpEmailPasswordRequest(@field:Json(name = "email") private val email: String,
+                                      @field:Json(name = "password") private val password: String)

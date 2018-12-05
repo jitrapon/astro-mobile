@@ -61,7 +61,7 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
 
     override fun refreshToken(refreshToken: String?): Flowable<AccountInfo> {
         return getAccount().let {
-            if (it == null) throw InvalidRefreshTokenException()
+            if (it == null) throw MissingRefreshTokenException()
             else Flowable.just(it)
         }
     }
