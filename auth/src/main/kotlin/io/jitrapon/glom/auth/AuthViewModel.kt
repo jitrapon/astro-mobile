@@ -87,7 +87,7 @@ class AuthViewModel : BaseViewModel() {
                     Arrays.fill(password, ' ')
                 }
                 is AsyncErrorResult -> {
-                    handleError(it.error)
+                    handleError(it.error, true)
 
                     // if the cause of the error is a HttpException, delete the stored credentials
                     if (it.error.cause is HttpException) {
