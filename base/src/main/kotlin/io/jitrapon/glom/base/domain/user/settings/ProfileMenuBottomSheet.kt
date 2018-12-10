@@ -54,6 +54,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
                 when (uiModel.loginButtonUiModel.status) {
                     UiModel.Status.POSITIVE -> {
                         profile_menu_bottom_sheet_auth_button.apply {
+                            applyState(uiModel.loginButtonUiModel)
                             setPositiveTheme()
                             text = context.getString(uiModel.loginButtonUiModel.text)
                         }
@@ -61,6 +62,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
                     UiModel.Status.NEGATIVE -> {
                         profile_menu_bottom_sheet_auth_button.apply {
                             setNegativeTheme()
+                            applyState(uiModel.loginButtonUiModel)
                             text = context.getString(uiModel.loginButtonUiModel.text)
                         }
                     }

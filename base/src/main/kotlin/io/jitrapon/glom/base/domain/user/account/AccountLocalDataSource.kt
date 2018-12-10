@@ -2,11 +2,13 @@ package io.jitrapon.glom.base.domain.user.account
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.accounts.OnAccountsUpdateListener
 import android.app.Application
 import android.os.Bundle
 import io.jitrapon.glom.R
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.concurrent.atomic.AtomicBoolean
 
 const val ACCOUNT_MANAGER_USER_ID = "user_id"
 const val ACCOUNT_MANAGER_REFRESH_TOKEN = "refresh_token"
@@ -14,7 +16,8 @@ const val ACCOUNT_MANAGER_ID_TOKEN = "id_token"
 const val ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN = "expires_in"
 const val ACCOUNT_MANAGER_IS_ANONYMOUS = "is_anonymous"
 
-class AccountLocalDataSource(private val accountManager: AccountManager, private val application: Application) : AccountDataSource {
+class AccountLocalDataSource(private val accountManager: AccountManager, private val application: Application)
+    : AccountDataSource, OnAccountsUpdateListener {
 
     /* in-memory cache for the currently signed in user, must be initialized
     from account manager as soon as it's available */
@@ -22,6 +25,8 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
 
     private val accountType: String
         get() = application.getString(R.string.account_manager_account_type)
+
+    private val isInitialized = AtomicBoolean(false)
 
     companion object {
 
@@ -43,6 +48,11 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
                 accountManager.getAccountsByType(accountType).firstOrNull().let {
                     if (it == null) null
                     else {
+                        // listen to any changes of accounts
+                        if (!isInitialized.getAndSet(true)) {
+                            accountManager.addOnAccountsUpdatedListener(this@AccountLocalDataSource, null, true)
+                        }
+
                         accountManager.let { manager ->
                             inMemoryAccount = AccountInfo(
                                     manager.getUserData(it, ACCOUNT_MANAGER_USER_ID),
@@ -119,6 +129,12 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
             account ?: return@fromAction
 
             accountManager.removeAccountExplicitly(account)
+            inMemoryAccount = null
+        }
+    }
+
+    override fun onAccountsUpdated(accounts: Array<Account>?) {
+        if (accounts.isNullOrEmpty()) {
             inMemoryAccount = null
         }
     }
