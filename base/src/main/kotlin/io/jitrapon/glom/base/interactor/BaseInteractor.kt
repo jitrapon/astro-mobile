@@ -4,6 +4,7 @@ import com.squareup.moshi.Moshi
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.exceptions.ConnectionException
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
+import io.jitrapon.glom.base.domain.user.account.NoRefreshTokenException
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
@@ -62,6 +63,10 @@ open class BaseInteractor {
     val isSignedIn: Boolean
         get() = accountDataSource.getAccount()?.userId != null
 
+    /* whether or not user is anonymously signed in */
+    val isSignedInAnonymously: Boolean
+        get() = isSignedIn && (accountDataSource.getAccount()?.isAnonymous ?: false)
+
     /**
      * Check if the flowable's throwable is of type UnauthorizedException, if so perform
      * a token refresh, otherwise propogate the error to a new Flowable instance.
@@ -71,13 +76,38 @@ open class BaseInteractor {
             when (it) {
                 is HttpException -> {
                     if (it.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                        Flowable.just(accountDataSource.refreshToken().blockingFirst())
+                        try {
+                            Flowable.just(accountDataSource.refreshToken().blockingFirst())
+                        }
+                        catch (ex: NoRefreshTokenException) {
+                            accountDataSource.signUpAnonymously()
+                        }
+                        catch (ex: Exception) {
+                            Flowable.error<Exception>(Exception(null, it.cause))
+                        }
                     }
                     else Flowable.error(it.serializeErrorBody())
                 }
                 is CompositeException -> {
-                    if (it.exceptions.isNotEmpty() && it.exceptions.any { ex -> ex is ConnectException }) {
-                        Flowable.error(ConnectionException(it))
+                    if (it.exceptions.isNotEmpty()) {
+                        when {
+                            // in the case that one or more requests fails from reaching the server
+                            it.exceptions.any { ex -> ex is ConnectException } -> Flowable.error(ConnectionException(it))
+
+                            // in the case that one or more requests fails due to invalid id token
+                            it.exceptions.any { ex -> ex is HttpException && ex.code() == HttpURLConnection.HTTP_UNAUTHORIZED } -> try {
+                                Flowable.just(accountDataSource.refreshToken().blockingFirst())
+                            }
+                            catch (ex: NoRefreshTokenException) {
+                                accountDataSource.signUpAnonymously()
+                            }
+                            catch (ex: Exception) {
+                                Flowable.error<Exception>(Exception(null, it.cause))
+                            }
+
+                            // else just throw the error
+                            else -> Flowable.error(Exception(null, it))
+                        }
                     }
                     else Flowable.error(Exception(null, it))
                 }

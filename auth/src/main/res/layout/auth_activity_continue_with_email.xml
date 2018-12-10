@@ -132,7 +132,7 @@
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
-        android:backgroundTint="@color/com_facebook_blue"
+        android:backgroundTint="@color/blue_grey"
         android:id="@+id/auth_facebook_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

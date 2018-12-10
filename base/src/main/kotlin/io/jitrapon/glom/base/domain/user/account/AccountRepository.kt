@@ -35,6 +35,13 @@ class AccountRepository(private val localDataSource: AccountDataSource,
             localDataSource::saveAccount)
     }
 
+    override fun signUpAnonymously(): Flowable<AccountInfo> {
+        return load(true,
+                localDataSource.signUpAnonymously(),
+                remoteDataSource.signUpAnonymously(),
+                localDataSource::saveAccount)
+    }
+
     override fun signOut(): Completable {
         return delete(localDataSource.signOut(), remoteDataSource.signOut(), true)
     }

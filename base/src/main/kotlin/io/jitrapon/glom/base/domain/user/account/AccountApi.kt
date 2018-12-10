@@ -20,5 +20,8 @@ interface AccountApi {
                                 @Body request: SignInEmailPasswordRequest): Flowable<AccountInfoResponse>
 
     @POST
+    fun signUpAnonymously(@Url url: String): Flowable<AccountInfoResponse>
+
+    @POST
     fun signOut(@Url url: String): Completable
 }

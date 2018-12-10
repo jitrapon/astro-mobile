@@ -14,12 +14,9 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import com.google.android.gms.auth.api.credentials.*
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.CommonStatusCodes.CANCELED
 import com.google.android.gms.common.api.CommonStatusCodes.RESOLUTION_REQUIRED
 import com.google.android.gms.common.api.ResolvableApiException
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
@@ -81,7 +78,7 @@ class AuthActivity : BaseActivity() {
 
         viewModel.getObservableBackground().observe(this, Observer {
                 auth_scrolling_background.loadFromUrl(this@AuthActivity, it, null, null,
-                        ColorDrawable(color(R.color.white)),
+                        ColorDrawable(color(io.jitrapon.glom.R.color.white)),
                         Transformation.CENTER_CROP,
                         800)
         })

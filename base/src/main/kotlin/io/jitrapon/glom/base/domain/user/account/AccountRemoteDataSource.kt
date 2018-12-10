@@ -19,6 +19,8 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
     }
 
     override fun refreshToken(refreshToken: String?): Flowable<AccountInfo> {
+        refreshToken ?: throw NoRefreshTokenException()
+
         return api.refreshIdToken("http://192.168.1.35:8081/token", RefreshIdTokenRequest(refreshToken)).map {
             AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime)
         }
@@ -31,7 +33,13 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
     override fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo> {
         return api.signInWithEmailPassword("http://192.168.1.35:8081/auth/signin?type=password",
             SignInEmailPasswordRequest(String(email), String(password))).map {
-            AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime)
+            AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime, false)
+        }
+    }
+
+    override fun signUpAnonymously(): Flowable<AccountInfo> {
+        return api.signUpAnonymously("http://192.168.1.35:8081/auth/signup?type=anonymous").map {
+            AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime, true)
         }
     }
 

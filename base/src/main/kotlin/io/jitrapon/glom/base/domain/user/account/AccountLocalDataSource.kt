@@ -12,6 +12,7 @@ const val ACCOUNT_MANAGER_USER_ID = "user_id"
 const val ACCOUNT_MANAGER_REFRESH_TOKEN = "refresh_token"
 const val ACCOUNT_MANAGER_ID_TOKEN = "id_token"
 const val ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN = "expires_in"
+const val ACCOUNT_MANAGER_IS_ANONYMOUS = "is_anonymous"
 
 class AccountLocalDataSource(private val accountManager: AccountManager, private val application: Application) : AccountDataSource {
 
@@ -31,7 +32,8 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
                         "u5SYFZI3Jqk4PJLim3WBw_50v7apYx9BUNyHneg-D_KtgDleZMXOJNdyyuM0SO2kL" +
                         "Q_5X_2Vrjn6ka6YPCVIzauhVrRfDezAkJwA",
                 "abcd1234",
-                3600L
+                3600L,
+                false
         )
     }
 
@@ -46,7 +48,8 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
                                     manager.getUserData(it, ACCOUNT_MANAGER_USER_ID),
                                     manager.getUserData(it, ACCOUNT_MANAGER_REFRESH_TOKEN),
                                     manager.getUserData(it, ACCOUNT_MANAGER_ID_TOKEN),
-                                    manager.getUserData(it, ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN).toLong())
+                                    manager.getUserData(it, ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN).toLong(),
+                                    manager.getUserData(it, ACCOUNT_MANAGER_IS_ANONYMOUS)?.toBoolean() ?: false)
                             inMemoryAccount
                         }
 //                        debugAccount
@@ -61,7 +64,7 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
 
     override fun refreshToken(refreshToken: String?): Flowable<AccountInfo> {
         return getAccount().let {
-            if (it == null) throw MissingRefreshTokenException()
+            if (it == null) throw NoRefreshTokenException()
             else Flowable.just(it)
         }
     }
@@ -80,6 +83,10 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
         return Flowable.empty()
     }
 
+    override fun signUpAnonymously(): Flowable<AccountInfo> {
+        return Flowable.empty()
+    }
+
     @Suppress("IMPLICIT_CAST_TO_ANY")
     private fun createOrUpdateAccountInAccountManager(account: AccountInfo) {
         accountManager.getAccountsByType(accountType).firstOrNull().let {
@@ -88,6 +95,9 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
                 putString(ACCOUNT_MANAGER_REFRESH_TOKEN, account.refreshToken)
                 putString(ACCOUNT_MANAGER_ID_TOKEN, account.idToken)
                 putString(ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN, account.expiresIn.toString())
+                account.isAnonymous?.let { value ->
+                    putString(ACCOUNT_MANAGER_IS_ANONYMOUS, value.toString())
+                }
             })
             else {
                 accountManager.apply {
@@ -95,6 +105,9 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
                     setUserData(it, ACCOUNT_MANAGER_REFRESH_TOKEN, account.refreshToken)
                     setUserData(it, ACCOUNT_MANAGER_ID_TOKEN, account.idToken)
                     setUserData(it, ACCOUNT_MANAGER_ID_TOKEN_EXPIRED_IN, account.expiresIn.toString())
+                    account.isAnonymous?.let { value ->
+                        setUserData(it, ACCOUNT_MANAGER_IS_ANONYMOUS, value.toString())
+                    }
                 }
             }
         }

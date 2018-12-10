@@ -14,14 +14,17 @@ interface AccountDataSource {
 
     fun getAccount(): AccountInfo?
 
+    @Throws(NoRefreshTokenException::class)
     fun refreshToken(refreshToken: String? = null): Flowable<AccountInfo>
 
     fun saveAccount(account: AccountInfo): Flowable<AccountInfo>
 
     fun signInWithEmailPassword(email: CharArray, password: CharArray): Flowable<AccountInfo>
 
+    fun signUpAnonymously(): Flowable<AccountInfo>
+
     fun signOut(): Completable
 }
 
-class MissingRefreshTokenException : Exception()
+class NoRefreshTokenException : Exception()
 

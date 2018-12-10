@@ -14,6 +14,7 @@ data class AccountInfo(val userId: String,
                        val refreshToken: String,
                        val idToken: String,
                        val expiresIn: Long,
+                       val isAnonymous: Boolean? = null,
                        override var retrievedTime: Date? = null,
                        override val error: Throwable? = null) : DataModel {
 
@@ -21,13 +22,15 @@ data class AccountInfo(val userId: String,
             parcel.readString()!!,
             parcel.readString()!!,
             parcel.readString()!!,
-            parcel.readLong())
+            parcel.readLong(),
+            parcel.readValue(Boolean::class.java.classLoader) as? Boolean)
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(userId)
         parcel.writeString(refreshToken)
         parcel.writeString(idToken)
         parcel.writeLong(expiresIn)
+        parcel.writeValue(isAnonymous)
     }
 
     override fun describeContents(): Int {

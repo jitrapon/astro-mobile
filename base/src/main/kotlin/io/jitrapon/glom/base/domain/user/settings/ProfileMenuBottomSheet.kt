@@ -64,6 +64,9 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
                             text = context.getString(uiModel.loginButtonUiModel.text)
                         }
                     }
+                    UiModel.Status.LOADING -> {
+                        profile_menu_bottom_sheet_auth_button.applyState(uiModel.loginButtonUiModel)
+                    }
                     else -> { /* do nothing */ }
                 }
             }

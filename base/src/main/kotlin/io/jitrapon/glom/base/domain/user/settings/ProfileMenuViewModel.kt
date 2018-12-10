@@ -5,13 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.ButtonUiModel
-import io.jitrapon.glom.base.model.Navigation
-import io.jitrapon.glom.base.model.Toast
-import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import javax.inject.Inject
 
@@ -37,32 +31,34 @@ class ProfileMenuViewModel : BaseViewModel() {
     }
 
     private fun updateInfo(isLoading: Boolean = false) {
+        val isAnonymous = userInteractor.isSignedInAnonymously
         observableUserLoginInfo.value = LoginInfoUiModel(
-                getLoginUserId(userInteractor.userId),
+                getLoginUserId(userInteractor.userId, isAnonymous),
                 userInteractor.getCurrentUserAvatar(),
-                if (isLoading) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), UiModel.Status.LOADING)
-                        else getLoginButtonState(userInteractor.isSignedIn),
-                if (isLoading) UiModel.Status.LOADING else getLoginInfoState(userInteractor.isSignedIn)
+                getLoginButtonState(isLoading, userInteractor.isSignedIn, isAnonymous),
+                getLoginInfoState(isLoading, userInteractor.isSignedIn, isAnonymous)
         )
     }
 
-    private fun getLoginUserId(userId: String?): AndroidString {
+    private fun getLoginUserId(userId: String?, isAnonymous: Boolean): AndroidString {
         return when (userId) {
             null -> AndroidString(R.string.auth_not_signed_in_label)
-            else -> AndroidString(text = userId)
+            else -> {
+                if (isAnonymous) AndroidString(R.string.auth_signed_in_anonymously) else AndroidString(text = userId)
+            }
         }
     }
 
-    private fun getLoginButtonState(isSignedIn: Boolean): ButtonUiModel {
-        return if (isSignedIn) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), UiModel.Status.NEGATIVE)
-        else ButtonUiModel(AndroidString(R.string.auth_sign_in_label), UiModel.Status.POSITIVE)
+    private fun getLoginButtonState(isLoading: Boolean, isSignedIn: Boolean, isAnonymous: Boolean): ButtonUiModel {
+        return if (isSignedIn && !isAnonymous) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), if (isLoading) UiModel.Status.LOADING else UiModel.Status.NEGATIVE)
+        else ButtonUiModel(AndroidString(R.string.auth_sign_in_label), if (isLoading) UiModel.Status.LOADING else UiModel.Status.POSITIVE)
     }
 
-    private fun getLoginInfoState(isSignedIn: Boolean): UiModel.Status =
-            if (isSignedIn) UiModel.Status.SUCCESS else UiModel.Status.EMPTY
+    private fun getLoginInfoState(isLoading: Boolean, isSignedIn: Boolean, isAnonymous: Boolean): UiModel.Status =
+            if (isLoading) UiModel.Status.LOADING else if (isSignedIn && !isAnonymous) UiModel.Status.SUCCESS else UiModel.Status.EMPTY
 
     fun signInOrSignOut() {
-        if (userInteractor.isSignedIn) {
+        if (userInteractor.isSignedIn && !userInteractor.isSignedInAnonymously) {
             updateInfo(true)
 
             userInteractor.signOut {
