@@ -43,6 +43,13 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
         }
     }
 
+    override fun signUpWithEmailPassword(email: CharArray, password: CharArray, idToken: String?): Flowable<AccountInfo> {
+        return api.signUpWithEmailPassword("http://192.168.1.35:8081/auth/signup?type=password",
+            SignUpEmailPasswordRequest(String(email), String(password), idToken)).map {
+            AccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime, false)
+        }
+    }
+
     override fun signOut(): Completable {
         return api.signOut("http://192.168.1.35:8081/token/revoke")
     }

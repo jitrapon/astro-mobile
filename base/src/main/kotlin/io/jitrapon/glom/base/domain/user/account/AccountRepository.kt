@@ -42,6 +42,13 @@ class AccountRepository(private val localDataSource: AccountDataSource,
                 localDataSource::saveAccount)
     }
 
+    override fun signUpWithEmailPassword(email: CharArray, password: CharArray, idToken: String?): Flowable<AccountInfo> {
+        return load(true,
+            localDataSource.signUpWithEmailPassword(email, password, idToken),
+            remoteDataSource.signUpWithEmailPassword(email, password, idToken),
+            localDataSource::saveAccount)
+    }
+
     override fun signOut(): Completable {
         return delete(localDataSource.signOut(), remoteDataSource.signOut(), true)
     }

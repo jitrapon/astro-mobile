@@ -17,4 +17,5 @@ data class SignInEmailPasswordRequest(@field:Json(name = "email") private val em
                                       @field:Json(name = "password") private val password: String)
 
 data class SignUpEmailPasswordRequest(@field:Json(name = "email") private val email: String,
-                                      @field:Json(name = "password") private val password: String)
+                                      @field:Json(name = "password") private val password: String,
+                                      @field:Json(name = "idToken") private val idToken: String?)

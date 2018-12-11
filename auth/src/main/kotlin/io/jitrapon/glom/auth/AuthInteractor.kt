@@ -23,4 +23,18 @@ class AuthInteractor(private val dataSource: AccountDataSource) : BaseInteractor
                 //nothing
             }).autoDispose()
     }
+
+    fun signUpWithEmailPassword(email: CharArray, password: CharArray, onComplete: (AsyncResult<Unit>) -> Unit) {
+        dataSource.signUpWithEmailPassword(email, password, accountDataSource.getAccount()?.idToken)
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(Unit))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }, {
+                //nothing
+            }).autoDispose()
+    }
 }

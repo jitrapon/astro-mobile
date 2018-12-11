@@ -51,21 +51,10 @@ class AuthActivity : BaseActivity() {
         auth_email_input_layout.hide()
         auth_password_input_layout.hide()
         auth_continue_with_email.setOnClickListener {
-            var email: CharArray? = null
-            var password: CharArray? = null
-            auth_email_edit_text.length().let { count ->
-                if (count > 0) {
-                    email = CharArray(count)
-                    auth_email_edit_text.text?.getChars(0, count, email, 0)
-                }
-            }
-            auth_password_edit_text.length().let { count ->
-                if (count > 0) {
-                    password = CharArray(count)
-                    auth_password_edit_text.text?.getChars(0, count, password, 0)
-                }
-            }
-            viewModel.continueWithEmail(email, password)
+            authenticateWithPassword(true)
+        }
+        auth_create_account.setOnClickListener {
+            authenticateWithPassword(false)
         }
     }
 
@@ -145,6 +134,24 @@ class AuthActivity : BaseActivity() {
         else {
             progressDialog.dismiss()
         }
+    }
+
+    private fun authenticateWithPassword(isSignIn: Boolean) {
+        var email: CharArray? = null
+        var password: CharArray? = null
+        auth_email_edit_text.length().let { count ->
+            if (count > 0) {
+                email = CharArray(count)
+                auth_email_edit_text.text?.getChars(0, count, email, 0)
+            }
+        }
+        auth_password_edit_text.length().let { count ->
+            if (count > 0) {
+                password = CharArray(count)
+                auth_password_edit_text.text?.getChars(0, count, password, 0)
+            }
+        }
+        viewModel.continueWithEmail(email, password, isSignIn)
     }
 
     private fun expandEmailLayout() {

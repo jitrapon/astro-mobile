@@ -93,6 +93,10 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
         return Flowable.empty()
     }
 
+    override fun signUpWithEmailPassword(email: CharArray, password: CharArray, idToken: String?): Flowable<AccountInfo> {
+        return Flowable.empty()
+    }
+
     override fun signUpAnonymously(): Flowable<AccountInfo> {
         return Flowable.empty()
     }

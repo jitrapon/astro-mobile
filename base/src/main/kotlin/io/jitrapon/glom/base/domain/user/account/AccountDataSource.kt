@@ -23,6 +23,8 @@ interface AccountDataSource {
 
     fun signUpAnonymously(): Flowable<AccountInfo>
 
+    fun signUpWithEmailPassword(email: CharArray, password: CharArray, idToken: String?): Flowable<AccountInfo>
+
     fun signOut(): Completable
 }
 

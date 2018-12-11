@@ -42,7 +42,7 @@ class AuthViewModel : BaseViewModel() {
         requestCredential()
     }
 
-    fun continueWithEmail(email: CharArray? = null, password: CharArray? = null) {
+    fun continueWithEmail(email: CharArray? = null, password: CharArray? = null, isSignIn: Boolean) {
         if (!authUiModel.showEmailExpandableLayout) {
             // expand menu and show credential hints
             arrayOf({
@@ -61,7 +61,8 @@ class AuthViewModel : BaseViewModel() {
                     passwordError = null
                 }
 
-                signInWithPassword(email!!, password!!)
+                if (isSignIn) signInWithPassword(email!!, password!!)
+                else signUpWithPassword(email!!, password!!)
             }
             else {
                 observableAuth.value = authUiModel.apply {
@@ -77,6 +78,34 @@ class AuthViewModel : BaseViewModel() {
         observableViewAction.value = Loading(true)
 
         authInteractor.signInWithEmailPassword(email, password) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableViewAction.value = Loading(false)
+
+                    observableCredentialSave.value = CredentialSaveUiModel(email, password, AccountType.PASSWORD)
+
+                    Arrays.fill(email, ' ')
+                    Arrays.fill(password, ' ')
+                }
+                is AsyncErrorResult -> {
+                    handleError(it.error, true)
+
+                    // if the cause of the error is a HttpException, delete the stored credentials
+                    if (it.error.cause is HttpException) {
+                        observableCredentialSave.value = CredentialSaveUiModel(email, password, AccountType.PASSWORD, shouldDelete = true)
+                    }
+
+                    Arrays.fill(email, ' ')
+                    Arrays.fill(password, ' ')
+                }
+            }
+        }
+    }
+
+    private fun signUpWithPassword(email: CharArray, password: CharArray) {
+        observableViewAction.value = Loading(true)
+
+        authInteractor.signUpWithEmailPassword(email, password) {
             when (it) {
                 is AsyncSuccessResult -> {
                     observableViewAction.value = Loading(false)
