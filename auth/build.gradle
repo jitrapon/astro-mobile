@@ -51,7 +51,7 @@ dependencies {
     api "com.google.android.gms:play-services-auth:$rootProject.playServicesAuthVersion"
 
     // facebook
-//    implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {
-//        exclude group: 'com.android.support'
-//    }
+    implementation ("com.facebook.android:facebook-login:$rootProject.facebookSdkVersion") {
+        exclude group: 'com.android.support'
+    }
 }

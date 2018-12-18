@@ -52,6 +52,8 @@ android {
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
             resValue "string", "server_url", "http://192.168.1.35:8080/"
             resValue "string", "account_manager_account_type", "io.jitrapon.glom"
+            resValue "string", "facebook_app_id", "440894693112447"
+            resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
         }
         release {
             minifyEnabled true
@@ -63,6 +65,8 @@ android {
             resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
             resValue "string", "server_url", "http://163.47.10.120:8080/"
             resValue "string", "account_manager_account_type", "io.jitrapon.glom"
+            resValue "string", "facebook_app_id", "440894693112447"
+            resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
         }
     }
 }
