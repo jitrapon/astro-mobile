@@ -15,6 +15,12 @@ android {
     }
 
     signingConfigs {
+        debug {
+            keyAlias rootProject.keystoreProperties['keyAlias']
+            keyPassword rootProject.keystoreProperties['keyPassword']
+            storeFile file(rootProject.debugKeystorePath)
+            storePassword rootProject.keystoreProperties['storePassword']
+        }
         release {
             keyAlias rootProject.keystoreProperties['keyAlias']
             keyPassword rootProject.keystoreProperties['keyPassword']
@@ -32,7 +38,9 @@ android {
     }
 
     buildTypes {
-        debug {}
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             signingConfig signingConfigs.release
         }

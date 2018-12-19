@@ -42,7 +42,8 @@ buildscript {
         espressoVersion = '3.0.1'
 
         keystoreProperties = new Properties()
-        releaseKeystorePath = '../release.keystore'
+        debugKeystorePath = '../keystore.jks'
+        releaseKeystorePath = '../keystore.jks'
 
         debugIdSuffix = ".debug"
     }

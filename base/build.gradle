@@ -23,6 +23,12 @@ android {
     }
 
     signingConfigs {
+        debug {
+            keyAlias rootProject.keystoreProperties['keyAlias']
+            keyPassword rootProject.keystoreProperties['keyPassword']
+            storeFile file(rootProject.debugKeystorePath)
+            storePassword rootProject.keystoreProperties['storePassword']
+        }
         release {
             keyAlias rootProject.keystoreProperties['keyAlias']
             keyPassword rootProject.keystoreProperties['keyPassword']
@@ -44,6 +50,7 @@ android {
             minifyEnabled true
             useProguard false
             debuggable true
+            signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
 
             ext.enableCrashlytics = false

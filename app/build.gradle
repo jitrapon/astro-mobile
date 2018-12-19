@@ -14,6 +14,12 @@ android {
     }
 
     signingConfigs {
+        debug {
+            keyAlias rootProject.keystoreProperties['keyAlias']
+            keyPassword rootProject.keystoreProperties['keyPassword']
+            storeFile file(rootProject.debugKeystorePath)
+            storePassword rootProject.keystoreProperties['storePassword']
+        }
         release {
             keyAlias rootProject.keystoreProperties['keyAlias']
             keyPassword rootProject.keystoreProperties['keyPassword']
@@ -34,6 +40,7 @@ android {
             debuggable true
             ext.enableCrashlytics = false       //TODO need to disable the Crashlytics kit at runtime
             ext.alwaysUpdateBuildId = false
+            signingConfig signingConfigs.debug
         }
         release {
             minifyEnabled true
