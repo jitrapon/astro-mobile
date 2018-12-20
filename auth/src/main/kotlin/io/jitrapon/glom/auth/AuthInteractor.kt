@@ -1,6 +1,7 @@
 package io.jitrapon.glom.auth
 
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
+import io.jitrapon.glom.base.domain.user.account.OAuthAccountInfo
 import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
@@ -31,6 +32,20 @@ class AuthInteractor(private val dataSource: AccountDataSource) : BaseInteractor
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 onComplete(AsyncSuccessResult(Unit))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }, {
+                //nothing
+            }).autoDispose()
+    }
+
+    fun signInWithOAuthCredential(oAuthToken: String, onComplete: (AsyncResult<OAuthAccountInfo>) -> Unit) {
+        dataSource.signInWithOAuthCredential(oAuthToken)
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(it))
             }, {
                 onComplete(AsyncErrorResult(it))
             }, {

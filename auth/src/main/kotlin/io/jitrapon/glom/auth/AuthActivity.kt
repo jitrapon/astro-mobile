@@ -21,7 +21,6 @@ import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.*
 import kotlinx.android.synthetic.main.auth_activity.*
 
-
 const val REQUEST_CODE_CREDENTIALS_HINT = 1000
 const val REQUEST_CODE_RESOLVE_CREDENTIALS = 1001
 const val REQUEST_CODE_SAVE_CREDENTIALS = 1002
@@ -31,7 +30,7 @@ const val REQUEST_CODE_SAVE_CREDENTIALS = 1002
  *
  * Created by Jitrapon
  */
-class AuthActivity : BaseActivity() {
+class AuthActivity : BaseActivity(), AuthView {
 
     private lateinit var viewModel: AuthViewModel
 
@@ -55,6 +54,9 @@ class AuthActivity : BaseActivity() {
         }
         auth_create_account.setOnClickListener {
             authenticateWithPassword(false)
+        }
+        auth_facebook_button.setOnClickListener {
+            viewModel.continueWithFacebook(this)
         }
     }
 
@@ -104,6 +106,7 @@ class AuthActivity : BaseActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        viewModel.processOauthResult(requestCode, resultCode, data)
 
         // upon selecting a credential from the hint picker, pre-fill the selected email
         if (requestCode == REQUEST_CODE_CREDENTIALS_HINT) {
@@ -241,6 +244,17 @@ class AuthActivity : BaseActivity() {
                 null
             }
             AccountType.FACEBOOK -> {
+                if (credentialSaveUiModel.email == null) {
+                    viewModel.onSaveCredentialCompleted()
+                    return
+                }
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                    .setAccountType(IdentityProviders.FACEBOOK)
+                    .setName(credentialSaveUiModel.name)
+                    .build()
+            }
+            AccountType.LINE -> {
                 null
             }
         }
@@ -296,6 +310,9 @@ class AuthActivity : BaseActivity() {
                 null
             }
             AccountType.FACEBOOK -> {
+                null
+            }
+            AccountType.LINE -> {
                 null
             }
         }

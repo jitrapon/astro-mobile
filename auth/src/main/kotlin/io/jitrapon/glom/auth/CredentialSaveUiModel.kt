@@ -3,7 +3,7 @@ package io.jitrapon.glom.auth
 import io.jitrapon.glom.base.model.UiActionModel
 
 enum class AccountType {
-    PASSWORD, GOOGLE, FACEBOOK
+    PASSWORD, GOOGLE, FACEBOOK, LINE
 }
 
 data class CredentialSaveUiModel(val email: CharArray?,

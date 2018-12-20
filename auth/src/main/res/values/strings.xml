@@ -9,4 +9,6 @@
     <string name="auth_create_account">Sign up</string>
     <string name="auth_email_empty_error">Please input this field</string>
     <string name="auth_password_empty_error">Please input this field</string>
+    <string name="auth_facebook_login">Facebook</string>
+    <string name="auth_oauth_third_party_failure">Unable to retrieve your information from $1%s, please try again with a different account or provider</string>
 </resources>

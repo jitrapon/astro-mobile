@@ -1,7 +1,9 @@
 package io.jitrapon.glom.auth
 
+import android.os.Parcelable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.jitrapon.glom.auth.oauth.BaseOauthInteractor
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
@@ -9,6 +11,7 @@ import io.jitrapon.glom.base.viewmodel.run
 import retrofit2.HttpException
 import java.util.*
 import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * Created by Jitrapon
@@ -33,6 +36,11 @@ class AuthViewModel : BaseViewModel() {
 
     @Inject
     lateinit var authInteractor: AuthInteractor
+
+    @field:[Inject Named("facebook")]
+    lateinit var facebookInteractor: BaseOauthInteractor
+
+    private var currentOauthType: AccountType? = null
 
     init {
         AuthInjector.getComponent().inject(this)
@@ -136,6 +144,48 @@ class AuthViewModel : BaseViewModel() {
 
     private fun requestCredential() {
         observableCredentialRequest.value = CredentialRequestUiModel(true)
+    }
+
+    fun continueWithFacebook(authView: AuthView) {
+        currentOauthType = AccountType.FACEBOOK
+
+        facebookInteractor.acquireToken(authView) {
+            when (it) {
+                is AsyncSuccessResult -> handleOauthSuccess(it.result)
+                is AsyncErrorResult -> handleOauthError(it.error)
+            }
+        }
+    }
+
+    fun processOauthResult(requestCode: Int, resultCode: Int, data: Parcelable?) {
+        val interactor = when (currentOauthType) {
+            AccountType.FACEBOOK -> facebookInteractor
+            AccountType.GOOGLE -> null
+            AccountType.LINE -> null
+            else -> null
+        }
+        interactor?.processOauthResult(requestCode, resultCode, data)
+    }
+
+    private fun handleOauthSuccess(oAuthToken: String) {
+        observableViewAction.value = Loading(true)
+
+        authInteractor.signInWithOAuthCredential(oAuthToken) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    observableViewAction.value = Loading(false)
+
+                    // https://stackoverflow.com/questions/34414532/store-facebook-credential-in-android-for-google-smart-lock-password
+                    // https://github.com/googlesamples/android-credentials/issues/6#issuecomment-168844689
+                    observableCredentialSave.value = CredentialSaveUiModel(it.result.email?.toCharArray(), null,
+                        currentOauthType!!, it.result.displayName)
+                }
+            }
+        }
+    }
+
+    private fun handleOauthError(ex: Throwable) {
+
     }
 
     override fun onCleared() {
