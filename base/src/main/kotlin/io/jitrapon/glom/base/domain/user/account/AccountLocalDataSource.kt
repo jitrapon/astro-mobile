@@ -97,6 +97,10 @@ class AccountLocalDataSource(private val accountManager: AccountManager, private
         return Flowable.empty()
     }
 
+    override fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo> {
+        throw NotImplementedError()
+    }
+
     override fun signUpAnonymously(): Flowable<AccountInfo> {
         return Flowable.empty()
     }

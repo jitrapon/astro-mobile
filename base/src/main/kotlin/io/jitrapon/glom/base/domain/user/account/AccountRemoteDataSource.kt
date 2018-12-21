@@ -50,6 +50,13 @@ class AccountRemoteDataSource : RemoteDataSource(), AccountDataSource {
         }
     }
 
+    override fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo> {
+        return api.signInWithOAuthCredential("http://192.168.1.35:8081/auth/signin?type=oauth",
+            SignInWithOAuthCredentialRequest(token, provider)).map {
+                OAuthAccountInfo(it.userId, it.refreshToken, it.idToken, it.expireTime, it.email, it.providerId, it.fullName, it.displayName, it.photoUrl)
+            }
+    }
+
     override fun signOut(): Completable {
         return api.signOut("http://192.168.1.35:8081/token/revoke")
     }

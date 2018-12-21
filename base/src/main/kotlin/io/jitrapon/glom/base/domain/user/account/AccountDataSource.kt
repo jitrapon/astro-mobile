@@ -27,7 +27,7 @@ interface AccountDataSource {
 
     fun signOut(): Completable
 
-    fun signInWithOAuthCredential(token: String): Flowable<OAuthAccountInfo>
+    fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo>
 }
 
 class NoRefreshTokenException : Exception()

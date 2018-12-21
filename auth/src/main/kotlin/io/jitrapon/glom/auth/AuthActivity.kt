@@ -338,9 +338,7 @@ class AuthActivity : BaseActivity(), AuthView {
             else if (it == IdentityProviders.GOOGLE) {
 
             }
-            else if (it == IdentityProviders.FACEBOOK) {
-
-            }
+            else if (it == IdentityProviders.FACEBOOK) viewModel.continueWithFacebook(this)
         }
     }
 

@@ -7,6 +7,7 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.internal.util.HalfSerializer.onComplete
 import io.reactivex.schedulers.Schedulers
 
 class AuthInteractor(private val dataSource: AccountDataSource) : BaseInteractor() {
@@ -39,8 +40,14 @@ class AuthInteractor(private val dataSource: AccountDataSource) : BaseInteractor
             }).autoDispose()
     }
 
-    fun signInWithOAuthCredential(oAuthToken: String, onComplete: (AsyncResult<OAuthAccountInfo>) -> Unit) {
-        dataSource.signInWithOAuthCredential(oAuthToken)
+    fun signInWithOAuthCredential(oAuthToken: String, provider: AccountType, onComplete: (AsyncResult<OAuthAccountInfo>) -> Unit) {
+        val providerId = when (provider) {
+            AccountType.FACEBOOK -> "FACEBOOK"
+            AccountType.GOOGLE -> "GOOGLE"
+            AccountType.LINE -> "LINE"
+            AccountType.PASSWORD -> "PASSWORD"
+        }
+        dataSource.signInWithOAuthCredential(oAuthToken, providerId)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

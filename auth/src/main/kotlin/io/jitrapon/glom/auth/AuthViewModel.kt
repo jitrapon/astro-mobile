@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.auth.oauth.BaseOauthInteractor
 import io.jitrapon.glom.base.NAVIGATE_TO_MAIN
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.run
 import retrofit2.HttpException
@@ -170,22 +171,43 @@ class AuthViewModel : BaseViewModel() {
     private fun handleOauthSuccess(oAuthToken: String) {
         observableViewAction.value = Loading(true)
 
-        authInteractor.signInWithOAuthCredential(oAuthToken) {
-            when (it) {
+        currentOauthType ?: return
+
+        authInteractor.signInWithOAuthCredential(oAuthToken, currentOauthType!!) { result ->
+            when (result) {
                 is AsyncSuccessResult -> {
                     observableViewAction.value = Loading(false)
 
+                    val name = result.result.displayName
+
                     // https://stackoverflow.com/questions/34414532/store-facebook-credential-in-android-for-google-smart-lock-password
                     // https://github.com/googlesamples/android-credentials/issues/6#issuecomment-168844689
-                    observableCredentialSave.value = CredentialSaveUiModel(it.result.email?.toCharArray(), null,
-                        currentOauthType!!, it.result.displayName)
+                    observableCredentialSave.value = CredentialSaveUiModel(
+                        result.result.email?.toCharArray(), null,
+                        currentOauthType!!, name)
                 }
+                is AsyncErrorResult -> handleError(result.error, true)
             }
         }
     }
 
     private fun handleOauthError(ex: Throwable) {
+        val oAuthProvider = when (currentOauthType) {
+            AccountType.FACEBOOK -> "Facebook"
+            AccountType.GOOGLE -> "Google"
+            AccountType.LINE -> "LINE"
+            else -> "unknown"
+        }
+        when (ex) {
+            is BaseOauthInteractor.OperationCanceledException ->
+                observableViewAction.value = Toast(AndroidString(R.string.auth_oauth_canceled, arrayOf(oAuthProvider)))
+            is BaseOauthInteractor.NoAccessTokenException,
+            is BaseOauthInteractor.OperationFailedException -> {
+                observableViewAction.value = Toast(AndroidString(R.string.auth_oauth_failure, arrayOf(oAuthProvider)))
 
+                AppLogger.e(ex)
+            }
+        }
     }
 
     override fun onCleared() {

@@ -27,5 +27,9 @@ interface AccountApi {
                                 @Body request: SignUpEmailPasswordRequest): Flowable<AccountInfoResponse>
 
     @POST
+    fun signInWithOAuthCredential(@Url url: String,
+                                  @Body request: SignInWithOAuthCredentialRequest): Flowable<SignInWithOAuthCredentialResponse>
+
+    @POST
     fun signOut(@Url url: String): Completable
 }

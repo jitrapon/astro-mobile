@@ -49,6 +49,14 @@ class AccountRepository(private val localDataSource: AccountDataSource,
             localDataSource::saveAccount)
     }
 
+    override fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo> {
+        return remoteDataSource.signInWithOAuthCredential(token, provider)
+            .map {
+                localDataSource.saveAccount(AccountInfo(it.userId, it.refreshToken, it.idToken, it.expiresIn, false))
+                it
+            }
+    }
+
     override fun signOut(): Completable {
         return delete(localDataSource.signOut(), remoteDataSource.signOut(), true)
     }
