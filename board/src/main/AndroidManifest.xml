@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.jitrapon.glom.board">
 
-    <application>
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity android:name=".BoardActivity">
 
             <intent-filter android:order="1"
