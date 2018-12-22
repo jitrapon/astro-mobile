@@ -43,7 +43,7 @@
                 android:clipToPadding="false"
                 android:scrollbarStyle="insideOverlay"
                 android:scrollbars="none"
-                android:paddingBottom="@dimen/spacing_normal" >
+                android:paddingBottom="48dp" >
 
             </androidx.recyclerview.widget.RecyclerView>
 

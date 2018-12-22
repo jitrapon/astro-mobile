@@ -6,6 +6,7 @@ import android.content.Context
 import android.text.TextUtils
 import android.view.View
 import android.view.View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION
+import android.view.ViewGroup
 import android.view.ViewPropertyAnimator
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.ColorRes
@@ -130,4 +131,14 @@ inline fun View.findViewsWithContentDescription(description: CharSequence, apply
         findViewsWithText(this, description, FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
         applyFunction(this)
     }
+}
+
+/**
+ * Sets this view's layout params margin in DP
+ */
+fun View.setMargin(left: Int? = null, top: Int? = null, right: Int? = null, bottom: Int? = null) {
+    val params = (layoutParams as ViewGroup.MarginLayoutParams).apply {
+        setMargins(left?.px ?: leftMargin, top?.px ?: topMargin, right?.px ?: rightMargin, bottom?.px ?: bottomMargin)
+    }
+    layoutParams = params
 }
