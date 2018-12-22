@@ -1,0 +1,6 @@
+<resources>
+
+    <style name="Theme.Glom" parent="Theme.Glom.Base">
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>
