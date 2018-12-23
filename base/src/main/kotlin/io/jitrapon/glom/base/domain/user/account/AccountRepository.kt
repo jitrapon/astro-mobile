@@ -52,7 +52,7 @@ class AccountRepository(private val localDataSource: AccountDataSource,
     override fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo> {
         return remoteDataSource.signInWithOAuthCredential(token, provider)
             .map {
-                localDataSource.saveAccount(AccountInfo(it.userId, it.refreshToken, it.idToken, it.expiresIn, false))
+                localDataSource.saveAccount(AccountInfo(it.userId, it.refreshToken, it.idToken, it.expiresIn, false)).blockingFirst()
                 it
             }
     }
