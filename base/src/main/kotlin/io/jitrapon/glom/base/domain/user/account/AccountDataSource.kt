@@ -23,11 +23,19 @@ interface AccountDataSource {
 
     fun signUpAnonymously(): Flowable<AccountInfo>
 
+    /**
+     * Creates a new account with the specified email and password. Optionally specify an idToken
+     * from an anonymous session to link it with the newly created account
+     */
     fun signUpWithEmailPassword(email: CharArray, password: CharArray, idToken: String?): Flowable<AccountInfo>
 
     fun signOut(): Completable
 
-    fun signInWithOAuthCredential(token: String, provider: String): Flowable<OAuthAccountInfo>
+    /**
+     * Creates a new account with the specified access or id token from an oauth provider. Optionally specify an idToken
+     * from an anonymous session to link it with the newly created account
+     */
+    fun signInWithOAuthCredential(token: String, provider: String, idToken: String?): Flowable<OAuthAccountInfo>
 }
 
 class NoRefreshTokenException : Exception()

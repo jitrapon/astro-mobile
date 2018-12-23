@@ -21,7 +21,8 @@ data class SignUpEmailPasswordRequest(@field:Json(name = "email") private val em
                                       @field:Json(name = "id_token") private val idToken: String?)
 
 data class SignInWithOAuthCredentialRequest(@field:Json(name = "credential") private val token: String,
-                                            @field:Json(name = "provider_id") private val providerId: String)
+                                            @field:Json(name = "provider_id") private val providerId: String,
+                                            @field:Json(name = "id_token") private val idToken: String?)
 
 data class SignInWithOAuthCredentialResponse(@field:Json(name = "id_token") val idToken: String,
                                              @field:Json(name = "refresh_token") val refreshToken: String,
