@@ -21,7 +21,7 @@ interface BaseOauthInteractor {
     /**
      * Process the result from Oauth library
      */
-    fun processOauthResult(requestCode: Int, resultCode: Int, data: Parcelable?)
+    fun processOauthResult(authView: AuthView?, requestCode: Int, resultCode: Int, data: Parcelable?)
 
     /**
      * This exception should be used to indicate that the user has manually cancelled the authentication exception
@@ -37,5 +37,5 @@ interface BaseOauthInteractor {
     /**
      * This exception should bev used to indicate that the login operation has failed with a cause
      */
-    class OperationFailedException(cause: Exception) : Exception("Operation failed", cause)
+    class OperationFailedException(cause: Exception?) : Exception("Operation failed", cause)
 }

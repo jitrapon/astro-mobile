@@ -24,6 +24,7 @@ import kotlinx.android.synthetic.main.auth_activity.*
 const val REQUEST_CODE_CREDENTIALS_HINT = 1000
 const val REQUEST_CODE_RESOLVE_CREDENTIALS = 1001
 const val REQUEST_CODE_SAVE_CREDENTIALS = 1002
+const val REQUEST_CODE_SIGN_IN = 1003
 
 /**
  * This activity is the main entry to the auth screen. Supports login and sign up flow.
@@ -57,6 +58,9 @@ class AuthActivity : BaseActivity(), AuthView {
         }
         auth_facebook_button.setOnClickListener {
             viewModel.continueWithFacebook(this)
+        }
+        auth_google_button.setOnClickListener {
+            viewModel.continueWithGoogle(this)
         }
     }
 
@@ -106,7 +110,7 @@ class AuthActivity : BaseActivity(), AuthView {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        viewModel.processOauthResult(requestCode, resultCode, data)
+        viewModel.processOauthResult(this, requestCode, resultCode, data)
 
         // upon selecting a credential from the hint picker, pre-fill the selected email
         if (requestCode == REQUEST_CODE_CREDENTIALS_HINT) {
@@ -129,6 +133,10 @@ class AuthActivity : BaseActivity(), AuthView {
     }
 
     //endregion
+
+    override fun onRequireSignIn(intent: Intent) {
+        startActivityForResult(intent, REQUEST_CODE_SIGN_IN)
+    }
 
     override fun showLoading(show: Boolean) {
         if (show) {
@@ -306,15 +314,9 @@ class AuthActivity : BaseActivity(), AuthView {
                         .setPassword(if (credentialSaveUiModel.password == null) null else String(credentialSaveUiModel.password))
                         .build()
             }
-            AccountType.GOOGLE -> {
-                null
-            }
-            AccountType.FACEBOOK -> {
-                null
-            }
-            AccountType.LINE -> {
-                null
-            }
+            AccountType.GOOGLE -> null
+            AccountType.FACEBOOK -> null
+            AccountType.LINE -> null
         }
         credential ?: return
 
@@ -335,9 +337,7 @@ class AuthActivity : BaseActivity(), AuthView {
                     viewModel.signInWithPassword(email, password)
                 }
             }
-            else if (it == IdentityProviders.GOOGLE) {
-
-            }
+            else if (it == IdentityProviders.GOOGLE) viewModel.continueWithGoogle(this)
             else if (it == IdentityProviders.FACEBOOK) viewModel.continueWithFacebook(this)
         }
     }

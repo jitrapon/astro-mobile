@@ -41,6 +41,9 @@ class AuthViewModel : BaseViewModel() {
     @field:[Inject Named("facebook")]
     lateinit var facebookInteractor: BaseOauthInteractor
 
+    @field:[Inject Named("google")]
+    lateinit var googleInteractor: BaseOauthInteractor
+
     private var currentOauthType: AccountType? = null
 
     init {
@@ -158,14 +161,25 @@ class AuthViewModel : BaseViewModel() {
         }
     }
 
-    fun processOauthResult(requestCode: Int, resultCode: Int, data: Parcelable?) {
+    fun continueWithGoogle(authView: AuthView) {
+        currentOauthType = AccountType.GOOGLE
+
+        googleInteractor.acquireToken(authView) {
+            when (it) {
+                is AsyncSuccessResult -> handleOauthSuccess(it.result)
+                is AsyncErrorResult -> handleOauthError(it.error)
+            }
+        }
+    }
+
+    fun processOauthResult(authView: AuthView, requestCode: Int, resultCode: Int, data: Parcelable?) {
         val interactor = when (currentOauthType) {
             AccountType.FACEBOOK -> facebookInteractor
-            AccountType.GOOGLE -> null
+            AccountType.GOOGLE -> googleInteractor
             AccountType.LINE -> null
             else -> null
         }
-        interactor?.processOauthResult(requestCode, resultCode, data)
+        interactor?.processOauthResult(authView, requestCode, resultCode, data)
     }
 
     private fun handleOauthSuccess(oAuthToken: String) {

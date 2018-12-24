@@ -61,6 +61,7 @@ android {
             resValue "string", "account_manager_account_type", "io.jitrapon.glom"
             resValue "string", "facebook_app_id", "440894693112447"
             resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
+            resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
         }
         release {
             minifyEnabled true
@@ -74,6 +75,7 @@ android {
             resValue "string", "account_manager_account_type", "io.jitrapon.glom"
             resValue "string", "facebook_app_id", "440894693112447"
             resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
+            resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
         }
     }
 }

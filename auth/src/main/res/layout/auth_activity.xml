@@ -166,9 +166,17 @@
         app:layout_constraintStart_toEndOf="@+id/auth_facebook_button"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginEnd="42dp"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="8dp"
+        android:drawableStart="@drawable/googleg_standard_color_18"
+        android:drawablePadding="0dp"
+        android:paddingStart="18dp"
+        android:paddingEnd="0dp"
+        android:text="@string/auth_google_login"
+        android:textColor="@color/common_google_signin_btn_text_light"
+        android:textAllCaps="false" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:visibility="invisible"
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"

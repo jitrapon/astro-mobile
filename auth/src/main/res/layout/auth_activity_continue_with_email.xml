@@ -157,6 +157,7 @@
         android:layout_marginBottom="8dp" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:visibility="invisible"
         style="@style/Widget.Glom.Button.Raised.Colored"
         android:theme="@style/Theme.Glom.Button.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"

@@ -60,7 +60,7 @@ class FacebookInteractor : BaseOauthInteractor {
         }
     }
 
-    override fun processOauthResult(requestCode: Int, resultCode: Int, data: Parcelable?) {
+    override fun processOauthResult(authView: AuthView?, requestCode: Int, resultCode: Int, data: Parcelable?) {
         callbackManager.onActivityResult(requestCode, resultCode, data as? Intent)
     }
 }
