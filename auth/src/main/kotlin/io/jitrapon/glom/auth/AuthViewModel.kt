@@ -44,6 +44,9 @@ class AuthViewModel : BaseViewModel() {
     @field:[Inject Named("google")]
     lateinit var googleInteractor: BaseOauthInteractor
 
+    @field:[Inject Named("line")]
+    lateinit var lineInteractor: BaseOauthInteractor
+
     private var currentOauthType: AccountType? = null
 
     init {
@@ -172,11 +175,22 @@ class AuthViewModel : BaseViewModel() {
         }
     }
 
+    fun continueWithLine(authView: AuthView) {
+        currentOauthType = AccountType.LINE
+
+        lineInteractor.acquireToken(authView) {
+            when (it) {
+                is AsyncSuccessResult -> handleOauthSuccess(it.result)
+                is AsyncErrorResult -> handleOauthError(it.error)
+            }
+        }
+    }
+
     fun processOauthResult(authView: AuthView, requestCode: Int, resultCode: Int, data: Parcelable?) {
         val interactor = when (currentOauthType) {
             AccountType.FACEBOOK -> facebookInteractor
             AccountType.GOOGLE -> googleInteractor
-            AccountType.LINE -> null
+            AccountType.LINE -> lineInteractor
             else -> null
         }
         interactor?.processOauthResult(authView, requestCode, resultCode, data)

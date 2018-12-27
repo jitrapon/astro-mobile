@@ -23,6 +23,7 @@ buildscript {
         lifecycleVersion = '2.0.0'
         roomVersion = '2.0.0-rc01'
         pagingVersion = '2.0.0-rc01'
+        browserVersion = '1.0.0'
 
         playServicesPlaceVersion = '15.0.1'
         playServicesAuthVersion = '15.0.1'
@@ -37,6 +38,7 @@ buildscript {
         okhttp3Version = '3.10.0'
         timberVersion = '4.6.0'
         lottieVersion = '2.8.0'
+        lineSdkVersion = '5.0.1'
 
         junitVersion = '4.12'
         espressoVersion = '3.0.1'
@@ -65,6 +67,9 @@ allprojects {
         jcenter()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        flatDir {
+            dirs '../auth/libs'
+        }
     }
 }
 

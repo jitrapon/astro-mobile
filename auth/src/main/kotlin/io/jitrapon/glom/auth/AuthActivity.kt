@@ -62,6 +62,9 @@ class AuthActivity : BaseActivity(), AuthView {
         auth_google_button.setOnClickListener {
             viewModel.continueWithGoogle(this)
         }
+        auth_line_button.setOnClickListener {
+            viewModel.continueWithLine(this)
+        }
     }
 
     override fun onCreateViewModel() {
@@ -249,7 +252,15 @@ class AuthActivity : BaseActivity(), AuthView {
                     .build()
             }
             AccountType.GOOGLE -> {
-                null
+                if (credentialSaveUiModel.email == null) {
+                    viewModel.onSaveCredentialCompleted()
+                    return
+                }
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                    .setAccountType(IdentityProviders.GOOGLE)
+                    .setName(credentialSaveUiModel.name)
+                    .build()
             }
             AccountType.FACEBOOK -> {
                 if (credentialSaveUiModel.email == null) {
@@ -314,8 +325,22 @@ class AuthActivity : BaseActivity(), AuthView {
                         .setPassword(if (credentialSaveUiModel.password == null) null else String(credentialSaveUiModel.password))
                         .build()
             }
-            AccountType.GOOGLE -> null
-            AccountType.FACEBOOK -> null
+            AccountType.GOOGLE -> {
+                credentialSaveUiModel.email ?: return
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                    .setAccountType(IdentityProviders.GOOGLE)
+                    .setName(credentialSaveUiModel.name)
+                    .build()
+            }
+            AccountType.FACEBOOK -> {
+                credentialSaveUiModel.email ?: return
+
+                Credential.Builder(String(credentialSaveUiModel.email))
+                    .setAccountType(IdentityProviders.FACEBOOK)
+                    .setName(credentialSaveUiModel.name)
+                    .build()
+            }
             AccountType.LINE -> null
         }
         credential ?: return

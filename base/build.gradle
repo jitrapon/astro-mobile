@@ -62,6 +62,7 @@ android {
             resValue "string", "facebook_app_id", "440894693112447"
             resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
             resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
+            resValue "string", "line_channel_id", "1634381849"
         }
         release {
             minifyEnabled true
@@ -76,6 +77,7 @@ android {
             resValue "string", "facebook_app_id", "440894693112447"
             resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
             resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
+            resValue "string", "line_channel_id", "1634381849"
         }
     }
 }
@@ -114,6 +116,7 @@ dependencies {
     api ("com.github.bumptech.glide:recyclerview-integration:$rootProject.glideVersion") {
         transitive = false
     }
+    api "androidx.browser:browser:$rootProject.browserVersion"
 
     // architecture components
     // ViewModel and LiveData
