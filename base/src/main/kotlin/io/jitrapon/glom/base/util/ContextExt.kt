@@ -1,7 +1,10 @@
 package io.jitrapon.glom.base.util
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.text.TextUtils
 import android.util.TypedValue
 import android.widget.Toast
@@ -11,6 +14,9 @@ import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 
@@ -107,3 +113,41 @@ fun Context.isLandscape(): Boolean = resources.configuration.orientation == Conf
  * Converts a res ID to a Drawable resource
  */
 fun Context.drawable(@DrawableRes resId: Int) = ContextCompat.getDrawable(this, resId)
+
+/**
+ * Returns true iff Google Play Services is installed and available on this device
+ */
+fun Context.hasPlayServices(): Boolean {
+    return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
+}
+
+/**
+ * Returns true iff the app has been granted the Location permissions
+ */
+fun Context.hasLocationPermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+    else true
+}
+
+/**
+ * Returns true iff the app has been granted the Read Calendar permission
+ */
+fun Context.hasReadCalendarPermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+    }
+    else true
+}
+
+/**
+ * Returns true iff the app has been granted the Write Calendar permission
+ */
+fun Context.hasWriteCalendarPermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED
+    }
+    else true
+}

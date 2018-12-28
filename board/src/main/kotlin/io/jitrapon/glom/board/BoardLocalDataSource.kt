@@ -8,7 +8,7 @@ import io.reactivex.Flowable
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: UserInteractor) : BoardDataSource {
+class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: CalendarDao, private val userInteractor: UserInteractor) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
     private val lock: Any = Any()
@@ -17,7 +17,7 @@ class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: 
     /* previously fetched board item type */
     private var lastFetchedItemType: AtomicInteger = AtomicInteger(Integer.MIN_VALUE)
 
-    /* DAO access object to event items */
+    /* DAO access object to event items in local DB */
     private val eventDao: EventItemDao = database.eventItemDao()
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
@@ -29,7 +29,10 @@ class BoardLocalDataSource(database: BoardDatabase, private val userInteractor: 
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
                     eventDao.getEventsInCircle(circleId).toFlowable()
-                            .map { it.toBoard(circleId, userInteractor.getCurrentUserId()) }
+                            .map {
+                                calendarDao.getEvents().blockingFirst()
+                                it.toBoard(circleId, userInteractor.getCurrentUserId())
+                            }
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it

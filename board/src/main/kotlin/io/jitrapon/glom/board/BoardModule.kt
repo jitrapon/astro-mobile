@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -13,12 +14,16 @@ class BoardModule {
 
     @Provides
     @BoardScope
+    fun provideCalendarDao(application: Application): CalendarDao = CalendarDaoImpl(application.applicationContext)
+
+    @Provides
+    @BoardScope
     fun provideDatabase(application: Application): BoardDatabase = Room.databaseBuilder(application.applicationContext, BoardDatabase::class.java, "board.db").build()
 
     @Provides
     @BoardScope
-    fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase, userInteractor: UserInteractor): BoardDataSource =
-            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, userInteractor))
+    fun provideBoardDataSource(circleInteractor: CircleInteractor, calendarDao: CalendarDao, database: BoardDatabase, userInteractor: UserInteractor): BoardDataSource =
+            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, calendarDao, userInteractor))
 
     @Provides
     @BoardScope
