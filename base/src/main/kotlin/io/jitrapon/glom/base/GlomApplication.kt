@@ -2,7 +2,6 @@ package io.jitrapon.glom.base
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
-import com.google.android.gms.maps.MapsInitializer
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.DeviceUtils
@@ -28,9 +27,6 @@ class GlomApplication : Application() {
 
         // set rx global plugin
         RxPlugins.init()
-
-        // initialize Google Play Services
-        MapsInitializer.initialize(this)
 
         // initialize device utility classes
         DeviceUtils.init(this)

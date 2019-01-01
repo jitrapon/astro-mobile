@@ -6,6 +6,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.CalendarContract
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.reactivex.Flowable
 
@@ -33,12 +34,18 @@ class CalendarDaoImpl(private val context: Context) : CalendarDao {
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    override fun getEvents(): Flowable<List<CalendarEntity>> {
+    override fun getEvents(): Flowable<List<EventEntity>> {
         // make sure we have enough permissions
-        if (context.hasReadCalendarPermission()) {
-            return getCalendars()
+        return if (context.hasReadCalendarPermission()) {
+            getCalendars().map {
+                it.forEach { entity ->
+                    AppLogger.d("Calendar: $entity")
+                }
+                val result: List<EventEntity> = emptyList()
+                result
+            }
         }
-        else throw IllegalAccessException("No READ_CALENDAR permission")
+        else Flowable.error(IllegalAccessException("No READ_CALENDAR permission"))
     }
 
     @SuppressLint("MissingPermission")
@@ -74,3 +81,5 @@ class CalendarDaoImpl(private val context: Context) : CalendarDao {
 
 data class CalendarEntity(val calId: Long, val displayName: String, val accountName: String,
                           val ownerName: String, val color: Int, val isVisible: Boolean)
+
+data class EventEntity(val eventId: String)

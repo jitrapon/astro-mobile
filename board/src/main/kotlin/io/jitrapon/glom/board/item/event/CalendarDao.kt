@@ -8,7 +8,7 @@ import io.reactivex.Flowable
  */
 interface CalendarDao {
 
-    fun getEvents(): Flowable<List<CalendarEntity>>
+    fun getEvents(): Flowable<List<EventEntity>>
 
     fun getCalendars(): Flowable<List<CalendarEntity>>
 }

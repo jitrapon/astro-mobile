@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.event.*
 import io.reactivex.Completable
@@ -28,10 +29,16 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
         else {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
-                    eventDao.getEventsInCircle(circleId).toFlowable()
+                    eventDao.getEventsInCircle(circleId)
                             .map {
-                                calendarDao.getEvents().blockingFirst()
                                 it.toBoard(circleId, userInteractor.getCurrentUserId())
+                            }
+                            .toFlowable()
+                            .flatMap {
+                                calendarDao.getEvents().addToBoard(it).onErrorReturn { ex ->
+                                    AppLogger.e(ex)
+                                    it
+                                }
                             }
                             .doOnNext {
                                 synchronized(lock) {

@@ -3,8 +3,9 @@ package io.jitrapon.glom.board.item.event
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Board
-import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.BoardItemResponse
+import io.jitrapon.glom.board.item.BoardItem
+import io.reactivex.Flowable
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -103,5 +104,27 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
                 itemInfo.location?.name, itemInfo.location?.description, itemInfo.location?.address, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
                 itemInfo.placePollStatus, owners.contains(userId), circleId)
         attendees = itemInfo.attendees
+    }
+}
+
+fun EventEntity.toEventItem(): EventItem {
+    val attendees: MutableList<String> = mutableListOf()
+    return EventItem(
+            BoardItem.TYPE_EVENT,
+            "aasfdgkla123",
+            null,
+            null,
+            arrayListOf(""),
+            EventInfo("hello", null, null, null, null, null,
+                    false, null, false, false, attendees)
+    )
+}
+
+fun Flowable<List<EventEntity>>.addToBoard(board: Board): Flowable<Board> {
+    return map {
+        it.forEach { event ->
+            board.items.add(event.toEventItem())
+        }
+        board
     }
 }

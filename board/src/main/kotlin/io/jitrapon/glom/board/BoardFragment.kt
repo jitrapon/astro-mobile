@@ -90,7 +90,7 @@ class BoardFragment : BaseFragment() {
             layoutManager = StickyHeadersLinearLayoutManager<BoardItemAdapter>(view.context)
             itemAnimator = DefaultItemAnimator()
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
-            createRecycledPool(recyclerView, 10)
+//            createRecycledPool(recyclerView, 10)
 
             hide()
         }
