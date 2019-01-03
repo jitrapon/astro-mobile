@@ -45,26 +45,23 @@ abstract class BaseMainActivity : BaseActivity() {
     }
 
     private fun setupBottomNavBar(bottomNavBar: BottomNavigationView, items: Array<NavigationItem>) {
-        bottomNavBar.let {
-            it.menu.let {
-                for (item in items) {
-                    it.findItem(item.id)?.let {
-                        it.isVisible = true
-                        it.setIcon(item.drawable)
-                        it.setTitle(item.title)
-                        if (item == selfNavItem) it.isChecked = true
-                    }
+        bottomNavBar.apply {
+            for (item in items) {
+                menu.findItem(item.id)?.apply {
+                    isVisible = true
+                    setIcon(item.drawable)
+                    setTitle(item.title)
+                    if (item == selfNavItem) isChecked = true
                 }
             }
 
-            it.setOnNavigationItemSelectedListener {
-                NavigationItem.getById(it.itemId).let {
-                    if (it != selfNavItem) {
-                        selectBottomNavItem(it)
-                        return@setOnNavigationItemSelectedListener true
-                    }
-                    return@setOnNavigationItemSelectedListener false
+            setOnNavigationItemSelectedListener { item ->
+                val navItem = NavigationItem.getById(item.itemId)
+                if (navItem != selfNavItem) {
+                    selectBottomNavItem(navItem)
+                    return@setOnNavigationItemSelectedListener true
                 }
+                return@setOnNavigationItemSelectedListener false
             }
         }
     }

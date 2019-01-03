@@ -100,10 +100,6 @@ class BoardFragment : BaseFragment() {
         board_fab.setOnClickListener {
             viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
         }
-
-        board_appbar_layout.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
-
-        })
     }
 
     /**

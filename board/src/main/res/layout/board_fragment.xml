@@ -8,6 +8,57 @@
     app:statusBarBackground="@null"
     tools:context=".BoardFragment" >
 
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/board_appbar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tall_toolbar_height"
+        app:elevation="@dimen/app_bar_elevation"
+        android:background="@color/background"
+        android:stateListAnimator="@null" >
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/board_collapsing_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:contentScrim="?colorPrimary"
+            app:titleEnabled="false"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed" >
+
+            <TextView
+                android:id="@+id/board_doodle"
+                style="@style/TextAppearance.H3"
+                android:layout_width="250dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="58dp"
+                android:layout_marginBottom="22dp"
+                android:layout_gravity="center"
+                android:text="Good morning Boat!\nNothing scheduled today"
+                android:gravity="center"
+                android:lineSpacingMultiplier="1.3"/>
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/app_bar_height"
+                app:layout_collapseMode="pin" >
+
+                <ImageView
+                    android:id="@+id/appbar_profile_menu"
+                    android:layout_width="@dimen/avatar_normal"
+                    android:layout_height="@dimen/avatar_normal"
+                    android:layout_marginTop="27dp"
+                    android:padding="5dp"
+                    android:src="@drawable/ic_empty_account"
+                    android:layout_gravity="end"
+                    android:foreground="?android:selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="16dp" />
+
+            </androidx.appcompat.widget.Toolbar>
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -70,56 +121,5 @@
         android:src="@drawable/avatar_bot"
         app:fabSize="normal"
         app:backgroundTint="@color/reddish" />
-
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/board_appbar_layout"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/tall_toolbar_height"
-        app:elevation="@dimen/app_bar_elevation"
-        android:background="@color/background"
-        android:stateListAnimator="@null" >
-
-        <com.google.android.material.appbar.CollapsingToolbarLayout
-            android:id="@+id/board_collapsing_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:contentScrim="?colorPrimary"
-            app:titleEnabled="false"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed" >
-
-            <TextView
-                android:id="@+id/board_doodle"
-                style="@style/TextAppearance.H3"
-                android:layout_width="250dp"
-                android:layout_height="match_parent"
-                android:layout_marginTop="58dp"
-                android:layout_marginBottom="22dp"
-                android:layout_gravity="center"
-                android:text="Good morning Boat!\nNothing scheduled today"
-                android:gravity="center"
-                android:lineSpacingMultiplier="1.3"/>
-
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/app_bar_height"
-                app:layout_collapseMode="pin" >
-
-                <ImageView
-                    android:id="@+id/appbar_profile_menu"
-                    android:layout_width="@dimen/avatar_normal"
-                    android:layout_height="@dimen/avatar_normal"
-                    android:layout_marginTop="27dp"
-                    android:padding="5dp"
-                    android:src="@drawable/ic_empty_account"
-                    android:layout_gravity="end"
-                    android:foreground="?android:selectableItemBackgroundBorderless"
-                    android:layout_marginEnd="16dp" />
-
-            </androidx.appcompat.widget.Toolbar>
-
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
-
-    </com.google.android.material.appbar.AppBarLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
