@@ -4,6 +4,7 @@ import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemRequest
+import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.deserialize
 import io.jitrapon.glom.board.item.event.serializeInfo
@@ -35,6 +36,10 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {
         return api.deleteBoardItem(circleInteractor.getActiveCircleId(), itemId)
+    }
+
+    override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
+        throw NotImplementedError()
     }
 
     //region deserializers

@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.*
 import io.reactivex.Completable
 import io.reactivex.Flowable
@@ -86,7 +87,8 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
         val iter = itemsInDB.iterator()
         while (iter.hasNext()) {
             iter.next().let {
-                if (newItemsIdSet.contains(it.entity.id)) iter.remove()
+                // remove items to be deleted that show up in the new list from remote, but also whose status is offline only
+                if (newItemsIdSet.contains(it.entity.id) && it.entity.syncStatus == SyncStatus.OFFLINE.intValue) iter.remove()
             }
         }
         eventDao.deleteEvents(*itemsInDB.toTypedArray())
@@ -132,6 +134,24 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
                         }
                         inMemoryBoard.items.removeAt(it)
                     }
+                }
+            }
+        }
+    }
+
+    override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
+        return Completable.fromAction {
+            synchronized(lock) {
+                val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }
+                when (item) {
+                    is EventItem -> eventDao.updateSyncStatusById(itemId, status.intValue)
+                    else -> { /* unsupported */ }
+                }
+            }
+        }.doOnComplete {
+            synchronized(lock) {
+                inMemoryBoard.items.firstOrNull { itemId == it.itemId }?.let {
+                    it.syncStatus = status
                 }
             }
         }

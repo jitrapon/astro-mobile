@@ -5,6 +5,8 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardItemResponse
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.toSyncStatus
 import io.reactivex.Flowable
 import java.util.*
 import kotlin.collections.HashMap
@@ -40,7 +42,7 @@ fun BoardItemResponse.deserialize(): EventItem {
                         it["is_date_poll_opened"] as Boolean,
                         it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>))
-            }, Date())
+            }, SyncStatus.SUCCESS, Date())
 }
 
 fun EventItem.serializeInfo(): MutableMap<String, Any?> {
@@ -90,7 +92,7 @@ fun List<EventItemFullEntity>.toBoard(circleId: String, userId: String?): Board 
             else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
             items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
                     EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
-                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList())))
+                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList()), it.syncStatus.toSyncStatus()))
         }
     }
     return Board(circleId = circleId, items = items, retrievedTime = Date(updatedTime))
@@ -102,7 +104,7 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
                 itemId, updatedTimeMs, itemInfo.eventName, itemInfo.startTime, itemInfo.endTime, itemInfo.location?.googlePlaceId,
                 itemInfo.location?.placeId, itemInfo.location?.latitude, itemInfo.location?.longitude,
                 itemInfo.location?.name, itemInfo.location?.description, itemInfo.location?.address, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
-                itemInfo.placePollStatus, owners.contains(userId), circleId)
+                itemInfo.placePollStatus, owners.contains(userId), syncStatus.intValue, circleId)
         attendees = itemInfo.attendees
     }
 }
@@ -116,7 +118,8 @@ fun EventEntity.toEventItem(): EventItem {
             null,
             arrayListOf(""),
             EventInfo("hello", null, null, null, null, null,
-                    false, null, false, false, attendees)
+                    false, null, false, false, attendees),
+            SyncStatus.SUCCESS
     )
 }
 

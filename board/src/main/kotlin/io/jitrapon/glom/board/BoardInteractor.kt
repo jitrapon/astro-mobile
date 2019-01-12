@@ -14,6 +14,7 @@ import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.reactivex.Flowable
@@ -190,7 +191,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,
                             "Asia/Bangkok", false, null, false, false, owners),
-                    now)
+                    SyncStatus.OFFLINE, now)
             else -> TODO()
         }
     }
@@ -346,6 +347,10 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             }
         }
         return Flowable.just(board to map)
+    }
+
+    fun setItemSyncStatus(itemId: String, status: SyncStatus) {
+        boardDataSource.setItemSyncStatus(itemId, status)
     }
 
     //TODO need to standardize how to generate this ID with the server

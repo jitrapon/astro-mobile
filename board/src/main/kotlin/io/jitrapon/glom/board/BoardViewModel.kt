@@ -6,28 +6,17 @@ import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AnimationItem
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.LiveEvent
-import io.jitrapon.glom.base.model.MessageLevel
-import io.jitrapon.glom.base.model.Navigation
-import io.jitrapon.glom.base.model.Snackbar
-import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
-import io.jitrapon.glom.board.item.BoardItem
-import io.jitrapon.glom.board.item.BoardItemDiffCallback
-import io.jitrapon.glom.board.item.BoardItemUiModel
-import io.jitrapon.glom.board.item.BoardItemViewModelStore
+import io.jitrapon.glom.board.item.*
 import io.jitrapon.glom.board.item.event.EventItemUiModel
 import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
+import kotlin.collections.HashMap
 import kotlin.math.absoluteValue
 
 /**
@@ -257,8 +246,10 @@ class BoardViewModel : BaseViewModel() {
             if (index != -1) {
 
                 // show the user visually that this item is syncing
+                // however, set the local copy of the item to be failed so that if the
+                // async operation fails, the next time the item loads, its sync status will be interpreted as failed
                 items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
-                syncItemIds[items[index].itemId] = UiModel.Status.LOADING
+                boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.FAILED)
 
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
@@ -300,7 +291,7 @@ class BoardViewModel : BaseViewModel() {
                     when (it) {
                         is AsyncSuccessResult -> {
                             items[index].status = UiModel.Status.SUCCESS
-                            syncItemIds.remove(items[index].itemId)
+                            boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.SUCCESS)
 
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
@@ -319,7 +310,7 @@ class BoardViewModel : BaseViewModel() {
                             handleError(it.error)
 
                             items[index].status = UiModel.Status.ERROR
-                            syncItemIds[items[index].itemId] = UiModel.Status.ERROR
+                            boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.FAILED)
 
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
@@ -351,7 +342,6 @@ class BoardViewModel : BaseViewModel() {
                     boardInteractor.deleteItemLocal(item.itemId) {
                         when (it) {
                             is AsyncSuccessResult -> {
-                                syncItemIds.remove(item.itemId)
                                 onBoardItemChanges(it.result, listOf(), null)
 
                                 syncDeletedItem(item.itemId)
@@ -408,16 +398,22 @@ class BoardViewModel : BaseViewModel() {
                 )))
                 map[key]?.let { items ->
                     items.forEach { item ->
-                        add(item.toUiModel(if (syncItemIds.contains(item.itemId)) syncItemIds[item.itemId]!! else UiModel.Status.SUCCESS))
+                        add(item.toUiModel())
                     }
                 }
             }
         }
     }
 
-    private fun BoardItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): BoardItemUiModel {
+    private fun BoardItem.toUiModel(status: UiModel.Status? = null): BoardItemUiModel {
         return BoardItemViewModelStore.obtainViewModelForItem(this::class.java).let {
-            it?.toUiModel(this, status) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
+            syncStatus = when (status) {
+                UiModel.Status.LOADING -> SyncStatus.ACTIVE
+                UiModel.Status.SUCCESS -> SyncStatus.SUCCESS
+                UiModel.Status.ERROR -> SyncStatus.FAILED
+                else -> syncStatus
+            }
+            it?.toUiModel(this) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
         }
     }
 

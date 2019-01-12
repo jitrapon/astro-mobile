@@ -42,6 +42,8 @@ data class EventItemEntity(
         val placePollStatus: Boolean,
         @ColumnInfo(name = "is_owner")
         val isOwner: Boolean,
+        @ColumnInfo(name = "sync_status")
+        val syncStatus: Int,
         @ColumnInfo(name = "circle_id")
         val circleId: String
 )

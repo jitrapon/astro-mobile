@@ -4,6 +4,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemInfo
+import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.toSyncStatus
 import java.util.*
 
 /**
@@ -17,6 +19,7 @@ data class EventItem(override val itemType: Int,
                      override var updatedTime: Long?,
                      override val owners: List<String>,
                      override var itemInfo: EventInfo,
+                     override val syncStatus: SyncStatus = SyncStatus.OFFLINE,
                      override var retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : BoardItem {
 
@@ -27,7 +30,7 @@ data class EventItem(override val itemType: Int,
 
     constructor(parcel: Parcel, type: Int) : this(
             type,
-            parcel.readString(),
+            parcel.readString()!!,
             parcel.readLong().let {
                 if (it == -1L) null
                 else it
@@ -36,8 +39,9 @@ data class EventItem(override val itemType: Int,
                 if (it == -1L) null
                 else it
             },
-            parcel.createStringArrayList(),
-            parcel.readParcelable(EventInfo::class.java.classLoader),
+            parcel.createStringArrayList()!!,
+            parcel.readParcelable(EventInfo::class.java.classLoader)!!,
+            parcel.readInt().toSyncStatus(),
             parcel.readLong().let {
                 if (it == -1L) null
                 else Date(it)
@@ -50,6 +54,7 @@ data class EventItem(override val itemType: Int,
         parcel.writeLong(updatedTime ?: -1L)
         parcel.writeStringList(owners)
         parcel.writeParcelable(itemInfo, flags)
+        parcel.writeInt(syncStatus.intValue)
         parcel.writeLong(retrievedTime?.time ?: -1L)
     }
 

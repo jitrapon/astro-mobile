@@ -93,7 +93,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     //region event board item
 
-    override fun toUiModel(item: BoardItem, status: UiModel.Status): BoardItemUiModel {
+    override fun toUiModel(item: BoardItem): BoardItemUiModel {
         return (item as EventItem).let {
             EventItemUiModel(
                     itemId = it.itemId,
@@ -103,7 +103,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     mapLatLng = getEventLatLng(it.itemInfo.location),
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
                     attendStatus = getEventAttendStatus(it.itemInfo.attendees),
-                    status = status,
+                    status = getSyncStatus(it.syncStatus),
                     isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus
             )
         }

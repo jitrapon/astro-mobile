@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
 import io.reactivex.Flowable
 
@@ -37,5 +38,9 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
     override fun deleteItem(itemId: String, remote: Boolean): Completable {
         return if (remote) remoteDataSource.deleteItem(itemId)
         else localDataSource.deleteItem(itemId, remote)
+    }
+
+    override fun setSyncStatus(itemId: String, status: SyncStatus): Completable {
+        return localDataSource.setSyncStatus(itemId, status)
     }
 }

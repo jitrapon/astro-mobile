@@ -52,4 +52,7 @@ interface EventItemDao {
     @Query("UPDATE events SET g_place_id = :googlePlaceId, place_id = :placeId, latitude = :latitude, longitude = :longitude, place_name = :placeName, place_description = :placeDescription, place_address = :placeAddress WHERE id = :itemId")
     fun updatePlace(itemId: String, googlePlaceId: String? = null, placeId: String? = null, latitude: Double? = null, longitude: Double? = null, placeName: String? = null,
                     placeDescription: String? = null, placeAddress: String? = null)
+
+    @Query("UPDATE events SET sync_status = :syncStatus WHERE id = :itemId")
+    fun updateSyncStatusById(itemId: String, syncStatus: Int)
 }

@@ -22,6 +22,8 @@ interface BoardItem : DataModel {
 
     val owners: List<String>
 
+    var syncStatus: SyncStatus
+
     val itemInfo: BoardItemInfo
 
     companion object : Parcelable.Creator<BoardItem> {
@@ -55,3 +57,19 @@ interface BoardItem : DataModel {
      */
     fun setInfo(info: BoardItemInfo)
 }
+
+/**
+ * Status of whether or not the board item has been synced to the remote source successfully
+ */
+enum class SyncStatus(val intValue: Int) {
+    SUCCESS(0),        // indicates that the item has synced successfully to the remote source
+    FAILED(-1),        // indicates that the item has failed to sync due to an error and requires to be sync again if possible
+    ACTIVE(1),         // indicates that the item is in the process of syncing with the remote source
+    OFFLINE(2);        // indicates that the item is not meant to by synced with remote source
+
+    companion object {
+        internal val map = SyncStatus.values().associateBy(SyncStatus::intValue)
+    }
+}
+
+fun Int.toSyncStatus(): SyncStatus = SyncStatus.map[this] ?: SyncStatus.OFFLINE
