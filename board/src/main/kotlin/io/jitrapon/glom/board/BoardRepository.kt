@@ -40,7 +40,7 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
         else localDataSource.deleteItem(itemId, remote)
     }
 
-    override fun setSyncStatus(itemId: String, status: SyncStatus): Completable {
-        return localDataSource.setSyncStatus(itemId, status)
+    override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
+        return localDataSource.setItemSyncStatus(itemId, status)
     }
 }

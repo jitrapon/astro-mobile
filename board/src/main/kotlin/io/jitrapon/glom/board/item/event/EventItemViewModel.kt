@@ -22,6 +22,7 @@ import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
+import io.jitrapon.glom.board.item.SyncStatus
 import java.util.*
 import javax.inject.Inject
 
@@ -93,7 +94,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     //region event board item
 
-    override fun toUiModel(item: BoardItem): BoardItemUiModel {
+    override fun toUiModel(item: BoardItem, syncStatus: SyncStatus): BoardItemUiModel {
         return (item as EventItem).let {
             EventItemUiModel(
                     itemId = it.itemId,
@@ -103,7 +104,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     mapLatLng = getEventLatLng(it.itemInfo.location),
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
                     attendStatus = getEventAttendStatus(it.itemInfo.attendees),
-                    status = getSyncStatus(it.syncStatus),
+                    status = getSyncStatus(syncStatus),
                     isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus
             )
         }

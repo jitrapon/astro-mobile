@@ -248,7 +248,7 @@ class BoardViewModel : BaseViewModel() {
                 // show the user visually that this item is syncing
                 // however, set the local copy of the item to be failed so that if the
                 // async operation fails, the next time the item loads, its sync status will be interpreted as failed
-                items[index] = boardItem.toUiModel(UiModel.Status.LOADING)
+                items[index] = boardItem.toUiModel(SyncStatus.ACTIVE)
                 boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.FAILED)
 
                 observableBoard.value = boardUiModel.apply {
@@ -398,22 +398,16 @@ class BoardViewModel : BaseViewModel() {
                 )))
                 map[key]?.let { items ->
                     items.forEach { item ->
-                        add(item.toUiModel())
+                        add(item.toUiModel(item.syncStatus))
                     }
                 }
             }
         }
     }
 
-    private fun BoardItem.toUiModel(status: UiModel.Status? = null): BoardItemUiModel {
+    private fun BoardItem.toUiModel(syncStatus: SyncStatus): BoardItemUiModel {
         return BoardItemViewModelStore.obtainViewModelForItem(this::class.java).let {
-            syncStatus = when (status) {
-                UiModel.Status.LOADING -> SyncStatus.ACTIVE
-                UiModel.Status.SUCCESS -> SyncStatus.SUCCESS
-                UiModel.Status.ERROR -> SyncStatus.FAILED
-                else -> syncStatus
-            }
-            it?.toUiModel(this) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
+            it?.toUiModel(this, syncStatus) ?: ErrorItemUiModel(errorIdCounter.getAndIncrement().toString())
         }
     }
 

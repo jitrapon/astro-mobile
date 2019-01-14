@@ -203,7 +203,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 )
             }
             syncStatus.apply {
-                loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
+                loadFromResource(io.jitrapon.glom.board.R.drawable.ic_sync)
                 hide()
             }
             planStatus.setOnClickListener {
@@ -303,6 +303,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 when (it) {
                     UiModel.Status.LOADING -> {
                         syncStatus.apply {
+                            loadFromResource(R.drawable.ic_sync)
                             show()
 //                            startAnimation(ANIM_ROTATION)     // cause no shared element transition
                         }
@@ -317,7 +318,16 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         }
                     }
                     UiModel.Status.ERROR -> {
-                        syncStatus.hide()
+                        syncStatus.apply {
+                            loadFromResource(R.drawable.ic_sync_failed)
+                            show()
+                        }
+                    }
+                    UiModel.Status.POSITIVE -> {
+                        syncStatus.apply {
+                            loadFromResource(R.drawable.ic_sync_offline)
+                            show()
+                        }
                     }
                     else -> { /* not applicable */ }
                 }

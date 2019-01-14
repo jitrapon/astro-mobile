@@ -351,6 +351,9 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus) {
         boardDataSource.setItemSyncStatus(itemId, status)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
     }
 
     //TODO need to standardize how to generate this ID with the server

@@ -11,14 +11,14 @@ abstract class BoardItemViewModel : BaseViewModel() {
     /**
      * Converts a Model to UiModel
      */
-    abstract fun toUiModel(item: BoardItem): BoardItemUiModel
+    abstract fun toUiModel(item: BoardItem, syncStatus: SyncStatus): BoardItemUiModel
 
     /**
      * Converts the sync status to UiModel status
      */
     fun getSyncStatus(status: SyncStatus): UiModel.Status {
         return when (status) {
-            SyncStatus.OFFLINE -> UiModel.Status.EMPTY
+            SyncStatus.OFFLINE -> UiModel.Status.POSITIVE
             SyncStatus.ACTIVE -> UiModel.Status.LOADING
             SyncStatus.SUCCESS -> UiModel.Status.SUCCESS
             SyncStatus.FAILED -> UiModel.Status.ERROR
