@@ -282,6 +282,13 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
+    /**
+     * Syncs the item with the specified item ID again with the remote server
+     */
+    fun syncItem(itemId: String) {
+        boardInteractor.getBoardItem(itemId)?.let { syncItem(it, false) }
+    }
+
     private fun syncItem(operation: (BoardItem, ((AsyncResult<BoardItem>) -> Unit)) -> Unit, boardItem: BoardItem, successMessage: AndroidString) {
         var index: Int
         operation(boardItem) {

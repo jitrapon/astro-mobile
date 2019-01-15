@@ -211,6 +211,9 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                     (it as? EventItemViewModel)?.showEventPlan(viewModel, adapterPosition)
                 }
             }
+            syncStatus.setOnClickListener {
+                itemId?.let(viewModel::syncItem)
+            }
         }
 
         fun updateTitle(item: EventItemUiModel) {
@@ -305,12 +308,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         syncStatus.apply {
                             loadFromResource(R.drawable.ic_sync)
                             show()
+                            isEnabled = true
 //                            startAnimation(ANIM_ROTATION)     // cause no shared element transition
                         }
                     }
                     UiModel.Status.SUCCESS -> {
                         syncStatus.apply {
                             hide(200L)
+                            isEnabled = false
 //                            animation?.let {
 //                                it.reset()
 //                                it.cancel()
@@ -321,12 +326,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                         syncStatus.apply {
                             loadFromResource(R.drawable.ic_sync_failed)
                             show()
+                            isEnabled = true
                         }
                     }
                     UiModel.Status.POSITIVE -> {
                         syncStatus.apply {
                             loadFromResource(R.drawable.ic_sync_offline)
                             show()
+                            isEnabled = true
                         }
                     }
                     else -> { /* not applicable */ }
