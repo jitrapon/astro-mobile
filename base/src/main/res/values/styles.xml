@@ -172,4 +172,7 @@
         <item name="colorControlActivated">@color/white</item>
     </style>
 
+    <!-- style for fab -->
+    <style name="Widget.Glom.FloatingActionButton" parent="Widget.MaterialComponents.FloatingActionButton" />
+
 </resources>

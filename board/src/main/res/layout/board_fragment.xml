@@ -111,14 +111,23 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <ViewStub
+        android:id="@+id/board_fab_menu_stub"
+        android:inflatedId="@+id/board_fab_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout="@layout/board_fab_action_menu"
+        app:layout_anchor="@+id/board_fab" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/board_fab"
+        style="@style/Widget.Glom.FloatingActionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginBottom="@dimen/fab_margin"
         android:layout_marginEnd="@dimen/fab_margin"
-        android:src="@drawable/avatar_bot"
+        app:srcCompat="@drawable/avatar_bot"
         app:fabSize="normal"
         app:backgroundTint="@color/reddish" />
 

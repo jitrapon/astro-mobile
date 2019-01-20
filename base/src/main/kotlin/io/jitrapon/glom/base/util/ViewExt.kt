@@ -96,10 +96,15 @@ inline fun View.animate(duration: Long, block:(ViewPropertyAnimator.() -> Unit),
  * @param animateDuration The duration in milliseconds until this view fades out completely, after which its visibility
  * will be set to GONE
  */
-fun View.hide(animateDuration: Long? = null) {
+fun View.hide(animateDuration: Long? = null, invisible: Boolean = false) {
     animateDuration.let {
         if (it == null) {
-            if (visibility != View.GONE) visibility = View.GONE else {}
+            if (invisible) {
+                if (visibility != View.INVISIBLE) visibility = View.INVISIBLE else {}
+            }
+            else {
+                if (visibility != View.GONE) visibility = View.GONE else {}
+            }
         }
         else {
             animate().alpha(0.0f)
@@ -107,7 +112,8 @@ fun View.hide(animateDuration: Long? = null) {
                     .setListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator) {
                             super.onAnimationEnd(animation)
-                            visibility = View.GONE
+                            if (invisible) visibility = View.INVISIBLE
+                            else View.GONE
                         }}
                     )
         }

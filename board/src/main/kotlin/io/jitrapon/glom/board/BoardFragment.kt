@@ -1,28 +1,44 @@
 package io.jitrapon.glom.board
 
 import android.app.Activity
+import android.app.ProgressDialog.show
 import android.content.Intent
+import android.transition.ChangeBounds
+import android.transition.Fade
+import android.transition.TransitionManager
+import android.transition.TransitionSet
 import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.children
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.board.R.id.board_fab_menu
+import io.jitrapon.glom.board.R.layout.board_fab_action_menu
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemAdapter
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemActivity
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
+import kotlinx.android.synthetic.main.board_fab_action_menu.board_fab_menu
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -34,6 +50,11 @@ class BoardFragment : BaseFragment() {
 
     /* this fragment's main ViewModel instance */
     private lateinit var viewModel: BoardViewModel
+
+    private lateinit var newItemFab: FloatingActionButton
+    private lateinit var customizeFab: FloatingActionButton
+    private lateinit var newItemFabTextView: TextView
+    private lateinit var customizeFabTextView: TextView
 
     companion object {
 
@@ -98,7 +119,7 @@ class BoardFragment : BaseFragment() {
 
         // main fab click listener
         board_fab.setOnClickListener {
-            viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
+            showFabActionMenu()
         }
     }
 
@@ -272,6 +293,67 @@ class BoardFragment : BaseFragment() {
                 }
             })
         }
+    }
+
+    private fun showFabActionMenu() {
+        board_fab_menu_stub.let { stub ->
+            // already inflated
+            if (stub == null) {
+                if (board_fab_menu.isVisible) {
+                    collapseFabActionMenu(board_fab_menu)
+                }
+                else {
+                    expandFabActionMenu(board_fab_menu)
+                }
+            }
+            else {
+                stub.setOnInflateListener { _, inflated ->
+                    inflated as ViewGroup
+                    customizeFab = inflated.findViewById(R.id.board_fab_customize)
+                    customizeFabTextView = inflated.findViewById(R.id.board_fab_customize_desc)
+                    customizeFab.apply {
+                        setOnClickListener { collapseFabActionMenu(inflated) }
+                        hide()
+                    }
+                    newItemFab = inflated.findViewById(R.id.board_fab_new_item)
+                    newItemFabTextView = inflated.findViewById(R.id.board_fab_new_item_desc)
+                    newItemFab.apply {
+                        setOnClickListener {
+                            viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
+                            collapseFabActionMenu(inflated)
+                        }
+                        hide()
+                    }
+                    expandFabActionMenu(inflated)
+                }
+                stub.inflate()
+            }
+        }
+    }
+
+    private fun expandFabActionMenu(viewGroup: ViewGroup) {
+        viewGroup.show()
+
+        delayRun(100L) {
+            customizeFab.show()
+            customizeFabTextView.show()
+        }
+        delayRun(200L) {
+            newItemFab.show()
+            newItemFabTextView.show()
+        }
+    }
+
+    private fun collapseFabActionMenu(viewGroup: ViewGroup) {
+        delayRun(100L) {
+            newItemFab.hide()
+            newItemFabTextView.hide(50L, true)
+        }
+        delayRun(200L) {
+            customizeFab.hide()
+            customizeFabTextView.hide(50L, true)
+        }
+        delayRun(300L) { viewGroup.hide() }
     }
 
     /**

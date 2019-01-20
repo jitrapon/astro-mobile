@@ -56,4 +56,6 @@
     <string name="event_plan_place_select_completed">Place set as %1$s</string>
     <string name="event_item_view_place_picker">map</string>
     <string name="event_plan_place_add_button">Add a place</string>
+    <string name="board_action_new_item">Create New</string>
+    <string name="board_action_customize">Customize</string>
 </resources>
