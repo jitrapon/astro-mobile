@@ -1,20 +1,25 @@
 package io.jitrapon.glom.board
 
 import android.app.Application
-import android.content.Context
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.calendar.CalendarDao
+import io.jitrapon.glom.board.item.event.calendar.CalendarDaoImpl
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceInteractor
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceRepository
 
 @Module
 class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideCalendarDao(application: Application): CalendarDao = CalendarDaoImpl(application.applicationContext)
+    fun provideCalendarDao(application: Application): CalendarDao =
+        CalendarDaoImpl(application.applicationContext)
 
     @Provides
     @BoardScope
@@ -38,4 +43,13 @@ class BoardModule {
     @BoardScope
     fun provideEventItemInteractor(userInteractor: UserInteractor, circleInteractor: CircleInteractor, boardDataSource: BoardDataSource, eventItemDataSource: EventItemDataSource): EventItemInteractor =
             EventItemInteractor(userInteractor, circleInteractor, boardDataSource, eventItemDataSource)
+
+    @Provides
+    @BoardScope
+    fun provideEventItemPreferenceDataSource(): EventItemPreferenceDataSource = EventItemPreferenceRepository()
+
+    @Provides
+    @BoardScope
+    fun provideEventItemPreferenceInteractor(calendarDao: CalendarDao, repository: EventItemPreferenceDataSource): EventItemPreferenceInteractor =
+            EventItemPreferenceInteractor(calendarDao, repository)
 }

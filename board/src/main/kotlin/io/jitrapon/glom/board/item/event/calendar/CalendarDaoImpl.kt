@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.item.event
+package io.jitrapon.glom.board.item.event.calendar
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
@@ -29,7 +29,8 @@ private const val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 3
 private const val PROJECTION_CALENDAR_COLOR_INDEX: Int = 4
 private const val PROJECTION_CALENDAR_VISIBLE_INDEX: Int = 5
 
-class CalendarDaoImpl(private val context: Context) : CalendarDao {
+class CalendarDaoImpl(private val context: Context) :
+    CalendarDao {
 
     private val contentResolver: ContentResolver
         get() = context.contentResolver
@@ -57,7 +58,8 @@ class CalendarDaoImpl(private val context: Context) : CalendarDao {
             // to see all calendars that a user has viewed, not just calendars the user owns, omit the OWNER_ACCOUNT
             var cur: Cursor? = null
             try {
-                cur = contentResolver.query(uri, EVENT_PROJECTION, null, null, null)
+                cur = contentResolver.query(uri,
+                    EVENT_PROJECTION, null, null, null)
                 while (cur.moveToNext()) {
                     val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
                     val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
@@ -65,7 +67,18 @@ class CalendarDaoImpl(private val context: Context) : CalendarDao {
                     val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                     val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                     val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
-                    result.add(CalendarEntity(calId, displayName, accountName, ownerName, color, isVisible))
+                    result.add(
+                        CalendarEntity(
+                            calId,
+                            displayName,
+                            accountName,
+                            ownerName,
+                            color,
+                            isVisible,
+                            false,
+                            true
+                        )
+                    )
                 }
             }
             catch (ex: Exception) {
@@ -80,6 +93,7 @@ class CalendarDaoImpl(private val context: Context) : CalendarDao {
 }
 
 data class CalendarEntity(val calId: Long, val displayName: String, val accountName: String,
-                          val ownerName: String, val color: Int, val isVisible: Boolean)
+                          val ownerName: String, val color: Int, val isVisible: Boolean,
+                          var isSyncedToBoard: Boolean, var isLocal: Boolean)
 
 data class EventEntity(val eventId: String)

@@ -5,6 +5,7 @@ import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
@@ -35,12 +36,12 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
                                 it.toBoard(circleId, userInteractor.getCurrentUserId())
                             }
                             .toFlowable()
-                            .flatMap {
-                                calendarDao.getEvents().addToBoard(it).onErrorReturn { ex ->
-                                    AppLogger.e(ex)
-                                    it
-                                }
-                            }
+//                            .flatMap {
+//                                calendarDao.getEvents().addToBoard(it).onErrorReturn { ex ->
+//                                    AppLogger.e(ex)
+//                                    it
+//                                }
+//                            }
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it

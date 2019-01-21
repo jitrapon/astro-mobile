@@ -6,6 +6,7 @@ import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardItemResponse
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.event.calendar.EventEntity
 import io.jitrapon.glom.board.item.toSyncStatus
 import io.reactivex.Flowable
 import java.util.*
