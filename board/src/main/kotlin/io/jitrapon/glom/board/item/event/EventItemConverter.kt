@@ -6,7 +6,7 @@ import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardItemResponse
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.calendar.EventEntity
+import io.jitrapon.glom.board.item.event.calendar.DeviceEvent
 import io.jitrapon.glom.board.item.toSyncStatus
 import io.reactivex.Flowable
 import java.util.*
@@ -110,7 +110,7 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
     }
 }
 
-fun EventEntity.toEventItem(): EventItem {
+fun DeviceEvent.toEventItem(): EventItem {
     val attendees: MutableList<String> = mutableListOf()
     return EventItem(
             BoardItem.TYPE_EVENT,
@@ -124,7 +124,7 @@ fun EventEntity.toEventItem(): EventItem {
     )
 }
 
-fun Flowable<List<EventEntity>>.addToBoard(board: Board): Flowable<Board> {
+fun Flowable<List<DeviceEvent>>.addToBoard(board: Board): Flowable<Board> {
     return map {
         it.forEach { event ->
             board.items.add(event.toEventItem())

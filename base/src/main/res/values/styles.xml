@@ -53,6 +53,10 @@
         <item name="android:windowIsTranslucent">true</item>
     </style>
 
+    <style name="Theme.Glom.OpaqueStatusBar" parent="Theme.Glom.Base">
+        <item name="android:windowTranslucentStatus">false</item>
+    </style>
+
     <!-- Text appearances -->
     <style name="TextAppearance.H1" parent="@style/TextAppearance.AppCompat.Large" >
         <item name="android:textColor">?android:textColorPrimary</item>

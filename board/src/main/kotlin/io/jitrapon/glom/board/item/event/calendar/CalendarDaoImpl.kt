@@ -5,10 +5,14 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Parcel
+import android.os.Parcelable
 import android.provider.CalendarContract
+import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.reactivex.Flowable
+import java.util.*
 
 // Projection array. Creating indices for this array instead of doing
 // dynamic lookups improves performance.
@@ -35,14 +39,14 @@ class CalendarDaoImpl(private val context: Context) :
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    override fun getEvents(): Flowable<List<EventEntity>> {
+    override fun getEvents(): Flowable<List<DeviceEvent>> {
         // make sure we have enough permissions
         return if (context.hasReadCalendarPermission()) {
             getCalendars().map {
                 it.forEach { entity ->
                     AppLogger.d("Calendar: $entity")
                 }
-                val result: List<EventEntity> = emptyList()
+                val result: List<DeviceEvent> = emptyList()
                 result
             }
         }
@@ -50,10 +54,10 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     @SuppressLint("MissingPermission")
-    override fun getCalendars(): Flowable<List<CalendarEntity>> {
+    override fun getCalendars(): Flowable<List<DeviceCalendar>> {
         return Flowable.fromCallable {
             val uri: Uri = CalendarContract.Calendars.CONTENT_URI
-            val result: MutableList<CalendarEntity> = mutableListOf()
+            val result: MutableList<DeviceCalendar> = mutableListOf()
 
             // to see all calendars that a user has viewed, not just calendars the user owns, omit the OWNER_ACCOUNT
             var cur: Cursor? = null
@@ -68,7 +72,7 @@ class CalendarDaoImpl(private val context: Context) :
                     val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                     val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
                     result.add(
-                        CalendarEntity(
+                        DeviceCalendar(
                             calId,
                             displayName,
                             accountName,
@@ -92,8 +96,69 @@ class CalendarDaoImpl(private val context: Context) :
     }
 }
 
-data class CalendarEntity(val calId: Long, val displayName: String, val accountName: String,
+data class DeviceCalendar(val calId: Long, val displayName: String, val accountName: String,
                           val ownerName: String, val color: Int, val isVisible: Boolean,
-                          var isSyncedToBoard: Boolean, var isLocal: Boolean)
+                          var isSyncedToBoard: Boolean, var isLocal: Boolean,
+                          override var retrievedTime: Date? = null,
+                          override val error: Throwable? = null) : DataModel {
+    constructor(parcel: Parcel) : this(
+            parcel.readLong(),
+            parcel.readString()!!,
+            parcel.readString()!!,
+            parcel.readString()!!,
+            parcel.readInt(),
+            parcel.readByte() != 0.toByte(),
+            parcel.readByte() != 0.toByte(),
+            parcel.readByte() != 0.toByte())
 
-data class EventEntity(val eventId: String)
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeLong(calId)
+        parcel.writeString(displayName)
+        parcel.writeString(accountName)
+        parcel.writeString(ownerName)
+        parcel.writeInt(color)
+        parcel.writeByte(if (isVisible) 1 else 0)
+        parcel.writeByte(if (isSyncedToBoard) 1 else 0)
+        parcel.writeByte(if (isLocal) 1 else 0)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<DeviceCalendar> {
+        override fun createFromParcel(parcel: Parcel): DeviceCalendar {
+            return DeviceCalendar(parcel)
+        }
+
+        override fun newArray(size: Int): Array<DeviceCalendar?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
+
+data class DeviceEvent(val eventId: String,
+                       override var retrievedTime: Date? = null,
+                       override val error: Throwable? = null) : DataModel {
+
+    constructor(parcel: Parcel) : this(
+            parcel.readString()!!)
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(eventId)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<DeviceEvent> {
+        override fun createFromParcel(parcel: Parcel): DeviceEvent {
+            return DeviceEvent(parcel)
+        }
+
+        override fun newArray(size: Int): Array<DeviceEvent?> {
+            return arrayOfNulls(size)
+        }
+    }
+}

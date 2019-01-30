@@ -30,6 +30,8 @@
             android:theme="@style/Theme.Glom.DialogActivity" />
         <activity android:name=".item.event.plan.PlanEventActivity"
             android:theme="@style/Theme.Glom.Translucent" />
+        <activity android:name=".item.BoardItemPreferenceActivity"
+            android:theme="@style/Theme.Glom.OpaqueStatusBar" />
     </application>
 
 </manifest>

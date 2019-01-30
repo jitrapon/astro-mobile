@@ -40,29 +40,15 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     /*
      * Board item types
      */
-    private var itemType: Int = BoardItem.TYPE_EVENT
+    var itemType: Int = BoardItem.TYPE_EVENT
 
     /*
      * Filtering type of items
      */
-    private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
+    var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
 
     //region public functions
-
-    /**
-     * Initializes the item type of items to be loaded
-     */
-    fun setItemType(type: Int) {
-        itemType = type
-    }
-
-    /**
-     * Initializes the filtering type of items when items are loaded.
-     */
-    fun setFilteringType(filterType: ItemFilterType) {
-        itemFilterType = filterType
-    }
 
     /**
      * Force reload of the board state, then transforms the items
@@ -182,7 +168,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 }).autoDispose()
     }
 
-    fun createEmptyItem(itemType: Int): BoardItem {
+    fun createEmptyItem(): BoardItem {
         val now = Date()
         val owners = ArrayList<String>().apply {
             userId?.let (::add)

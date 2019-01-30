@@ -13,10 +13,9 @@ import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.item.*
 import io.jitrapon.glom.board.item.event.EventItemUiModel
-import java.util.ArrayList
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
-import kotlin.collections.HashMap
 import kotlin.math.absoluteValue
 
 /**
@@ -48,9 +47,6 @@ class BoardViewModel : BaseViewModel() {
     /* observable flag to indicate that a navigation event should be triggered */
     val observableNavigation = LiveEvent<Navigation>()
 
-    /* whether or not first load function has been called */
-    private var firstLoadCalled: Boolean = false
-
     /* default filtering type of items */
     private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
@@ -71,11 +67,6 @@ class BoardViewModel : BaseViewModel() {
      */
     private val errorIdCounter = AtomicInteger(0)
 
-    /*
-     * Keeps track of currently syncing items and their statuses
-     */
-    private val syncItemIds = HashMap<String, UiModel.Status>()
-
     companion object {
 
         const val NUM_WEEK_IN_YEAR = 52
@@ -87,8 +78,8 @@ class BoardViewModel : BaseViewModel() {
         BoardInjector.getComponent().inject(this)
 
         boardInteractor.apply {
-            setItemType(BoardItem.TYPE_EVENT)
-            setFilteringType(itemFilterType)
+            itemType = BoardItem.TYPE_EVENT
+            itemFilterType = ItemFilterType.EVENTS_BY_WEEK
         }
 
         loadBoard(false)
@@ -201,8 +192,8 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Displays new board item view
      */
-    fun showEmptyNewItem(itemType: Int) {
-        observableBoardItem.value = Triple(boardInteractor.createEmptyItem(itemType), null, true)
+    fun showEmptyNewItem() {
+        observableBoardItem.value = Triple(boardInteractor.createEmptyItem(), null, true)
     }
 
     /**
@@ -368,6 +359,10 @@ class BoardViewModel : BaseViewModel() {
                 is AsyncErrorResult -> handleError(it.error)
             }
         }
+    }
+
+    fun showBoardPreference() {
+        observableNavigation.value = Navigation(Const.NAVIGATE_TO_BOARD_PREFERENCE, boardInteractor.itemType)
     }
 
     //endregion

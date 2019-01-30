@@ -80,7 +80,8 @@ abstract class BaseFragment : Fragment() {
         onSubscribeToObservables()
         getToolbar()?.let {
             setupActionBar(it) {
-                title = null
+                title = getToolbarTitle()
+                setDisplayHomeAsUpEnabled(isBackButtonEnabled())
             }
             getToolbarMenuId()?.let { _ ->
                 setHasOptionsMenu(true)
@@ -157,9 +158,19 @@ abstract class BaseFragment : Fragment() {
     open fun getToolbar(): Toolbar? = null
 
     /**
+     * Returns the title to be displayed in the toolbar
+     */
+    open fun getToolbarTitle(): String? = null
+
+    /**
      * Returns the menu resource of the toolbar
      */
     open fun getToolbarMenuId(): Int? = null
+
+    /**
+     * Returns true if home as back button should be displayed
+     */
+    open fun isBackButtonEnabled(): Boolean = false
 
     /**
      * Child fragment class should override this to indicate that this fragment has a profile

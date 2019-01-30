@@ -1,44 +1,33 @@
 package io.jitrapon.glom.board
 
 import android.app.Activity
-import android.app.ProgressDialog.show
 import android.content.Intent
-import android.transition.ChangeBounds
-import android.transition.Fade
-import android.transition.TransitionManager
-import android.transition.TransitionSet
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
-import io.jitrapon.glom.board.R.id.board_fab_menu
-import io.jitrapon.glom.board.R.layout.board_fab_action_menu
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemAdapter
+import io.jitrapon.glom.board.item.BoardItemPreferenceActivity
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemActivity
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
-import kotlinx.android.synthetic.main.board_fab_action_menu.board_fab_menu
+import kotlinx.android.synthetic.main.board_fab_action_menu.*
 import kotlinx.android.synthetic.main.board_fragment.*
 
 /**
@@ -237,6 +226,13 @@ class BoardFragment : BaseFragment() {
                         putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
                     }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
                 }
+                else if (it.action == Const.NAVIGATE_TO_BOARD_PREFERENCE) {
+                    val boardItemType = it.payload as Int
+
+                    startActivity(BoardItemPreferenceActivity::class.java, Const.BOARD_ITEM_PREFERENCE_REQUEST_CODE, {
+                        putExtra(Const.EXTRA_BOARD_ITEM_TYPE, boardItemType)
+                    })
+                }
             }
         })
     }
@@ -312,14 +308,17 @@ class BoardFragment : BaseFragment() {
                     customizeFab = inflated.findViewById(R.id.board_fab_customize)
                     customizeFabTextView = inflated.findViewById(R.id.board_fab_customize_desc)
                     customizeFab.apply {
-                        setOnClickListener { collapseFabActionMenu(inflated) }
+                        setOnClickListener {
+                            viewModel.showBoardPreference()
+                            collapseFabActionMenu(inflated)
+                        }
                         hide()
                     }
                     newItemFab = inflated.findViewById(R.id.board_fab_new_item)
                     newItemFabTextView = inflated.findViewById(R.id.board_fab_new_item_desc)
                     newItemFab.apply {
                         setOnClickListener {
-                            viewModel.showEmptyNewItem(BoardItem.TYPE_EVENT)
+                            viewModel.showEmptyNewItem()
                             collapseFabActionMenu(inflated)
                         }
                         hide()

@@ -18,4 +18,7 @@ object Const {
     const val NAVIGATE_BACK = "action.navigate.back"
     const val NAVIGATE_TO_PLACE_PICKER = "action.navigate.placepicker"
     const val PLACE_PICKER_RESULT_CODE = 1003
+    const val NAVIGATE_TO_BOARD_PREFERENCE = "action.navigate.board.preference"
+    const val EXTRA_BOARD_ITEM_TYPE = "android.intent.EXTRA_BOARD_ITEM_TYPE"
+    const val BOARD_ITEM_PREFERENCE_REQUEST_CODE = 1004
 }

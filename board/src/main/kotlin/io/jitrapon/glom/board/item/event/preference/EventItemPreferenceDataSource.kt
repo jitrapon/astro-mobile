@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board.item.event.preference
 
-import io.jitrapon.glom.board.item.event.calendar.CalendarEntity
 import io.reactivex.Flowable
+import java.util.*
 
 /**
  * Main entry to the saved preference settings for event items
@@ -10,5 +10,7 @@ import io.reactivex.Flowable
  */
 interface EventItemPreferenceDataSource {
 
-    fun getSyncedCalendars(): Flowable<List<CalendarEntity>>
+    fun getPreference(refresh: Boolean): Flowable<EventItemPreference>
+
+    fun getSyncTime(): Date
 }

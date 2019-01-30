@@ -10,9 +10,6 @@ import io.jitrapon.glom.base.domain.exceptions.ConnectionException
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.withinDuration
-import java.io.IOException
-import java.net.ConnectException
-import java.net.SocketTimeoutException
 import java.util.*
 
 /* time in seconds before data is refreshed automatically */
@@ -39,6 +36,9 @@ abstract class BaseViewModel : ViewModel() {
        there are no active observers
      */
     private val undispatchedLiveDataList = ArrayList<LiveData<*>>()
+
+    /* whether or not first load function has been called */
+    protected var firstLoadCalled: Boolean = false
 
     init {
         if (Looper.myLooper() == Looper.getMainLooper()) {
