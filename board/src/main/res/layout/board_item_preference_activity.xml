@@ -20,7 +20,6 @@
     <FrameLayout
         android:id="@+id/board_item_preference_fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toBottomOf="@+id/board_item_preference_toolbar" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

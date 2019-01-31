@@ -94,7 +94,9 @@
                 android:clipToPadding="false"
                 android:scrollbarStyle="insideOverlay"
                 android:scrollbars="none"
-                android:paddingBottom="48dp" >
+                android:paddingBottom="48dp"
+                tools:listitem="@layout/board_item_event"
+                tools:itemCount="1" >
 
             </androidx.recyclerview.widget.RecyclerView>
 

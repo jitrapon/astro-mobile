@@ -43,4 +43,8 @@
     <dimen name="bottom_sheet_item_height">48dp</dimen>
     <dimen name="bottom_sheet_corner_radius">16dp</dimen>
     <dimen name="bottom_sheet_top_padding">8dp</dimen>
+
+    <!-- list -->
+    <dimen name="list_item_margin">16dp</dimen>
+    <dimen name="list_item_small_icon">24dp</dimen>
 </resources>
