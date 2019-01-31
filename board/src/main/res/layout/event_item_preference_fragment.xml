@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.4" />
+        app:layout_constraintGuide_percent="0.5" />
 
     <ImageView
         android:id="@+id/event_item_preference_preview"
@@ -45,7 +45,7 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:clipToPadding="false"
-            tools:listitem="@layout/list_item_single_line"
+            tools:listitem="@layout/single_line_list_item"
             tools:itemCount="5" />
         
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
