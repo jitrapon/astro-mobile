@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.viewmodel
 
+import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import io.reactivex.Single
@@ -27,6 +28,7 @@ fun Array<() -> Unit>.run(delayBetween: Long) {
  * Runs a given function on a thread in computation thread pool, then forward the return value
  * to onComplete on the Android's main thread.
  */
+@SuppressLint("CheckResult")
 fun <T> runAsync(function: () -> T, onComplete: (T) -> Unit, onError: (Throwable) -> Unit) {
     Single.fromCallable(function)
             .subscribeOn(Schedulers.computation())

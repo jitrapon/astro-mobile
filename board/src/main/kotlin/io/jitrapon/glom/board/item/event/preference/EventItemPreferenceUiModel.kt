@@ -9,4 +9,4 @@ import io.jitrapon.glom.base.model.UiModel
  * Created by Jitrapon
  */
 data class EventItemPreferenceUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
-                                      val preferences: MutableList<PreferenceItemUiModel> = ArrayList()) : UiModel
+                                      var preferences: List<PreferenceItemUiModel> = emptyList()) : UiModel

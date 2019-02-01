@@ -45,7 +45,7 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:clipToPadding="false"
-            tools:listitem="@layout/single_line_list_item"
+            tools:listitem="@layout/list_item_small_icon"
             tools:itemCount="5" />
         
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

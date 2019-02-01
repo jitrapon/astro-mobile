@@ -11,7 +11,7 @@
     android:clickable="true" >
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/single_line_list_item_start_guideline"
+        android:id="@+id/list_item_start_guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -19,7 +19,7 @@
         app:layout_constraintGuide_begin="@dimen/list_item_margin" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/single_line_list_item_end_guideline"
+        android:id="@+id/list_item_end_guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -27,7 +27,7 @@
         app:layout_constraintGuide_end="@dimen/list_item_margin" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/single_line_list_item_top_guideline"
+        android:id="@+id/list_item_top_guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -35,7 +35,7 @@
         app:layout_constraintGuide_begin="@dimen/list_item_margin" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/single_line_list_item_top_primary_text_guideline"
+        android:id="@+id/list_item_top_primary_text_guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -43,26 +43,26 @@
 
     <ImageView
         tools:visibility="visible"
-        android:id="@+id/single_line_list_item_left_icon"
+        android:id="@+id/list_item_left_icon"
         android:layout_width="@dimen/list_item_small_icon"
         android:layout_height="@dimen/list_item_small_icon"
-        app:layout_constraintStart_toStartOf="@+id/single_line_list_item_start_guideline"
-        app:layout_constraintTop_toBottomOf="@+id/single_line_list_item_top_guideline"
-        app:layout_constraintEnd_toStartOf="@+id/single_line_list_item_title"
+        app:layout_constraintStart_toStartOf="@+id/list_item_start_guideline"
+        app:layout_constraintTop_toBottomOf="@+id/list_item_top_guideline"
+        app:layout_constraintEnd_toStartOf="@+id/list_item_title"
         android:layout_marginEnd="32dp"
         tools:src="@tools:sample/avatars"
         tools:ignore="ContentDescription" />
 
     <TextView
         style="@style/TextAppearance.H3"
-        android:id="@+id/single_line_list_item_title"
+        android:id="@+id/list_item_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        tools:text="Single-line item"
+        tools:text="@tools:sample/lorem/random"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/single_line_list_item_left_icon"
-        app:layout_constraintEnd_toStartOf="@+id/single_line_list_item_right_icon"
-        app:layout_constraintBottom_toTopOf="@+id/single_line_list_item_description"
+        app:layout_constraintStart_toEndOf="@+id/list_item_left_icon"
+        app:layout_constraintEnd_toStartOf="@+id/list_item_right_icon"
+        app:layout_constraintBottom_toTopOf="@+id/list_item_description"
         app:layout_constraintVertical_chainStyle="packed"
         android:gravity="start"
         android:maxLines="1"
@@ -71,13 +71,13 @@
     <TextView
         tools:visibility="gone"
         style="@style/TextAppearance.H4"
-        android:id="@+id/single_line_list_item_description"
+        android:id="@+id/list_item_description"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         tools:text="@tools:sample/lorem/random"
-        app:layout_constraintTop_toBottomOf="@+id/single_line_list_item_title"
-        app:layout_constraintStart_toStartOf="@+id/single_line_list_item_title"
-        app:layout_constraintEnd_toEndOf="@+id/single_line_list_item_title"
+        app:layout_constraintTop_toBottomOf="@+id/list_item_title"
+        app:layout_constraintStart_toStartOf="@+id/list_item_title"
+        app:layout_constraintEnd_toEndOf="@+id/list_item_title"
         app:layout_constraintBottom_toBottomOf="parent"
         android:gravity="start"
         android:maxLines="1"
@@ -86,14 +86,25 @@
 
     <ImageView
         tools:visibility="visible"
-        android:id="@+id/single_line_list_item_right_icon"
+        android:id="@+id/list_item_right_icon"
         android:layout_width="@dimen/list_item_small_icon"
         android:layout_height="@dimen/list_item_small_icon"
-        app:layout_constraintTop_toBottomOf="@+id/single_line_list_item_top_guideline"
-        app:layout_constraintStart_toEndOf="@id/single_line_list_item_title"
-        app:layout_constraintEnd_toStartOf="@+id/single_line_list_item_end_guideline"
+        app:layout_constraintTop_toBottomOf="@+id/list_item_top_guideline"
+        app:layout_constraintStart_toEndOf="@id/list_item_title"
+        app:layout_constraintEnd_toStartOf="@+id/list_item_end_guideline"
         android:layout_marginStart="16dp"
-        tools:src="@tools:sample/avatars"
+        tools:src="@drawable/ic_chevron_up"
         tools:ignore="ContentDescription" />
+
+    <CheckBox
+        tools:visibility="visibile"
+        android:id="@+id/list_item_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:checked="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/list_item_end_guideline"
+        android:layout_marginStart="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
