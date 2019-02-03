@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
+import io.jitrapon.glom.base.viewmodel.run
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.BoardInjector
 import io.jitrapon.glom.board.BoardViewModel
@@ -54,31 +55,31 @@ class EventItemPreferenceViewModel : BaseViewModel() {
         runAsync({
             updatePreference(interactor.preference)
         }, {
-            observablePreferenceUiModel.value = preferenceUiModel
-
-            if (preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] &&
-                    preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX) {
-                interactor.preference.calendarPreference.error.let {
-                    if (it != null) {
-                        if (it is NoCalendarPermissionException) {
-                            observableViewAction.value = Snackbar(
-                                    AndroidString(R.string.error_no_calendar_permissions),
-                                    AndroidString(R.string.permission_grant_action),
-                                    ::showGrantCalendarPermissionsDialog,
-                                    duration = com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE,
-                                    level = MessageLevel.WARNING)
-                        }
-                        else {
-                            observableViewAction.value = Snackbar(
-                                    AndroidString(R.string.error_calendar_preference_generic),
-                                    level = MessageLevel.ERROR)
+            arrayOf({
+                observablePreferenceUiModel.value = preferenceUiModel
+            }, {
+                if (preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] &&
+                        preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX) {
+                    interactor.preference.calendarPreference.error.let {
+                        if (it != null) {
+                            if (it is NoCalendarPermissionException) {
+                                observableViewAction.value = Snackbar(
+                                        AndroidString(R.string.error_no_calendar_permissions),
+                                        AndroidString(R.string.permission_grant_action),
+                                        ::showGrantCalendarPermissionsDialog,
+                                        duration = com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE,
+                                        level = MessageLevel.WARNING)
+                            } else {
+                                observableViewAction.value = Snackbar(
+                                        AndroidString(R.string.error_calendar_preference_generic),
+                                        level = MessageLevel.ERROR)
+                            }
                         }
                     }
+                } else if (!preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] && preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX) {
+                    observableViewAction.value = Snackbar(AndroidString(), shouldDismiss = true)
                 }
-            }
-            else if (!preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] && preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX){
-                observableViewAction.value = Snackbar(AndroidString(), shouldDismiss = true)
-            }
+            }).run(200L)
         }, {
             handleError(it)
 
