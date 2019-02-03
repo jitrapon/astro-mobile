@@ -20,14 +20,17 @@ import java.util.*
 class EventItemPreferenceInteractor(private val calendarDao: CalendarDao,
                                     private val repository: EventItemPreferenceDataSource) : BaseInteractor() {
 
+    val preference: EventItemPreference
+            get() = repository.getPreference(false).blockingFirst()
+
     fun loadPreference(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, EventItemPreference>>) -> Unit) {
         Flowable.zip(
                 calendarDao.getCalendars().subscribeOn(Schedulers.io()),
                 repository.getPreference(refresh).subscribeOn(Schedulers.io()),
-                BiFunction<List<DeviceCalendar>, EventItemPreference, EventItemPreference> { allLocalCalendars, preference ->
-                    val calendars = allLocalCalendars.associateBy({it.calId}, {it}).let { map ->
-                        val result = ArrayList<DeviceCalendar>(allLocalCalendars)
-                        for (synced in preference.calendars) {
+                BiFunction<CalendarPreference, EventItemPreference, EventItemPreference> { localCalendars, preference ->
+                    val calendars = localCalendars.calendars.associateBy({it.calId}, {it}).let { map ->
+                        val result = ArrayList<DeviceCalendar>(localCalendars.calendars)
+                        for (synced in preference.calendarPreference.calendars) {
                             map[synced.calId].let {
                                 synced.isLocal = it != null
                                 synced.isSyncedToBoard = true
@@ -36,8 +39,11 @@ class EventItemPreferenceInteractor(private val calendarDao: CalendarDao,
                         }
                         result
                     }
-                    EventItemPreference(calendars, repository.getSyncTime())
+                    EventItemPreference(
+                            CalendarPreference(calendars, Date(), localCalendars.error),
+                            repository.getSyncTime())
                 })
+                .flatMap(repository::savePreference)
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -48,5 +54,16 @@ class EventItemPreferenceInteractor(private val calendarDao: CalendarDao,
                 }, {
                     //nothing yet
                 }).autoDispose()
+    }
+
+    fun setCalendarSyncStatus(id: String?, isSynced: Boolean) {
+        try {
+            id?.toLong()
+        }
+        catch (ex: Exception) {
+            null
+        }?.let { calId ->
+            repository.setCalendarSyncStatus(calId, isSynced)
+        }
     }
 }

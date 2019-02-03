@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.settings.ProfileMenuBottomSheet
@@ -46,10 +45,13 @@ abstract class BaseFragment : Fragment() {
     @Inject
     lateinit var placeProvider: PlaceProvider
 
+    var snackBar: com.google.android.material.snackbar.Snackbar? = null
+
     /*
      * Profile menu bottom sheet used in every screen
      */
     private val profileMenuBottomSheet: ProfileMenuBottomSheet by lazy { ProfileMenuBottomSheet() }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,7 +75,7 @@ abstract class BaseFragment : Fragment() {
         getSwipeRefreshLayout()?.apply {
             refreshLayout = this
             setOnRefreshListener(onRefreshListener)
-            setColorSchemeColors(color(R.color.lightish_red)!!)
+            setColorSchemeColors(context.colorPrimary())
         }
         onCreateViewModel(activity!!)
         onSetupView(view)
@@ -109,13 +111,18 @@ abstract class BaseFragment : Fragment() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss() else showSnackbar(it.level, it.message, it.actionMessage, it.duration, it.actionCallback).apply {
+                    snackBar = this
+                }
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
+                else -> {
+                    AppLogger.w("This ViewAction is is not yet supported by this handler")
+                }
             }
         }
     }

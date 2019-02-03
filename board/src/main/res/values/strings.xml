@@ -59,4 +59,8 @@
     <string name="board_action_new_item">Create New</string>
     <string name="board_action_customize">Customize</string>
     <string name="board_item_preference_title">Customize</string>
+    <string name="event_item_preference_calendars">Calendars</string>
+    <string name="event_item_preference_empty">No items</string>
+    <string name="error_no_calendar_permissions">No calendar permission</string>
+    <string name="error_calendar_preference_generic">Error retrieving your calendars from this device</string>
 </resources>

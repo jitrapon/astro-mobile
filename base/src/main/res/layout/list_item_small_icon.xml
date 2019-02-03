@@ -97,7 +97,7 @@
         tools:ignore="ContentDescription" />
 
     <CheckBox
-        tools:visibility="visibile"
+        tools:visibility="gone"
         android:id="@+id/list_item_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

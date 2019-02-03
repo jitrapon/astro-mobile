@@ -143,4 +143,12 @@ abstract class BaseViewModel : ViewModel() {
                 R.drawable.ic_empty_account_colored,
                 R.drawable.ic_empty_account_colored)
     }
+
+    /**
+     * Called to show system dialog to allow user to grant permissions
+     * to Calendar
+     */
+    fun showGrantCalendarPermissionsDialog() {
+
+    }
 }

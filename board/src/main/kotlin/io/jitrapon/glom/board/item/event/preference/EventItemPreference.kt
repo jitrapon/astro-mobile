@@ -11,15 +11,17 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-data class EventItemPreference(
-    val calendars: List<DeviceCalendar>    /* list of calendars that are both synced and unsynced to the board */,
-    override var retrievedTime: Date? = null,
-    override val error: Throwable? = null
+data class EventItemPreference(val calendarPreference: CalendarPreference,
+                               override var retrievedTime: Date? = null,
+                               override val error: Throwable? = null
 ) : DataModel {
-    constructor(parcel: Parcel) : this(parcel.createTypedArrayList(DeviceCalendar)!!)
+
+    constructor(parcel: Parcel) : this(
+            parcel.readParcelable<CalendarPreference>(CalendarPreference::class.java.classLoader)!!
+    )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeTypedList(calendars)
+        parcel.writeParcelable(calendarPreference, flags)
     }
 
     override fun describeContents(): Int {
@@ -32,6 +34,36 @@ data class EventItemPreference(
         }
 
         override fun newArray(size: Int): Array<EventItemPreference?> {
+            return arrayOfNulls(size)
+        }
+    }
+
+}
+
+/**
+ * List of all device calendars that are both synced and unsynced to the board
+ */
+data class CalendarPreference(val calendars: List<DeviceCalendar>,
+                              override var retrievedTime: Date? = null,
+                              override val error: Throwable? = null
+) : DataModel {
+
+    constructor(parcel: Parcel) : this(parcel.createTypedArrayList(DeviceCalendar)!!)
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeTypedList(calendars)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<CalendarPreference> {
+        override fun createFromParcel(parcel: Parcel): CalendarPreference {
+            return CalendarPreference(parcel)
+        }
+
+        override fun newArray(size: Int): Array<CalendarPreference?> {
             return arrayOfNulls(size)
         }
     }

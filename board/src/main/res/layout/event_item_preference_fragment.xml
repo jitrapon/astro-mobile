@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.5" />
+        app:layout_constraintGuide_percent="0.4" />
 
     <ImageView
         android:id="@+id/event_item_preference_preview"
@@ -28,7 +28,15 @@
         android:layout_marginEnd="80dp"
         app:layout_constraintBottom_toBottomOf="@+id/event_item_preference_top_guideline"
         tools:ignore="ContentDescription"
-        tools:src="@tools:sample/avatars" />
+        android:background="@color/black" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dip"
+        android:background="@color/light_grey"
+        app:layout_constraintTop_toBottomOf="@+id/event_item_preference_top_guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
     
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/event_item_preference_swipe_refresh_layout"
@@ -41,6 +49,7 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/event_item_preference_recycler_view"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"

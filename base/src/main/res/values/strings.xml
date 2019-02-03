@@ -28,4 +28,7 @@
     <string name="auth_sign_out_success">Signed out successfully</string>
     <string name="auth_sign_out_success_with_warning">Signed out</string>
     <string name="auth_signed_in_anonymously">Anonymous</string>
+
+    <!-- permissions -->
+    <string name="permission_grant_action">Allow</string>
 </resources>

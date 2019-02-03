@@ -49,6 +49,9 @@ abstract class BaseActivity : AppCompatActivity() {
         GlomProgressDialog()
     }
 
+    /* snack bar that is used in this activity */
+    var snackBar: com.google.android.material.snackbar.Snackbar? = null
+
     /* shared google place provider */
     @Inject
     lateinit var placeProvider: PlaceProvider
@@ -74,7 +77,9 @@ abstract class BaseActivity : AppCompatActivity() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss() else showSnackbar(it.level, it.message, it.actionMessage, it.duration, it.actionCallback).apply {
+                    snackBar = this
+                }
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is Loading -> showLoading(it.show)

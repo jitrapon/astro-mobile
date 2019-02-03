@@ -3,14 +3,16 @@ package io.jitrapon.glom.board.item.event
 import android.view.View
 import android.widget.ProgressBar
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.obtainViewModel
 import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceAdapter
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceViewModel
-import kotlinx.android.synthetic.main.event_item_preference_fragment.event_item_preference_progressbar
-import kotlinx.android.synthetic.main.event_item_preference_fragment.event_item_preference_recycler_view
-import kotlinx.android.synthetic.main.event_item_preference_fragment.event_item_preference_swipe_refresh_layout
+import kotlinx.android.synthetic.main.event_item_preference_fragment.*
 
 /**
  * Fragment showing list of available customization options for event items in a board
@@ -51,7 +53,9 @@ class EventItemPreferenceFragment : BaseFragment() {
      */
     override fun onSetupView(view: View) {
         event_item_preference_recycler_view.apply {
-
+            adapter = EventItemPreferenceAdapter(this@EventItemPreferenceFragment.context!!, viewModel)
+            itemAnimator = DefaultItemAnimator()
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         }
     }
 
@@ -60,6 +64,12 @@ class EventItemPreferenceFragment : BaseFragment() {
      */
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
+
+        viewModel.getObservablePreference().observe(this, Observer {
+            it?.let {
+                event_item_preference_recycler_view.adapter?.notifyDataSetChanged()
+            }
+        })
     }
 
     /**

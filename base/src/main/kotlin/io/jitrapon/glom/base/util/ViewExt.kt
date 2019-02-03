@@ -22,7 +22,7 @@ import io.jitrapon.glom.base.model.MessageLevel
  * Show a snackbar message with optional action and callback
  */
 fun View.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString? = null,
-                      duration: Int = Snackbar.LENGTH_LONG, actionCallback: (() -> Unit)? = null) {
+                      duration: Int = Snackbar.LENGTH_LONG, actionCallback: (() -> Unit)? = null): Snackbar? {
     val colors = when (level) {
         MessageLevel.INFO -> R.color.calm_blue to R.color.reddish
         MessageLevel.WARNING -> R.color.warning_orange to R.color.reddish
@@ -30,19 +30,19 @@ fun View.showSnackbar(level: Int, message: AndroidString, actionMessage: Android
         MessageLevel.SUCCESS -> R.color.success_green to R.color.white
         else -> null to null
     }
-    showStyledSnackbar(message, actionMessage, duration, actionCallback, colors.first, colors.second)
+    return showStyledSnackbar(message, actionMessage, duration, actionCallback, colors.first, colors.second)
 }
 
 private fun View.showStyledSnackbar(message: AndroidString, actionMessage: AndroidString? = null,
                                     duration: Int = Snackbar.LENGTH_LONG, actionCallback: (() -> Unit)? = null,
-                                    @ColorRes backgroundColorId: Int? = null, @ColorRes actionColorId: Int? = null) {
+                                    @ColorRes backgroundColorId: Int? = null, @ColorRes actionColorId: Int? = null): Snackbar? {
     val messageText = context.getString(message)
-    if (!TextUtils.isEmpty(messageText)) {
+    return if (!TextUtils.isEmpty(messageText)) {
         Snackbar.make(this, messageText!!, duration).apply {
             val actionMessageText = context.getString(actionMessage)
-            if (!TextUtils.isEmpty(actionMessageText)) setAction(actionMessageText,  {
+            if (!TextUtils.isEmpty(actionMessageText)) setAction(actionMessageText) {
                 actionCallback?.invoke()
-            })
+            }
             backgroundColorId?.let {
                 view.setBackgroundColor(context.color(it))
             }
@@ -52,6 +52,7 @@ private fun View.showStyledSnackbar(message: AndroidString, actionMessage: Andro
             show()
         }
     }
+    else null
 }
 
 /**

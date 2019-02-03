@@ -8,13 +8,9 @@ import android.os.Build
 import android.text.TextUtils
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.annotation.ColorInt
-import androidx.annotation.ColorRes
-import androidx.annotation.DimenRes
-import androidx.annotation.DrawableRes
+import androidx.annotation.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import io.jitrapon.glom.R
@@ -101,6 +97,15 @@ fun Context.colorPrimary(): Int {
         val resolved = theme.resolveAttribute(R.attr.colorPrimary, it, true)
         if (resolved) color(it.resourceId)
         else color(R.color.dark_grey)
+    }
+}
+
+@ColorInt
+fun Context.attrColor(@AttrRes resId: Int): Int {
+    return TypedValue().let {
+        val resolved = theme.resolveAttribute(resId, it, true)
+        if (resolved) color(it.resourceId)
+        else colorPrimary()
     }
 }
 

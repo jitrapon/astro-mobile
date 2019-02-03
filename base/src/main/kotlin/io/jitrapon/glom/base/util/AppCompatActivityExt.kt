@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.google.android.material.snackbar.Snackbar
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -76,9 +77,9 @@ fun AppCompatActivity.showToast(message: AndroidString) {
 /**
  * Show a snackbar message with optional action and callback
  */
-fun AppCompatActivity.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString? = null,
-                                   actionCallback: (() -> Unit)? = null) {
-    window.decorView.rootView.showSnackbar(level, message, actionMessage, actionCallback = actionCallback)
+fun AppCompatActivity.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString? = null, duration: Int,
+                                   actionCallback: (() -> Unit)? = null): Snackbar? {
+    return window.decorView.rootView.showSnackbar(level, message, actionMessage, duration, actionCallback = actionCallback)
 }
 
 

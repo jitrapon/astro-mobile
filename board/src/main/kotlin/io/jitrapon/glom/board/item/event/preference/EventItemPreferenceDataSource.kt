@@ -12,5 +12,9 @@ interface EventItemPreferenceDataSource {
 
     fun getPreference(refresh: Boolean): Flowable<EventItemPreference>
 
+    fun savePreference(preference: EventItemPreference): Flowable<EventItemPreference>
+
     fun getSyncTime(): Date
+
+    fun setCalendarSyncStatus(calId: Long, isSynced: Boolean)
 }

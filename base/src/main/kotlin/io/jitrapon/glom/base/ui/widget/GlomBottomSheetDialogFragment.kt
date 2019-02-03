@@ -14,6 +14,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
@@ -61,12 +62,15 @@ abstract class GlomBottomSheetDialogFragment : BottomSheetDialogFragment() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.actionCallback)
+                is Snackbar -> showSnackbar(it.level, it.message, it.actionMessage, it.duration, it.actionCallback)
                 is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
                         it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
+                else -> {
+                    AppLogger.w("This ViewAction is is not yet supported by this handler")
+                }
             }
         }
     }

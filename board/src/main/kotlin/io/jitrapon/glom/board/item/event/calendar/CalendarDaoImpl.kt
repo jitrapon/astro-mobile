@@ -9,8 +9,10 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.provider.CalendarContract
 import io.jitrapon.glom.base.model.DataModel
-import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
+import io.jitrapon.glom.base.util.hasWriteCalendarPermission
+import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
 import java.util.*
 
@@ -40,59 +42,53 @@ class CalendarDaoImpl(private val context: Context) :
         get() = context.contentResolver
 
     override fun getEvents(): Flowable<List<DeviceEvent>> {
-        // make sure we have enough permissions
-        return if (context.hasReadCalendarPermission()) {
-            getCalendars().map {
-                it.forEach { entity ->
-                    AppLogger.d("Calendar: $entity")
-                }
-                val result: List<DeviceEvent> = emptyList()
-                result
-            }
-        }
-        else Flowable.error(IllegalAccessException("No READ_CALENDAR permission"))
+        TODO()
     }
 
     @SuppressLint("MissingPermission")
-    override fun getCalendars(): Flowable<List<DeviceCalendar>> {
-        return Flowable.fromCallable {
-            val uri: Uri = CalendarContract.Calendars.CONTENT_URI
-            val result: MutableList<DeviceCalendar> = mutableListOf()
+    override fun getCalendars(): Flowable<CalendarPreference> {
+        return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
+            Flowable.fromCallable {
+                val uri: Uri = CalendarContract.Calendars.CONTENT_URI
+                val result: MutableList<DeviceCalendar> = mutableListOf()
+                var exception: Exception? = null
 
-            // to see all calendars that a user has viewed, not just calendars the user owns, omit the OWNER_ACCOUNT
-            var cur: Cursor? = null
-            try {
-                cur = contentResolver.query(uri,
-                    EVENT_PROJECTION, null, null, null)
-                while (cur.moveToNext()) {
-                    val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
-                    val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
-                    val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
-                    val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
-                    val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
-                    val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
-                    result.add(
-                        DeviceCalendar(
-                            calId,
-                            displayName,
-                            accountName,
-                            ownerName,
-                            color,
-                            isVisible,
-                            false,
-                            true
+                // to see all calendars that a user has viewed, not just calendars the user owns, omit the OWNER_ACCOUNT
+                var cur: Cursor? = null
+                try {
+                    cur = contentResolver.query(uri,
+                            EVENT_PROJECTION, null, null, null)
+                    while (cur.moveToNext()) {
+                        val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
+                        val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
+                        val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
+                        val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
+                        val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
+                        val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        result.add(
+                                DeviceCalendar(
+                                        calId,
+                                        displayName,
+                                        accountName,
+                                        ownerName,
+                                        color,
+                                        isVisible,
+                                        false,
+                                        true
+                                )
                         )
-                    )
+                    }
                 }
+                catch (ex: Exception) {
+                    exception = ex
+                }
+                finally {
+                    cur?.close()
+                }
+                CalendarPreference(result, Date(), exception)
             }
-            catch (ex: Exception) {
-                throw ex
-            }
-            finally {
-                cur?.close()
-            }
-            result
         }
+        else Flowable.just(CalendarPreference(listOf(), Date(), NoCalendarPermissionException()))
     }
 }
 

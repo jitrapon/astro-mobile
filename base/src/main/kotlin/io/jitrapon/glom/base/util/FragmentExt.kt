@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.google.android.material.snackbar.Snackbar
 import io.jitrapon.glom.base.model.AndroidString
 
 /**
@@ -31,9 +32,9 @@ fun Fragment.showToast(message: AndroidString) {
     activity?.application?.showToast(message)
 }
 
-fun Fragment.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString?, actionCallback: (() -> Unit)?) {
-    activity?.let {
-        view?.showSnackbar(level, message, actionMessage, actionCallback = actionCallback)
+fun Fragment.showSnackbar(level: Int, message: AndroidString, actionMessage: AndroidString?, duration: Int, actionCallback: (() -> Unit)?): Snackbar? {
+    return activity?.let {
+        view?.showSnackbar(level, message, actionMessage, duration, actionCallback = actionCallback)
     }
 }
 

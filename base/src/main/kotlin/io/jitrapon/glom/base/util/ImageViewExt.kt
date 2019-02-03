@@ -6,12 +6,11 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.RawRes
-import androidx.fragment.app.Fragment
 import androidx.core.widget.ImageViewCompat
-import android.widget.ImageView
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -19,6 +18,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import io.jitrapon.glom.base.component.GlideApp
 import io.jitrapon.glom.base.di.toGlidePlaceId
+import io.jitrapon.glom.base.model.AndroidImage
 
 
 /**
@@ -182,5 +182,22 @@ fun ImageView.clear(fragment: androidx.fragment.app.Fragment) {
  */
 fun ImageView.tint(@ColorInt color: Int) {
     ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))
+}
+
+
+/**
+ * Loads an image based an an AndroidImage object
+ */
+fun ImageView.load(context: Context, image: AndroidImage?) {
+    image ?: return
+    if (image.resId != null) loadFromResource(image.resId)
+    else if (image.colorInt != null) setBackgroundColor(image.colorInt)
+    else if (image.colorRes != null) setBackgroundResource(image.colorRes)
+    else if (!image.imageUrl.isNullOrEmpty()) loadFromUrl(context, image.imageUrl,
+            image.placeHolder, image.errorPlaceHolder, image.fallback.let {
+        if (it == null) ColorDrawable(Color.BLACK)
+        else context.drawable(it) ?: ColorDrawable(Color.BLACK)
+    }, image.transformation ?: Transformation.NONE)
+    if (image.tint != null) tint(image.tint)
 }
 
