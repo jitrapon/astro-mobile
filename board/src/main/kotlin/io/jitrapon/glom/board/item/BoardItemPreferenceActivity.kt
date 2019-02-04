@@ -7,7 +7,7 @@ import io.jitrapon.glom.base.util.addFragment
 import io.jitrapon.glom.base.util.setupActionBar
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.item.event.EventItemPreferenceFragment
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceFragment
 import kotlinx.android.synthetic.main.board_item_preference_activity.*
 
 /**

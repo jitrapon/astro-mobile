@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.item.event.preference
 
 import android.util.SparseBooleanArray
+import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.model.PreferenceItemUiModel
 import io.jitrapon.glom.base.model.UiModel
 
@@ -10,6 +11,7 @@ import io.jitrapon.glom.base.model.UiModel
  * Created by Jitrapon
  */
 data class EventItemPreferenceUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
-                                      val preferences: MutableList<PreferenceItemUiModel> = mutableListOf(),
+                                      var preferences: List<PreferenceItemUiModel> = listOf(),
                                       val expandStates: SparseBooleanArray = SparseBooleanArray(),
-                                      var lastExpandHeaderIndex: Int? = null) : UiModel
+                                      var lastExpandHeaderIndex: Int? = null,
+                                      var preferencesDiffResult: DiffUtil.DiffResult? = null) : UiModel

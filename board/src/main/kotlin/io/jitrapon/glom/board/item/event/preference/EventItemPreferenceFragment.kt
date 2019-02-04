@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.item.event
+package io.jitrapon.glom.board.item.event.preference
 
 import android.view.View
 import android.widget.ProgressBar
@@ -7,11 +7,10 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.util.obtainViewModel
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceAdapter
-import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceViewModel
 import kotlinx.android.synthetic.main.event_item_preference_fragment.*
 
 /**
@@ -66,8 +65,18 @@ class EventItemPreferenceFragment : BaseFragment() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
         viewModel.getObservablePreference().observe(this, Observer {
-            it?.let {
-                event_item_preference_recycler_view.adapter?.notifyDataSetChanged()
+            it?.let { uiModel ->
+                when (uiModel.status) {
+                    UiModel.Status.SUCCESS, UiModel.Status.EMPTY -> {
+                        if (uiModel.preferencesDiffResult == null) {
+                            event_item_preference_recycler_view.adapter?.notifyDataSetChanged()
+                        }
+                        else {
+                            uiModel.preferencesDiffResult?.dispatchUpdatesTo(event_item_preference_recycler_view.adapter!!)
+                        }
+                    }
+                    else -> { /* do nothing */ }
+                }
             }
         })
     }

@@ -43,8 +43,8 @@ class EventItemPreferenceInteractor(private val calendarDao: CalendarDao,
                             CalendarPreference(calendars, Date(), localCalendars.error),
                             repository.getSyncTime())
                 })
-                .flatMap(repository::savePreference)
                 .retryWhen(::errorIsUnauthorized)
+                .flatMap(repository::savePreference)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({

@@ -1,8 +1,21 @@
 package io.jitrapon.glom.board.item.event.preference
 
+import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import io.jitrapon.glom.base.model.*
+import androidx.recyclerview.widget.DiffUtil
+import io.jitrapon.glom.base.model.AndroidImage
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.EMPTY_ITEM_TAG
+import io.jitrapon.glom.base.model.MessageLevel
+import io.jitrapon.glom.base.model.NoCalendarPermissionException
+import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.model.isCheckedItem
+import io.jitrapon.glom.base.model.isHeaderItem
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.run
@@ -44,19 +57,23 @@ class EventItemPreferenceViewModel : BaseViewModel() {
         loadData(refresh, interactor::loadPreference, if (!firstLoadCalled) BoardViewModel.FIRST_LOAD_ANIM_DELAY
         else BoardViewModel.SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
-                is AsyncSuccessResult -> updatePreferenceAsync()
+                is AsyncSuccessResult -> updatePreferenceAsync(false, it.result.second)
                 is AsyncErrorResult -> updatePreference(it.error)
             }
         }
         firstLoadCalled = true
     }
 
-    private fun updatePreferenceAsync() {
+    private fun updatePreferenceAsync(shouldCalculateDiffResult: Boolean, preference: EventItemPreference = interactor.preference) {
         runAsync({
-            updatePreference(interactor.preference)
-        }, {
+            updatePreference(shouldCalculateDiffResult, preference)
+        }, { (newPreferenceList, diffResult) ->
             arrayOf({
-                observablePreferenceUiModel.value = preferenceUiModel
+                observablePreferenceUiModel.value = preferenceUiModel.apply {
+                    preferences = newPreferenceList
+                    preferencesDiffResult = diffResult
+                    status = if (preferences.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+                }
             }, {
                 if (preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] &&
                         preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX) {
@@ -79,7 +96,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                 } else if (!preferenceUiModel.expandStates[CALENDAR_HEADER_INDEX] && preferenceUiModel.lastExpandHeaderIndex == CALENDAR_HEADER_INDEX) {
                     observableViewAction.value = Snackbar(AndroidString(), shouldDismiss = true)
                 }
-            }).run(200L)
+            }).run(400L)
         }, {
             handleError(it)
 
@@ -109,7 +126,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
         if (headerTag != null) {
             preferenceUiModel.lastExpandHeaderIndex = headerTag
             preferenceUiModel.expandStates.put(headerTag, !preferenceUiModel.expandStates[headerTag])
-            updatePreferenceAsync()
+            updatePreferenceAsync(true)
         }
     }
 
@@ -124,18 +141,16 @@ class EventItemPreferenceViewModel : BaseViewModel() {
         }
     }
 
-    private fun updatePreference(preference: EventItemPreference) {
+    @WorkerThread
+    private fun updatePreference(shouldCalculateDiffResult: Boolean, preference: EventItemPreference): Pair<MutableList<PreferenceItemUiModel>, DiffUtil.DiffResult?> {
         val items: MutableList<PreferenceItemUiModel> = mutableListOf()
         addCalendarItems(preference, items)
         addSampleGroupItems(items, "Card style", CARD_STYLE_HEADER_INDEX)
         addSampleGroupItems(items, "Card action", CARD_ACTION_HEADER_INDEX)
         addSampleGroupItems(items, "Note", NOTE_HEADER_INDEX)
-
-        preferenceUiModel.preferences.apply {
-            clear()
-            addAll(items)
-        }
-        preferenceUiModel.status = if (items.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+        return items to if (shouldCalculateDiffResult)
+            DiffUtil.calculateDiff(EventItemPreferenceDiffCallback(preferenceUiModel.preferences, items), true)
+            else null
     }
 
     private fun updatePreference(error: Throwable) {
@@ -160,7 +175,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                 items.add(PreferenceItemUiModel(
                         UiModel.Status.EMPTY, CALENDAR_HEADER_INDEX,
                         AndroidString(R.string.event_item_preference_empty), true,
-                        null, null, null, null,
+                        null, null, null, EMPTY_ITEM_TAG,
                         null, null)
                 )
             }
@@ -169,7 +184,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                     items.add(PreferenceItemUiModel(
                             UiModel.Status.SUCCESS, CALENDAR_HEADER_INDEX,
                             AndroidString(text = accountName), true,
-                            null, null, null, null,
+                            null, null, null, accountName,
                             null, null)
                     )
                     for (calendar in calendars) {
@@ -201,7 +216,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
             items.add(PreferenceItemUiModel(
                     UiModel.Status.EMPTY, headerIndex,
                     AndroidString(R.string.event_item_preference_empty), true,
-                    null, null, null, null,
+                    null, null, null, EMPTY_ITEM_TAG,
                     null, null)
             )
         }

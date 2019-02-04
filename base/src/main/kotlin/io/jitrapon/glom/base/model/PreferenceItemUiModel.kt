@@ -5,7 +5,7 @@ package io.jitrapon.glom.base.model
  *
  * Created by Jitrapon
  */
-open class PreferenceItemUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
+data class PreferenceItemUiModel(override var status: UiModel.Status = UiModel.Status.SUCCESS,
                                  val headerTag: Int?,
                                  val title: AndroidString,
                                  val isTitleSecondaryText: Boolean,
@@ -20,3 +20,4 @@ fun PreferenceItemUiModel.isHeaderItem(): Boolean = headerTag != null && isExpan
 
 fun PreferenceItemUiModel.isCheckedItem(): Boolean = !tag.isNullOrEmpty() && isToggled != null
 
+const val EMPTY_ITEM_TAG = "empty"
