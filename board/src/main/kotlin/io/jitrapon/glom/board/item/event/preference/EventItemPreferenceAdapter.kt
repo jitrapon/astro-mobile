@@ -37,7 +37,10 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
         val uiModel = viewModel.getPreferenceUiModel(position)
         holder.apply {
             setImage(leftImage, uiModel.leftImage)
-            setImage(rightImage, uiModel.rightImage)
+            setImage(rightImage, uiModel.rightImage,
+                if (uiModel.isExpanded == true) 180f
+                else if (uiModel.isExpanded == false) 0f
+                else null)
             setTitle(uiModel.title, uiModel.isTitleSecondaryText)
             setDescription(uiModel.subtitle)
             setCheckbox(uiModel.isToggled)
@@ -58,6 +61,13 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
         init {
             itemView.setOnClickListener {
                 onItemClicked(adapterPosition)
+
+                viewModel.getPreferenceUiModel(adapterPosition).let {
+                    if (it.isExpanded != null && it.headerTag != null) {
+                        val rotationAngle = if (viewModel.isHeaderItemExpanded(it.headerTag!!)) 180f else 0f
+                        rightImage.animate().rotation(rotationAngle).setDuration(200).start()
+                    }
+                }
             }
             leftImage.hide(null, true)
             title.hide(null, true)
@@ -66,7 +76,7 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
             checkbox.hide()
         }
 
-        fun setImage(imageView: ImageView, image: AndroidImage?) {
+        fun setImage(imageView: ImageView, image: AndroidImage?, rotationAngle: Float? = null) {
             if (image == null) {
                 imageView.hide(invisible = true)
             }
@@ -74,6 +84,9 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
                 imageView.apply {
                     show()
                     load(context, image)
+                    rotationAngle?.let {
+                        rotation = it
+                    }
                 }
             }
         }

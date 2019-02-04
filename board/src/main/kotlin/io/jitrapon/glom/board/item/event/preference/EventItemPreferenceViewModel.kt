@@ -121,6 +121,8 @@ class EventItemPreferenceViewModel : BaseViewModel() {
 
     fun getPreferenceSize() = preferenceUiModel.preferences.size
 
+    fun isHeaderItemExpanded(headerTag: Int) = preferenceUiModel.expandStates[headerTag]
+
     private fun toggleHeaderExpandState(uiModel: PreferenceItemUiModel) {
         val headerTag = uiModel.headerTag
         if (headerTag != null) {
