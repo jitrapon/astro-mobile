@@ -29,6 +29,8 @@ class Navigation(val action: String, val payload: Any? = null) : UiActionModel
 
 class ReloadData(val delay: Long) : UiActionModel
 
+class RequestPermission(val rationaleMessage: AndroidString, vararg permissions: String) : UiActionModel
+
 object MessageLevel {
 
     const val INFO = 0

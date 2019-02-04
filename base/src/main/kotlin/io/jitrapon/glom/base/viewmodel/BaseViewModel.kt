@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.viewmodel
 
+import android.Manifest
 import android.os.Build
 import android.os.Looper
 import androidx.lifecycle.LiveData
@@ -149,6 +150,9 @@ abstract class BaseViewModel : ViewModel() {
      * to Calendar
      */
     fun showGrantCalendarPermissionsDialog() {
-
+        observableViewAction.value = RequestPermission(
+            AndroidString(R.string.permission_calendar_rationale),
+            Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR
+        )
     }
 }
