@@ -80,12 +80,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                     interactor.preference.calendarPreference.error.let {
                         if (it != null) {
                             if (it is NoCalendarPermissionException) {
-                                observableViewAction.value = Snackbar(
-                                        AndroidString(R.string.error_no_calendar_permissions),
-                                        AndroidString(R.string.permission_grant_action),
-                                        ::showGrantCalendarPermissionsDialog,
-                                        duration = com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE,
-                                        level = MessageLevel.WARNING)
+                                showNoCalendarPermissionWarning()
                             } else {
                                 observableViewAction.value = Snackbar(
                                         AndroidString(R.string.error_calendar_preference_generic),
@@ -104,6 +99,26 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                 status = UiModel.Status.ERROR
             }
         })
+    }
+
+    private fun requestCalendarPermissions() {
+        showGrantCalendarPermissionsDialog { ungrantedPermissions ->
+            if (ungrantedPermissions.isEmpty()) {
+                updatePreferenceAsync(true)
+            }
+            else {
+                showNoCalendarPermissionWarning()
+            }
+        }
+    }
+
+    private fun showNoCalendarPermissionWarning() {
+        observableViewAction.value = Snackbar(
+            AndroidString(R.string.error_no_calendar_permissions),
+            AndroidString(R.string.permission_grant_action),
+            ::requestCalendarPermissions,
+            duration = com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE,
+            level = MessageLevel.WARNING)
     }
 
     fun selectItem(position: Int) {

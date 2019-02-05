@@ -149,9 +149,9 @@ abstract class BaseViewModel : ViewModel() {
      * Called to show system dialog to allow user to grant permissions
      * to Calendar
      */
-    fun showGrantCalendarPermissionsDialog() {
+    fun showGrantCalendarPermissionsDialog(onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
         observableViewAction.value = RequestPermission(
-            AndroidString(R.string.permission_calendar_rationale),
+            AndroidString(R.string.permission_calendar_rationale), onPermissionsGranted,
             Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR
         )
     }

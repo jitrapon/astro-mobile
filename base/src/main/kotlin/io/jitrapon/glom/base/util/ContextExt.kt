@@ -10,6 +10,7 @@ import android.util.TypedValue
 import android.widget.Toast
 import androidx.annotation.*
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -155,4 +156,21 @@ fun Context.hasWriteCalendarPermission(): Boolean {
         ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED
     }
     else true
+}
+
+/**
+ * Given a list of permissions, returns the list of permissions not granted
+ */
+fun Context.getUngrantedPermissions(permissions: Array<out String>): Array<out String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        arrayListOf<String>().apply {
+            for (permission in permissions) {
+                if (ContextCompat.checkSelfPermission(this@getUngrantedPermissions, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    add(permission)
+                }
+            }
+        }.toTypedArray()
+    }
+    else arrayOf()
 }

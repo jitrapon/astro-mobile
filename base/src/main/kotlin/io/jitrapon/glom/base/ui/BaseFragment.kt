@@ -1,12 +1,15 @@
 package io.jitrapon.glom.base.ui
 
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.*
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -46,6 +49,9 @@ abstract class BaseFragment : Fragment() {
     lateinit var placeProvider: PlaceProvider
 
     var snackBar: com.google.android.material.snackbar.Snackbar? = null
+
+    /* callback for when permission request is granted */
+    private var permissionsGrantCallback: ((Array<out String>) -> Unit)? = null
 
     /*
      * Profile menu bottom sheet used in every screen
@@ -120,6 +126,7 @@ abstract class BaseFragment : Fragment() {
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
+                is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -294,4 +301,60 @@ abstract class BaseFragment : Fragment() {
      * Called when sign in state changes from user signing in or out
      */
     open fun onSignOut() {}
+
+    /**
+     * Overrides this function to change the behavior to show the permission dialog
+     */
+    open fun showRequestPermissionsDialog(rationaleMessage: AndroidString,
+                                          permissions: Array<out String>,
+                                          onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
+        context ?: return
+        // check to make sure that the permissions are actually not granted
+        val ungrantedPermissions = context!!.getUngrantedPermissions(permissions)
+        permissionsGrantCallback = onPermissionsGranted
+        if (ungrantedPermissions.isNotEmpty()) {
+            // not all permissions are granted
+            // should we show an explanation?
+            if ((activity as AppCompatActivity).shouldShowRequestPermissionRationale(ungrantedPermissions)) {
+                showAlertDialog(null, rationaleMessage, AndroidString(android.R.string.yes), {
+                    showRequestPermissionsDialog(rationaleMessage, permissions, onPermissionsGranted)
+                }, AndroidString(android.R.string.no), {
+                    onPermissionsGranted(ungrantedPermissions)
+                }, true, {
+                    onPermissionsGranted(ungrantedPermissions)
+                })
+            }
+            // no explanation needed
+            else {
+                requestPermissions(ungrantedPermissions, REQUEST_PERMISSION_RESULT_CODE)
+            }
+        }
+
+        // all permissions have been granted
+        else {
+            onPermissionsGranted(ungrantedPermissions)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_PERMISSION_RESULT_CODE -> {
+                val ungrantedPermissions = arrayListOf<String>()
+                if (grantResults.isNotEmpty()) {
+                    for (i in grantResults.indices) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            ungrantedPermissions.add(permissions[i])
+                        }
+                    }
+                    permissionsGrantCallback?.invoke(ungrantedPermissions.toTypedArray())
+                }
+            }
+        }
+    }
 }

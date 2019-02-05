@@ -1,23 +1,30 @@
 package io.jitrapon.glom.base.ui
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.google.android.instantapps.InstantApps
+import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.getUngrantedPermissions
+import io.jitrapon.glom.base.util.shouldShowRequestPermissionRationale
 import io.jitrapon.glom.base.util.showAlertDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
 import javax.inject.Inject
+
+const val REQUEST_PERMISSION_RESULT_CODE = 5000
 
 /**
  * Wrapper around Android's AppCompatActivity. Contains convenience functions
@@ -56,6 +63,9 @@ abstract class BaseActivity : AppCompatActivity() {
     @Inject
     lateinit var placeProvider: PlaceProvider
 
+    /* callback for when permission request is granted */
+    private var permissionsGrantCallback: ((Array<out String>) -> Unit)? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -86,6 +96,7 @@ abstract class BaseActivity : AppCompatActivity() {
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
+                is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -161,6 +172,62 @@ abstract class BaseActivity : AppCompatActivity() {
      * Overrides this function to allow handling of navigation events
      */
     open fun navigate(action: String, payload: Any?) {}
+
+    /**
+     * Overrides this function to change the behavior to show the permission dialog
+     */
+    open fun showRequestPermissionsDialog(
+        rationaleMessage: AndroidString,
+        permissions: Array<out String>,
+        onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
+        // check to make sure that the permissions are actually not granted
+        val ungrantedPermissions = getUngrantedPermissions(permissions)
+        permissionsGrantCallback = onPermissionsGranted
+        if (ungrantedPermissions.isNotEmpty()) {
+            // not all permissions are granted
+            // should we show an explanation?
+            if (shouldShowRequestPermissionRationale(ungrantedPermissions)) {
+                showAlertDialog(null, rationaleMessage, AndroidString(android.R.string.yes), {
+                    showRequestPermissionsDialog(rationaleMessage, permissions, onPermissionsGranted)
+                }, AndroidString(android.R.string.no), {
+                    onPermissionsGranted(ungrantedPermissions)
+                }, true, {
+                    onPermissionsGranted(ungrantedPermissions)
+                })
+            }
+            // no explanation needed
+            else {
+                ActivityCompat.requestPermissions(this, ungrantedPermissions, REQUEST_PERMISSION_RESULT_CODE)
+            }
+        }
+
+        // all permissions have been granted
+        else {
+            onPermissionsGranted(ungrantedPermissions)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_PERMISSION_RESULT_CODE -> {
+                val ungrantedPermissions = arrayListOf<String>()
+                if (grantResults.isNotEmpty()) {
+                    for (i in grantResults.indices) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            ungrantedPermissions.add(permissions[i])
+                        }
+                    }
+                    permissionsGrantCallback?.invoke(ungrantedPermissions.toTypedArray())
+                }
+            }
+        }
+    }
 
     /**
      * Wrapper around Android's handler to delay run a Runnable on the main thread

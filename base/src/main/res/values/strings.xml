@@ -31,5 +31,5 @@
 
     <!-- permissions -->
     <string name="permission_grant_action">Allow</string>
-    <string name="permission_calendar_rationale">Calendar permission is required for syncing events that you have added to them with our app. To proceed, please grant calendar permissions.</string>
+    <string name="permission_calendar_rationale">Granting calendar permission optionally enables you to choose which of your device calendar to sync. This can be turned off at a later time. Allow now?</string>
 </resources>

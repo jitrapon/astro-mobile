@@ -1,5 +1,6 @@
 package io.jitrapon.glom.base.util
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.View
@@ -119,4 +120,11 @@ fun <T> AppCompatActivity.startActivity(clazz: Class<T>, resultCode: Int?, actio
             overridePendingTransition(it.first, it.second)
         }
     }
+}
+
+/**
+ * Given a list of permissions, returns true iff we need to show request permission rationale for the permissions
+ */
+fun AppCompatActivity.shouldShowRequestPermissionRationale(permissions: Array<out String>): Boolean {
+    return permissions.count { ActivityCompat.shouldShowRequestPermissionRationale(this, it) } > 0
 }

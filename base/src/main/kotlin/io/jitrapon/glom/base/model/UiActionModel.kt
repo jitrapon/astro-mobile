@@ -29,7 +29,7 @@ class Navigation(val action: String, val payload: Any? = null) : UiActionModel
 
 class ReloadData(val delay: Long) : UiActionModel
 
-class RequestPermission(val rationaleMessage: AndroidString, vararg permissions: String) : UiActionModel
+class RequestPermission(val rationaleMessage: AndroidString, val onRequestPermission: (Array<out String>) -> Unit, vararg val permissions: String) : UiActionModel
 
 object MessageLevel {
 
