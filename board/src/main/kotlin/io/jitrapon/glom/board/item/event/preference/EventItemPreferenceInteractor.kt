@@ -28,14 +28,24 @@ class EventItemPreferenceInteractor(private val calendarDao: CalendarDao,
                 calendarDao.getCalendars().subscribeOn(Schedulers.io()),
                 repository.getPreference(refresh).subscribeOn(Schedulers.io()),
                 BiFunction<CalendarPreference, EventItemPreference, EventItemPreference> { localCalendars, preference ->
-                    val calendars = localCalendars.calendars.associateBy({it.calId}, {it}).let { map ->
-                        val result = ArrayList<DeviceCalendar>(localCalendars.calendars)
-                        for (synced in preference.calendarPreference.calendars) {
-                            map[synced.calId].let {
-                                synced.isLocal = it != null
-                                synced.isSyncedToBoard = true
+                    val calendars = preference.calendarPreference.calendars.associateBy({it.calId}, {it}).let { map ->
+                        val result = ArrayList<DeviceCalendar>(preference.calendarPreference.calendars)
+                        for (calendar in localCalendars.calendars) {
+                            map[calendar.calId].let {
+
+                                // add a local calendar to our result only
+                                // if it's not in the repository's list
+                                if (it == null) {
+                                    calendar.isLocal = true
+                                    result.add(calendar)
+                                }
+
+                                // otherwise, if it's already in the repository
+                                // set the flags correctly
+                                else {
+                                    it.isLocal = true
+                                }
                             }
-                            result.add(synced)
                         }
                         result
                     }

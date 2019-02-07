@@ -14,4 +14,5 @@ data class EventItemPreferenceUiModel(override var status: UiModel.Status = UiMo
                                       var preferences: List<PreferenceItemUiModel> = listOf(),
                                       val expandStates: SparseBooleanArray = SparseBooleanArray(),
                                       var lastExpandHeaderIndex: Int? = null,
-                                      var preferencesDiffResult: DiffUtil.DiffResult? = null) : UiModel
+                                      var preferencesDiffResult: DiffUtil.DiffResult? = null,
+                                      var itemChangeIndex: Int? = null) : UiModel

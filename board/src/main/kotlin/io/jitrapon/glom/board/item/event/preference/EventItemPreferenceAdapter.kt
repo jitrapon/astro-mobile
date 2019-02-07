@@ -67,6 +67,9 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
                         val rotationAngle = if (viewModel.isHeaderItemExpanded(it.headerTag!!)) 180f else 0f
                         rightImage.animate().rotation(rotationAngle).setDuration(200).start()
                     }
+                    if (it.isToggled != null) {
+                        checkbox.toggle()
+                    }
                 }
             }
             leftImage.hide(null, true)
@@ -74,6 +77,7 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
             description.hide()
             rightImage.hide(null, true)
             checkbox.hide()
+            checkbox.isClickable = false
         }
 
         fun setImage(imageView: ImageView, image: AndroidImage?, rotationAngle: Float? = null) {

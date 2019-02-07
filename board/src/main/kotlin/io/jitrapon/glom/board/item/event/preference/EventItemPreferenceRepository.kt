@@ -27,7 +27,7 @@ class EventItemPreferenceRepository : EventItemPreferenceDataSource {
 
     override fun setCalendarSyncStatus(calId: Long, isSynced: Boolean) {
         inMemoryPreference?.calendarPreference?.calendars?.find { it.calId == calId }?.let {
-            it.isSyncedToBoard = true
+            it.isSyncedToBoard = isSynced
         }
     }
 }

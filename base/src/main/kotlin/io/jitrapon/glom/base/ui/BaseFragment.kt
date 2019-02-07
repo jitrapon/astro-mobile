@@ -9,7 +9,6 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -317,7 +316,7 @@ abstract class BaseFragment : Fragment() {
             // should we show an explanation?
             if ((activity as AppCompatActivity).shouldShowRequestPermissionRationale(ungrantedPermissions)) {
                 showAlertDialog(null, rationaleMessage, AndroidString(android.R.string.yes), {
-                    showRequestPermissionsDialog(rationaleMessage, permissions, onPermissionsGranted)
+                    requestPermissions(ungrantedPermissions, REQUEST_PERMISSION_RESULT_CODE)
                 }, AndroidString(android.R.string.no), {
                     onPermissionsGranted(ungrantedPermissions)
                 }, true, {
@@ -352,8 +351,8 @@ abstract class BaseFragment : Fragment() {
                             ungrantedPermissions.add(permissions[i])
                         }
                     }
-                    permissionsGrantCallback?.invoke(ungrantedPermissions.toTypedArray())
                 }
+                permissionsGrantCallback?.invoke(ungrantedPermissions.toTypedArray())
             }
         }
     }

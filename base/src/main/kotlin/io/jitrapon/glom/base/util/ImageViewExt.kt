@@ -180,8 +180,8 @@ fun ImageView.clear(fragment: androidx.fragment.app.Fragment) {
 /**
  * Tints this image view to a specific color
  */
-fun ImageView.tint(@ColorInt color: Int) {
-    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))
+fun ImageView.tint(@ColorInt color: Int?) {
+    ImageViewCompat.setImageTintList(this, if (color == null) null else ColorStateList.valueOf(color))
 }
 
 
@@ -199,5 +199,6 @@ fun ImageView.load(context: Context, image: AndroidImage?) {
         else context.drawable(it) ?: ColorDrawable(Color.BLACK)
     }, image.transformation ?: Transformation.NONE)
     if (image.tint != null) tint(image.tint)
+    else tint(null)
 }
 

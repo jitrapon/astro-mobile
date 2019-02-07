@@ -4,18 +4,7 @@ import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
-import io.jitrapon.glom.base.model.AndroidImage
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.EMPTY_ITEM_TAG
-import io.jitrapon.glom.base.model.MessageLevel
-import io.jitrapon.glom.base.model.NoCalendarPermissionException
-import io.jitrapon.glom.base.model.PreferenceItemUiModel
-import io.jitrapon.glom.base.model.Snackbar
-import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.model.isCheckedItem
-import io.jitrapon.glom.base.model.isHeaderItem
+import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.run
@@ -205,15 +194,13 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                             null, null)
                     )
                     for (calendar in calendars) {
-                        if (calendar.isVisible) {
-                            items.add(PreferenceItemUiModel(
-                                    UiModel.Status.SUCCESS, CALENDAR_HEADER_INDEX,
-                                    AndroidString(text = calendar.displayName), false,
-                                    AndroidString(text = calendar.ownerName), null,
-                                    calendar.isSyncedToBoard, calendar.calId.toString(),
-                                    AndroidImage(R.drawable.ic_checkbox_blank_circle, tint = calendar.color),
-                                    null))
-                        }
+                        items.add(PreferenceItemUiModel(
+                                UiModel.Status.SUCCESS, CALENDAR_HEADER_INDEX,
+                                AndroidString(text = calendar.displayName), false,
+                                null, null,
+                                calendar.isSyncedToBoard, calendar.calId.toString(),
+                                AndroidImage(R.drawable.ic_checkbox_blank_circle, tint = calendar.color),
+                                null))
                     }
                 }
             }
