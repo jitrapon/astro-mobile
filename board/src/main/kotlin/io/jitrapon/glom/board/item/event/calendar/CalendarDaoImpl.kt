@@ -92,11 +92,12 @@ class CalendarDaoImpl(private val context: Context) :
     }
 }
 
-data class DeviceCalendar(val calId: Long, val displayName: String, val accountName: String,
-                          val ownerName: String, val color: Int, val isVisible: Boolean,
+data class DeviceCalendar(val calId: Long, var displayName: String, var accountName: String,
+                          var ownerName: String, var color: Int, var isVisible: Boolean,
                           var isSyncedToBoard: Boolean, var isLocal: Boolean,
                           override var retrievedTime: Date? = null,
                           override val error: Throwable? = null) : DataModel {
+
     constructor(parcel: Parcel) : this(
             parcel.readLong(),
             parcel.readString()!!,

@@ -67,4 +67,25 @@ class EventItemFullEntity {
     lateinit var attendees: List<String>
 }
 
+/**
+ * Stores a list of calendars that are synced
+ */
+@Entity(tableName = "calendars")
+data class CalendarEntity(
+        @ColumnInfo(name = "calendar_id")
+        val calendarId: String,
+        @ColumnInfo(name = "display_name")
+        val displayName: String,
+        @ColumnInfo(name = "account_name")
+        val accountName: String,
+        @ColumnInfo(name = "owner_name")
+        val ownerName: String,
+        @ColumnInfo(name = "is_local")
+        val isLocal: Boolean,
+        @ColumnInfo(name = "circle_id")
+        val circleId: String,
+        @PrimaryKey(autoGenerate = true)
+        @ColumnInfo(name = "id")
+        val id: Long = 0        // this should not be set explicitly, setting it to 0 allows Room to auto-increment this value
+)
 

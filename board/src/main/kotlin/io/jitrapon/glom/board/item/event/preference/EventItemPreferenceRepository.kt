@@ -3,31 +3,21 @@ package io.jitrapon.glom.board.item.event.preference
 import io.reactivex.Flowable
 import java.util.*
 
-class EventItemPreferenceRepository : EventItemPreferenceDataSource {
-
-    private var inMemoryPreference: EventItemPreference? = null
+class EventItemPreferenceRepository(private val localDataSource: EventItemPreferenceLocalDataSource) : EventItemPreferenceDataSource {
 
     override fun savePreference(preference: EventItemPreference): Flowable<EventItemPreference> {
-        return Flowable.fromCallable {
-            inMemoryPreference = preference
-            inMemoryPreference
-        }
+        return localDataSource.savePreference(preference)
     }
 
     override fun getPreference(refresh: Boolean): Flowable<EventItemPreference> {
-        return inMemoryPreference.let {
-            if (it == null) Flowable.just(EventItemPreference(CalendarPreference(ArrayList())))
-            else Flowable.just(inMemoryPreference)
-        }
+        return localDataSource.getPreference(refresh)
     }
 
     override fun getSyncTime(): Date {
-        return Date()
+        return localDataSource.getSyncTime()
     }
 
     override fun setCalendarSyncStatus(calId: Long, isSynced: Boolean) {
-        inMemoryPreference?.calendarPreference?.calendars?.find { it.calId == calId }?.let {
-            it.isSyncedToBoard = isSynced
-        }
+        localDataSource.setCalendarSyncStatus(calId, isSynced)
     }
 }

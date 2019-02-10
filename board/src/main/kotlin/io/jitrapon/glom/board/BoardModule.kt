@@ -11,6 +11,7 @@ import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.calendar.CalendarDaoImpl
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceInteractor
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceLocalDataSource
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceRepository
 
 @Module
@@ -46,10 +47,11 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideEventItemPreferenceDataSource(): EventItemPreferenceDataSource = EventItemPreferenceRepository()
+    fun provideEventItemPreferenceDataSource(database: BoardDatabase, calendarDao: CalendarDao, circleInteractor: CircleInteractor): EventItemPreferenceDataSource = EventItemPreferenceRepository(
+            EventItemPreferenceLocalDataSource(database, calendarDao, circleInteractor))
 
     @Provides
     @BoardScope
-    fun provideEventItemPreferenceInteractor(calendarDao: CalendarDao, repository: EventItemPreferenceDataSource): EventItemPreferenceInteractor =
-            EventItemPreferenceInteractor(calendarDao, repository)
+    fun provideEventItemPreferenceInteractor(repository: EventItemPreferenceDataSource): EventItemPreferenceInteractor =
+            EventItemPreferenceInteractor(repository)
 }
