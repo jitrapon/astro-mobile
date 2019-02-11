@@ -93,7 +93,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
     private fun requestCalendarPermissions() {
         showGrantCalendarPermissionsDialog { ungrantedPermissions ->
             if (ungrantedPermissions.isEmpty()) {
-                updatePreferenceAsync(true)
+                loadPreference(true)
             }
             else {
                 showNoCalendarPermissionWarning()

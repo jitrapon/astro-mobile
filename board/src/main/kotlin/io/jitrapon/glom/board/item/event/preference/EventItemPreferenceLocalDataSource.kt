@@ -20,7 +20,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
     private var inMemoryPreference: EventItemPreference? = null
 
     override fun getPreference(refresh: Boolean): Flowable<EventItemPreference> {
-        return if (inMemoryPreference != null) Flowable.just(inMemoryPreference)
+        return if (!refresh && inMemoryPreference != null) Flowable.just(inMemoryPreference)
         else Flowable.zip(
                 calendarDao.getCalendars().subscribeOn(Schedulers.io()),
                 preferenceDao.getSyncedCalendars(circleInteractor.getActiveCircleId()).toFlowable().subscribeOn(Schedulers.io()),
