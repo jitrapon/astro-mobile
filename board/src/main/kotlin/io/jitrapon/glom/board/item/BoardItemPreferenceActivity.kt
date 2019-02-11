@@ -4,11 +4,15 @@ import android.app.Activity
 import android.os.Bundle
 import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.addFragment
+import io.jitrapon.glom.base.util.findFragment
 import io.jitrapon.glom.base.util.setupActionBar
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.R
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_PREF_FRAGMENT_TAG
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceFragment
 import kotlinx.android.synthetic.main.board_item_preference_activity.*
+
+
 
 /**
  * Fragment showing customization options for event items in a board
@@ -16,6 +20,8 @@ import kotlinx.android.synthetic.main.board_item_preference_activity.*
  * Created by Jitrapon
  */
 class BoardItemPreferenceActivity : BaseActivity() {
+
+    private lateinit var fragmentTag: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,9 +45,21 @@ class BoardItemPreferenceActivity : BaseActivity() {
             finish()
         }
         val fragmentValues = when (boardItemType) {
-            BoardItem.TYPE_EVENT -> EventItemPreferenceFragment() to "event_item_preference"
+            BoardItem.TYPE_EVENT -> EventItemPreferenceFragment() to EVENT_ITEM_PREF_FRAGMENT_TAG
             else -> throw IllegalArgumentException()
         }
+        fragmentTag = fragmentValues.second
         addFragment(R.id.board_item_preference_fragment_container, fragmentValues.first, fragmentValues.second)
     }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+
+        (findFragment(fragmentTag) as? PreferenceFragmentListener)?.onSavePreference()
+    }
+}
+
+interface PreferenceFragmentListener {
+
+    fun onSavePreference()
 }

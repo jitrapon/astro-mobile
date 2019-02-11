@@ -260,6 +260,9 @@ class BoardFragment : BaseFragment() {
                 viewModel.syncItem(it, false)
             }
         }
+        else if (requestCode == Const.BOARD_ITEM_PREFERENCE_REQUEST_CODE) {
+            viewModel.syncPrefChanges()
+        }
     }
 
     /**

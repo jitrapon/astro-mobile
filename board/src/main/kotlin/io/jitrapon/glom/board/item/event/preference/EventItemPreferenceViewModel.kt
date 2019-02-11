@@ -127,6 +127,12 @@ class EventItemPreferenceViewModel : BaseViewModel() {
 
     fun isHeaderItemExpanded(headerTag: Int) = preferenceUiModel.expandStates[headerTag]
 
+    fun savePreference() {
+        interactor.savePreference {
+            if (it is AsyncErrorResult) handleError(it.error)
+        }
+    }
+
     private fun toggleHeaderExpandState(uiModel: PreferenceItemUiModel) {
         val headerTag = uiModel.headerTag
         if (headerTag != null) {

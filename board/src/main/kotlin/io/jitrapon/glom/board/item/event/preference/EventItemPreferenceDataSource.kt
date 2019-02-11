@@ -17,4 +17,11 @@ interface EventItemPreferenceDataSource {
     fun getSyncTime(): Date
 
     fun setCalendarSyncStatus(calId: Long, isSynced: Boolean)
+
+    /**
+     * Returns a pair of recently synced calendars and unsynced calendars
+     */
+    fun getCalendarSyncListDiff(): Pair<HashSet<String>, HashSet<String>>
+
+    fun clearCalendarSyncListDiff()
 }

@@ -7,12 +7,14 @@ import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.item.*
 import io.jitrapon.glom.board.item.event.EventItemUiModel
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceInteractor
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -33,6 +35,9 @@ class BoardViewModel : BaseViewModel() {
 
     @Inject
     lateinit var userInteractor: UserInteractor
+
+    @Inject
+    lateinit var prefInteractor: EventItemPreferenceInteractor
 
     /* live data for the board items */
     internal val observableBoard = MutableLiveData<BoardUiModel>()
@@ -363,6 +368,11 @@ class BoardViewModel : BaseViewModel() {
 
     fun showBoardPreference() {
         observableNavigation.value = Navigation(Const.NAVIGATE_TO_BOARD_PREFERENCE, boardInteractor.itemType)
+    }
+
+    fun syncPrefChanges() {
+        prefInteractor.getCalendarSyncListDiff()
+        prefInteractor.clearCalendarSyncListDiff()
     }
 
     //endregion

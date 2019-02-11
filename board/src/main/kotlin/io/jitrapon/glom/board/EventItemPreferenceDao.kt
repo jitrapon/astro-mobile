@@ -17,6 +17,16 @@ interface EventItemPreferenceDao {
         }
     }
 
+    @Transaction
+    fun deleteCalendars(idList: List<String>) {
+        for (id in idList) {
+            deleteCalendarById(id)
+        }
+    }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertCalendar(calendar: CalendarEntity)
+
+    @Query("DELETE FROM calendars WHERE calendar_id = :calId")
+    fun deleteCalendarById(calId: String)
 }

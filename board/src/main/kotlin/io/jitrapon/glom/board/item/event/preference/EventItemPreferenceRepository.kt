@@ -20,4 +20,10 @@ class EventItemPreferenceRepository(private val localDataSource: EventItemPrefer
     override fun setCalendarSyncStatus(calId: Long, isSynced: Boolean) {
         localDataSource.setCalendarSyncStatus(calId, isSynced)
     }
+
+    override fun getCalendarSyncListDiff() = localDataSource.getCalendarSyncListDiff()
+
+    override fun clearCalendarSyncListDiff() {
+        localDataSource.clearCalendarSyncListDiff()
+    }
 }
