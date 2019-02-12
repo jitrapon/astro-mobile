@@ -123,12 +123,3 @@ fun DeviceEvent.toEventItem(): EventItem {
             SyncStatus.SUCCESS
     )
 }
-
-fun Flowable<List<DeviceEvent>>.addToBoard(board: Board): Flowable<Board> {
-    return map {
-        it.forEach { event ->
-            board.items.add(event.toEventItem())
-        }
-        board
-    }
-}

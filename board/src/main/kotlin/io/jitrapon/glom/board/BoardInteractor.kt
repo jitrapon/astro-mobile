@@ -342,6 +342,17 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             .subscribe()
     }
 
+    fun syncBoardFromPreference() {
+        boardDataSource.syncItemPreference(getCurrentBoard(), itemType)
+            .subscribeOn(Schedulers.computation())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+
+            }, {
+
+            }).autoDispose()
+    }
+
     //TODO need to standardize how to generate this ID with the server
     private fun generateItemId(): String {
         return UUID.randomUUID().toString()

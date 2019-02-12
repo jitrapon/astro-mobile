@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event.preference
 
+import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.reactivex.Flowable
 import java.util.*
 
@@ -21,9 +22,9 @@ class EventItemPreferenceRepository(private val localDataSource: EventItemPrefer
         localDataSource.setCalendarSyncStatus(calId, isSynced)
     }
 
-    override fun getCalendarSyncListDiff() = localDataSource.getCalendarSyncListDiff()
+    override fun getCalendarDiff(): SimpleDiffResult<String> = localDataSource.getCalendarDiff()
 
-    override fun clearCalendarSyncListDiff() {
-        localDataSource.clearCalendarSyncListDiff()
+    override fun clearCalendarDiff() {
+        localDataSource.clearCalendarDiff()
     }
 }

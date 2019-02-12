@@ -229,6 +229,8 @@ class BoardFragment : BaseFragment() {
                 else if (it.action == Const.NAVIGATE_TO_BOARD_PREFERENCE) {
                     val boardItemType = it.payload as Int
 
+                    //TODO stop loading
+
                     startActivity(BoardItemPreferenceActivity::class.java, Const.BOARD_ITEM_PREFERENCE_REQUEST_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM_TYPE, boardItemType)
                     })
@@ -261,7 +263,7 @@ class BoardFragment : BaseFragment() {
             }
         }
         else if (requestCode == Const.BOARD_ITEM_PREFERENCE_REQUEST_CODE) {
-            viewModel.syncPrefChanges()
+            viewModel.syncBoardFromPreference()
         }
     }
 

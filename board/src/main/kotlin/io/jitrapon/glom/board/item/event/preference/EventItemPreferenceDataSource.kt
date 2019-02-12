@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event.preference
 
+import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.reactivex.Flowable
 import java.util.*
 
@@ -18,10 +19,7 @@ interface EventItemPreferenceDataSource {
 
     fun setCalendarSyncStatus(calId: Long, isSynced: Boolean)
 
-    /**
-     * Returns a pair of recently synced calendars and unsynced calendars
-     */
-    fun getCalendarSyncListDiff(): Pair<HashSet<String>, HashSet<String>>
+    fun getCalendarDiff(): SimpleDiffResult<String>
 
-    fun clearCalendarSyncListDiff()
+    fun clearCalendarDiff()
 }

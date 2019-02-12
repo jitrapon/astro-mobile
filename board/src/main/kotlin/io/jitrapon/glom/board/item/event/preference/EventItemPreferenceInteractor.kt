@@ -4,7 +4,6 @@ import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -55,11 +54,5 @@ class EventItemPreferenceInteractor(private val repository: EventItemPreferenceD
             }, {
                 //nothing yet
             }).autoDispose()
-    }
-
-    fun getCalendarSyncListDiff() = repository.getCalendarSyncListDiff()
-
-    fun clearCalendarSyncListDiff() {
-        repository.clearCalendarSyncListDiff()
     }
 }

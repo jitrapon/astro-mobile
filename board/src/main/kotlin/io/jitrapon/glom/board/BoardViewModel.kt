@@ -36,9 +36,6 @@ class BoardViewModel : BaseViewModel() {
     @Inject
     lateinit var userInteractor: UserInteractor
 
-    @Inject
-    lateinit var prefInteractor: EventItemPreferenceInteractor
-
     /* live data for the board items */
     internal val observableBoard = MutableLiveData<BoardUiModel>()
     internal val boardUiModel = BoardUiModel()
@@ -366,14 +363,17 @@ class BoardViewModel : BaseViewModel() {
         }
     }
 
+    //region preferences
+
     fun showBoardPreference() {
         observableNavigation.value = Navigation(Const.NAVIGATE_TO_BOARD_PREFERENCE, boardInteractor.itemType)
     }
 
-    fun syncPrefChanges() {
-        prefInteractor.getCalendarSyncListDiff()
-        prefInteractor.clearCalendarSyncListDiff()
+    fun syncBoardFromPreference() {
+        boardInteractor.syncBoardFromPreference()
     }
+
+    //endregion
 
     //endregion
     //region utility functions

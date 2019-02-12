@@ -1,17 +1,22 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.*
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceRepository
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: CalendarDao, private val userInteractor: UserInteractor) : BoardDataSource {
+class BoardLocalDataSource(database: BoardDatabase,
+                           private val userInteractor: UserInteractor,
+                           private val eventPref: EventItemPreferenceDataSource) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
     private val lock: Any = Any()
@@ -21,7 +26,7 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
     private var lastFetchedItemType: AtomicInteger = AtomicInteger(Integer.MIN_VALUE)
 
     /* DAO access object to event items in local DB */
-    private val eventDao: EventItemDao = database.eventItemDao()
+    private val eventDao: EventItemDao by lazy { database.eventItemDao() }
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
@@ -36,12 +41,9 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
                                 it.toBoard(circleId, userInteractor.getCurrentUserId())
                             }
                             .toFlowable()
-//                            .flatMap {
-//                                calendarDao.getEvents().addToBoard(it).onErrorReturn { ex ->
-//                                    AppLogger.e(ex)
-//                                    it
-//                                }
-//                            }
+                            .flatMap {
+                                syncItemPreference(it, BoardItem.TYPE_EVENT)
+                            }
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it
@@ -155,6 +157,31 @@ class BoardLocalDataSource(database: BoardDatabase, private val calendarDao: Cal
                     it.syncStatus = status
                 }
             }
+        }
+    }
+
+    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
+        return when (itemType) {
+            BoardItem.TYPE_EVENT -> {
+                eventPref.getPreference(true)
+                    .map { pref ->
+                        val calendars = pref.calendarPreference.calendars.filter { it.isSyncedToBoard }
+                        for (calendar in calendars) {
+                            AppLogger.d("Synced calendar: $calendar")
+                        }
+                        val addedCalendarIds = eventPref.getCalendarDiff().getAdded()
+                        val removedCalendarIds = eventPref.getCalendarDiff().getRemoved()
+                        for (calId in addedCalendarIds) {
+                            AppLogger.d("Added calendar IDs: $calId")
+                        }
+                        for (calId in removedCalendarIds) {
+                            AppLogger.d("Removed calendar ID: $calId")
+                        }
+                        eventPref.clearCalendarDiff()
+                        board
+                    }
+            }
+            else -> Flowable.error(NotImplementedError())
         }
     }
 }

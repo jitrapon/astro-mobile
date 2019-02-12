@@ -23,4 +23,6 @@ interface BoardDataSource {
     fun deleteItem(itemId: String, remote: Boolean = false): Completable
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable
+
+    fun syncItemPreference(board: Board, itemType: Int): Flowable<Board>
 }

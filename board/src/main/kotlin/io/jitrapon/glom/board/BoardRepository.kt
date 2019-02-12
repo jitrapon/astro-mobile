@@ -43,4 +43,8 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
     override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
         return localDataSource.setItemSyncStatus(itemId, status)
     }
+
+    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
+        return localDataSource.syncItemPreference(board, itemType)
+    }
 }

@@ -58,6 +58,10 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
         }
     }
 
+    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
+        throw NotImplementedError()
+    }
+
     //region serializers
     //endregion
 

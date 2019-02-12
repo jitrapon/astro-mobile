@@ -1,9 +1,8 @@
 package io.jitrapon.glom.board.item.event.preference
 
 import android.graphics.Color
-import android.util.SparseLongArray
-import androidx.core.util.putAll
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.jitrapon.glom.board.BoardDatabase
 import io.jitrapon.glom.board.item.event.CalendarEntity
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
@@ -21,8 +20,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
 
     private var inMemoryPreference: EventItemPreference? = null
     private var inMemorySyncedCalIds = HashSet<String>()
-    private val toBeSynced = HashSet<String>()
-    private val toBeUnsynced = HashSet<String>()
+    private val calendarDiffResult = SimpleDiffResult<String>()
 
     override fun getPreference(refresh: Boolean): Flowable<EventItemPreference> {
         return if (!refresh && inMemoryPreference != null) {
@@ -39,8 +37,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
                 preferenceDao.getSyncedCalendars(circleInteractor.getActiveCircleId()).toFlowable().subscribeOn(Schedulers.io()),
                 BiFunction<CalendarPreference, List<CalendarEntity>, EventItemPreference> { deviceCalendars, syncedCalendars ->
                     val list = syncedCalendars.toCalendarList()
-                    toBeSynced.clear()
-                    toBeUnsynced.clear()
+                    calendarDiffResult.clear()
                     inMemorySyncedCalIds = syncedCalendars.map { it.calendarId }.toHashSet()
                     val calendars = list.associateBy({it.calId}, {it}).let { map ->
                         val result = ArrayList<DeviceCalendar>(list)
@@ -83,14 +80,12 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
         return Flowable.fromCallable {
             if (preference.calendarPreference.calendars.isNotEmpty()) {
                 val toBeSyncedCalendars = preference.calendarPreference.calendars.filter {
-                    toBeSynced.contains(it.calId.toString())
+                    calendarDiffResult.hasAdded(it.calId.toString())
                 }.map { it.toEntity() }
-                preferenceDao.insertOrReplaceCalendars(toBeSyncedCalendars)
-
                 val toBeUnsyncedCalendarIds = preference.calendarPreference.calendars.filter {
-                    toBeUnsynced.contains(it.calId.toString())
+                    calendarDiffResult.hasRemoved(it.calId.toString())
                 }.map { it.calId.toString() }
-                preferenceDao.deleteCalendars(toBeUnsyncedCalendarIds)
+                preferenceDao.insertAndRemoveCalendars(toBeSyncedCalendars, toBeUnsyncedCalendarIds)
             }
             preference
         }
@@ -103,25 +98,18 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
             isSyncedToBoard = isSynced
             val calIdString = calId.toString()
             if (isSynced) {
-                if (!inMemorySyncedCalIds.contains(calIdString)) {
-                    toBeSynced.add(calIdString)
-                }
-                toBeUnsynced.remove(calIdString)
+                calendarDiffResult.add(calIdString, !inMemorySyncedCalIds.contains(calIdString))
             }
             else {
-                if (inMemorySyncedCalIds.contains(calIdString)) {
-                    toBeUnsynced.add(calIdString)
-                }
-                toBeSynced.remove(calIdString)
+                calendarDiffResult.remove(calIdString, inMemorySyncedCalIds.contains(calIdString))
             }
         }
     }
 
-    override fun getCalendarSyncListDiff(): Pair<HashSet<String>, HashSet<String>> = toBeSynced to toBeUnsynced
+    override fun getCalendarDiff() = calendarDiffResult
 
-    override fun clearCalendarSyncListDiff() {
-        toBeSynced.clear()
-        toBeUnsynced.clear()
+    override fun clearCalendarDiff() {
+        calendarDiffResult.clear()
     }
 
     private fun List<CalendarEntity>.toCalendarList(): List<DeviceCalendar> {

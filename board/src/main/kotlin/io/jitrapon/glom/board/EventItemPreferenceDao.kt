@@ -11,15 +11,11 @@ interface EventItemPreferenceDao {
     fun getSyncedCalendars(circleId: String): Single<List<CalendarEntity>>
 
     @Transaction
-    fun insertOrReplaceCalendars(calendars: List<CalendarEntity>) {
-        for (calendar in calendars) {
+    fun insertAndRemoveCalendars(insertList: List<CalendarEntity>, removeList: List<String>) {
+        for (calendar in insertList) {
             insertCalendar(calendar)
         }
-    }
-
-    @Transaction
-    fun deleteCalendars(idList: List<String>) {
-        for (id in idList) {
+        for (id in removeList) {
             deleteCalendarById(id)
         }
     }

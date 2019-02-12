@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.app.Application
 import androidx.room.Room
+import dagger.Lazy
 import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -28,8 +29,9 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideBoardDataSource(circleInteractor: CircleInteractor, calendarDao: CalendarDao, database: BoardDatabase, userInteractor: UserInteractor): BoardDataSource =
-            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, calendarDao, userInteractor))
+    fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase, userInteractor: UserInteractor,
+                               eventPref: EventItemPreferenceDataSource): BoardDataSource =
+            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, userInteractor, eventPref))
 
     @Provides
     @BoardScope
