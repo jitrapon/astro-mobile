@@ -11,6 +11,7 @@ import io.jitrapon.glom.base.viewmodel.run
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.BoardInjector
 import io.jitrapon.glom.board.BoardViewModel
+import io.jitrapon.glom.board.Const.NAVIGATE_BACK
 import io.jitrapon.glom.board.R
 import javax.inject.Inject
 
@@ -128,8 +129,17 @@ class EventItemPreferenceViewModel : BaseViewModel() {
     fun isHeaderItemExpanded(headerTag: Int) = preferenceUiModel.expandStates[headerTag]
 
     fun savePreference() {
+        observableViewAction.value = Loading(true)
+
         interactor.savePreference {
-            if (it is AsyncErrorResult) handleError(it.error)
+            if (it is AsyncSuccessResult) {
+                arrayOf({
+                    observableViewAction.value = Loading(false)
+                }, {
+                    observableViewAction.value = Navigation(NAVIGATE_BACK)
+                }).run(50L)
+            }
+            else if (it is AsyncErrorResult) handleError(it.error)
         }
     }
 

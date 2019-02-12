@@ -1,14 +1,11 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.*
-import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
-import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceRepository
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
@@ -163,7 +160,7 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
         return when (itemType) {
             BoardItem.TYPE_EVENT -> {
-                eventPref.getPreference(true)
+                eventPref.getPreference(false)
                     .map { pref ->
                         val calendars = pref.calendarPreference.calendars.filter { it.isSyncedToBoard }
                         for (calendar in calendars) {

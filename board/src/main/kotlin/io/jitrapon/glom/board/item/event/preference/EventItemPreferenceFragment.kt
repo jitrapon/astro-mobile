@@ -1,6 +1,5 @@
 package io.jitrapon.glom.board.item.event.preference
 
-import android.preference.PreferenceFragment
 import android.view.View
 import android.widget.ProgressBar
 import androidx.fragment.app.FragmentActivity
@@ -10,7 +9,9 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
+import io.jitrapon.glom.base.util.finish
 import io.jitrapon.glom.base.util.obtainViewModel
+import io.jitrapon.glom.board.Const.NAVIGATE_BACK
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.PreferenceFragmentListener
 import kotlinx.android.synthetic.main.event_item_preference_fragment.*
@@ -101,5 +102,9 @@ class EventItemPreferenceFragment : BaseFragment(), PreferenceFragmentListener {
 
     override fun onSavePreference() {
         viewModel.savePreference()
+    }
+
+    override fun navigate(action: String, payload: Any?) {
+        if (action == NAVIGATE_BACK) finish()
     }
 }

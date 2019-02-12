@@ -53,8 +53,6 @@ class BoardItemPreferenceActivity : BaseActivity() {
     }
 
     override fun onBackPressed() {
-        super.onBackPressed()
-
         (findFragment(fragmentTag) as? PreferenceFragmentListener)?.onSavePreference()
     }
 }

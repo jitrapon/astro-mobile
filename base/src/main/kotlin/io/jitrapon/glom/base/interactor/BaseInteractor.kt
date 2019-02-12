@@ -49,7 +49,7 @@ open class BaseInteractor {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    AppLogger.i("Initialized account complete")
+
                 }, {
                     AppLogger.e(it)
                 }).autoDispose()
