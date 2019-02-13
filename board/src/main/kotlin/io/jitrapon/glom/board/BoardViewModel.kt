@@ -369,10 +369,6 @@ class BoardViewModel : BaseViewModel() {
         observableNavigation.value = Navigation(Const.NAVIGATE_TO_BOARD_PREFERENCE, boardInteractor.itemType)
     }
 
-    fun syncBoardFromPreference() {
-        boardInteractor.syncBoardFromPreference()
-    }
-
     //endregion
 
     //endregion

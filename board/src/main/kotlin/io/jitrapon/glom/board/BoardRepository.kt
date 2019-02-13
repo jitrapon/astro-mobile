@@ -5,6 +5,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.Date
 
 /**
  * Repository for retrieving and saving Board information
@@ -44,7 +45,5 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
         return localDataSource.setItemSyncStatus(itemId, status)
     }
 
-    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
-        return localDataSource.syncItemPreference(board, itemType)
-    }
+    override fun getSyncTime(): Date = Date()
 }

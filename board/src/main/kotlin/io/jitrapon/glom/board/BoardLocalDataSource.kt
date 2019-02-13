@@ -4,11 +4,20 @@ import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.EventItemDao
+import io.jitrapon.glom.board.item.event.EventItemFullEntity
+import io.jitrapon.glom.board.item.event.calendar.DeviceEvent
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
+import io.jitrapon.glom.board.item.event.toEntity
+import io.jitrapon.glom.board.item.event.toEventItems
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import java.util.*
+import io.reactivex.functions.BiFunction
+import io.reactivex.schedulers.Schedulers
+import java.util.ArrayList
+import java.util.Date
+import java.util.HashSet
 import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(database: BoardDatabase,
@@ -33,14 +42,13 @@ class BoardLocalDataSource(database: BoardDatabase,
         else {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
-                    eventDao.getEventsInCircle(circleId)
-                            .map {
-                                it.toBoard(circleId, userInteractor.getCurrentUserId())
-                            }
-                            .toFlowable()
-                            .flatMap {
-                                syncItemPreference(it, BoardItem.TYPE_EVENT)
-                            }
+                    Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable().subscribeOn(Schedulers.io()),
+                                getEventsFromDeviceCalendars().subscribeOn(Schedulers.io()),
+                                BiFunction<List<EventItemFullEntity>, List<DeviceEvent>, Board> { dbEvents, deviceEvents ->
+                                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId())
+                                    items.addAll(deviceEvents.toEventItems())
+                                    Board(circleId, items, getSyncTime())
+                                })
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it
@@ -55,12 +63,15 @@ class BoardLocalDataSource(database: BoardDatabase,
 
     override fun saveBoard(board: Board): Flowable<Board> {
         return Flowable.fromCallable {
-            //TODO delete unsynced items?
             val eventEntities = ArrayList<EventItemFullEntity>()
             val updatedTime = Date().time
             board.items.forEach {
                 when (it) {
-                    is EventItem -> eventEntities.add(it.toEntity(board.circleId, userInteractor.getCurrentUserId(), updatedTime))
+                    is EventItem -> {
+                        if (!it.isDeviceEvent) {
+                            eventEntities.add(it.toEntity(board.circleId, userInteractor.getCurrentUserId(), updatedTime))
+                        }
+                    }
                     else -> { /* do nothing */ }
                 }
             }
@@ -69,10 +80,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             // find items that should be deleted
             val itemsInDB = eventDao.getEventsInCircle(board.circleId).blockingGet()
             deleteItemsNotFoundInNewBoard(eventEntities, itemsInDB.toMutableList())
-        }.flatMap {
-            eventDao.getEventsInCircle(board.circleId)
-                    .map { it.toBoard(board.circleId, userInteractor.getCurrentUserId()) }
-                    .toFlowable()
+            board
         }.doOnNext {
             synchronized(lock) {
                 inMemoryBoard = it
@@ -157,28 +165,25 @@ class BoardLocalDataSource(database: BoardDatabase,
         }
     }
 
-    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
-        return when (itemType) {
-            BoardItem.TYPE_EVENT -> {
-                eventPref.getPreference(false)
-                    .map { pref ->
-                        val calendars = pref.calendarPreference.calendars.filter { it.isSyncedToBoard }
-                        for (calendar in calendars) {
-                            AppLogger.d("Synced calendar: $calendar")
-                        }
-                        val addedCalendarIds = eventPref.getCalendarDiff().getAdded()
-                        val removedCalendarIds = eventPref.getCalendarDiff().getRemoved()
-                        for (calId in addedCalendarIds) {
-                            AppLogger.d("Added calendar IDs: $calId")
-                        }
-                        for (calId in removedCalendarIds) {
-                            AppLogger.d("Removed calendar ID: $calId")
-                        }
-                        eventPref.clearCalendarDiff()
-                        board
-                    }
+    override fun getSyncTime(): Date = Date()
+
+    private fun getEventsFromDeviceCalendars(): Flowable<List<DeviceEvent>> {
+        return eventPref.getPreference(false)
+            .map { pref ->
+                val calendars = pref.calendarPreference.calendars.filter { it.isSyncedToBoard }
+                for (calendar in calendars) {
+                    AppLogger.d("Synced calendar: $calendar")
+                }
+                val addedCalendarIds = eventPref.getCalendarDiff().getAdded()
+                val removedCalendarIds = eventPref.getCalendarDiff().getRemoved()
+                for (calId in addedCalendarIds) {
+                    AppLogger.d("Added calendar IDs: $calId")
+                }
+                for (calId in removedCalendarIds) {
+                    AppLogger.d("Removed calendar ID: $calId")
+                }
+                eventPref.clearCalendarDiff()
+                ArrayList<DeviceEvent>()
             }
-            else -> Flowable.error(NotImplementedError())
-        }
     }
 }

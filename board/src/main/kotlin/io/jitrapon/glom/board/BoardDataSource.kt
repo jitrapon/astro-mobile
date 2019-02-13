@@ -4,6 +4,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import java.util.Date
 
 /**
  * Main entry to the board data and its items
@@ -24,5 +25,5 @@ interface BoardDataSource {
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable
 
-    fun syncItemPreference(board: Board, itemType: Int): Flowable<Board>
+   fun getSyncTime(): Date
 }

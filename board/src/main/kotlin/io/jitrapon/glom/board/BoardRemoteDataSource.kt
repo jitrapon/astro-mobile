@@ -58,9 +58,7 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
         }
     }
 
-    override fun syncItemPreference(board: Board, itemType: Int): Flowable<Board> {
-        throw NotImplementedError()
-    }
+    override fun getSyncTime(): Date = Date()
 
     //region serializers
     //endregion

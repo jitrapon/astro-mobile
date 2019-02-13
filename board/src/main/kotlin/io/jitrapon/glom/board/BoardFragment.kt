@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -263,7 +264,7 @@ class BoardFragment : BaseFragment() {
             }
         }
         else if (requestCode == Const.BOARD_ITEM_PREFERENCE_REQUEST_CODE) {
-            viewModel.syncBoardFromPreference()
+            showToast(AndroidString(text = "TODO"))
         }
     }
 

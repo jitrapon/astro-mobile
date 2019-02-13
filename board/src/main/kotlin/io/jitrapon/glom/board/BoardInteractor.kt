@@ -12,6 +12,7 @@ import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
@@ -79,6 +80,16 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 .doOnNext {
                     itemsLoaded = it.first.items.size
                 }
+                .measureExecutionTime("BoardInteractor#loadBoard")
+//                .doOnSubscribe {
+//                    startMeasureTime = System.currentTimeMillis()
+//                    AppLogger.d("Executing...")
+//                }
+//                .doOnTerminate {
+//                    startMeasureTime?.let {
+//                        AppLogger.d("Executed in ${System.currentTimeMillis() - it} ms}")
+//                    }
+//                }
                 .subscribe({
                     onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
                 }, {
@@ -177,7 +188,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,
                             "Asia/Bangkok", false, null, false, false, owners),
-                    SyncStatus.OFFLINE, now)
+                    SyncStatus.OFFLINE, false, now)
             else -> TODO()
         }
     }
@@ -340,17 +351,6 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
-    }
-
-    fun syncBoardFromPreference() {
-        boardDataSource.syncItemPreference(getCurrentBoard(), itemType)
-            .subscribeOn(Schedulers.computation())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-
-            }, {
-
-            }).autoDispose()
     }
 
     //TODO need to standardize how to generate this ID with the server

@@ -43,7 +43,7 @@ fun BoardItemResponse.deserialize(): EventItem {
                         it["is_date_poll_opened"] as Boolean,
                         it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>))
-            }, SyncStatus.SUCCESS, Date())
+            }, SyncStatus.SUCCESS, false, Date())
 }
 
 fun EventItem.serializeInfo(): MutableMap<String, Any?> {
@@ -80,15 +80,10 @@ fun EventItem.serializeInfo(): MutableMap<String, Any?> {
     }
 }
 
-fun List<EventItemFullEntity>.toBoard(circleId: String, userId: String?): Board {
+fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardItem> {
     val items = ArrayList<BoardItem>()
-    var updatedTime: Long = Date().time
     for (entity in this) {
         entity.entity.let {
-            //TODO add owners
-            if (it.updatedTime < updatedTime) {
-                updatedTime = it.updatedTime
-            }
             val location: EventLocation? = if (it.latitude == null && it.longitude == null && it.googlePlaceId == null && it.placeId == null && it.placeName == null) null
             else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
             items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
@@ -96,7 +91,11 @@ fun List<EventItemFullEntity>.toBoard(circleId: String, userId: String?): Board 
                             it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList()), it.syncStatus.toSyncStatus()))
         }
     }
-    return Board(circleId = circleId, items = items, retrievedTime = Date(updatedTime))
+    return items
+}
+
+fun List<DeviceEvent>.toEventItems(): MutableList<BoardItem> {
+    return ArrayList<BoardItem>()
 }
 
 fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): EventItemFullEntity {
@@ -113,13 +112,9 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
 fun DeviceEvent.toEventItem(): EventItem {
     val attendees: MutableList<String> = mutableListOf()
     return EventItem(
-            BoardItem.TYPE_EVENT,
-            "aasfdgkla123",
-            null,
-            null,
-            arrayListOf(""),
-            EventInfo("hello", null, null, null, null, null,
+            BoardItem.TYPE_EVENT, "aasfdgkla123", Date().time, Date().time, arrayListOf(""),
+            EventInfo("Calendar Event", null, null, null, null, null,
                     false, null, false, false, attendees),
-            SyncStatus.SUCCESS
+            SyncStatus.OFFLINE, true
     )
 }

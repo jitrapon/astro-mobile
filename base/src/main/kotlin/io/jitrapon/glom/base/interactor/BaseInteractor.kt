@@ -1,6 +1,9 @@
 package io.jitrapon.glom.base.interactor
 
+import android.annotation.SuppressLint
+import android.os.Build
 import com.squareup.moshi.Moshi
+import io.jitrapon.glom.BuildConfig
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.exceptions.ConnectionException
 import io.jitrapon.glom.base.domain.user.account.AccountDataSource
@@ -40,6 +43,8 @@ open class BaseInteractor {
 
     @Inject
     lateinit var moshi: Moshi
+
+    protected var startMeasureTime: Long? = null
 
     init {
         ObjectGraph.component.inject(this)
@@ -150,6 +155,26 @@ open class BaseInteractor {
      */
     fun Disposable.autoDispose() {
         compositeDisposable.add(this)
+    }
+
+    /**
+     * Measures the execution time of this Flowable, from the moment it is subscribed,
+     * to when it is terminated in milliseconds. This method only runs in DEBUG mode.
+     */
+    fun <T> Flowable<T>.measureExecutionTime(message: String? = null, useNanoTime: Boolean = false): Flowable<T> {
+        return if (BuildConfig.DEBUG) {
+            doOnSubscribe {
+                startMeasureTime = System.currentTimeMillis()
+                if (useNanoTime) startMeasureTime = System.nanoTime()
+                AppLogger.d("Executing $message...")
+            }
+            .doOnTerminate {
+                startMeasureTime?.let {
+                    AppLogger.d("Executed $message in ${System.currentTimeMillis() - it} ${if (useNanoTime) "ns" else "ms"}")
+                }
+            }
+        }
+        else this
     }
 
     /**

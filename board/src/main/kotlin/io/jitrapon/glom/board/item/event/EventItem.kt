@@ -20,6 +20,7 @@ data class EventItem(override val itemType: Int,
                      override val owners: List<String>,
                      override var itemInfo: EventInfo,
                      override var syncStatus: SyncStatus = SyncStatus.OFFLINE,
+                     var isDeviceEvent: Boolean = false,
                      override var retrievedTime: Date? = Date(),
                      override val error: Throwable? = null) : BoardItem {
 
@@ -42,6 +43,7 @@ data class EventItem(override val itemType: Int,
             parcel.createStringArrayList()!!,
             parcel.readParcelable(EventInfo::class.java.classLoader)!!,
             parcel.readInt().toSyncStatus(),
+            parcel.readInt() == 1,
             parcel.readLong().let {
                 if (it == -1L) null
                 else Date(it)
@@ -55,6 +57,7 @@ data class EventItem(override val itemType: Int,
         parcel.writeStringList(owners)
         parcel.writeParcelable(itemInfo, flags)
         parcel.writeInt(syncStatus.intValue)
+        parcel.writeInt(if (isDeviceEvent) 1 else 0)
         parcel.writeLong(retrievedTime?.time ?: -1L)
     }
 
