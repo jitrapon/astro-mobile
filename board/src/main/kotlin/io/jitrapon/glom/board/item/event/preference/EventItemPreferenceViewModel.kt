@@ -36,7 +36,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
     init {
         BoardInjector.getComponent().inject(this)
 
-        loadPreference(false)
+        loadPreference(true)
     }
 
     fun loadPreference(refresh: Boolean) {

@@ -30,8 +30,8 @@ class BoardModule {
     @Provides
     @BoardScope
     fun provideBoardDataSource(circleInteractor: CircleInteractor, database: BoardDatabase, userInteractor: UserInteractor,
-                               eventPref: EventItemPreferenceDataSource): BoardDataSource =
-            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, userInteractor, eventPref))
+                               eventPref: EventItemPreferenceDataSource, calendarDao: CalendarDao): BoardDataSource =
+            BoardRepository(BoardRemoteDataSource(circleInteractor), BoardLocalDataSource(database, userInteractor, eventPref, calendarDao))
 
     @Provides
     @BoardScope

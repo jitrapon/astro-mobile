@@ -1,16 +1,19 @@
 package io.jitrapon.glom.board.item.event
 
 import io.jitrapon.glom.base.model.RepeatInfo
-import io.jitrapon.glom.base.util.*
-import io.jitrapon.glom.board.Board
+import io.jitrapon.glom.base.util.asInt
+import io.jitrapon.glom.base.util.asLong
+import io.jitrapon.glom.base.util.asNullableDouble
+import io.jitrapon.glom.base.util.asNullableInt
+import io.jitrapon.glom.base.util.asNullableIntList
+import io.jitrapon.glom.base.util.asNullableLong
 import io.jitrapon.glom.board.BoardItemResponse
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.calendar.DeviceEvent
 import io.jitrapon.glom.board.item.toSyncStatus
-import io.reactivex.Flowable
-import java.util.*
-import kotlin.collections.HashMap
+import java.util.ArrayList
+import java.util.Date
+import java.util.LinkedHashMap
 
 fun BoardItemResponse.deserialize(): EventItem {
     return EventItem(BoardItem.TYPE_EVENT, itemId, createdTime, updatedTime, owners,
@@ -94,10 +97,6 @@ fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardIt
     return items
 }
 
-fun List<DeviceEvent>.toEventItems(): MutableList<BoardItem> {
-    return ArrayList<BoardItem>()
-}
-
 fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): EventItemFullEntity {
     return EventItemFullEntity().apply {
         entity = EventItemEntity(
@@ -107,14 +106,4 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
                 itemInfo.placePollStatus, owners.contains(userId), syncStatus.intValue, circleId)
         attendees = itemInfo.attendees
     }
-}
-
-fun DeviceEvent.toEventItem(): EventItem {
-    val attendees: MutableList<String> = mutableListOf()
-    return EventItem(
-            BoardItem.TYPE_EVENT, "aasfdgkla123", Date().time, Date().time, arrayListOf(""),
-            EventInfo("Calendar Event", null, null, null, null, null,
-                    false, null, false, false, attendees),
-            SyncStatus.OFFLINE, true
-    )
 }

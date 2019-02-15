@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event.calendar
 
+import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
 
@@ -9,7 +10,7 @@ import io.reactivex.Flowable
  */
 interface CalendarDao {
 
-    fun getEvents(): Flowable<List<DeviceEvent>>
+    fun getEventsSync(calId: String, startSearchTime: Long, endSearchTime: Long? = null): List<EventItem>
 
     fun getCalendars(): Flowable<CalendarPreference>
 }

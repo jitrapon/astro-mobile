@@ -2,12 +2,13 @@ package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemDao
 import io.jitrapon.glom.board.item.event.EventItemFullEntity
-import io.jitrapon.glom.board.item.event.calendar.DeviceEvent
+import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
 import io.jitrapon.glom.board.item.event.toEntity
 import io.jitrapon.glom.board.item.event.toEventItems
@@ -22,7 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(database: BoardDatabase,
                            private val userInteractor: UserInteractor,
-                           private val eventPref: EventItemPreferenceDataSource) : BoardDataSource {
+                           private val eventPrefDataSource: EventItemPreferenceDataSource,
+                           private val calendarDao: CalendarDao) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
     private val lock: Any = Any()
@@ -43,10 +45,10 @@ class BoardLocalDataSource(database: BoardDatabase,
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
                     Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable().subscribeOn(Schedulers.io()),
-                                getEventsFromDeviceCalendars().subscribeOn(Schedulers.io()),
-                                BiFunction<List<EventItemFullEntity>, List<DeviceEvent>, Board> { dbEvents, deviceEvents ->
+                                getEventsFromDeviceCalendars(Date().addDay(-30), Date().addDay(120)).subscribeOn(Schedulers.io()),
+                                BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
                                     val items = dbEvents.toEventItems(userInteractor.getCurrentUserId())
-                                    items.addAll(deviceEvents.toEventItems())
+                                    items.addAll(deviceEvents)
                                     Board(circleId, items, getSyncTime())
                                 })
                             .doOnNext {
@@ -167,23 +169,16 @@ class BoardLocalDataSource(database: BoardDatabase,
 
     override fun getSyncTime(): Date = Date()
 
-    private fun getEventsFromDeviceCalendars(): Flowable<List<DeviceEvent>> {
-        return eventPref.getPreference(false)
-            .map { pref ->
-                val calendars = pref.calendarPreference.calendars.filter { it.isSyncedToBoard }
+    private fun getEventsFromDeviceCalendars(startSearchTime: Date, endSearchTime: Date?): Flowable<List<EventItem>> {
+        return eventPrefDataSource.getSyncedCalendars()
+            .map { calendars ->
+                val result = ArrayList<EventItem>()
                 for (calendar in calendars) {
-                    AppLogger.d("Synced calendar: $calendar")
+                    // 1546138800000
+                    result.addAll(calendarDao.getEventsSync(calendar.calendarId, startSearchTime.time, endSearchTime?.time))
                 }
-                val addedCalendarIds = eventPref.getCalendarDiff().getAdded()
-                val removedCalendarIds = eventPref.getCalendarDiff().getRemoved()
-                for (calId in addedCalendarIds) {
-                    AppLogger.d("Added calendar IDs: $calId")
-                }
-                for (calId in removedCalendarIds) {
-                    AppLogger.d("Removed calendar ID: $calId")
-                }
-                eventPref.clearCalendarDiff()
-                ArrayList<DeviceEvent>()
+                eventPrefDataSource.clearCalendarDiff()
+                result
             }
     }
 }
