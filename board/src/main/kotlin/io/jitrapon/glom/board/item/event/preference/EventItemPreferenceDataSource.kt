@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.item.event.preference
 
 import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.jitrapon.glom.board.item.event.CalendarEntity
+import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.reactivex.Flowable
 import java.util.*
 
@@ -24,5 +25,5 @@ interface EventItemPreferenceDataSource {
 
     fun clearCalendarDiff()
 
-    fun getSyncedCalendars(): Flowable<List<CalendarEntity>>
+    fun getSyncedCalendars(): Flowable<List<DeviceCalendar>>
 }

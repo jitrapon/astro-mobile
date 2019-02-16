@@ -188,7 +188,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,
                             "Asia/Bangkok", false, null, false, false, owners),
-                    SyncStatus.OFFLINE, false, now)
+                    SyncStatus.OFFLINE, now)
             else -> TODO()
         }
     }

@@ -22,8 +22,12 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
     private var inMemorySyncedCalIds = HashSet<String>()
     private val calendarDiffResult = SimpleDiffResult<String>()
 
-    override fun getSyncedCalendars(): Flowable<List<CalendarEntity>> {
-        return preferenceDao.getSyncedCalendars(circleInteractor.getActiveCircleId()).toFlowable()
+    override fun getSyncedCalendars(): Flowable<List<DeviceCalendar>> {
+        return preferenceDao.getSyncedCalendars(circleInteractor.getActiveCircleId())
+            .toFlowable()
+            .map {
+
+            }
     }
 
     override fun getPreference(refresh: Boolean): Flowable<EventItemPreference> {

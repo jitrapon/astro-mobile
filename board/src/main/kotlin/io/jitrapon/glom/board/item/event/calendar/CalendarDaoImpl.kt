@@ -19,9 +19,11 @@ import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.jitrapon.glom.base.util.hasWriteCalendarPermission
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.event.CalendarEntity
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventLocation
+import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
 import java.util.*
@@ -97,7 +99,7 @@ class CalendarDaoImpl(private val context: Context) :
 
     @SuppressLint("MissingPermission")
     @WorkerThread
-    override fun getEventsSync(calId: String, startSearchTime: Long, endSearchTime: Long?): List<EventItem> {
+    override fun getEventsSync(calendar: DeviceCalendar, startSearchTime: Long, endSearchTime: Long?): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             ArrayList<EventItem>().apply {
                 val uri: Uri = CalendarContract.Events.CONTENT_URI
@@ -106,7 +108,7 @@ class CalendarDaoImpl(private val context: Context) :
                     val endSearchQuery = endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
                     cur = contentResolver.query(uri,
                         EVENT_INSTANCE_PROJECTION,
-                        "${CalendarContract.Events.CALENDAR_ID} = '$calId' AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery",
+                        "${CalendarContract.Events.CALENDAR_ID} = '${calendar.calId}' AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery",
                         null,
                         "${CalendarContract.Events.DTSTART} ASC")
                     cur ?: return ArrayList()
@@ -125,8 +127,9 @@ class CalendarDaoImpl(private val context: Context) :
                                 cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
                                 cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
                                 null, false, false,
-                                arrayListOf()
-                            ), SyncStatus.OFFLINE, true
+                                arrayListOf(),
+                                EventSource(null, calendar)
+                            ), SyncStatus.OFFLINE, Date()
                         ))
                     }
                 }

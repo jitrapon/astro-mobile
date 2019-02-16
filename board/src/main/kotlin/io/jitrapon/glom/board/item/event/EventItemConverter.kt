@@ -45,8 +45,9 @@ fun BoardItemResponse.deserialize(): EventItem {
                         },
                         it["is_date_poll_opened"] as Boolean,
                         it["is_place_poll_opened"] as Boolean,
-                        ArrayList(it["attendees"] as List<String>))
-            }, SyncStatus.SUCCESS, false, Date())
+                        ArrayList(it["attendees"] as List<String>),
+                        EventSource(null, null))
+            }, SyncStatus.SUCCESS, Date())
 }
 
 fun EventItem.serializeInfo(): MutableMap<String, Any?> {
@@ -91,7 +92,7 @@ fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardIt
             else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
             items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
                     EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
-                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList()), it.syncStatus.toSyncStatus()))
+                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList(), EventSource(null, null)), it.syncStatus.toSyncStatus()))
         }
     }
     return items

@@ -2,8 +2,10 @@ package io.jitrapon.glom.board.item.event
 
 import android.os.Parcel
 import android.os.Parcelable
+import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.board.item.BoardItemInfo
+import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import java.util.*
 
 /**
@@ -21,11 +23,12 @@ data class EventInfo(var eventName: String,
                      var datePollStatus: Boolean,
                      var placePollStatus: Boolean,
                      var attendees: MutableList<String>,
+                     var source: EventSource,
                      override var retrievedTime: Date? = null,
                      override var error: Throwable? = null): BoardItemInfo {
 
     constructor(parcel: Parcel) : this(
-            parcel.readString(),
+            parcel.readString()!!,
             parcel.readLong().let {
                 if (it == -1L) null else it
             },
@@ -39,7 +42,8 @@ data class EventInfo(var eventName: String,
             parcel.readParcelable(RepeatInfo::class.java.classLoader),
             parcel.readByte() != 0.toByte(),
             parcel.readByte() != 0.toByte(),
-            parcel.createStringArrayList())
+            parcel.createStringArrayList()!!,
+            parcel.readParcelable(EventSource::class.java.classLoader)!!)
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(eventName)
@@ -53,6 +57,7 @@ data class EventInfo(var eventName: String,
         parcel.writeByte(if (datePollStatus) 1 else 0)
         parcel.writeByte(if (placePollStatus) 1 else 0)
         parcel.writeStringList(attendees)
+        parcel.writeParcelable(source, flags)
     }
 
     override fun describeContents(): Int = 0
@@ -62,4 +67,35 @@ data class EventInfo(var eventName: String,
 
         override fun newArray(size: Int): Array<EventInfo?> = arrayOfNulls(size)
     }
+}
+
+data class EventSource(val provider: String?,
+                       val calendar: DeviceCalendar?,
+                       override var retrievedTime: Date? = null,
+                       override val error: Throwable? = null
+): DataModel {
+    constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readParcelable(DeviceCalendar::class.java.classLoader)
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(provider)
+        parcel.writeParcelable(calendar, flags)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<EventSource> {
+        override fun createFromParcel(parcel: Parcel): EventSource {
+            return EventSource(parcel)
+        }
+
+        override fun newArray(size: Int): Array<EventSource?> {
+            return arrayOfNulls(size)
+        }
+    }
+
 }

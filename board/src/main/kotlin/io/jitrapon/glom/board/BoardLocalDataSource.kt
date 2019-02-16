@@ -70,7 +70,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             board.items.forEach {
                 when (it) {
                     is EventItem -> {
-                        if (!it.isDeviceEvent) {
+                        if (it.itemInfo.source.calendar == null) {
                             eventEntities.add(it.toEntity(board.circleId, userInteractor.getCurrentUserId(), updatedTime))
                         }
                     }
@@ -174,8 +174,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             .map { calendars ->
                 val result = ArrayList<EventItem>()
                 for (calendar in calendars) {
-                    // 1546138800000
-                    result.addAll(calendarDao.getEventsSync(calendar.calendarId, startSearchTime.time, endSearchTime?.time))
+                    result.addAll(calendarDao.getEventsSync(calendar, startSearchTime.time, endSearchTime?.time))
                 }
                 eventPrefDataSource.clearCalendarDiff()
                 result
