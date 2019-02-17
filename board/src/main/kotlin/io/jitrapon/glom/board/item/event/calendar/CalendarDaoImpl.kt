@@ -14,12 +14,10 @@ import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.jitrapon.glom.base.util.hasWriteCalendarPermission
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.CalendarEntity
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventLocation
@@ -30,7 +28,7 @@ import java.util.*
 
 // Projection array. Creating indices for this array instead of doing
 // dynamic lookups improves performance.
-private val EVENT_PROJECTION: Array<String> = arrayOf(
+private val CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars._ID,                     // 0
     CalendarContract.Calendars.ACCOUNT_NAME,            // 1
     CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 2
@@ -39,7 +37,7 @@ private val EVENT_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars.VISIBLE                  // 5
 )
 
-private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
+private val EVENT_CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events._ID,                        // 0    The _ID of this event
     CalendarContract.Events.CALENDAR_ID,                // 1    The _ID of the calendar the event belongs to.
     CalendarContract.Events.ORGANIZER,                  // 2    Email of the organizer (owner) of the event.
@@ -49,19 +47,15 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events.DTSTART,                    // 6    The time the event starts in UTC milliseconds since the epoch.
     CalendarContract.Events.DTEND,                      // 7    The time the event ends in UTC milliseconds since the epoch.
     CalendarContract.Events.EVENT_TIMEZONE,             // 8    The time zone for the event.
-    CalendarContract.Events.EVENT_END_TIMEZONE,         // 9    The time zone for the end time of the event.
-    CalendarContract.Events.DURATION,                   // 10   The duration of the event in RFC5545 format.
+    CalendarContract.Events.DURATION,                   // 9    The duration of the event in RFC5545 format.
                                                         //      For example, a value of "PT1H" states that the event
                                                         //      should last one hour, and a value of "P2W" indicates a duration of 2 weeks.
-    CalendarContract.Events.ALL_DAY,                    // 11   A value of 1 indicates this event occupies the entire day, as defined by the local time zone.
+    CalendarContract.Events.ALL_DAY,                    // 10   A value of 1 indicates this event occupies the entire day, as defined by the local time zone.
                                                         //      A value of 0 indicates it is a regular event that may start and end at any time during a day.
-    CalendarContract.Events.RRULE,                      // 12   The recurrence rule for the event format. For example, "FREQ=WEEKLY;COUNT=10;WKST=SU".
-    CalendarContract.Events.RDATE,                      // 13   The recurrence dates for the event. You typically use RDATE in conjunction with RRULE
+    CalendarContract.Events.RRULE,                      // 11   The recurrence rule for the event format. For example, "FREQ=WEEKLY;COUNT=10;WKST=SU".
+    CalendarContract.Events.RDATE,                      // 12   The recurrence dates for the event. You typically use RDATE in conjunction with RRULE
                                                         //      to define an aggregate set of repeating occurrences. For more discussion, see the RFC5545 spec.
-    CalendarContract.Events.AVAILABILITY,               // 14   If this event counts as busy time or is free time that can be scheduled over.
-    CalendarContract.Events.GUESTS_CAN_MODIFY,          // 15   Whether guests can modify the event.
-    CalendarContract.Events.GUESTS_CAN_INVITE_OTHERS,   // 16   Whether guests can invite other guests.
-    CalendarContract.Events.GUESTS_CAN_SEE_GUESTS       // 17   Whether guests can see the list of attendees.
+    CalendarContract.Events.AVAILABILITY                // 13   If this event counts as busy time or is free time that can be scheduled over.
 )
 
 // The indices for the projection array above.
@@ -81,15 +75,11 @@ private const val PROJECTION_EVENT_DESCRIPTION = 5
 private const val PROJECTION_EVENT_DTSTART = 6
 private const val PROJECTION_EVENT_DTEND = 7
 private const val PROJECTION_EVENT_TIMEZONE = 8
-private const val PROJECTION_EVENT_END_TIMEZONE = 9
-private const val PROJECTION_EVENT_DURATION = 10
-private const val PROJECTION_EVENT_ALL_DAY = 11
-private const val PROJECTION_EVENT_RRULE = 12
-private const val PROJECTION_EVENT_RDATE = 13
-private const val PROJECTION_EVENT_AVAILABILITY = 14
-private const val PROJECTION_EVENT_GUESTS_CAN_MODIFY = 15
-private const val PROJECTION_EVENT_GUESTS_CAN_INVITE_OTHERS = 16
-private const val PROJECTION_EVENT_GUESTS_CAN_SEE_GUESTS = 17
+private const val PROJECTION_EVENT_DURATION = 9
+private const val PROJECTION_EVENT_ALL_DAY = 10
+private const val PROJECTION_EVENT_RRULE = 11
+private const val PROJECTION_EVENT_RDATE = 12
+private const val PROJECTION_EVENT_AVAILABILITY = 13
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
@@ -99,19 +89,25 @@ class CalendarDaoImpl(private val context: Context) :
 
     @SuppressLint("MissingPermission")
     @WorkerThread
-    override fun getEventsSync(calendar: DeviceCalendar, startSearchTime: Long, endSearchTime: Long?): List<EventItem> {
+    override fun getEventsSync(calendars: List<DeviceCalendar>, startSearchTime: Long, endSearchTime: Long?): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             ArrayList<EventItem>().apply {
                 val uri: Uri = CalendarContract.Events.CONTENT_URI
                 var cur: Cursor? = null
                 try {
                     val endSearchQuery = endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
+                    val ids = StringBuffer().apply {
+                        for (i in calendars.indices) {
+                            append(calendars[i].calId)
+                            if (i != calendars.size - 1) append(",")
+                        }
+                    }.toString()
                     cur = contentResolver.query(uri,
-                        EVENT_INSTANCE_PROJECTION,
-                        "${CalendarContract.Events.CALENDAR_ID} = '${calendar.calId}' AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery",
-                        null,
-                        "${CalendarContract.Events.DTSTART} ASC")
+                        EVENT_CALENDAR_PROJECTION,
+                        "${CalendarContract.Events.CALENDAR_ID} in ($ids) AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery",
+                        null, null)
                     cur ?: return ArrayList()
+                    val map = calendars.associateBy { it.calId }
 
                     while (cur.moveToNext()) {
                         add(EventItem(BoardItem.TYPE_EVENT,
@@ -128,7 +124,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
                                 null, false, false,
                                 arrayListOf(),
-                                EventSource(null, calendar)
+                                EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)])
                             ), SyncStatus.OFFLINE, Date()
                         ))
                     }
@@ -144,7 +140,57 @@ class CalendarDaoImpl(private val context: Context) :
         else throw NoCalendarPermissionException()
     }
 
-    @SuppressLint("MissingPermission")
+    override fun getCalendars(calendarIds: List<String>): List<DeviceCalendar> {
+        return if (calendarIds.isEmpty()) listOf()
+        else {
+            if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
+                val uri: Uri = CalendarContract.Calendars.CONTENT_URI
+                val result: MutableList<DeviceCalendar> = mutableListOf()
+                var cur: Cursor? = null
+                try {
+                    val ids = StringBuffer().apply {
+                        for (i in calendarIds.indices) {
+                            append(calendarIds[i])
+                            if (i != calendarIds.size - 1) append(",")
+                        }
+                    }.toString()
+                    cur = contentResolver.query(uri,
+                            CALENDAR_PROJECTION, "${CalendarContract.Calendars._ID} in ($ids)", null, null)
+                    cur ?: return listOf()
+
+                    while (cur.moveToNext()) {
+                        val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
+                        val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
+                        val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
+                        val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
+                        val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
+                        val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        result.add(
+                                DeviceCalendar(
+                                        calId,
+                                        displayName,
+                                        accountName,
+                                        ownerName,
+                                        color,
+                                        isVisible,
+                                        false,
+                                        true
+                                )
+                        )
+                    }
+                }
+                catch (ex: Exception) {
+                    throw ex
+                }
+                finally {
+                    cur?.close()
+                }
+                result
+            }
+            else throw NoCalendarPermissionException()
+        }
+    }
+
     override fun getCalendars(): Flowable<CalendarPreference> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             Flowable.fromCallable {
@@ -156,7 +202,7 @@ class CalendarDaoImpl(private val context: Context) :
                 var cur: Cursor? = null
                 try {
                     cur = contentResolver.query(uri,
-                            EVENT_PROJECTION, null, null, null)
+                            CALENDAR_PROJECTION, null, null, null)
                     cur ?: return@fromCallable CalendarPreference(result, Date(), exception)
 
                     while (cur.moveToNext()) {

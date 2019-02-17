@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board.item.event.calendar
 
-import io.jitrapon.glom.board.item.event.CalendarEntity
+import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
@@ -11,7 +11,11 @@ import io.reactivex.Flowable
  */
 interface CalendarDao {
 
-    fun getEventsSync(calendar: DeviceCalendar, startSearchTime: Long, endSearchTime: Long? = null): List<EventItem>
+    @Throws(NoCalendarPermissionException::class)
+    fun getEventsSync(calendars: List<DeviceCalendar>, startSearchTime: Long, endSearchTime: Long? = null): List<EventItem>
 
     fun getCalendars(): Flowable<CalendarPreference>
+
+    @Throws(NoCalendarPermissionException::class)
+    fun getCalendars(calendarIds: List<String>): List<DeviceCalendar>
 }

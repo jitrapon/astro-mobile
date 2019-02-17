@@ -2,6 +2,7 @@ package io.jitrapon.glom.board
 
 import android.os.Parcel
 import android.text.TextUtils
+import androidx.annotation.WorkerThread
 import com.google.android.gms.location.places.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
@@ -18,6 +19,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.EventSource
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -81,15 +83,6 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                     itemsLoaded = it.first.items.size
                 }
                 .measureExecutionTime("BoardInteractor#loadBoard")
-//                .doOnSubscribe {
-//                    startMeasureTime = System.currentTimeMillis()
-//                    AppLogger.d("Executing...")
-//                }
-//                .doOnTerminate {
-//                    startMeasureTime?.let {
-//                        AppLogger.d("Executed in ${System.currentTimeMillis() - it} ms}")
-//                    }
-//                }
                 .subscribe({
                     onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
                 }, {
@@ -187,7 +180,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,
-                            "Asia/Bangkok", false, null, false, false, owners),
+                            "Asia/Bangkok", false, null, false, false, owners, EventSource(null, null)),
                     SyncStatus.OFFLINE, now)
             else -> TODO()
         }
@@ -291,59 +284,65 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.
      * This function call should be run in a background thread.
      */
+    @WorkerThread
     private fun processItems(board: Board): Flowable<Pair<Board, androidx.collection.ArrayMap<*, List<BoardItem>>>> {
-        val map = when (itemFilterType) {
-            ItemFilterType.EVENTS_BY_WEEK -> {
-                androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
-                    if (board.items.isEmpty()) put(null, board.items)
+        return Flowable.fromCallable {
+            val startTime = System.currentTimeMillis()
 
-                    val now = Calendar.getInstance().apply { time = Date() }
-                    board.items.filter { it is EventItem }                              // make sure that all items are event items
-                            .sortedBy { (it as EventItem).itemInfo.startTime }          // then sort by start time
-                            .groupBy { item ->                                          // group by the week of year
-                                Calendar.getInstance().let {
-                                    val startTime = (item as EventItem).itemInfo.startTime
-                                    if (startTime == null) null else {
-                                        it.time = Date(startTime)
-                                        when {
-                                            now[Calendar.YEAR] > it[Calendar.YEAR] -> {
+            val map = when (itemFilterType) {
+                ItemFilterType.EVENTS_BY_WEEK -> {
+                    androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
+                        if (board.items.isEmpty()) put(null, board.items)
 
-                                                // special case where year difference is 1
-                                                if (now[Calendar.YEAR] - it[Calendar.YEAR] == 1 && it[Calendar.WEEK_OF_YEAR] == 1) {
-                                                    (now[Calendar.WEEK_OF_YEAR] - 1) * -1
+                        val now = Calendar.getInstance().apply { time = Date() }
+                        board.items.filter { it is EventItem }                              // make sure that all items are event items
+                                .sortedBy { (it as EventItem).itemInfo.startTime }          // then sort by start time
+                                .groupBy { item ->                                          // group by the week of year
+                                    Calendar.getInstance().let {
+                                        val startTime = (item as EventItem).itemInfo.startTime
+                                        if (startTime == null) null else {
+                                            it.time = Date(startTime)
+                                            when {
+                                                now[Calendar.YEAR] > it[Calendar.YEAR] -> {
+
+                                                    // special case where year difference is 1
+                                                    if (now[Calendar.YEAR] - it[Calendar.YEAR] == 1 && it[Calendar.WEEK_OF_YEAR] == 1) {
+                                                        (now[Calendar.WEEK_OF_YEAR] - 1) * -1
+                                                    }
+                                                    else {
+                                                        (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
+                                                                * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+                                                    }
                                                 }
-                                                else {
-                                                    (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
-                                                            * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
+                                                now[Calendar.YEAR] < it[Calendar.YEAR] -> {
+                                                    ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
+                                                            + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
                                                 }
-                                            }
-                                            now[Calendar.YEAR] < it[Calendar.YEAR] -> {
-                                                ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
-                                                        + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
-                                            }
-                                            else -> {
+                                                else -> {
 
-                                                // for special case where the day falls in the first week of next year
-                                                if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
-                                                    (BoardViewModel.NUM_WEEK_IN_YEAR + 1) - now[Calendar.WEEK_OF_YEAR]
+                                                    // for special case where the day falls in the first week of next year
+                                                    if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
+                                                        (BoardViewModel.NUM_WEEK_IN_YEAR + 1) - now[Calendar.WEEK_OF_YEAR]
+                                                    }
+
+                                                    else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
                                                 }
-
-                                                else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
                                             }
                                         }
                                     }
                                 }
-                            }
-                            .forEach { put(it.key, it.value) }
+                                .forEach { put(it.key, it.value) }
+                    }
+                }
+                else -> {
+                    androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
+                        put(null, ArrayList())
+                    }
                 }
             }
-            else -> {
-                androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
-                    put(null, ArrayList())
-                }
-            }
+            AppLogger.d("BoardInteractor#processItems took ${System.currentTimeMillis() - startTime} ms")
+            board to map
         }
-        return Flowable.just(board to map)
     }
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus) {

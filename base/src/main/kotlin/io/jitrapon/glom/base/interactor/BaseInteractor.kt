@@ -1,7 +1,5 @@
 package io.jitrapon.glom.base.interactor
 
-import android.annotation.SuppressLint
-import android.os.Build
 import com.squareup.moshi.Moshi
 import io.jitrapon.glom.BuildConfig
 import io.jitrapon.glom.base.di.ObjectGraph
@@ -166,7 +164,6 @@ open class BaseInteractor {
             doOnSubscribe {
                 startMeasureTime = System.currentTimeMillis()
                 if (useNanoTime) startMeasureTime = System.nanoTime()
-                AppLogger.d("Executing $message...")
             }
             .doOnTerminate {
                 startMeasureTime?.let {

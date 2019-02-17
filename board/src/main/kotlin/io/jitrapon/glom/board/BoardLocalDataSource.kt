@@ -5,20 +5,14 @@ import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.EventItem
-import io.jitrapon.glom.board.item.event.EventItemDao
-import io.jitrapon.glom.board.item.event.EventItemFullEntity
+import io.jitrapon.glom.board.item.event.*
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
-import io.jitrapon.glom.board.item.event.toEntity
-import io.jitrapon.glom.board.item.event.toEventItems
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
-import java.util.ArrayList
-import java.util.Date
-import java.util.HashSet
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(database: BoardDatabase,
@@ -36,6 +30,25 @@ class BoardLocalDataSource(database: BoardDatabase,
     /* DAO access object to event items in local DB */
     private val eventDao: EventItemDao by lazy { database.eventItemDao() }
 
+    private var timestamp1 = System.currentTimeMillis()
+    private var timestamp2 = System.currentTimeMillis()
+
+    private fun getEventBoard(circleId: String): Flowable<Board> {
+        return Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable()
+                .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
+                .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
+                .subscribeOn(Schedulers.io()),
+                getEventsFromDeviceCalendars(Date().addDay(-30), Date().addDay(14))
+                        .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
+                        .doOnNext { AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms") }
+                        .subscribeOn(Schedulers.io()),
+                BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
+                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId())
+                    items.addAll(deviceEvents)
+                    Board(circleId, items, getSyncTime())
+                })
+    }
+
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
         return if (lastFetchedItemType.get() == itemType) Flowable.just(inMemoryBoard)
@@ -44,13 +57,7 @@ class BoardLocalDataSource(database: BoardDatabase,
         else {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
-                    Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable().subscribeOn(Schedulers.io()),
-                                getEventsFromDeviceCalendars(Date().addDay(-30), Date().addDay(120)).subscribeOn(Schedulers.io()),
-                                BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
-                                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId())
-                                    items.addAll(deviceEvents)
-                                    Board(circleId, items, getSyncTime())
-                                })
+                    getEventBoard(circleId)
                             .doOnNext {
                                 synchronized(lock) {
                                     inMemoryBoard = it
@@ -83,6 +90,8 @@ class BoardLocalDataSource(database: BoardDatabase,
             val itemsInDB = eventDao.getEventsInCircle(board.circleId).blockingGet()
             deleteItemsNotFoundInNewBoard(eventEntities, itemsInDB.toMutableList())
             board
+        }.flatMap {
+            getEventBoard(board.circleId)
         }.doOnNext {
             synchronized(lock) {
                 inMemoryBoard = it
@@ -173,8 +182,11 @@ class BoardLocalDataSource(database: BoardDatabase,
         return eventPrefDataSource.getSyncedCalendars()
             .map { calendars ->
                 val result = ArrayList<EventItem>()
-                for (calendar in calendars) {
-                    result.addAll(calendarDao.getEventsSync(calendar, startSearchTime.time, endSearchTime?.time))
+                try {
+                    result.addAll(calendarDao.getEventsSync(calendars, startSearchTime.time, endSearchTime?.time))
+                }
+                catch (ex: Exception) {
+                    AppLogger.e(ex)
                 }
                 eventPrefDataSource.clearCalendarDiff()
                 result

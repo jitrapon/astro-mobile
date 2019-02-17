@@ -3,6 +3,7 @@ package io.jitrapon.glom.board.item.event.preference
 import android.graphics.Color
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.model.SimpleDiffResult
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.BoardDatabase
 import io.jitrapon.glom.board.item.event.CalendarEntity
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
@@ -25,8 +26,13 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
     override fun getSyncedCalendars(): Flowable<List<DeviceCalendar>> {
         return preferenceDao.getSyncedCalendars(circleInteractor.getActiveCircleId())
             .toFlowable()
-            .map {
-
+            .map { calendars ->
+                try {
+                    calendarDao.getCalendars(calendars.map { it.calendarId })
+                } catch (ex: Exception) {
+                    AppLogger.e(ex)
+                    listOf<DeviceCalendar>()
+                }
             }
     }
 
