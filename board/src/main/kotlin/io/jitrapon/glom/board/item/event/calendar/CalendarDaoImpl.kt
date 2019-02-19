@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.CalendarContract
+import androidx.annotation.ColorInt
 import androidx.annotation.WorkerThread
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
@@ -240,7 +241,7 @@ class CalendarDaoImpl(private val context: Context) :
 }
 
 data class DeviceCalendar(val calId: Long, var displayName: String, var accountName: String,
-                          var ownerName: String, var color: Int, var isVisible: Boolean,
+                          var ownerName: String, @ColorInt var color: Int, var isVisible: Boolean,
                           var isSyncedToBoard: Boolean, var isLocal: Boolean,
                           override var retrievedTime: Date? = null,
                           override val error: Throwable? = null) : DataModel {

@@ -9,6 +9,13 @@ import android.view.animation.RotateAnimation
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.MapsInitializer
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
@@ -17,35 +24,32 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardViewModel
 import io.jitrapon.glom.board.HeaderItemUiModel
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.item.event.EventCardAttendeeAdapter
-import io.jitrapon.glom.board.item.event.EventItem
-import io.jitrapon.glom.board.item.event.EventItemUiModel
-import io.jitrapon.glom.board.item.event.EventItemViewModel
+import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_USE_GOOGLE_MAP
 
 /**
  * RecyclerView's Adapter for the Board screen, handling different item types (i.e. Events, Notes, etc.)
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragment: androidx.fragment.app.Fragment, private val orientation: Int) :
-        androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>(),
+class BoardItemAdapter(private val viewModel: BoardViewModel,
+                       private val fragment: Fragment,
+                       private val orientation: Int) :
+        RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         StickyHeaders,
         StickyHeaders.ViewSetup,
         ItemTouchHelperCallback.OnItemChangedListener {
 
     /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
-    private val attendeesRecycledViewPool: androidx.recyclerview.widget.RecyclerView.RecycledViewPool = androidx.recyclerview.widget.RecyclerView.RecycledViewPool()
+    private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool = RecyclerView.RecycledViewPool()
 
-    companion object {
-
-        private const val CAMERA_ZOOM_LEVEL = 15f
-        private const val VISIBLE_ATTENDEE_AVATARS = 3
-        private val ANIM_ROTATION = RotateAnimation(0f, 360f,
-                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-                0.5f).apply {
-            duration = 1000
-            repeatCount = Animation.INFINITE
-        }
+    private val ANIM_ROTATION = RotateAnimation(0f, 360f,
+            Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+            0.5f).apply {
+        duration = 1000
+        repeatCount = Animation.INFINITE
     }
 
     //endregion
@@ -54,7 +58,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
     /**
      * Bind view holder without payloads containing individual payloads
      */
-    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -68,7 +72,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * @param payloads A non-null list of merged payloads. Can be empty list if requires full
      *                 update.
      */
-    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
@@ -99,19 +103,21 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
                 updateAttendStatus(item)
                 updateStatus(item)
                 updateIsPlanning(item)
+                updateSource(item)
             }
             else {
                 val fields = payloads!!.first() as List<*>
                 for (field in fields) {
                     when (field as Int) {
-                        EventItemUiModel.TITLE -> { updateTitle(item) }
-                        EventItemUiModel.DATETIME -> { updateDateTime(item) }
-                        EventItemUiModel.LOCATION -> { updateLocation(item) }
-                        EventItemUiModel.MAPLATLNG -> { updateMap(item) }
-                        EventItemUiModel.ATTENDEES -> { updateAttendees(item) }
-                        EventItemUiModel.ATTENDSTATUS -> { updateAttendStatus(item) }
-                        EventItemUiModel.SYNCSTATUS -> { updateStatus(item) }
-                        EventItemUiModel.PLAN -> { updateIsPlanning(item) }
+                        TITLE -> { updateTitle(item) }
+                        DATETIME -> { updateDateTime(item) }
+                        LOCATION -> { updateLocation(item) }
+                        MAPLATLNG -> { updateMap(item) }
+                        ATTENDEES -> { updateAttendees(item) }
+                        ATTENDSTATUS -> { updateAttendStatus(item) }
+                        SYNCSTATUS -> { updateStatus(item) }
+                        PLAN -> { updateIsPlanning(item) }
+                        SOURCE -> { updateSource(item) }
                     }
                 }
             }
@@ -120,7 +126,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
 
     override fun getItemCount(): Int = viewModel.getBoardItemCount()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
                     .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::viewItemDetail)
@@ -151,10 +157,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         viewModel.deleteItem(position)
     }
 
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        (holder as? BoardItemViewHolder)?.recycle()
+    }
+
     //endregion
     //region view holder classes
 
-    inner class HeaderItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
+    inner class HeaderItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val text: TextView = itemView.findViewById(R.id.board_item_header_text)
     }
@@ -164,8 +174,10 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
      * The map is then initialized with LatLng that is stored as the tag of the MapView.
      * This ensures that the map is initialised with the latest data that it should display.
      */
-    inner class EventItemViewHolder(itemView: View, attendeesPool: androidx.recyclerview.widget.RecyclerView.RecycledViewPool,
-                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
+    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
+                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) :
+            BoardItemViewHolder(itemView),
+            OnMapReadyCallback {
 
         var itemId: String? = null
         private val title: TextView = itemView.findViewById(R.id.event_card_title)
@@ -174,17 +186,20 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         private val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         private val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)
         private val location: TextView = itemView.findViewById(R.id.event_card_location)
-        private val mapView: ImageView = itemView.findViewById(R.id.event_card_map)
-        private val attendees: androidx.recyclerview.widget.RecyclerView = itemView.findViewById(R.id.event_card_attendees)
+        private val mapImage: ImageView = itemView.findViewById(R.id.event_card_map_image)
+        private val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
         private val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
         private val syncStatus: ImageView = itemView.findViewById(R.id.event_card_sync_status)
         private val planStatus: ImageButton = itemView.findViewById(R.id.event_card_plan_button)
+        private val mapView: MapView = itemView.findViewById(R.id.event_card_map)
+        private var map: GoogleMap? = null
+        private val sourceIcon: ImageView = itemView.findViewById(R.id.event_card_source)
 
         init {
             attendees.apply {
                 setRecycledViewPool(attendeesPool)
-                (layoutManager as androidx.recyclerview.widget.LinearLayoutManager).initialPrefetchItemCount = VISIBLE_ATTENDEE_AVATARS + 1
-                adapter = EventCardAttendeeAdapter(fragment, visibleItemCount = VISIBLE_ATTENDEE_AVATARS)
+                (layoutManager as androidx.recyclerview.widget.LinearLayoutManager).initialPrefetchItemCount = EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT + 1
+                adapter = EventCardAttendeeAdapter(fragment, visibleItemCount = EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT)
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
                 }
@@ -214,6 +229,25 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             syncStatus.setOnClickListener {
                 itemId?.let(viewModel::syncItem)
             }
+
+            // initialize the MapView
+            if (EVENT_ITEM_MAP_USE_GOOGLE_MAP) {
+                with(mapView) {
+                    onCreate(null)
+                    getMapAsync(this@EventItemViewHolder)
+                }
+                mapImage.hide()
+            }
+            else {
+                mapView.hide()
+            }
+        }
+
+        override fun onMapReady(googleMap: GoogleMap?) {
+            MapsInitializer.initialize(fragment.context!!.applicationContext)
+            map = googleMap ?: return
+            map!!.setStyle(fragment.context!!, R.raw.map_style)
+            setMapLocation()
         }
 
         fun updateTitle(item: EventItemUiModel) {
@@ -247,17 +281,29 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         fun updateMap(item: EventItemUiModel) {
             item.mapLatLng.let { latLng ->
                 if (latLng != null) {
-                    mapView.apply {
-                        show()
-                        val width = if (orientation == Configuration.ORIENTATION_PORTRAIT) 481 else 650
-                        loadFromUrl(fragment, latLng.toUri(context, width, 153), transformation = Transformation.FIT_CENTER)
+                    if (EVENT_ITEM_MAP_USE_GOOGLE_MAP) {
+                        mapView.tag = latLng
+                        setMapLocation()
+                    }
+                    else {
+                        mapImage.apply {
+                            show()
+                            val width = if (orientation == Configuration.ORIENTATION_PORTRAIT) 481 else 650
+                            loadFromUrl(fragment, latLng.toUri(context, width, 153), transformation = Transformation.FIT_CENTER)
+                        }
                     }
                 }
                 else {
-                    mapView.apply {
-                        hide()
-                    }
+                    if (EVENT_ITEM_MAP_USE_GOOGLE_MAP)mapView.hide()
+                    else mapImage.hide()
                 }
+            }
+        }
+
+        private fun setMapLocation() {
+            (mapView.tag as? LatLng)?.let {
+                mapView.show()
+                map?.showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
             }
         }
 
@@ -265,7 +311,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
             item.attendeesAvatars.let {
                 attendees.apply {
                     if (it.isNullOrEmpty()) {
-                        hide()
+                        hide(invisible = true)
                     }
                     else {
                         show()
@@ -344,7 +390,35 @@ class BoardItemAdapter(private val viewModel: BoardViewModel, private val fragme
         fun updateIsPlanning(item: EventItemUiModel) {
             if (item.isPlanning) planStatus.show() else planStatus.hide()
         }
+
+        fun updateSource(item: EventItemUiModel) {
+            item.source.let {
+                when {
+                    it == null -> sourceIcon.hide()
+                    it.colorInt != null -> sourceIcon.apply {
+                        show()
+                        loadFromResource(R.drawable.ic_checkbox_blank_circle)
+                        tint(it.colorInt)
+                    }
+                    else -> sourceIcon.apply {
+                        show()
+                        load(fragment.context!!, it)
+                    }
+                }
+            }
+        }
+
+        override fun recycle() {
+            if (EVENT_ITEM_MAP_USE_GOOGLE_MAP) {
+                map?.clearMap()
+            }
+        }
     }
 
     //endregion
+}
+
+abstract class BoardItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+
+    abstract fun recycle()
 }

@@ -2,10 +2,21 @@ package io.jitrapon.glom.board.item.event
 
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
+import io.jitrapon.glom.base.model.AndroidImage
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.board.item.BoardItem.Companion.TYPE_EVENT
 import io.jitrapon.glom.board.item.BoardItemUiModel
-import io.jitrapon.glom.board.item.BoardItemUiModel.Companion.TYPE_EVENT
+
+const val TITLE = 0
+const val DATETIME = 1
+const val LOCATION = 2
+const val MAPLATLNG = 3
+const val ATTENDEES = 4
+const val ATTENDSTATUS = 5
+const val SYNCSTATUS = 6
+const val PLAN = 7
+const val SOURCE = 8
 
 /**
  * @author Jitrapon Tiachunpun
@@ -18,6 +29,7 @@ data class EventItemUiModel(override val itemId: String,
                             var attendeesAvatars: MutableList<String?>?,
                             var attendStatus: AttendStatus,
                             var isPlanning: Boolean = false,
+                            var source: AndroidImage? = null,
                             override val itemType: Int = TYPE_EVENT,
                             override var status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
 
@@ -26,18 +38,6 @@ data class EventItemUiModel(override val itemId: String,
      */
     enum class AttendStatus {
         DECLINED, MAYBE, GOING;
-    }
-
-    companion object {
-
-        const val TITLE = 0
-        const val DATETIME = 1
-        const val LOCATION = 2
-        const val MAPLATLNG = 3
-        const val ATTENDEES = 4
-        const val ATTENDSTATUS = 5
-        const val SYNCSTATUS = 6
-        const val PLAN = 7
     }
 
     override fun getChangePayload(other: BoardItemUiModel?): List<Int> {
@@ -53,6 +53,7 @@ data class EventItemUiModel(override val itemId: String,
             if (attendStatus != otherItem.attendStatus) add(ATTENDSTATUS)
             if (status != otherItem.status) add(SYNCSTATUS)
             if (isPlanning != otherItem.isPlanning) add(PLAN)
+            if (source != otherItem.source) add(SOURCE)
         }
     }
 

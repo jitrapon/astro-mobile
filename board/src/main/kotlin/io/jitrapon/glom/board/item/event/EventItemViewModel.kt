@@ -105,8 +105,20 @@ class EventItemViewModel : BoardItemViewModel() {
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
                     attendStatus = getEventAttendStatus(it.itemInfo.attendees),
                     status = getSyncStatus(syncStatus),
-                    isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus
+                    isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus,
+                    source = getEventSource(it.itemInfo.source)
             )
+        }
+    }
+
+    /**
+     * Returns an AndroidImage from an EventSource
+     */
+    private fun getEventSource(source: EventSource): AndroidImage? {
+        return when {
+            !source.providerIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.providerIconUrl)
+            source.calendar?.color != null -> AndroidImage(colorInt = source.calendar.color)
+            else -> null
         }
     }
 
@@ -233,7 +245,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
                     requestPlaceInfoItemIds = null
                     diffResult = null
-                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(EventItemUiModel.ATTENDSTATUS)) }
+                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(ATTENDSTATUS)) }
                 }
 
                 // show the animation
@@ -252,7 +264,7 @@ class EventItemViewModel : BoardItemViewModel() {
                                 requestPlaceInfoItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
-                                        arrayListOf(EventItemUiModel.ATTENDSTATUS, EventItemUiModel.ATTENDEES)) }
+                                        arrayListOf(ATTENDSTATUS, ATTENDEES)) }
                             }
                             boardViewModel.observableViewAction.value = Snackbar(message, level = level)
                         }
@@ -267,7 +279,7 @@ class EventItemViewModel : BoardItemViewModel() {
                                 requestPlaceInfoItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
-                                        arrayListOf(EventItemUiModel.ATTENDSTATUS, EventItemUiModel.ATTENDEES)) }
+                                        arrayListOf(ATTENDSTATUS, ATTENDEES)) }
                             }
                         }
                     }

@@ -1,7 +1,6 @@
 package io.jitrapon.glom.board.item.event.preference
 
 import io.jitrapon.glom.base.model.SimpleDiffResult
-import io.jitrapon.glom.board.item.event.CalendarEntity
 import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.reactivex.Flowable
 import java.util.*
@@ -27,3 +26,7 @@ interface EventItemPreferenceDataSource {
 
     fun getSyncedCalendars(): Flowable<List<DeviceCalendar>>
 }
+
+const val EVENT_ITEM_MAP_USE_GOOGLE_MAP = false
+const val EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL = 15f
+const val EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT = 3

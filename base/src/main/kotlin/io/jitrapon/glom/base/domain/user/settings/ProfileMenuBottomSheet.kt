@@ -87,7 +87,7 @@ class ProfileMenuBottomSheet : GlomBottomSheetDialogFragment() {
         }
     }
 
-    override fun onDismiss(dialog: DialogInterface?) {
+    override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
 
         if (viewModel.hasSignedOut) onDismissHandler?.invoke()

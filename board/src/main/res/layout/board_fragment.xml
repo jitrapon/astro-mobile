@@ -130,6 +130,7 @@
         android:layout_marginBottom="@dimen/fab_margin"
         android:layout_marginEnd="@dimen/fab_margin"
         app:srcCompat="@drawable/avatar_bot"
+        app:tint="@color/white"
         app:fabSize="normal"
         app:backgroundTint="@color/reddish" />
 

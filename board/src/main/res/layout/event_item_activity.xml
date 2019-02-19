@@ -13,7 +13,7 @@
         android:orientation="vertical"
         android:fitsSystemWindows="true" >
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/event_item_cardview"
             style="@style/CardView.BoardItem"
             android:layout_width="match_parent"
@@ -320,7 +320,7 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

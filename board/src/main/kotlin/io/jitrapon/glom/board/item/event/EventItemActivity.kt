@@ -10,13 +10,9 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
 import androidx.lifecycle.Observer
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -30,6 +26,7 @@ import io.jitrapon.glom.board.item.BoardItemActivity
 import io.jitrapon.glom.board.item.BoardItemViewModelStore
 import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
 import io.jitrapon.glom.board.item.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
@@ -65,40 +62,6 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     /* Place picker widget */
     private val placePicker: PlacePicker by lazy { PlacePicker() }
-
-    companion object {
-
-        private const val CAMERA_ZOOM_LEVEL = 15f
-
-        /**
-         * Displays a LatLng location on a
-         * {@link com.google.android.gms.maps.GoogleMap}.
-         * Adds a marker and centers the camera on the location with the normal map type.
-         */
-        private fun showMap(mapView: MapView, map: GoogleMap, data: LatLng) {
-            mapView.show()
-
-            // Add a marker for this item and set the camera
-            map.apply {
-                // Add a marker for this item and set the camera
-                moveCamera(CameraUpdateFactory.newLatLngZoom(data, CAMERA_ZOOM_LEVEL))
-                addMarker(MarkerOptions().position(data))
-
-                // Set the map type back to normal.
-                mapType = GoogleMap.MAP_TYPE_NORMAL
-            }
-        }
-
-        private fun clearMap(mapView: MapView, map: GoogleMap?) {
-            // clear the map and free up resources by changing the map type to none
-            mapView.hide()
-            map?.apply {
-                // clear the map and free up resources by changing the map type to none
-                clear()
-                mapType = GoogleMap.MAP_TYPE_NONE
-            }
-        }
-    }
 
     //region lifecycle
 
@@ -224,29 +187,18 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         super.onDestroy()
     }
 
-    override fun onMapReady(map: GoogleMap) {
-        this.map = map
-        this.map?.let {
-            try {
-                map.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style)).let {
-                    if (!it) AppLogger.w("Google Maps custom style parsing failed")
-                }
-            }
-            catch (ex: Exception) {
-                AppLogger.w(ex)
-            }
-
-            // disable ui
-            map.uiSettings.isMapToolbarEnabled = false
-
-            // on click listener
-            it.setOnMapClickListener {
+    override fun onMapReady(map: GoogleMap?) {
+        this.map = map ?: return
+        with(map) {
+            setStyle(this@EventItemActivity, R.raw.map_style)
+            setOnMapClickListener {
                 viewModel.navigateToMap()
             }
 
             // if there is a tag previously, set the location now
-            event_item_map.tag?.let {
-                showMap(event_item_map, map, it as LatLng)
+            (event_item_map.tag as? LatLng)?.let {
+                event_item_map.show()
+                showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
             }
         }
     }
@@ -342,26 +294,19 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 }
             })
 
-            // observe on location latlng
+            // observe on location latLng
             getObservableLocationLatLng().observe(this@EventItemActivity, Observer {
                 it.let { latlng ->
                     if (latlng == null) {
-                        clearMap(event_item_map, map)
+                        event_item_map.hide()
                     }
                     else {
-                        if (map == null) {
-                            event_item_map.apply {
+                        map.let { map ->
+                            if (map != null) event_item_map.show()
+                            map?.showMap(latlng, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL) ?: event_item_map.apply {
+                                event_item_map.tag = latlng
                                 onCreate(null)
                                 getMapAsync(this@EventItemActivity)
-                            }
-                        }
-                        map.let {
-                            // if map is not ready, set the tag, and onMapReady() will receive the latlng in the tag
-                            if (it == null) {
-                                event_item_map.tag = latlng
-                            }
-                            else {
-                                showMap(event_item_map, it, latlng)
                             }
                         }
                     }

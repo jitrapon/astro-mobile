@@ -10,7 +10,7 @@
         <item name="android:textColor">@color/warm_grey</item>
     </style>
 
-    <style name="CardView.BoardItem" parent="CardView">
+    <style name="CardView.BoardItem" parent="@style/Widget.MaterialComponents.CardView">
         <item name="cardBackgroundColor">@color/card_background</item>
         <item name="cardElevation">@dimen/card_elevation</item>
         <item name="cardCornerRadius">@dimen/card_corner_radius</item>

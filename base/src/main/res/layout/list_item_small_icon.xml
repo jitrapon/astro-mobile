@@ -97,14 +97,15 @@
         tools:ignore="ContentDescription" />
 
     <CheckBox
-        tools:visibility="gone"
+        app:useMaterialThemeColors="false"
+        tools:visibility="visible"
         android:id="@+id/list_item_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:checked="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/list_item_end_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

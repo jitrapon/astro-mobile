@@ -69,7 +69,7 @@ data class EventInfo(var eventName: String,
     }
 }
 
-data class EventSource(val provider: String?,
+data class EventSource(val providerIconUrl: String?,
                        val calendar: DeviceCalendar?,
                        override var retrievedTime: Date? = null,
                        override val error: Throwable? = null
@@ -80,7 +80,7 @@ data class EventSource(val provider: String?,
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(provider)
+        parcel.writeString(providerIconUrl)
         parcel.writeParcelable(calendar, flags)
     }
 
