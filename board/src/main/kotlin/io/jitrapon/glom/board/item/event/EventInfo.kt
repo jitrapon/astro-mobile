@@ -69,19 +69,22 @@ data class EventInfo(var eventName: String,
     }
 }
 
-data class EventSource(val providerIconUrl: String?,
+data class EventSource(val sourceIconUrl: String?,
                        val calendar: DeviceCalendar?,
+                       val description: String?,
                        override var retrievedTime: Date? = null,
                        override val error: Throwable? = null
 ): DataModel {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
-        parcel.readParcelable(DeviceCalendar::class.java.classLoader)
+        parcel.readParcelable(DeviceCalendar::class.java.classLoader),
+        parcel.readString()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(providerIconUrl)
+        parcel.writeString(sourceIconUrl)
         parcel.writeParcelable(calendar, flags)
+        parcel.writeString(description)
     }
 
     override fun describeContents(): Int {

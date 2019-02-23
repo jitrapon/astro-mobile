@@ -1,12 +1,7 @@
 package io.jitrapon.glom.board.item.event
 
 import io.jitrapon.glom.base.model.RepeatInfo
-import io.jitrapon.glom.base.util.asInt
-import io.jitrapon.glom.base.util.asLong
-import io.jitrapon.glom.base.util.asNullableDouble
-import io.jitrapon.glom.base.util.asNullableInt
-import io.jitrapon.glom.base.util.asNullableIntList
-import io.jitrapon.glom.base.util.asNullableLong
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.BoardItemResponse
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
@@ -14,6 +9,7 @@ import io.jitrapon.glom.board.item.toSyncStatus
 import java.util.ArrayList
 import java.util.Date
 import java.util.LinkedHashMap
+import kotlin.collections.HashMap
 
 fun BoardItemResponse.deserialize(): EventItem {
     return EventItem(BoardItem.TYPE_EVENT, itemId, createdTime, updatedTime, owners,
@@ -46,7 +42,7 @@ fun BoardItemResponse.deserialize(): EventItem {
                         it["is_date_poll_opened"] as Boolean,
                         it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>),
-                        EventSource(null, null))
+                        EventSource(null, null, null))
             }, SyncStatus.SUCCESS, Date())
 }
 
@@ -92,7 +88,7 @@ fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardIt
             else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
             items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
                     EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
-                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList(), EventSource(null, null)), it.syncStatus.toSyncStatus()))
+                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList(), EventSource(null, null, null)), it.syncStatus.toSyncStatus()))
         }
     }
     return items

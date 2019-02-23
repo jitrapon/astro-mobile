@@ -38,7 +38,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                 .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
                 .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
                 .subscribeOn(Schedulers.io()),
-                getEventsFromDeviceCalendars(Date().addDay(-30), Date().addDay(14))
+                getEventsFromDeviceCalendars(Date().addDay(-14), Date().addDay(14))
                         .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
                         .doOnNext { AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms") }
                         .subscribeOn(Schedulers.io()),

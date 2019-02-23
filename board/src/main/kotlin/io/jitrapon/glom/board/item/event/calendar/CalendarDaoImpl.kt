@@ -125,7 +125,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
                                 null, false, false,
                                 arrayListOf(),
-                                EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)])
+                                EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)], null)
                             ), SyncStatus.OFFLINE, Date()
                         ))
                     }

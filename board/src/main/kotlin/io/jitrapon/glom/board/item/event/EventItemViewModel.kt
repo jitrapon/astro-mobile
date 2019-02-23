@@ -106,7 +106,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     attendStatus = getEventAttendStatus(it.itemInfo.attendees),
                     status = getSyncStatus(syncStatus),
                     isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus,
-                    source = getEventSource(it.itemInfo.source)
+                    sourceIcon = getEventSourceIcon(it.itemInfo.source),
+                    sourceDescription = getEventSourceDescription(it.itemInfo.source)
             )
         }
     }
@@ -114,11 +115,30 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns an AndroidImage from an EventSource
      */
-    private fun getEventSource(source: EventSource): AndroidImage? {
+    private fun getEventSourceIcon(source: EventSource): AndroidImage? {
         return when {
-            !source.providerIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.providerIconUrl)
+            !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
             source.calendar?.color != null -> AndroidImage(colorInt = source.calendar.color)
             else -> null
+        }
+    }
+
+    /**
+     * Returns an AndroidString from an EventSource
+     */
+    private fun getEventSourceDescription(source: EventSource): AndroidString? {
+        return when {
+            source.calendar != null -> getLocalCalendarSourceName(source.calendar.displayName)
+            !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
+            else -> null
+        }
+    }
+
+    private fun getLocalCalendarSourceName(displayName: String?): AndroidString? {
+        return when {
+            displayName.isNullOrEmpty() -> null
+            displayName.contains("@") -> AndroidString(R.string.event_card_calendar_source)
+            else -> AndroidString(text = displayName)
         }
     }
 

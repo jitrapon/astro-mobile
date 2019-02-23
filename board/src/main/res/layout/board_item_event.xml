@@ -7,7 +7,8 @@
     android:id="@+id/event_card_root_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:transitionName="@string/event_card_background_transition" >
+    android:transitionName="@string/event_card_background_transition"
+    tools:ignore="ContentDescription" >
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -15,16 +16,6 @@
         android:clipChildren="false"
         android:clipToPadding="false"
         android:paddingBottom="@dimen/card_content_padding">
-
-        <ImageView
-            android:id="@+id/event_card_source"
-            android:layout_width="@dimen/list_item_small_icon"
-            android:layout_height="@dimen/list_item_small_icon"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/event_card_title"
-            android:layout_marginTop="3dp"
-            android:layout_marginStart="@dimen/card_content_padding"
-            tools:src="@tools:sample/avatars" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/event_card_action_button_guideline"
@@ -56,9 +47,34 @@
             android:paddingEnd="@dimen/card_content_padding"
             android:textAppearance="@style/TextAppearance.H1"
             app:layout_constraintEnd_toStartOf="@+id/event_card_sync_status"
-            app:layout_constraintStart_toEndOf="@+id/event_card_source"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/event_card_image"
             tools:text="Dinner with John and Mary in town tonight" />
+
+        <ImageView
+            android:id="@+id/event_card_source_image"
+            android:layout_width="@dimen/card_icon_small"
+            android:layout_height="@dimen/card_icon_small"
+            android:minWidth="@dimen/card_icon_small"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="@dimen/card_content_padding"
+            tools:src="@drawable/ic_board_empty"
+            app:layout_constraintTop_toBottomOf="@+id/event_card_location" />
+
+        <TextView
+            android:id="@+id/event_card_source_description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.H4.Light"
+            tools:text="Event from your calendar"
+            app:layout_constraintTop_toTopOf="@+id/event_card_source_image"
+            app:layout_constraintStart_toEndOf="@+id/event_card_source_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            android:paddingEnd="@dimen/card_content_padding"
+            android:paddingStart="0dp"
+            android:includeFontPadding="false" />
 
         <ImageButton
             android:id="@+id/event_card_sync_status"
@@ -93,7 +109,8 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="1dp"
             android:layout_marginStart="8dp"
-            android:paddingEnd="@dimen/card_content_padding" />
+            android:paddingEnd="@dimen/card_content_padding"
+            android:paddingStart="0dp" />
 
         <ImageView
             android:id="@+id/event_card_location_icon"
@@ -110,31 +127,32 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.H4.Light"
-            tools:text="123 Geneva Avenue"
+            tools:text="123 Geneva Avenue, Bangkok\n10250, Thailand"
             app:layout_constraintTop_toBottomOf="@+id/event_card_date_time"
             app:layout_constraintStart_toEndOf="@+id/event_card_location_icon"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="8dp"
             android:layout_marginStart="8dp"
-            android:paddingEnd="@dimen/card_content_padding" />
+            android:paddingEnd="@dimen/card_content_padding"
+            android:paddingStart="0dp" />
 
         <ImageView
             android:id="@+id/event_card_map_image"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintTop_toBottomOf="@+id/event_card_location"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:contentDescription="@string/event_card_location_content_description"
+            android:layout_height="123dp"
             android:layout_marginTop="@dimen/card_content_padding"
-            app:layout_constraintDimensionRatio="16:5" />
+            android:contentDescription="@string/event_card_location_content_description"
+            app:layout_constraintDimensionRatio="16:5"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/event_card_source_image" />
 
         <com.google.android.gms.maps.MapView
             android:visibility="gone"
             android:id="@+id/event_card_map"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layout_constraintTop_toBottomOf="@+id/event_card_location"
+            app:layout_constraintTop_toBottomOf="@+id/event_card_source_image"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:contentDescription="@string/event_card_location_content_description"

@@ -29,7 +29,8 @@ data class EventItemUiModel(override val itemId: String,
                             var attendeesAvatars: MutableList<String?>?,
                             var attendStatus: AttendStatus,
                             var isPlanning: Boolean = false,
-                            var source: AndroidImage? = null,
+                            var sourceIcon: AndroidImage? = null,
+                            var sourceDescription: AndroidString? = null,
                             override val itemType: Int = TYPE_EVENT,
                             override var status: UiModel.Status = UiModel.Status.SUCCESS) : BoardItemUiModel {
 
@@ -53,7 +54,7 @@ data class EventItemUiModel(override val itemId: String,
             if (attendStatus != otherItem.attendStatus) add(ATTENDSTATUS)
             if (status != otherItem.status) add(SYNCSTATUS)
             if (isPlanning != otherItem.isPlanning) add(PLAN)
-            if (source != otherItem.source) add(SOURCE)
+            if (sourceIcon != otherItem.sourceIcon || sourceDescription != otherItem.sourceDescription) add(SOURCE)
         }
     }
 

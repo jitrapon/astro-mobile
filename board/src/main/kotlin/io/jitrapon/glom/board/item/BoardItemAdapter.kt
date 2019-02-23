@@ -193,7 +193,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
         private val planStatus: ImageButton = itemView.findViewById(R.id.event_card_plan_button)
         private val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         private var map: GoogleMap? = null
-        private val sourceIcon: ImageView = itemView.findViewById(R.id.event_card_source)
+        private val sourceIcon: ImageView = itemView.findViewById(R.id.event_card_source_image)
+        private val sourceDescription: TextView = itemView.findViewById(R.id.event_card_source_description)
 
         init {
             attendees.apply {
@@ -392,9 +393,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
         }
 
         fun updateSource(item: EventItemUiModel) {
-            item.source.let {
+            item.sourceIcon.let {
                 when {
-                    it == null -> sourceIcon.hide()
+                    it == null -> {
+                        sourceIcon.hide()
+                    }
                     it.colorInt != null -> sourceIcon.apply {
                         show()
                         loadFromResource(R.drawable.ic_checkbox_blank_circle)
@@ -403,6 +406,17 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                     else -> sourceIcon.apply {
                         show()
                         load(fragment.context!!, it)
+                    }
+                }
+            }
+            item.sourceDescription.let {
+                if (it == null) {
+                    sourceDescription.hide()
+                }
+                else {
+                    sourceDescription.apply {
+                        show()
+                        text = context.getString(it)
                     }
                 }
             }

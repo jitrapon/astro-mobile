@@ -63,4 +63,5 @@
     <string name="event_item_preference_empty">No items</string>
     <string name="error_no_calendar_permissions">Enable calendar permission to sync events from your calendars. Allow?</string>
     <string name="error_calendar_preference_generic">Error retrieving your calendars from this device</string>
+    <string name="event_card_calendar_source">From your calendar</string>
 </resources>
