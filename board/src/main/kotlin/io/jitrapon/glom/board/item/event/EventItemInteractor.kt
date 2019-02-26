@@ -326,7 +326,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
             // if the new start date surpasses end date, reset the end date
             // or if the new start date is null, we should also reset the end date
-            if (((startDateTemp != null && endDateTemp != null) && (startDateTemp > endDateTemp)) || startDateTemp == null) {
+            if (((startDateTemp != null && endDateTemp != null) && (startDateTemp >= endDateTemp)) || startDateTemp == null) {
                 endDateTemp = null
             }
             eventItemDataSource.setDate(startDateTemp, endDateTemp)
