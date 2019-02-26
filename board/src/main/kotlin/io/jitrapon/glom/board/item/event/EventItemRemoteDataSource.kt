@@ -97,7 +97,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                 }
     }
 
-    override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
+    override fun setDateRemote(item: EventItem, startDate: Date?, endDate: Date?): Completable {
         return api.setDate(circleInteractor.getActiveCircleId(), item.itemId, EventDatePollRequest(startDate?.time, endDate?.time))
                 .flatMapCompletable {
                     Completable.fromCallable {
@@ -107,6 +107,10 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                         }
                     }
                 }
+    }
+
+    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
+        throw NotImplementedError()
     }
 
     override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {

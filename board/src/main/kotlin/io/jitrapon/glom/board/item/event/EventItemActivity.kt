@@ -257,8 +257,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             getObservableDateTimePicker().observe(this@EventItemActivity, Observer {
                 it?.let { (picker, isStartDate) ->
                     dateTimePicker.apply {
-                        show(picker, onDateTimeSet = {
-                            viewModel.setDate(it, isStartDate)
+                        show(picker, onDateTimeSet = { date ->
+                            viewModel.setDate(date, isStartDate)
                         }, onCancel = {
                             viewModel.cancelSetDate()
                         })

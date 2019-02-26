@@ -73,11 +73,15 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 false)
     }
 
-    override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
+    override fun setDateRemote(item: EventItem, startDate: Date?, endDate: Date?): Completable {
         return update(
-                localDataSource.setDate(item, startDate, endDate),
-                remoteDataSource.setDate(item, startDate, endDate),
+                localDataSource.setDateRemote(item, startDate, endDate),
+                remoteDataSource.setDateRemote(item, startDate, endDate),
                 false)
+    }
+
+    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
+        localDataSource.setDate(startDateMs, endDateMs)
     }
 
     override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {

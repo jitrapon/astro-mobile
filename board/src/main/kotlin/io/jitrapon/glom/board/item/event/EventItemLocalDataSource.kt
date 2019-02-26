@@ -95,7 +95,7 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun setDate(item: EventItem, startDate: Date?, endDate: Date?): Completable {
+    override fun setDateRemote(item: EventItem, startDate: Date?, endDate: Date?): Completable {
         return Completable.fromCallable {
             eventDao.updateDateTime(item.itemId, startDate?.time, endDate?.time)
         }.doOnComplete {
@@ -103,6 +103,13 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
                 startTime = startDate?.time
                 endTime = endDate?.time
             }
+        }
+    }
+
+    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
+        inMemoryItem.itemInfo.apply {
+            startTime = startDateMs
+            endTime = endDateMs
         }
     }
 

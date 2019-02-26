@@ -128,7 +128,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Sets the event name, and optionally filter suggestions asynchronously
      */
     @WorkerThread
-    fun setName(name: String, filter: Boolean): List<Suggestion> {
+    fun setItemName(name: String, filter: Boolean): List<Suggestion> {
         isItemModified = true
 
         if (filter) {
@@ -316,39 +316,31 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     /**
      * Updates this cached event's date, processing whether the start and end dates are set correctly
-     *
-     * @return true iff the dates are correctly provided and set successfully
      */
     fun setItemDate(date: Date?, isStartDate: Boolean) {
         isItemModified = true
 
-        event.itemInfo.let {
-            if (isStartDate) {
-                it.startTime = date?.time
-                fields[START_DAY] = date
-                fields[START_TIME] = date
+        if (isStartDate) {
+            val startDateTemp = date?.time
+            var endDateTemp = event.itemInfo.endTime
 
-                // if the new start date surpasses end date, reset the end date
-                if (it.startTime != null && it.endTime != null) {
-                    if (it.startTime!! > it.endTime!!) {
-                        it.endTime = null
-                    }
-                }
+            // if the new start date surpasses end date, reset the end date
+            // or if the new start date is null, we should also reset the end date
+            if (((startDateTemp != null && endDateTemp != null) && (startDateTemp > endDateTemp)) || startDateTemp == null) {
+                endDateTemp = null
+            }
+            eventItemDataSource.setDate(startDateTemp, endDateTemp)
+        }
+        else {
+            var startDateTemp = event.itemInfo.startTime
+            val endDateTemp = date?.time
 
-                // if the new start date is null, also reset the end date
-                if (it.startTime == null) {
-                    it.endTime = null
-                }
+            // we should set the start time accordingly to one hour prior to the new end time
+            // if it is less than the start time already set, or if the start time has not been set
+            if (endDateTemp != null && (startDateTemp == null || startDateTemp > endDateTemp)) {
+                startDateTemp = Date(endDateTemp).addHour(-1).time
             }
-            else {
-                it.endTime = date?.time
-                if (it.endTime != null && (it.startTime == null || it.startTime!! > it.endTime!!)) {
-                    val newStartDate = Date(it.endTime!!).addHour(-1)
-                    it.startTime = newStartDate.time
-                    fields[START_DAY] = newStartDate
-                    fields[START_TIME] = newStartDate
-                }
-            }
+            eventItemDataSource.setDate(startDateTemp, endDateTemp)
         }
     }
 
@@ -366,7 +358,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun syncItemDate(startDate: Date?, endDate: Date?, onComplete: (AsyncResult<Unit>) -> Unit) {
-        eventItemDataSource.setDate(event, startDate, endDate)
+        eventItemDataSource.setDateRemote(event, startDate, endDate)
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
