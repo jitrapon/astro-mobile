@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:focusableInTouchMode="true"
     tools:context=".item.event.EventItemActivity" >
 
     <LinearLayout
@@ -15,15 +16,20 @@
         android:gravity="center_vertical"
         android:fitsSystemWindows="true" >
 
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="0.5" />
+
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/event_item_cardview"
             style="@style/CardView.BoardItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/card_expand_vertical_margin"
+            android:layout_marginBottom="@dimen/card_expand_bottom_margin"
             android:layout_marginEnd="@dimen/card_expand_horizontal_margin"
             android:layout_marginStart="@dimen/card_expand_horizontal_margin"
-            android:layout_marginTop="240dp"
+            android:layout_marginTop="@dimen/card_expand_top_margin"
             android:transitionName="@string/event_card_background_transition">
 
             <androidx.constraintlayout.widget.ConstraintLayout
