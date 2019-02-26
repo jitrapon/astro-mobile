@@ -5,12 +5,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".item.event.EventItemActivity" >
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:gravity="center_vertical"
         android:fitsSystemWindows="true" >
 
         <com.google.android.material.card.MaterialCardView
@@ -21,7 +23,7 @@
             android:layout_marginBottom="@dimen/card_expand_vertical_margin"
             android:layout_marginEnd="@dimen/card_expand_horizontal_margin"
             android:layout_marginStart="@dimen/card_expand_horizontal_margin"
-            android:layout_marginTop="@dimen/card_expand_vertical_margin"
+            android:layout_marginTop="240dp"
             android:transitionName="@string/event_card_background_transition">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -62,7 +64,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/event_item_name_hint"
-                        android:theme="@style/Theme.Glom.EditText.Title" />
+                        android:theme="@style/Theme.Glom.EditText.Title"
+                        tools:text="Dinner at Mark's"
+                        android:paddingTop="3dp" />
 
                 </io.jitrapon.glom.base.ui.widget.GlomTextInputLayout>
 
