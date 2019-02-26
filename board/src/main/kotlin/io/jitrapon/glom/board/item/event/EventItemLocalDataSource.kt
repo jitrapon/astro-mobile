@@ -31,6 +31,10 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
+    override fun setName(name: String?) {
+        inMemoryItem.itemInfo.eventName = name ?: ""
+    }
+
     override fun joinEvent(item: EventItem): Completable {
         return Completable.fromCallable {
             userInteractor.getCurrentUserId()?.let {

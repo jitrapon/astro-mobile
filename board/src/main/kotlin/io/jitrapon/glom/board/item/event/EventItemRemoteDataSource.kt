@@ -29,6 +29,10 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
         throw NotImplementedError()
     }
 
+    override fun setName(name: String?) {
+        throw NotImplementedError()
+    }
+
     override fun joinEvent(item: EventItem): Completable {
         return api.joinEvent(circleInteractor.getActiveCircleId(), item.itemId, EditAttendeeRequest(EventApiConst.GOING.code))
                 .flatMapCompletable {

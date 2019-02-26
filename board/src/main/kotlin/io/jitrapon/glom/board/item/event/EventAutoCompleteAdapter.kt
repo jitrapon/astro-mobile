@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
+import androidx.annotation.WorkerThread
 import io.jitrapon.glom.base.util.getString
 import java.util.*
 
@@ -46,6 +47,7 @@ class EventAutoCompleteAdapter(private val viewModel: EventItemViewModel, contex
             /**
              * Invoked in a worker thread.
              */
+            @WorkerThread
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 return FilterResults().apply {
                     constraint.let {

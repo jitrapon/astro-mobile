@@ -571,7 +571,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Synchronously filter suggestions to display based on the specified query
      */
     fun filterSuggestions(text: CharSequence): List<Suggestion> {
-        return interactor.filterSuggestions(text.toString())
+        return interactor.setName(text.toString(), false)
     }
 
     /**

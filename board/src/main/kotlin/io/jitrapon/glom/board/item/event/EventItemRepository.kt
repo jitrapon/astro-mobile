@@ -24,6 +24,10 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
 
     override fun saveItem(info: EventInfo): Completable = localDataSource.saveItem(info)
 
+    override fun setName(name: String?) {
+        localDataSource.setName(name)
+    }
+
     override fun joinEvent(item: EventItem): Completable {
         return update(
                 localDataSource.joinEvent(item),
