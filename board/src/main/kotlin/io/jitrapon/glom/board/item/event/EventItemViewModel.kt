@@ -522,7 +522,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun onNoteTextChanged(s: CharSequence) {
         // may need to convert from markdown text to String
-        interactor.setItemNote(s.toString())
+        interactor.setItemNote(s)
     }
 
     private fun getEventDetailPlanStatus(datePollStatus: Boolean, placePollStatus: Boolean): ButtonUiModel {

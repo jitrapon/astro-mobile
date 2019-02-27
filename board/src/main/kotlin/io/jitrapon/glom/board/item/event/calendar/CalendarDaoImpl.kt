@@ -141,6 +141,7 @@ class CalendarDaoImpl(private val context: Context) :
         else throw NoCalendarPermissionException()
     }
 
+    @SuppressLint("MissingPermission")
     override fun getCalendars(calendarIds: List<String>): List<DeviceCalendar> {
         return if (calendarIds.isEmpty()) listOf()
         else {
@@ -192,6 +193,7 @@ class CalendarDaoImpl(private val context: Context) :
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun getCalendars(): Flowable<CalendarPreference> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             Flowable.fromCallable {

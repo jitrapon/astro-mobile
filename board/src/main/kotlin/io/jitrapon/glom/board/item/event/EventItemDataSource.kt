@@ -52,4 +52,6 @@ interface EventItemDataSource {
     fun setPlace(item: EventItem, location: EventLocation?): Completable
 
     fun setLocation(location: EventLocation?)
+
+    fun setNote(note: String?)
 }

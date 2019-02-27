@@ -177,4 +177,8 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
     override fun setLocation(location: EventLocation?) {
         throw NotImplementedError()
     }
+
+    override fun setNote(note: String?) {
+        throw NotImplementedError()
+    }
 }
