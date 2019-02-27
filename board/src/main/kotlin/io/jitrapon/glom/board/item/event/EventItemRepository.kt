@@ -120,4 +120,8 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 remoteDataSource.setPlace(item, location),
                 false)
     }
+
+    override fun setLocation(location: EventLocation?) {
+        localDataSource.setLocation(location)
+    }
 }

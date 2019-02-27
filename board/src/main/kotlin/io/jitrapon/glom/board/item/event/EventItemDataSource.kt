@@ -50,4 +50,6 @@ interface EventItemDataSource {
     fun setPlacePollStatus(item: EventItem, open: Boolean): Completable
 
     fun setPlace(item: EventItem, location: EventLocation?): Completable
+
+    fun setLocation(location: EventLocation?)
 }

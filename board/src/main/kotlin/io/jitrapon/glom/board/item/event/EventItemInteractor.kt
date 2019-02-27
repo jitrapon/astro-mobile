@@ -221,8 +221,6 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         Single.fromCallable {
             event.itemInfo.apply {
-                startTime = getSelectedDate()?.time ?: startTime
-                location = getSelectedItemLocation()
                 note = this@EventItemInteractor.note
             }
         }.flatMapCompletable {
@@ -249,66 +247,46 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     fun loadPlaceInfo(customName: String?, onComplete: (AsyncResult<EventLocation>) -> Unit) {
         val placeId = event.itemInfo.location?.googlePlaceId
         if (!TextUtils.isEmpty(placeId)) {
-            placeProvider?.let {
-                it.getPlaces(arrayOf(placeId!!))
-                        .retryWhen(::errorIsUnauthorized)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({
-                            if (it.isNotEmpty()) {
-                                it.first().let {
-                                    val location = EventLocation(
-                                            it.latLng.latitude,
-                                            it.latLng.longitude,
-                                            it.id,
-                                            null,
-                                            if (!TextUtils.isEmpty(customName)) customName else it.name.toString(),
-                                            null,
-                                            it.address.toString())
-                                    setItemLocation(location)
-                                    onComplete(AsyncSuccessResult(location))
-                                }
-                            }
-                            else {
-                                onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
-                            }
-                        }, {
-                            onComplete(AsyncErrorResult(it))
-                        }).autoDispose()
-            }
+            placeProvider?.getPlaces(arrayOf(placeId!!))
+                ?.retryWhen(::errorIsUnauthorized)
+                ?.subscribeOn(Schedulers.io())?.observeOn(AndroidSchedulers.mainThread())
+                ?.subscribe({ places ->
+                    if (places.isNotEmpty()) {
+                        places.first().let { result ->
+                            val location = EventLocation(
+                                result.latLng.latitude,
+                                result.latLng.longitude,
+                                result.id,
+                                null,
+                                if (!TextUtils.isEmpty(customName)) customName else result.name.toString(),
+                                null,
+                                result.address.toString())
+                            setItemLocation(location)
+                            onComplete(AsyncSuccessResult(location))
+                        }
+                    } else {
+                        onComplete(AsyncErrorResult(Exception("No places returned for id '$placeId'")))
+                    }
+                }, { error ->
+                    onComplete(AsyncErrorResult(error))
+                })?.autoDispose()
         }
     }
 
-    fun getItemLocation(): EventLocation? {
-        return event.itemInfo.location
-    }
+    fun getItemLocation(): EventLocation? = event.itemInfo.location
 
-    private fun getSelectedItemLocation(): EventLocation? {
-        return fields[LOCATION].let {
-            when (it) {
-                is CharSequence -> {
-                    if (TextUtils.isEmpty(it)) null
-                    else EventLocation(it.toString())
-                }
-                is EventLocation -> it
-                else -> getItemLocation()
-            }
-        }
-    }
-
-    fun setItemLocation(locationText: CharSequence) {
+    /**
+     * Sets this event item location. The argument must be either a CharSequence or an EventLocation type
+     */
+    fun setItemLocation(location: Any?) {
         isItemModified = true
 
-        fields[LOCATION] = locationText
-    }
-
-    fun setItemLocation(location: EventLocation?) {
-        event.itemInfo.let {
-            isItemModified = it.location != location
-
-            it.location = location
-            fields[LOCATION] = location
+        val eventLocation = when (location) {
+            is CharSequence -> EventLocation(location.toString())
+            is EventLocation -> location
+            else -> null
         }
+        eventItemDataSource.setLocation(eventLocation)
     }
 
     //endregion
@@ -345,12 +323,12 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     }
 
     fun getItemDate(startDate: Boolean): Date? {
-        event.itemInfo.let {
-            return if (startDate) it.startTime.let {
+        event.itemInfo.let { info ->
+            return if (startDate) info.startTime.let {
                 if (it == null) null else Date(it)
             }
             else {
-                it.endTime.let {
+                info.endTime.let {
                     if (it == null) null else Date(it)
                 }
             }
@@ -598,8 +576,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
     fun syncItemPlace(id: String, onComplete: (AsyncResult<Unit>) -> Unit) {
         eventItemDataSource.getPlacePolls(event, false)
-                .flatMapCompletable {
-                    it.first { it.id == id }.let { poll ->
+                .flatMapCompletable { polls ->
+                    polls.first { it.id == id }.let { poll ->
                         eventItemDataSource.setPlace(event, poll.location)
                     }
                 }

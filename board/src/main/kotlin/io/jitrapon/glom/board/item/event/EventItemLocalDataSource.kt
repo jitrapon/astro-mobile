@@ -162,4 +162,8 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
             }
         }
     }
+
+    override fun setLocation(location: EventLocation?) {
+        inMemoryItem.itemInfo.location = location
+    }
 }

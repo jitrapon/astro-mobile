@@ -728,7 +728,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Update the location text
      */
     fun onLocationTextChanged(charSequence: CharSequence) {
-        if (charSequence.isEmpty()) interactor.setItemLocation(location = null)
+        if (charSequence.isEmpty()) interactor.setItemLocation(null)
         else interactor.setItemLocation(charSequence)
     }
 
