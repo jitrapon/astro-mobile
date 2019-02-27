@@ -337,7 +337,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
 
             // we should set the start time accordingly to one hour prior to the new end time
             // if it is less than the start time already set, or if the start time has not been set
-            if (endDateTemp != null && (startDateTemp == null || startDateTemp > endDateTemp)) {
+            if (endDateTemp != null && (startDateTemp == null || startDateTemp >= endDateTemp)) {
                 startDateTemp = Date(endDateTemp).addHour(-1).time
             }
             eventItemDataSource.setDate(startDateTemp, endDateTemp)
