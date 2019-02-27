@@ -180,7 +180,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                                 if (!TextUtils.isEmpty(customName)) customName else result.name.toString(),
                                 null,
                                 result.address.toString())
-                            setItemLocation(location)
+                            setItemLocation(location, false)
                             onComplete(AsyncSuccessResult(location))
                         }
                     } else {
@@ -197,8 +197,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     /**
      * Sets this event item location. The argument must be either a CharSequence or an EventLocation type
      */
-    fun setItemLocation(location: Any?) {
-        isItemModified = true
+    fun setItemLocation(location: Any?, shouldMarkItemModified: Boolean = true) {
+        if (shouldMarkItemModified) {
+            isItemModified = true
+        }
 
         val eventLocation = when (location) {
             is CharSequence -> EventLocation(location.toString())

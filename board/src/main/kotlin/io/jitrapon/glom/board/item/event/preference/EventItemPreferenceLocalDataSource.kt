@@ -76,7 +76,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
                                     it.ownerName = calendar.ownerName
                                     it.isVisible = calendar.isVisible
                                     it.color = calendar.color
-                                    it.areEventsSynced = calendar.areEventsSynced
+                                    it.isWritable = calendar.isWritable
                                 }
                             }
                         }
