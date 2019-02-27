@@ -35,7 +35,8 @@ private val CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 2
     CalendarContract.Calendars.OWNER_ACCOUNT,           // 3
     CalendarContract.Calendars.CALENDAR_COLOR,          // 4
-    CalendarContract.Calendars.VISIBLE                  // 5
+    CalendarContract.Calendars.VISIBLE,                 // 5
+    CalendarContract.Calendars.SYNC_EVENTS              // 6
 )
 
 private val EVENT_CALENDAR_PROJECTION: Array<String> = arrayOf(
@@ -66,6 +67,7 @@ private const val PROJECTION_DISPLAY_NAME_INDEX: Int = 2
 private const val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 3
 private const val PROJECTION_CALENDAR_COLOR_INDEX: Int = 4
 private const val PROJECTION_CALENDAR_VISIBLE_INDEX: Int = 5
+private const val PROJECTION_CALENDAR_SYNC_EVENTS: Int = 6
 
 private const val PROJECTION_EVENT_ID = 0
 private const val PROJECTION_EVENT_CALENDAR_ID = 1
@@ -167,6 +169,7 @@ class CalendarDaoImpl(private val context: Context) :
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                         val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        val areEventsSynced: Boolean = cur.getInt(PROJECTION_CALENDAR_SYNC_EVENTS) == 1
                         result.add(
                                 DeviceCalendar(
                                         calId,
@@ -176,7 +179,8 @@ class CalendarDaoImpl(private val context: Context) :
                                         color,
                                         isVisible,
                                         false,
-                                        true
+                                        true,
+                                        areEventsSynced
                                 )
                         )
                     }
@@ -215,6 +219,7 @@ class CalendarDaoImpl(private val context: Context) :
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                         val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        val areEventsSynced: Boolean = cur.getInt(PROJECTION_CALENDAR_SYNC_EVENTS) == 1
                         result.add(
                                 DeviceCalendar(
                                         calId,
@@ -224,7 +229,8 @@ class CalendarDaoImpl(private val context: Context) :
                                         color,
                                         isVisible,
                                         false,
-                                        true
+                                        true,
+                                        areEventsSynced
                                 )
                         )
                     }
@@ -244,7 +250,7 @@ class CalendarDaoImpl(private val context: Context) :
 
 data class DeviceCalendar(val calId: Long, var displayName: String, var accountName: String,
                           var ownerName: String, @ColorInt var color: Int, var isVisible: Boolean,
-                          var isSyncedToBoard: Boolean, var isLocal: Boolean,
+                          var isSyncedToBoard: Boolean, var isLocal: Boolean, var areEventsSynced: Boolean,
                           override var retrievedTime: Date? = null,
                           override val error: Throwable? = null) : DataModel {
 
@@ -254,6 +260,7 @@ data class DeviceCalendar(val calId: Long, var displayName: String, var accountN
             parcel.readString()!!,
             parcel.readString()!!,
             parcel.readInt(),
+            parcel.readByte() != 0.toByte(),
             parcel.readByte() != 0.toByte(),
             parcel.readByte() != 0.toByte(),
             parcel.readByte() != 0.toByte())
@@ -267,6 +274,7 @@ data class DeviceCalendar(val calId: Long, var displayName: String, var accountN
         parcel.writeByte(if (isVisible) 1 else 0)
         parcel.writeByte(if (isSyncedToBoard) 1 else 0)
         parcel.writeByte(if (isLocal) 1 else 0)
+        parcel.writeByte(if (areEventsSynced) 1 else 0)
     }
 
     override fun describeContents(): Int {

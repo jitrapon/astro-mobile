@@ -76,6 +76,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
                                     it.ownerName = calendar.ownerName
                                     it.isVisible = calendar.isVisible
                                     it.color = calendar.color
+                                    it.areEventsSynced = calendar.areEventsSynced
                                 }
                             }
                         }
@@ -128,7 +129,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
 
     private fun List<CalendarEntity>.toCalendarList(): List<DeviceCalendar> {
         return map { DeviceCalendar(it.calendarId.toLong(), it.displayName, it.accountName, it.ownerName,
-                Color.TRANSPARENT, true, true, it.isLocal) }
+                Color.TRANSPARENT, true, true, it.isLocal, false) }
     }
 
     private fun DeviceCalendar.toEntity(): CalendarEntity {
