@@ -139,22 +139,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * the new item, along with a flag indicating if the item has been modified
      */
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
-        Single.fromCallable {
-            event.itemInfo.apply {
-
-            }
-        }.flatMapCompletable {
-            eventItemDataSource.saveItem(it)
-        }.retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.computation())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    val temp = isItemModified
-                    isItemModified = false
-                    onComplete(AsyncSuccessResult(event to temp))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }).autoDispose()
+        onComplete(AsyncSuccessResult(event to isItemModified))
+        isItemModified = false
     }
 
     //endregion

@@ -328,9 +328,9 @@ class EventItemViewModel : BoardItemViewModel() {
                 AppLogger.w("Cannot set item because item is NULL")
             }
             else {
-                if (item is EventItem) {
-                    interactor.initWith(item = item)
-                    item.itemInfo.let {
+                if (it is EventItem) {
+                    interactor.initWith(item = it)
+                    it.itemInfo.let {
                         prevName = it.eventName
                         isNewItem = new
                         observableName.value = AndroidString(text = it.eventName) to false

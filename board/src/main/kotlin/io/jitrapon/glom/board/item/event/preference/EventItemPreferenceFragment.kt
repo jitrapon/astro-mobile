@@ -69,7 +69,7 @@ class EventItemPreferenceFragment : BaseFragment(), PreferenceFragmentListener {
     override fun onSubscribeToObservables() {
         subscribeToViewActionObservables(viewModel.getObservableViewAction())
 
-        viewModel.getObservablePreference().observe(this, Observer {
+        viewModel.getObservablePreference().observe(viewLifecycleOwner, Observer {
             it?.let { uiModel ->
                 when (uiModel.status) {
                     UiModel.Status.SUCCESS, UiModel.Status.EMPTY -> {
