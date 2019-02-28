@@ -41,6 +41,9 @@ abstract class BaseViewModel : ViewModel() {
     /* whether or not first load function has been called */
     protected var firstLoadCalled: Boolean = false
 
+    /* observable flag to indicate that a navigation event should be triggered */
+    val observableNavigation = LiveEvent<Navigation>()
+
     init {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             observableViewAction.value = EmptyLoading(false)
@@ -155,4 +158,9 @@ abstract class BaseViewModel : ViewModel() {
             Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR
         )
     }
+
+    /**
+     * Observable navigation events
+     */
+    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 }

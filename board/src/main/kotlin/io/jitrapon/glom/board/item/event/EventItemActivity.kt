@@ -232,6 +232,16 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         UiModel.Status.EMPTY -> {
                             event_item_title_til.setHelperTextEnabled(false)
                         }
+                        UiModel.Status.NEGATIVE -> {
+                            event_item_title.apply {
+                                setText(getString(query), filter)
+                                isEnabled = false
+                                event_item_title_til.apply {
+                                    isHelperTextEnabled = true
+                                    helperText = getString(R.string.board_item_not_editable)
+                                }
+                            }
+                        }
                         else -> { /* do nothing */ }
                     }
                 }
@@ -240,16 +250,22 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on the start date
             getObservableStartDate().observe(this@EventItemActivity, Observer {
                 event_item_start_time.text = getString(it)
+                if (it.status == UiModel.Status.NEGATIVE) {
+                    event_item_start_time.isEnabled = false
+                }
                 it?.let {
-                    event_item_start_time.setDrawableVisible(it.status != UiModel.Status.EMPTY)
+                    event_item_start_time.setDrawableVisible(it.status != UiModel.Status.EMPTY && it.status != UiModel.Status.NEGATIVE)
                 }
             })
 
             // observe on the end date
             getObservableEndDate().observe(this@EventItemActivity, Observer {
                 event_item_end_time.text = getString(it)
+                if (it.status == UiModel.Status.NEGATIVE) {
+                    event_item_end_time.isEnabled = false
+                }
                 it?.let {
-                    event_item_end_time.setDrawableVisible(it.status != UiModel.Status.EMPTY)
+                    event_item_end_time.setDrawableVisible(it.status != UiModel.Status.EMPTY && it.status != UiModel.Status.NEGATIVE)
                 }
             })
 
@@ -275,6 +291,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         Selection.setSelection(text, text.length)
                         setDrawableVisible(text.isNotEmpty())
                         locationTextWatcher?.let (::addTextChangedListener)
+                        if (it.status == UiModel.Status.NEGATIVE) {
+                            isEnabled = false
+                        }
                     }
                 }
             })
@@ -340,6 +359,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on event note
             getObservableNote().observe(this@EventItemActivity, Observer {
                 event_item_note.apply {
+                    if (it?.status == UiModel.Status.NEGATIVE) {
+                        isEnabled = false
+                    }
                     noteTextWatcher?.let (::removeTextChangedListener)
                     setText(context.getString(it))
                     noteTextWatcher?.let (::addTextChangedListener)

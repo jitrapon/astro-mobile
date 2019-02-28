@@ -49,9 +49,6 @@ class PlanEventViewModel : BaseViewModel() {
     /* whether or not user is attending */
     private var isUserAttending: Boolean = false
 
-    /* observable navigation event */
-    private val observableNavigation = LiveEvent<Navigation>()
-
     /* cached event date plan UI model for reuse */
     private val datePlan: EventDatePlanUiModel
 
@@ -906,8 +903,6 @@ class PlanEventViewModel : BaseViewModel() {
     fun getObservableAttendeesLabel(): LiveData<AndroidString> = observableAttendeesLabel
 
     fun getObservableJoinButton(): LiveData<ButtonUiModel> = observableJoinButton
-
-    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     fun getObservableDatePlan(): LiveData<EventDatePlanUiModel> = observableDatePlan
 

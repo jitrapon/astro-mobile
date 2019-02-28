@@ -63,6 +63,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     /* whether or not the current user ID owns this item */
     private var isUserAnOwner: Boolean = false
 
+    /* whether or not the current item is editable */
+    private var isItemEditable: Boolean = false
+
     //region initializers
 
     /**
@@ -84,6 +87,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
             eventItemDataSource.initWith(it)
             isUserAnOwner = item.owners.contains(userId)
             initialized = true
+            isItemEditable = it.isEditable
         }
     }
 
@@ -125,10 +129,13 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      */
     @WorkerThread
     fun setItemName(name: String, filter: Boolean): List<Suggestion> {
+        val suggestions = ArrayList<Suggestion>()
+        if (!isItemEditable) return suggestions
+
         isItemModified = true
 
         eventItemDataSource.setName(name)
-        return ArrayList()
+        return suggestions
     }
 
     //endregion
@@ -184,6 +191,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Sets this event item location. The argument must be either a CharSequence or an EventLocation type
      */
     fun setItemLocation(location: Any?, shouldMarkItemModified: Boolean = true) {
+        if (!isItemEditable) return
+
         if (shouldMarkItemModified) {
             isItemModified = true
         }
@@ -203,6 +212,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
      * Updates this cached event's date, processing whether the start and end dates are set correctly
      */
     fun setItemDate(date: Date?, isStartDate: Boolean) {
+        if (!isItemEditable) return
+
         isItemModified = true
 
         if (isStartDate) {
@@ -331,6 +342,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
     //region note
 
     fun setItemNote(note: CharSequence) {
+        if (!isItemEditable) return
+
         isItemModified = true
 
         eventItemDataSource.setNote(note.toString())

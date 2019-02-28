@@ -46,9 +46,6 @@ class BoardViewModel : BaseViewModel() {
     /* live data for selected board item and list of shared views for transition */
     private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>>()
 
-    /* observable flag to indicate that a navigation event should be triggered */
-    val observableNavigation = LiveEvent<Navigation>()
-
     /* default filtering type of items */
     private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
@@ -446,11 +443,6 @@ class BoardViewModel : BaseViewModel() {
      * Returns an observable that if set, becomes the currently selected item
      */
     fun getObservableBoardItem(): LiveData<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>> = observableBoardItem
-
-    /**
-     * Observable navigation events
-     */
-    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     //endregion
     //region view states

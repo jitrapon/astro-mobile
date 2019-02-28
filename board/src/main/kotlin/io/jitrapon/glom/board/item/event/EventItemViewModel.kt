@@ -82,12 +82,6 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable plan status */
     private val observablePlanStatus = MutableLiveData<ButtonUiModel>()
 
-    /* observable flag to indicate that a navigation event should be triggered */
-    private val observableNavigation = LiveEvent<Navigation>()
-
-    /* whether or not this is a new item to add */
-    private var isNewItem: Boolean = false
-
     init {
         BoardInjector.getComponent().inject(this)
     }
@@ -328,22 +322,25 @@ class EventItemViewModel : BoardItemViewModel() {
                 AppLogger.w("Cannot set item because item is NULL")
             }
             else {
+                isItemEditable = it.isEditable
+                val editableStatus = getEditableStatus(it.isEditable)
+
                 if (it is EventItem) {
                     interactor.initWith(item = it)
                     it.itemInfo.let {
                         prevName = it.eventName
                         isNewItem = new
-                        observableName.value = AndroidString(text = it.eventName) to false
-                        observableStartDate.value = getEventDetailDate(it.startTime, true)
-                        observableEndDate.value = getEventDetailDate(it.endTime, false)
-                        observableLocation.value = getEventDetailLocation(it.location)
-                        observableLocationDescription.value = getEventDetailLocationDescription(it.location)
+                        observableName.value = AndroidString(text = it.eventName, status = editableStatus) to false
+                        observableStartDate.value = getEventDetailDate(it.startTime, true)?.apply { status = editableStatus }
+                        observableEndDate.value = getEventDetailDate(it.endTime, false)?.apply { status = editableStatus }
+                        observableLocation.value = getEventDetailLocation(it.location)?.apply { status = editableStatus }
+                        observableLocationDescription.value = getEventDetailLocationDescription(it.location)?.apply { status = editableStatus }
                         loadPlaceInfoIfRequired(it.location?.name, it.location?.googlePlaceId)
                         observableLocationLatLng.value = getEventDetailLocationLatLng(it.location)
                         observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
                         observableAttendees.value = getEventDetailAttendees(it.attendees)
                         observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
-                        observableNote.value = getEventDetailNote(it.note)
+                        observableNote.value = getEventDetailNote(it.note)?.apply { status = editableStatus }
                         observablePlanStatus.value = getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus)
                     }
                 }
@@ -683,6 +680,8 @@ class EventItemViewModel : BoardItemViewModel() {
      * Displays the datetime picker
      */
     fun showDateTimePicker(isStartDate: Boolean) {
+        if (!isItemEditable) return
+
         val startDate = interactor.getItemDate(true)
         val endDate = interactor.getItemDate(false)
         val defaultDate: Date =
@@ -778,8 +777,6 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableNote(): LiveData<AndroidString?> = observableNote
 
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
-
-    fun getObservableNavigation(): LiveData<Navigation> = observableNavigation
 
     override fun cleanUp() {
         interactor.cleanup()

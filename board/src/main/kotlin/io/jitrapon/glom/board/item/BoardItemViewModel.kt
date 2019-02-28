@@ -8,10 +8,21 @@ import io.jitrapon.glom.base.viewmodel.BaseViewModel
  */
 abstract class BoardItemViewModel : BaseViewModel() {
 
+    /* whether or not this is a new item to add */
+    internal var isNewItem: Boolean = false
+
+    /* whether or not this item is editable */
+    internal var isItemEditable: Boolean = false
+
     /**
      * Converts a Model to UiModel
      */
     abstract fun toUiModel(item: BoardItem, syncStatus: SyncStatus): BoardItemUiModel
+
+    /**
+     * Converts editable status of the BoradItem to UiModel status
+     */
+    fun getEditableStatus(allow: Boolean): UiModel.Status = if (allow) UiModel.Status.SUCCESS else UiModel.Status.NEGATIVE
 
     /**
      * Converts the sync status to UiModel status
