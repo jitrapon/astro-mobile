@@ -12,7 +12,12 @@ import java.util.LinkedHashMap
 import kotlin.collections.HashMap
 
 fun BoardItemResponse.deserialize(): EventItem {
-    return EventItem(BoardItem.TYPE_EVENT, itemId, createdTime, updatedTime, owners,
+    return EventItem(
+            BoardItem.TYPE_EVENT,
+            itemId,
+            createdTime,
+            updatedTime,
+            owners,
             info.let {
                 EventInfo(it["event_name"] as String,
                         it["start_time"].asNullableLong(),
@@ -43,7 +48,11 @@ fun BoardItemResponse.deserialize(): EventItem {
                         it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>),
                         EventSource(null, null, null))
-            }, SyncStatus.SUCCESS, Date())
+            },
+            isEditable ?: false,
+            SyncStatus.SUCCESS,
+            Date()
+    )
 }
 
 fun EventItem.serializeInfo(): MutableMap<String, Any?> {
@@ -84,11 +93,17 @@ fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardIt
     val items = ArrayList<BoardItem>()
     for (entity in this) {
         entity.entity.let {
-            val location: EventLocation? = if (it.latitude == null && it.longitude == null && it.googlePlaceId == null && it.placeId == null && it.placeName == null) null
-            else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName, it.placeDescription, it.placeAddress)
-            items.add(EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime, ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
-                    EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
-                            it.isFullDay, null, it.datePollStatus, it.placePollStatus, entity.attendees.toMutableList(), EventSource(null, null, null)), it.syncStatus.toSyncStatus()))
+            val location: EventLocation? = if (it.latitude == null && it.longitude == null &&
+                    it.googlePlaceId == null && it.placeId == null && it.placeName == null) null
+            else EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.placeName,
+                    it.placeDescription, it.placeAddress)
+            items.add(
+                    EventItem(BoardItem.TYPE_EVENT, it.id, null, it.updatedTime,
+                            ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
+                            EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
+                                    it.isFullDay, null, it.datePollStatus, it.placePollStatus,
+                                    entity.attendees.toMutableList(), EventSource(null, null, null)),
+                            it.isEditable, it.syncStatus.toSyncStatus()))
         }
     }
     return items
@@ -99,8 +114,9 @@ fun EventItem.toEntity(circleId: String, userId: String?, updatedTimeMs: Long): 
         entity = EventItemEntity(
                 itemId, updatedTimeMs, itemInfo.eventName, itemInfo.startTime, itemInfo.endTime, itemInfo.location?.googlePlaceId,
                 itemInfo.location?.placeId, itemInfo.location?.latitude, itemInfo.location?.longitude,
-                itemInfo.location?.name, itemInfo.location?.description, itemInfo.location?.address, itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
-                itemInfo.placePollStatus, owners.contains(userId), syncStatus.intValue, circleId)
+                itemInfo.location?.name, itemInfo.location?.description, itemInfo.location?.address,
+                itemInfo.note, itemInfo.timeZone, itemInfo.isFullDay, itemInfo.datePollStatus,
+                itemInfo.placePollStatus, owners.contains(userId), isEditable, syncStatus.intValue, circleId)
         attendees = itemInfo.attendees
     }
 }

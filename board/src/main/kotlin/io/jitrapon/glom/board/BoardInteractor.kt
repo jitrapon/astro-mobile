@@ -180,8 +180,9 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
         return when (itemType) {
             BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                     EventInfo("", null, null, null, null,
-                            "Asia/Bangkok", false, null, false, false, owners, EventSource(null, null, null)),
-                    SyncStatus.OFFLINE, now)
+                            "Asia/Bangkok", false, null, false, false, owners,
+                            EventSource(null, null, null)),
+                            true, SyncStatus.OFFLINE, now)
             else -> TODO()
         }
     }

@@ -26,6 +26,8 @@ interface BoardItem : DataModel {
 
     val itemInfo: BoardItemInfo
 
+    val isEditable: Boolean
+
     companion object : Parcelable.Creator<BoardItem> {
 
         const val TYPE_EVENT = 1

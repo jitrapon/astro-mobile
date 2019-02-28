@@ -16,4 +16,5 @@ data class BoardItemResponse(@field:Json(name = "item_id") val itemId: String,
                              @field:Json(name = "created_time") val createdTime: Long?,
                              @field:Json(name = "updated_time") val updatedTime: Long?,
                              @field:Json(name = "owners") val owners: List<String>,
+                             @field:Json(name = "is_editable") val isEditable: Boolean?,
                              @field:Json(name = "info") val info: Map<String, Any?>)

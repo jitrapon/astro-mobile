@@ -119,6 +119,7 @@ class CalendarDaoImpl(private val context: Context) :
                     val map = calendars.associateBy { it.calId }
 
                     while (cur.moveToNext()) {
+                        val calendar = map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
                         add(EventItem(BoardItem.TYPE_EVENT,
                             cur.getLong(PROJECTION_EVENT_ID).toString(),
                             null, null,
@@ -134,7 +135,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 null, false, false,
                                 arrayListOf(),
                                 EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)], null)
-                            ), SyncStatus.OFFLINE, Date()
+                            ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
                         ))
                     }
                 }
