@@ -386,7 +386,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns an event location in detail
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
-        return getEventLocation(location)
+        return getEventLocation(location) ?: if (isItemEditable) null else AndroidString(R.string.event_item_no_location_placeholder)
     }
 
     /**

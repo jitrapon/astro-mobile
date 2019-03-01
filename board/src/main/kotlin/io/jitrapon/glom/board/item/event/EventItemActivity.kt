@@ -293,6 +293,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         locationTextWatcher?.let (::addTextChangedListener)
                         if (it.status == UiModel.Status.NEGATIVE) {
                             isEnabled = false
+                            setDrawableVisible(false)
                         }
                     }
                 }
