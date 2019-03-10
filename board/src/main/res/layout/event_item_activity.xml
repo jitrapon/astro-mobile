@@ -83,7 +83,7 @@
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/text_field_icon_indicator_top_margin"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_title_til"
                     app:srcCompat="@drawable/ic_time" />
 
@@ -93,10 +93,9 @@
                     android:layout_height="26dp"
                     app:srcCompat="@drawable/ic_dots_vertical"
                     android:contentDescription="@string/event_item_transition_view"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_title_til"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_clock_icon"
                     app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginStart="17dp"
-                    android:layout_marginTop="26dp" />
+                    android:layout_marginStart="17dp" />
 
                 <ImageView
                     android:id="@+id/event_item_clock_icon_3"
@@ -105,27 +104,28 @@
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginTop="15dp"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_clock_icon"
+                    android:layout_marginTop="4dp"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_clock_icon_2"
                     app:srcCompat="@drawable/ic_time" />
 
                 <io.jitrapon.glom.board.item.event.widget.GlomTextView
                     android:id="@+id/event_item_start_time"
                     style="@style/CardView.TextView"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
+                    android:paddingTop="@dimen/text_field_vertical_padding"
+                    android:paddingBottom="@dimen/text_field_vertical_padding"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/card_content_padding"
-                    android:layout_marginTop="1dp"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/event_item_clock_icon"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_title_til"
-                    android:gravity="center_vertical"
                     android:drawableEnd="@drawable/ic_close"
-                    android:drawableTint="@color/grey" />
+                    android:drawableTint="@color/grey"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true" />
 
                 <View
                     android:id="@+id/event_item_time_separator"
@@ -143,10 +143,10 @@
                     android:id="@+id/event_item_end_time"
                     style="@style/CardView.TextView"
                     android:foreground="?android:attr/selectableItemBackground"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
+                    android:paddingTop="@dimen/text_field_vertical_padding"
+                    android:paddingBottom="@dimen/text_field_vertical_padding"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -154,17 +154,17 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_start_time"
                     android:gravity="center_vertical"
                     android:drawableEnd="@drawable/ic_close"
-                    android:drawableTint="@color/grey" />
+                    android:drawableTint="@color/grey"
+                    android:clickable="true"
+                    android:focusable="true" />
 
                 <ImageView
                     android:id="@+id/event_item_location_icon"
                     android:layout_width="@dimen/card_icon_small"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/card_content_padding"
-                    android:layout_marginTop="@dimen/card_expand_space_margin"
-                    android:clickable="true"
+                    android:layout_marginTop="@dimen/text_field_icon_indicator_top_margin"
                     android:contentDescription="@string/event_item_transition_view"
-                    android:focusable="true"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_time_separator"
                     app:srcCompat="@drawable/ic_marker" />
@@ -172,10 +172,12 @@
                 <io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
                     android:id="@+id/event_item_location_primary"
                     style="@style/CardView.EditText"
+                    android:gravity="top"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:paddingTop="@dimen/text_field_vertical_padding"
+                    android:paddingBottom="@dimen/text_field_vertical_padding"
                     android:layout_marginStart="@dimen/card_content_padding"
-                    android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view"
                     android:drawableEnd="@drawable/ic_close"
                     android:drawableTint="@color/grey"
@@ -192,10 +194,8 @@
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/event_item_transition_view"
                     android:text="@string/event_item_view_place_picker"
-                    app:layout_constraintBottom_toBottomOf="@+id/event_item_location_primary"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/event_item_location_primary"
-                    android:layout_marginTop="8dp" />
+                    app:layout_constraintTop_toTopOf="@+id/event_item_location_primary" />
 
                 <TextView
                     android:id="@+id/event_item_location_secondary"
@@ -203,7 +203,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/card_content_padding"
-                    android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
@@ -212,39 +211,80 @@
                 <com.google.android.gms.maps.MapView
                     android:id="@+id/event_item_map"
                     android:layout_width="0dp"
-                    android:layout_height="110dp"
+                    android:layout_height="0dp"
                     android:layout_marginEnd="@dimen/card_content_padding"
-                    android:layout_marginStart="50dp"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
+                    app:layout_constraintDimensionRatio="16:5"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_location_secondary"
                     map:liteMode="true" />
+
+                <View
+                    android:id="@+id/event_item_source_separator"
+                    android:layout_width="0dp"
+                    android:layout_height="1dip"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:background="@color/dark_grey"
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_map" />
+
+                <ImageView
+                    android:id="@+id/event_item_source_icon"
+                    android:layout_width="@dimen/card_icon_small"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginTop="@dimen/text_field_icon_indicator_top_margin"
+                    android:clickable="true"
+                    android:contentDescription="@string/event_item_transition_view"
+                    android:focusable="true"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_source_separator"
+                    tools:srcCompat="@drawable/ic_calendar_multiple" />
+
+                <TextView
+                    android:id="@+id/event_item_source_text_view"
+                    style="@style/TextAppearance.H4.Selectable"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="@dimen/text_field_vertical_padding"
+                    android:paddingBottom="@dimen/text_field_vertical_padding"
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_source_separator"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_source_icon"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:layout_marginStart="@dimen/card_content_padding"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="someone@example.com" />
 
                 <io.jitrapon.glom.base.ui.widget.TitledLineSeperator
                     android:id="@+id/event_item_location_separator"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/card_content_padding"
-                    android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_map" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_source_text_view" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/event_item_attendees"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="50dp"
+                    android:layout_marginStart="@dimen/card_content_padding"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:clipToPadding="false"
                     android:contentDescription="@string/event_item_transition_view"
                     android:orientation="horizontal"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_attendees_icon"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
@@ -303,7 +343,7 @@
                     android:layout_width="@dimen/card_icon_small"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/card_content_padding"
-                    android:layout_marginTop="@dimen/card_expand_space_margin"
+                    android:layout_marginTop="@dimen/text_field_icon_indicator_top_margin"
                     android:clickable="true"
                     android:contentDescription="@string/event_item_transition_view"
                     android:focusable="true"
@@ -317,8 +357,9 @@
                     android:layout_width="0dp"
                     android:background="@color/transparent"
                     android:textColorHint="@color/warm_grey"
-                    android:minLines="2"
                     android:gravity="top"
+                    android:paddingTop="@dimen/text_field_vertical_padding"
+                    android:paddingBottom="@dimen/text_field_vertical_padding"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:layout_marginStart="@dimen/card_content_padding"
@@ -326,7 +367,7 @@
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintStart_toEndOf="@+id/event_item_note_icon"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/event_item_note_icon" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_note_separator" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

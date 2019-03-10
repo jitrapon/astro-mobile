@@ -47,4 +47,8 @@
     <!-- list -->
     <dimen name="list_item_margin">16dp</dimen>
     <dimen name="list_item_small_icon">24dp</dimen>
+
+    <!-- text field -->
+    <dimen name="text_field_vertical_padding">14dp</dimen>
+    <dimen name="text_field_icon_indicator_top_margin">14dp</dimen>
 </resources>

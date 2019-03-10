@@ -66,4 +66,5 @@
     <string name="event_card_calendar_source">From your calendar</string>
     <string name="board_item_not_editable">You cannot edit details of this item</string>
     <string name="event_item_no_location_placeholder">No location info</string>
+    <string name="event_item_source_placeholder">Save to your calendar?</string>
 </resources>

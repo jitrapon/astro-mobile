@@ -82,6 +82,9 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable plan status */
     private val observablePlanStatus = MutableLiveData<ButtonUiModel>()
 
+    /* observable source of this event */
+    private val observableSource = MutableLiveData<EventSourceUiModel>()
+
     init {
         BoardInjector.getComponent().inject(this)
     }
@@ -342,6 +345,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
                         observableNote.value = getEventDetailNote(it.note)?.apply { status = editableStatus }
                         observablePlanStatus.value = getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus)
+                        observableSource.value = getEventDetailSource(it.source)
                     }
                 }
                 else {
@@ -532,6 +536,22 @@ class EventItemViewModel : BoardItemViewModel() {
             it.itemInfo.eventName = name       // update the name to be the currently displayed one
             observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, it to false)
         }
+    }
+
+    private fun getEventDetailSource(source: EventSource): EventSourceUiModel {
+        return EventSourceUiModel(
+                when {
+                    !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
+                    source.calendar?.color != null -> AndroidImage(resId = R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
+                    else -> null
+                },
+                when {
+                    source.calendar != null -> AndroidString(text = source.calendar.displayName)
+                    !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
+                    else -> null
+                },
+                if (!isItemEditable) UiModel.Status.NEGATIVE else UiModel.Status.SUCCESS
+        )
     }
 
     //region autocomplete
@@ -777,6 +797,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableNote(): LiveData<AndroidString?> = observableNote
 
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
+
+    fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
 
     override fun cleanUp() {
         interactor.cleanup()

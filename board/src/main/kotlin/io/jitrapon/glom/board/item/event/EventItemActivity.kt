@@ -385,6 +385,18 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                     }
                 }
             })
+
+            // observe on event source
+            getObservableSource().observe(this@EventItemActivity, Observer {
+                it?.let { uiModel ->
+                    event_item_source_text_view.apply {
+                        text = getString(uiModel.sourceDescription)
+                        isEnabled = uiModel.status != UiModel.Status.NEGATIVE
+                    }
+                    if (uiModel.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
+                    else event_item_source_icon.load(this@EventItemActivity, uiModel.sourceIcon)
+                }
+            })
         }
     }
 
