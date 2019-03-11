@@ -19,6 +19,7 @@ package io.jitrapon.glom.base.util
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatSpinner
 
 /**
  * Add an action which will be invoked after text of this TextView has been changed.

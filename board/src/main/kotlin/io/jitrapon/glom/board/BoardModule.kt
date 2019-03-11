@@ -44,8 +44,8 @@ class BoardModule {
 
     @Provides
     @BoardScope
-    fun provideEventItemInteractor(userInteractor: UserInteractor, circleInteractor: CircleInteractor, boardDataSource: BoardDataSource, eventItemDataSource: EventItemDataSource): EventItemInteractor =
-            EventItemInteractor(userInteractor, circleInteractor, boardDataSource, eventItemDataSource)
+    fun provideEventItemInteractor(userInteractor: UserInteractor, circleInteractor: CircleInteractor, boardDataSource: BoardDataSource, eventItemDataSource: EventItemDataSource, eventItemPreferenceDataSource: EventItemPreferenceDataSource): EventItemInteractor =
+            EventItemInteractor(userInteractor, circleInteractor, boardDataSource, eventItemDataSource, eventItemPreferenceDataSource)
 
     @Provides
     @BoardScope

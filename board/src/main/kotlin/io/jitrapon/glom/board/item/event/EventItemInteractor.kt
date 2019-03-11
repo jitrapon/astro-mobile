@@ -19,8 +19,10 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
 import io.jitrapon.glom.board.item.event.plan.EventPlacePoll
+import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -32,8 +34,11 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemInteractor(private val userInteractor: UserInteractor, private val circleInteractor: CircleInteractor,
-                          private val boardDataSource: BoardDataSource, private val eventItemDataSource: EventItemDataSource): BaseInteractor() {
+class EventItemInteractor(private val userInteractor: UserInteractor,
+                          private val circleInteractor: CircleInteractor,
+                          private val boardDataSource: BoardDataSource,
+                          private val eventItemDataSource: EventItemDataSource,
+                          private val eventItemPreferenceDataSource: EventItemPreferenceDataSource): BaseInteractor() {
 
     /* place provider use for providing place info */
     private var placeProvider: PlaceProvider? = null
@@ -265,6 +270,20 @@ class EventItemInteractor(private val userInteractor: UserInteractor, private va
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }).autoDispose()
+    }
+
+    //endregion
+    //region source
+
+    fun getItemSources(onComplete: (AsyncResult<List<EventSource>>) -> Unit) {
+        eventItemPreferenceDataSource.getSyncedSources()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(it))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     //endregion

@@ -197,7 +197,7 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/event_item_location_primary" />
 
-                <TextView
+                <io.jitrapon.glom.board.item.event.widget.GlomTextView
                     android:id="@+id/event_item_location_secondary"
                     style="@style/CardView.TextView.Secondary"
                     android:layout_width="0dp"
@@ -246,13 +246,11 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_source_separator"
                     tools:srcCompat="@drawable/ic_calendar_multiple" />
 
-                <TextView
-                    android:id="@+id/event_item_source_text_view"
+                <androidx.appcompat.widget.AppCompatSpinner
+                    android:id="@+id/event_item_source_spinner"
                     style="@style/TextAppearance.H4.Selectable"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:paddingTop="@dimen/text_field_vertical_padding"
-                    android:paddingBottom="@dimen/text_field_vertical_padding"
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_source_separator"
                     app:layout_constraintStart_toEndOf="@+id/event_item_source_icon"
@@ -260,8 +258,7 @@
                     android:layout_marginStart="@dimen/card_content_padding"
                     android:layout_marginEnd="@dimen/card_content_padding"
                     android:maxLines="1"
-                    android:ellipsize="end"
-                    tools:text="someone@example.com" />
+                    android:ellipsize="end" />
 
                 <io.jitrapon.glom.base.ui.widget.TitledLineSeperator
                     android:id="@+id/event_item_location_separator"
@@ -271,7 +268,7 @@
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_source_text_view" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_source_spinner" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/event_item_attendees"

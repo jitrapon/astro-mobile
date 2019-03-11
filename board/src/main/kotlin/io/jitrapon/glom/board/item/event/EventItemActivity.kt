@@ -9,6 +9,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -28,6 +29,7 @@ import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
+import io.jitrapon.glom.board.item.event.widget.EventSourceArrayAdapter
 import io.jitrapon.glom.board.item.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
 
@@ -144,6 +146,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         }
         event_item_view_placepicker_button.setOnClickListener {
             viewModel.showPlacePicker()
+        }
+        event_item_source_spinner.apply {
+            adapter = EventSourceArrayAdapter(this@EventItemActivity, viewModel)
         }
     }
 
@@ -386,15 +391,17 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 }
             })
 
-            // observe on event source
+            // observe on event source change
             getObservableSource().observe(this@EventItemActivity, Observer {
                 it?.let { uiModel ->
-                    event_item_source_text_view.apply {
-                        text = getString(uiModel.sourceDescription)
+                    event_item_source_spinner.apply {
+                        (adapter as EventSourceArrayAdapter).items = uiModel.items
+//                        setSelection(it.selectedIndex, false)
                         isEnabled = uiModel.status != UiModel.Status.NEGATIVE
                     }
-                    if (uiModel.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
-                    else event_item_source_icon.load(this@EventItemActivity, uiModel.sourceIcon)
+                    val selectedSource = uiModel.items[uiModel.selectedIndex]
+                    if (selectedSource.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
+                    else event_item_source_icon.load(this@EventItemActivity, selectedSource.sourceIcon)
                 }
             })
         }

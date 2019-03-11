@@ -42,7 +42,7 @@ open class BaseInteractor {
     @Inject
     lateinit var moshi: Moshi
 
-    protected var startMeasureTime: Long? = null
+    private var startMeasureTime: Long? = null
 
     init {
         ObjectGraph.component.inject(this)
@@ -151,7 +151,7 @@ open class BaseInteractor {
     /**
      * Adds this disposable to the CompositeDisposable instances
      */
-    fun Disposable.autoDispose() {
+    protected fun Disposable.autoDispose() {
         compositeDisposable.add(this)
     }
 

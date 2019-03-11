@@ -6,6 +6,7 @@ import io.jitrapon.glom.base.model.SimpleDiffResult
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.board.BoardDatabase
 import io.jitrapon.glom.board.item.event.CalendarEntity
+import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.reactivex.Flowable
@@ -125,6 +126,14 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
 
     override fun clearCalendarDiff() {
         calendarDiffResult.clear()
+    }
+
+    override fun getSyncedSources(): Flowable<List<EventSource>> {
+        return getSyncedCalendars().map {
+            it.map { cal ->
+                EventSource(null, cal, null)
+            }
+        }
     }
 
     private fun List<CalendarEntity>.toCalendarList(): List<DeviceCalendar> {

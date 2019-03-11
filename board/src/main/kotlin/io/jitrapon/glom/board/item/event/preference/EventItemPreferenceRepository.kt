@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.item.event.preference
 
 import io.jitrapon.glom.base.model.SimpleDiffResult
+import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.reactivex.Flowable
 import java.util.*
@@ -31,5 +32,9 @@ class EventItemPreferenceRepository(private val localDataSource: EventItemPrefer
 
     override fun getSyncedCalendars(): Flowable<List<DeviceCalendar>> {
         return localDataSource.getSyncedCalendars()
+    }
+
+    override fun getSyncedSources(): Flowable<List<EventSource>> {
+        return localDataSource.getSyncedSources()
     }
 }
