@@ -101,4 +101,7 @@ data class EventSource(val sourceIconUrl: String?,
         }
     }
 
+    fun isWritable(): Boolean = (calendar != null && calendar.isWritable) || calendar == null
+
+    fun isEmpty(): Boolean = calendar == null && sourceIconUrl == null && description == null
 }

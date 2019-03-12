@@ -17,11 +17,7 @@ import io.jitrapon.glom.board.item.event.EventSourceUiModel
 
 class EventSourceArrayAdapter(private val context: Context, private val viewModel: EventItemViewModel) : BaseAdapter() {
 
-    var items: MutableList<EventSourceUiModel> = ArrayList()
-        set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
+    private val items: MutableList<EventSourceUiModel> = ArrayList()
 
     inner class EventSourceViewHolder(view: View) {
 
@@ -30,7 +26,14 @@ class EventSourceArrayAdapter(private val context: Context, private val viewMode
 
         init {
             view.findViewById<CheckBox>(R.id.list_item_checkbox).hide()
+            view.findViewById<ImageView>(R.id.list_item_right_icon).hide()
         }
+    }
+
+    fun setItems(newItems: MutableList<EventSourceUiModel>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
     }
 
     private val layoutInflater: LayoutInflater by lazy {
@@ -38,23 +41,11 @@ class EventSourceArrayAdapter(private val context: Context, private val viewMode
     }
 
     override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        return layoutInflater.inflate(R.layout.list_item_no_icon, parent, false).apply {
-            tag = EventSourceViewHolder(this)
-        }
+
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        return if (convertView == null) {
-            layoutInflater.inflate(R.layout.list_item_no_icon, parent, false).apply {
-                tag = EventSourceViewHolder(this)
-            }
-        } else {
-            (convertView.tag as EventSourceViewHolder).run {
-                icon.load(context, items[position].sourceIcon)
-                text.text = context.getString(items[position].sourceDescription)
-                convertView
-            }!!
-        }
+
     }
 
     override fun getItem(position: Int): Any = items[position]

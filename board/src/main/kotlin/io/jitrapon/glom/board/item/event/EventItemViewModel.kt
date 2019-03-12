@@ -543,11 +543,19 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     private fun setEventDetailSourceSelection(currentSource: EventSource) {
-        interactor.getItemSources {
+        interactor.getSyncedAndWritableSources {
             when (it) {
                 is AsyncSuccessResult -> {
                     runAsync({
-                        it.result.map { source ->
+                        // add the first choice, which is no calendars and other external sources
+                        // events will be exclusive our app
+                        val choices = ArrayList<EventSourceUiModel>().apply {
+                            add(EventSourceUiModel(AndroidImage(resId = R.drawable.ic_calendar_multiple, tint = null),
+                                AndroidString(resId = R.string.event_item_source_none)))
+                        }
+
+                        // after that we add all other writable sources
+                        choices.addAll(it.result.map { source ->
                             EventSourceUiModel(
                                 when {
                                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
@@ -560,7 +568,9 @@ class EventItemViewModel : BoardItemViewModel() {
                                     else -> null
                                 }
                             )
-                        }.toMutableList() to it.result.indexOfFirst { it == currentSource }
+                        })
+                        val selectedChoiceIndex = if (currentSource.isEmpty()) 0 else (it.result.indexOfFirst { it == currentSource } + 1)
+                         choices to selectedChoiceIndex
                     }, { (sources, selectedIndex) ->
                         observableSources.value = EventSourceChoiceUiModel(
                             selectedIndex = selectedIndex,
@@ -819,7 +829,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
-    fun getObservableSource(): LiveData<EventSourceChoiceUiModel> = observableSources
+    fun getObservableSources(): LiveData<EventSourceChoiceUiModel> = observableSources
 
     fun getObservableSelectedSource(): LiveData<Int> = observableSelectedSource
 

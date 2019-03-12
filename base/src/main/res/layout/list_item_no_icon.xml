@@ -78,7 +78,7 @@
         android:textColor="?android:textColorSecondary" />
 
     <ImageView
-        tools:visibility="visible"
+        tools:visibility="gone"
         android:id="@+id/list_item_right_icon"
         android:layout_width="@dimen/list_item_small_icon"
         android:layout_height="@dimen/list_item_small_icon"
@@ -87,10 +87,12 @@
         app:layout_constraintEnd_toStartOf="@+id/list_item_end_guideline"
         android:layout_marginStart="16dp"
         tools:src="@drawable/ic_chevron_up"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         tools:ignore="ContentDescription" />
 
     <CheckBox
-        tools:visibility="visible"
+        tools:visibility="gone"
         android:id="@+id/list_item_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

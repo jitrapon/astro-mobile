@@ -275,8 +275,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     //endregion
     //region source
 
-    fun getItemSources(onComplete: (AsyncResult<List<EventSource>>) -> Unit) {
+    fun getSyncedAndWritableSources(onComplete: (AsyncResult<List<EventSource>>) -> Unit) {
         eventItemPreferenceDataSource.getSyncedSources()
+            .map {
+                it.filter { source -> source.isWritable() }
+            }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({

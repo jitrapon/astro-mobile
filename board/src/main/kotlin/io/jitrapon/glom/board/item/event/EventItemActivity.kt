@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.item.event
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
@@ -14,6 +15,8 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import io.jitrapon.glom.base.model.AndroidImage
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -392,16 +395,13 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             })
 
             // observe on event source change
-            getObservableSource().observe(this@EventItemActivity, Observer {
+            getObservableSources().observe(this@EventItemActivity, Observer {
                 it?.let { uiModel ->
                     event_item_source_spinner.apply {
-                        (adapter as EventSourceArrayAdapter).items = uiModel.items
-//                        setSelection(it.selectedIndex, false)
                         isEnabled = uiModel.status != UiModel.Status.NEGATIVE
                     }
                     val selectedSource = uiModel.items[uiModel.selectedIndex]
-                    if (selectedSource.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
-                    else event_item_source_icon.load(this@EventItemActivity, selectedSource.sourceIcon)
+                    event_item_source_icon.load(this@EventItemActivity, selectedSource.sourceIcon)
                 }
             })
         }
