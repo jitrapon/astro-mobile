@@ -84,7 +84,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private val observablePlanStatus = MutableLiveData<ButtonUiModel>()
 
     /* observable source of this event */
-    private val observableSources = MutableLiveData<EventSourceChoiceUiModel>()
+    private val observableSource = MutableLiveData<EventSourceUiModel>()
 
     /* observable selected index of source */
     private val observableSelectedSource = MutableLiveData<Int>()
@@ -349,7 +349,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
                         observableNote.value = getEventDetailNote(it.note)?.apply { status = editableStatus }
                         observablePlanStatus.value = getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus)
-                        setEventDetailSourceSelection(it.source)
+                        observableSource.value = getEventDetailSource(it.source)
                     }
                 }
                 else {
@@ -542,7 +542,23 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun setEventDetailSourceSelection(currentSource: EventSource) {
+    private fun getEventDetailSource(source: EventSource): EventSourceUiModel {
+        return EventSourceUiModel(
+                when {
+                    !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
+                    source.calendar?.color != null -> AndroidImage(resId = R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
+                    else -> null
+                },
+                when {
+                    source.calendar != null -> AndroidString(text = source.calendar.displayName)
+                    !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
+                    else -> AndroidString(resId = R.string.event_item_source_none)
+                },
+                if (!isItemEditable) UiModel.Status.NEGATIVE else UiModel.Status.SUCCESS
+        )
+    }
+
+    fun showEventDetailSource() {
         interactor.getSyncedAndWritableSources {
             when (it) {
                 is AsyncSuccessResult -> {
@@ -550,8 +566,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         // add the first choice, which is no calendars and other external sources
                         // events will be exclusive our app
                         val choices = ArrayList<EventSourceUiModel>().apply {
-                            add(EventSourceUiModel(AndroidImage(resId = R.drawable.ic_calendar_multiple, tint = null),
-                                AndroidString(resId = R.string.event_item_source_none)))
+                            add(EventSourceUiModel(null, AndroidString(resId = R.string.event_item_source_none)))
                         }
 
                         // after that we add all other writable sources
@@ -569,14 +584,9 @@ class EventItemViewModel : BoardItemViewModel() {
                                 }
                             )
                         })
-                        val selectedChoiceIndex = if (currentSource.isEmpty()) 0 else (it.result.indexOfFirst { it == currentSource } + 1)
-                         choices to selectedChoiceIndex
-                    }, { (sources, selectedIndex) ->
-                        observableSources.value = EventSourceChoiceUiModel(
-                            selectedIndex = selectedIndex,
-                            items = sources,
-                            status = if (!isItemEditable) UiModel.Status.NEGATIVE else UiModel.Status.SUCCESS
-                        )
+                         choices
+                    }, {
+
                     }, {
                         handleError(it)
                     })
@@ -829,9 +839,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
-    fun getObservableSources(): LiveData<EventSourceChoiceUiModel> = observableSources
-
-    fun getObservableSelectedSource(): LiveData<Int> = observableSelectedSource
+    fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
 
     override fun cleanUp() {
         interactor.cleanup()

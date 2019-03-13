@@ -40,17 +40,26 @@ class EventSourceArrayAdapter(private val context: Context, private val viewMode
         LayoutInflater.from(context)
     }
 
-    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup?): View {
-
-    }
-
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-
+        val view: View
+        val vh: EventSourceViewHolder
+        if (convertView == null) {
+            view = layoutInflater.inflate(R.layout.list_item_no_icon, parent, false)
+            vh = EventSourceViewHolder(view)
+            view?.tag = vh
+        }
+        else {
+            view = convertView
+            vh = view.tag as EventSourceViewHolder
+        }
+        vh.icon.load(context, items[position].sourceIcon)
+        vh.text.text = context.getString(items[position].sourceDescription)
+        return view
     }
 
-    override fun getItem(position: Int): Any = items[position]
+    override fun getItem(position: Int): Any? = null
 
-    override fun getItemId(position: Int): Long = position.toLong()
+    override fun getItemId(position: Int): Long = 0
 
     override fun getCount(): Int = items.size
 }

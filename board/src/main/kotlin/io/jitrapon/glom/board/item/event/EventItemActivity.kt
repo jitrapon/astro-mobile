@@ -1,7 +1,6 @@
 package io.jitrapon.glom.board.item.event
 
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
@@ -10,13 +9,10 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import io.jitrapon.glom.base.model.AndroidImage
-import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -32,7 +28,6 @@ import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
-import io.jitrapon.glom.board.item.event.widget.EventSourceArrayAdapter
 import io.jitrapon.glom.board.item.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.event_item_activity.*
 
@@ -150,8 +145,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_view_placepicker_button.setOnClickListener {
             viewModel.showPlacePicker()
         }
-        event_item_source_spinner.apply {
-            adapter = EventSourceArrayAdapter(this@EventItemActivity, viewModel)
+        event_item_source_text_view.setOnClickListener {
+            viewModel.showEventDetailSource()
         }
     }
 
@@ -395,13 +390,14 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             })
 
             // observe on event source change
-            getObservableSources().observe(this@EventItemActivity, Observer {
+            getObservableSource().observe(this@EventItemActivity, Observer {
                 it?.let { uiModel ->
-                    event_item_source_spinner.apply {
+                    event_item_source_text_view.apply {
+                        text = getString(uiModel.sourceDescription)
                         isEnabled = uiModel.status != UiModel.Status.NEGATIVE
                     }
-                    val selectedSource = uiModel.items[uiModel.selectedIndex]
-                    event_item_source_icon.load(this@EventItemActivity, selectedSource.sourceIcon)
+                    if (uiModel.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
+                    else event_item_source_icon.load(this@EventItemActivity, uiModel.sourceIcon)
                 }
             })
         }
