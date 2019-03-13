@@ -86,8 +86,8 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable source of this event */
     private val observableSource = MutableLiveData<EventSourceUiModel>()
 
-    /* observable selected index of source */
-    private val observableSelectedSource = MutableLiveData<Int>()
+    /* observable available sources for this event */
+    private val observableSources = MutableLiveData<List<EventSourceUiModel>>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -324,39 +324,49 @@ class EventItemViewModel : BoardItemViewModel() {
      * Initializes this ViewModel with the event item to display
      */
     fun setItem(item: BoardItem?, new: Boolean) {
-        item.let {
-            if (it == null) {
-                AppLogger.w("Cannot set item because item is NULL")
-            }
-            else {
-                isItemEditable = it.isEditable
-                val editableStatus = getEditableStatus(it.isEditable)
-
-                if (it is EventItem) {
-                    interactor.initWith(item = it)
-                    it.itemInfo.let {
-                        prevName = it.eventName
-                        isNewItem = new
-                        observableName.value = AndroidString(text = it.eventName, status = editableStatus) to false
-                        observableStartDate.value = getEventDetailDate(it.startTime, true)?.apply { status = editableStatus }
-                        observableEndDate.value = getEventDetailDate(it.endTime, false)?.apply { status = editableStatus }
-                        observableLocation.value = getEventDetailLocation(it.location)?.apply { status = editableStatus }
-                        observableLocationDescription.value = getEventDetailLocationDescription(it.location)?.apply { status = editableStatus }
-                        loadPlaceInfoIfRequired(it.location?.name, it.location?.googlePlaceId)
-                        observableLocationLatLng.value = getEventDetailLocationLatLng(it.location)
-                        observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
-                        observableAttendees.value = getEventDetailAttendees(it.attendees)
-                        observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
-                        observableNote.value = getEventDetailNote(it.note)?.apply { status = editableStatus }
-                        observablePlanStatus.value = getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus)
-                        observableSource.value = getEventDetailSource(it.source)
-                    }
-                }
-                else {
-                    AppLogger.w("Cannot set item because item is not an instance of EventItem")
+        runAsync({
+            if (item == null || item !is EventItem) throw Exception("Item is either NULL or not a")
+            item.run {
+                isItemEditable = isEditable
+                val editableStatus = getEditableStatus(isEditable)
+                interactor.initWith(item = this)
+                itemInfo.let {
+                    prevName = it.eventName
+                    isNewItem = new
+                    EventItemDetailUiModel(
+                        AndroidString(text = it.eventName, status = editableStatus) to false,
+                        getEventDetailDate(it.startTime, true)?.apply { status = editableStatus },
+                        getEventDetailDate(it.endTime, false)?.apply { status = editableStatus },
+                        it.location,
+                        getEventDetailLocation(it.location)?.apply { status = editableStatus },
+                        getEventDetailLocationDescription(it.location)?.apply { status = editableStatus },
+                        getEventDetailLocationLatLng(it.location),
+                        getEventDetailAttendeeTitle(it.attendees),
+                        getEventDetailAttendees(it.attendees),
+                        getEventDetailAttendStatus(it.attendees),
+                        getEventDetailNote(it.note)?.apply { status = editableStatus },
+                        getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus),
+                        getEventDetailSource(it.source)
+                    )
                 }
             }
-        }
+        }, {
+            observableName.value = it.name
+            observableStartDate.value = it.startDate
+            observableEndDate.value = it.endDate
+            observableLocation.value = it.locationName
+            observableLocationDescription.value = it.locationDescription
+            it.location?.let { loadPlaceAsync(it.name, it.googlePlaceId) }
+            observableLocationLatLng.value = it.locationLatLng
+            observableAttendeeTitle.value = it.attendeeTitle
+            observableAttendees.value = it.attendees
+            observableAttendStatus.value = it.attendButton
+            observableNote.value = it.note
+            observablePlanStatus.value = it.planButton
+            observableSource.value = it.source
+        }, {
+            handleError(it)
+        })
     }
 
     /**
@@ -547,7 +557,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 when {
                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
                     source.calendar?.color != null -> AndroidImage(resId = R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
-                    else -> null
+                    else -> AndroidImage(resId = R.drawable.ic_calendar_multiple, tint = null)
                 },
                 when {
                     source.calendar != null -> AndroidString(text = source.calendar.displayName)
@@ -558,9 +568,9 @@ class EventItemViewModel : BoardItemViewModel() {
         )
     }
 
-    fun showEventDetailSource() {
-        interactor.getSyncedAndWritableSources {
-            when (it) {
+    fun showEventDetailSources() {
+        interactor.getSyncedAndWritableSources { result ->
+            when (result) {
                 is AsyncSuccessResult -> {
                     runAsync({
                         // add the first choice, which is no calendars and other external sources
@@ -570,7 +580,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         }
 
                         // after that we add all other writable sources
-                        choices.addAll(it.result.map { source ->
+                        choices.addAll(result.result.map { source ->
                             EventSourceUiModel(
                                 when {
                                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
@@ -586,7 +596,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         })
                          choices
                     }, {
-
+                        observableSources.value = it
                     }, {
                         handleError(it)
                     })
@@ -685,7 +695,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     observableLocation.value = getEventDetailLocation(this)
                     observableLocationDescription.value = getEventDetailLocationDescription(this)
                     observableLocationLatLng.value = getEventDetailLocationLatLng(this)
-                    loadPlaceInfoIfRequired(it.name, it.googlePlaceId)
+                    loadPlaceAsync(it.name, it.googlePlaceId)
                 }
             }
         }
@@ -703,7 +713,7 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun loadPlaceInfoIfRequired(customName: String?, googlePlaceId: String?) {
+    private fun loadPlaceAsync(customName: String?, googlePlaceId: String?) {
         if (!TextUtils.isEmpty(googlePlaceId)) {
             interactor.loadPlaceInfo(customName) { result ->
                 when (result) {
@@ -840,6 +850,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
     fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
+
+    fun getObservableSources(): LiveData<List<EventSourceUiModel>> = observableSources
 
     override fun cleanUp() {
         interactor.cleanup()

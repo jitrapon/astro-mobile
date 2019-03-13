@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -146,7 +147,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             viewModel.showPlacePicker()
         }
         event_item_source_text_view.setOnClickListener {
-            viewModel.showEventDetailSource()
+            viewModel.showEventDetailSources()
         }
     }
 
@@ -253,7 +254,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on the start date
             getObservableStartDate().observe(this@EventItemActivity, Observer {
                 event_item_start_time.text = getString(it)
-                if (it.status == UiModel.Status.NEGATIVE) {
+                if (it?.status == UiModel.Status.NEGATIVE) {
                     event_item_start_time.isEnabled = false
                 }
                 it?.let {
@@ -264,7 +265,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on the end date
             getObservableEndDate().observe(this@EventItemActivity, Observer {
                 event_item_end_time.text = getString(it)
-                if (it.status == UiModel.Status.NEGATIVE) {
+                if (it?.status == UiModel.Status.NEGATIVE) {
                     event_item_end_time.isEnabled = false
                 }
                 it?.let {
@@ -287,50 +288,47 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on location text
             getObservableLocation().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    event_item_location_primary.apply {
-                        locationTextWatcher?.let (::removeTextChangedListener)
-                        setText(getString(it), false)
-                        Selection.setSelection(text, text.length)
-                        setDrawableVisible(text.isNotEmpty())
-                        locationTextWatcher?.let (::addTextChangedListener)
-                        if (it.status == UiModel.Status.NEGATIVE) {
-                            isEnabled = false
-                            setDrawableVisible(false)
-                        }
+                event_item_location_primary.apply {
+                    locationTextWatcher?.let (::removeTextChangedListener)
+                    setText(getString(it), false)
+                    Selection.setSelection(text, text.length)
+                    setDrawableVisible(text.isNotEmpty())
+                    locationTextWatcher?.let (::addTextChangedListener)
+                    if (it?.status == UiModel.Status.NEGATIVE) {
+                        isEnabled = false
+                        setDrawableVisible(false)
                     }
                 }
             })
 
             // observe on location description
             getObservableLocationDescription().observe(this@EventItemActivity, Observer {
-                it.let {
-                    if (it == null) {
-                        event_item_location_secondary.hide()
-                    }
-                    else {
-                        event_item_location_secondary.apply {
-                            show()
-                            text = getString(it)
-                        }
+                if (it == null) {
+                    event_item_location_secondary.hide()
+                }
+                else {
+                    event_item_location_secondary.apply {
+                        show()
+                        text = getString(it)
                     }
                 }
             })
 
             // observe on location latLng
             getObservableLocationLatLng().observe(this@EventItemActivity, Observer {
-                it.let { latlng ->
-                    if (latlng == null) {
-                        event_item_map.hide()
+                if (it == null) {
+                    event_item_map.apply {
+                        hide()
+                        tag = null
                     }
-                    else {
-                        map.let { map ->
-                            if (map != null) event_item_map.show()
-                            map?.showMap(latlng, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL) ?: event_item_map.apply {
-                                event_item_map.tag = latlng
-                                onCreate(null)
-                                getMapAsync(this@EventItemActivity)
-                            }
+                }
+                else {
+                    map.let { map ->
+                        if (map != null) event_item_map.show()
+                        map?.showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL) ?: event_item_map.apply {
+                            event_item_map.tag = it
+                            onCreate(null)
+                            getMapAsync(this@EventItemActivity)
                         }
                     }
                 }
@@ -338,16 +336,12 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on title showing number of attendees
             getObservableAttendeeTitle().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    event_item_location_separator.setTitle(getString(it))
-                }
+                event_item_location_separator.setTitle(getString(it))
             })
 
             // observe on list of attendees
             getObservableAttendees().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    (event_item_attendees.adapter as EventItemAttendeeAdapter).setItems(it)
-                }
+                (event_item_attendees.adapter as EventItemAttendeeAdapter).setItems(it)
             })
 
             // observe on plan status
@@ -374,31 +368,31 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on navigation event
             getObservableNavigation().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    if (it.action == NAVIGATE_TO_EVENT_PLAN) {
-                        val (boardItem, isNewItem) = it.payload as Pair<*, *>
+                if (it.action == NAVIGATE_TO_EVENT_PLAN) {
+                    val (boardItem, isNewItem) = it.payload as Pair<*, *>
 
-                        startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_REQUEST_CODE, {
-                            putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
-                            putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
-                        }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
-                    }
-                    else if (it.action == NAVIGATE_TO_PLACE_PICKER) {
-                        placePicker.launch(this@EventItemActivity, Const.PLACE_PICKER_RESULT_CODE)
-                    }
+                    startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_REQUEST_CODE, {
+                        putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
+                        putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
+                    }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
+                }
+                else if (it.action == NAVIGATE_TO_PLACE_PICKER) {
+                    placePicker.launch(this@EventItemActivity, Const.PLACE_PICKER_RESULT_CODE)
                 }
             })
 
             // observe on event source change
             getObservableSource().observe(this@EventItemActivity, Observer {
-                it?.let { uiModel ->
-                    event_item_source_text_view.apply {
-                        text = getString(uiModel.sourceDescription)
-                        isEnabled = uiModel.status != UiModel.Status.NEGATIVE
-                    }
-                    if (uiModel.sourceIcon == null) event_item_source_icon.loadFromResource(R.drawable.ic_calendar_multiple)
-                    else event_item_source_icon.load(this@EventItemActivity, uiModel.sourceIcon)
+                event_item_source_text_view.apply {
+                    text = getString(it?.sourceDescription)
+                    isEnabled = it?.status != UiModel.Status.NEGATIVE
                 }
+                event_item_source_icon.load(this@EventItemActivity, it.sourceIcon)
+            })
+
+            // observe on event available sources
+            getObservableSources().observe(this@EventItemActivity, Observer {
+                showToast(message = AndroidString(text = "Size is ${it.size}"))
             })
         }
     }
