@@ -10,10 +10,10 @@ import android.util.TypedValue
 import android.widget.Toast
 import androidx.annotation.*
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
 
@@ -41,7 +41,7 @@ fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, posit
                             onPositiveOptionClicked: (() -> Unit)? = null, negativeOptionText: AndroidString? = null,
                             onNegativeOptionClicked: (() -> Unit)? = null, isCancelable: Boolean = true,
                             onCancel: (() -> Unit)? = null): AlertDialog {
-    return AlertDialog.Builder(this).apply {
+    return MaterialAlertDialogBuilder(this).apply {
         val titleText = getString(title)
         val messageText = getString(message)
         val positive = getString(positiveOptionText)
@@ -49,14 +49,14 @@ fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, posit
         if (!TextUtils.isEmpty(titleText)) setTitle(titleText)
         if (!TextUtils.isEmpty(messageText)) setMessage(messageText)
         if (!TextUtils.isEmpty(positive)) {
-            setPositiveButton(positive, { _, _ ->
+            setPositiveButton(positive) { _, _ ->
                 onPositiveOptionClicked?.invoke()
-            })
+            }
         }
         if (!TextUtils.isEmpty(negative)) {
-            setNegativeButton(negative, { _, _ ->
+            setNegativeButton(negative) { _, _ ->
                 onNegativeOptionClicked?.invoke()
-            })
+            }
         }
         setOnCancelListener {
             onCancel?.invoke()
