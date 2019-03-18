@@ -392,7 +392,9 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on event available sources
             getObservableSources().observe(this@EventItemActivity, Observer {
-                showToast(message = AndroidString(text = "Size is ${it.size}"))
+                it?.let {
+                    showToast(message = AndroidString(text = "Size is ${it.size}"))
+                }
             })
         }
     }

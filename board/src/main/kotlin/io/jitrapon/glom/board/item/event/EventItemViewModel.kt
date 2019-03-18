@@ -87,7 +87,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private val observableSource = MutableLiveData<EventSourceUiModel>()
 
     /* observable available sources for this event */
-    private val observableSources = MutableLiveData<List<EventSourceUiModel>>()
+    private val observableSources = LiveEvent<List<EventSourceUiModel>>()
 
     init {
         BoardInjector.getComponent().inject(this)
