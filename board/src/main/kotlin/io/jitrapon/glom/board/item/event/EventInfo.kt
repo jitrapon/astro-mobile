@@ -24,6 +24,7 @@ data class EventInfo(var eventName: String,
                      var placePollStatus: Boolean,
                      var attendees: MutableList<String>,
                      var source: EventSource,
+                     var newSource: EventSource? = null,
                      override var retrievedTime: Date? = null,
                      override var error: Throwable? = null): BoardItemInfo {
 
@@ -43,7 +44,8 @@ data class EventInfo(var eventName: String,
             parcel.readByte() != 0.toByte(),
             parcel.readByte() != 0.toByte(),
             parcel.createStringArrayList()!!,
-            parcel.readParcelable(EventSource::class.java.classLoader)!!)
+            parcel.readParcelable(EventSource::class.java.classLoader)!!,
+            parcel.readParcelable(EventSource::class.java.classLoader))
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(eventName)
@@ -57,6 +59,7 @@ data class EventInfo(var eventName: String,
         parcel.writeByte(if (datePollStatus) 1 else 0)
         parcel.writeByte(if (placePollStatus) 1 else 0)
         parcel.writeStringList(attendees)
+        parcel.writeParcelable(source, flags)
         parcel.writeParcelable(source, flags)
     }
 

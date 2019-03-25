@@ -116,7 +116,12 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                is EventItem -> if (item.itemInfo.source.calendar == null) {
+                    eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                }
+                else {
+                    //TODO
+                }
             }
         }.doOnComplete {
             synchronized(lock) {
@@ -128,7 +133,15 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun editItem(item: BoardItem): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                is EventItem -> {
+                    if (item.itemInfo.source.calendar == null) {
+                        eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                    }
+                    else {
+                        //TODO
+//                        calendarDao.updateEvent(item.toDeviceEvent())
+                    }
+                }
             }
         }.doOnComplete {
             synchronized(lock) {

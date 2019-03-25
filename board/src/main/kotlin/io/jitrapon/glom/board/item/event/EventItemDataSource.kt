@@ -54,4 +54,6 @@ interface EventItemDataSource {
     fun setLocation(location: EventLocation?)
 
     fun setNote(note: String?)
+
+    fun setSource(source: EventSource)
 }

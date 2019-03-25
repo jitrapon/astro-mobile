@@ -170,4 +170,8 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     override fun setNote(note: String?) {
         inMemoryItem.itemInfo.note = note
     }
+
+    override fun setSource(source: EventSource) {
+        inMemoryItem.itemInfo.newSource = source
+    }
 }

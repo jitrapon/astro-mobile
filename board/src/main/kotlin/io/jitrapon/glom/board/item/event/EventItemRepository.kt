@@ -128,4 +128,8 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
     override fun setNote(note: String?) {
         localDataSource.setNote(note)
     }
+
+    override fun setSource(source: EventSource) {
+        localDataSource.setSource(source)
+    }
 }
