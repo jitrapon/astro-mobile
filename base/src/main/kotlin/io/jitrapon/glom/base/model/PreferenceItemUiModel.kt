@@ -14,7 +14,13 @@ data class PreferenceItemUiModel(override var status: UiModel.Status = UiModel.S
                                  var isToggled: Boolean?,
                                  val tag: String?,
                                  val leftImage: AndroidImage? = null,
-                                 val rightImage: AndroidImage? = null) : UiModel
+                                 val rightImage: AndroidImage? = null) : UiModel {
+
+    constructor(image: AndroidImage?, title: AndroidString):
+            this(UiModel.Status.SUCCESS, null, title,
+                false, null, null,
+                null, null, image, null)
+}
 
 fun PreferenceItemUiModel.isHeaderItem(): Boolean = headerTag != null && isExpanded != null
 

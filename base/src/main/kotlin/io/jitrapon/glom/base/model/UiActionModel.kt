@@ -31,6 +31,10 @@ class ReloadData(val delay: Long) : UiActionModel
 
 class RequestPermission(val rationaleMessage: AndroidString, val onRequestPermission: (Array<out String>) -> Unit, vararg val permissions: String) : UiActionModel
 
+class PresentChoices(val title: AndroidString?,
+                     val items: ArrayList<PreferenceItemUiModel>,
+                     val onItemClick: (Int) -> Unit) : UiActionModel
+
 object MessageLevel {
 
     const val INFO = 0

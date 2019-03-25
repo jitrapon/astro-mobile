@@ -389,18 +389,13 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on event source change
             getObservableSource().observe(this@EventItemActivity, Observer {
+                dialog?.dismiss()
+
                 event_item_source_text_view.apply {
                     text = getString(it?.sourceDescription)
                     isEnabled = it?.status != UiModel.Status.NEGATIVE
                 }
                 event_item_source_icon.load(this@EventItemActivity, it.sourceIcon)
-            })
-
-            // observe on event available sources
-            getObservableSources().observe(this@EventItemActivity, Observer {
-                it?.let {
-                    showToast(message = AndroidString(text = "Size is ${it.size}"))
-                }
             })
         }
     }

@@ -15,18 +15,26 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.PlaceInfo
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.addHour
+import io.jitrapon.glom.base.util.addMinute
+import io.jitrapon.glom.base.util.isToday
+import io.jitrapon.glom.base.util.roundToNextHalfHour
+import io.jitrapon.glom.base.util.setTime
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
 import io.jitrapon.glom.board.item.BoardItem
-import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
 import io.jitrapon.glom.board.item.event.plan.EventPlacePoll
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * Controller that handles all interactions for editing, saving, and updating
@@ -534,6 +542,13 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }).autoDispose()
+    }
+
+    //endregion
+    //region source
+
+    fun setItemSource(eventSource: EventSource): EventSource {
+        return eventSource
     }
 
     //endregion

@@ -6,20 +6,31 @@ import android.os.Handler
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.google.android.instantapps.InstantApps
-import io.jitrapon.glom.R
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
-import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.model.Alert
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.EmptyLoading
+import io.jitrapon.glom.base.model.Loading
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.PresentChoices
+import io.jitrapon.glom.base.model.ReloadData
+import io.jitrapon.glom.base.model.RequestPermission
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.Toast
+import io.jitrapon.glom.base.model.UiActionModel
 import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.getUngrantedPermissions
 import io.jitrapon.glom.base.util.shouldShowRequestPermissionRationale
 import io.jitrapon.glom.base.util.showAlertDialog
+import io.jitrapon.glom.base.util.showChoiceDialog
 import io.jitrapon.glom.base.util.showSnackbar
 import io.jitrapon.glom.base.util.showToast
 import javax.inject.Inject
@@ -59,6 +70,9 @@ abstract class BaseActivity : AppCompatActivity() {
     /* snack bar that is used in this activity */
     var snackBar: com.google.android.material.snackbar.Snackbar? = null
 
+    /* Alert dialog that is displayed */
+    var dialog: AlertDialog? = null
+
     /* shared google place provider */
     @Inject
     lateinit var placeProvider: PlaceProvider
@@ -97,6 +111,9 @@ abstract class BaseActivity : AppCompatActivity() {
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
                 is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
+                is PresentChoices -> showChoiceDialog(it.title, it.items, it.onItemClick).apply {
+                    dialog = this
+                }
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }

@@ -7,6 +7,7 @@ import android.os.Handler
 import android.view.*
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -48,6 +49,8 @@ abstract class BaseFragment : Fragment() {
     lateinit var placeProvider: PlaceProvider
 
     var snackBar: com.google.android.material.snackbar.Snackbar? = null
+
+    var dialog: AlertDialog? = null
 
     /* callback for when permission request is granted */
     private var permissionsGrantCallback: ((Array<out String>) -> Unit)? = null
@@ -126,6 +129,9 @@ abstract class BaseFragment : Fragment() {
                 is Navigation -> navigate(it.action, it.payload)
                 is ReloadData -> onRefresh(it.delay)
                 is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
+                is PresentChoices -> showChoiceDialog(it.title, it.items, it.onItemClick).apply {
+                    dialog = this
+                }
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
                 }
@@ -355,5 +361,12 @@ abstract class BaseFragment : Fragment() {
                 permissionsGrantCallback?.invoke(ungrantedPermissions.toTypedArray())
             }
         }
+    }
+
+    /**
+     * Overrides this function to change the behavior of showing choice dialog
+     */
+    open fun showChoiceDialog(title: AndroidString?, items: ArrayList<PreferenceItemUiModel>, onItemClick: (Int) -> Unit): AlertDialog? {
+        return context?.showChoiceDialog(title, items, onItemClick)
     }
 }

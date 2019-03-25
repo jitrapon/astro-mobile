@@ -86,9 +86,6 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable source of this event */
     private val observableSource = MutableLiveData<EventSourceUiModel>()
 
-    /* observable available sources for this event */
-    private val observableSources = LiveEvent<List<EventSourceUiModel>>()
-
     init {
         BoardInjector.getComponent().inject(this)
     }
@@ -575,13 +572,13 @@ class EventItemViewModel : BoardItemViewModel() {
                     runAsync({
                         // add the first choice, which is no calendars and other external sources
                         // events will be exclusive our app
-                        val choices = ArrayList<EventSourceUiModel>().apply {
-                            add(EventSourceUiModel(null, AndroidString(resId = R.string.event_item_source_none)))
+                        val choices = ArrayList<PreferenceItemUiModel>().apply {
+                            add(PreferenceItemUiModel(null, AndroidString(resId = R.string.event_item_source_none)))
                         }
 
                         // after that we add all other writable sources
                         choices.addAll(result.result.map { source ->
-                            EventSourceUiModel(
+                            PreferenceItemUiModel(
                                 when {
                                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
                                     source.calendar?.color != null -> AndroidImage(resId = R.drawable.ic_checkbox_blank_circle, tint = source.calendar.color)
@@ -590,13 +587,20 @@ class EventItemViewModel : BoardItemViewModel() {
                                 when {
                                     source.calendar != null -> AndroidString(text = source.calendar.displayName)
                                     !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
-                                    else -> null
+                                    else -> AndroidString(text = null)
                                 }
                             )
                         })
                          choices
                     }, {
-                        observableSources.value = it
+                        observableViewAction.value = PresentChoices(AndroidString(R.string.event_item_select_sources), it) { position ->
+                            observableSource.value = interactor.setItemSource(
+                                if (position == 0) EventSource(null, null, null)
+                                else result.result[position - 1]
+                            ).let { source ->
+                                getEventDetailSource(source)
+                            }
+                        }
                     }, {
                         handleError(it)
                     })
@@ -850,8 +854,6 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
     fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
-
-    fun getObservableSources(): LiveData<List<EventSourceUiModel>> = observableSources
 
     override fun cleanUp() {
         interactor.cleanup()

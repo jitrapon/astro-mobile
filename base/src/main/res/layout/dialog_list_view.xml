@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.recyclerview.widget.RecyclerView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/dialog_list_view_recycler_view"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/spacing_normal"
+    android:paddingBottom="@dimen/spacing_normal"
+    android:clipToPadding="false" />

@@ -7,15 +7,20 @@ import android.content.res.Configuration
 import android.os.Build
 import android.text.TextUtils
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.annotation.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.ui.widget.recyclerview.DialogRecyclerViewAdapter
 
 
 /**
@@ -37,9 +42,13 @@ fun Context.showToast(message: AndroidString) {
 /**
  * Show an alert dialog with optional buttons and callbacks
  */
-fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, positiveOptionText: AndroidString? = null,
-                            onPositiveOptionClicked: (() -> Unit)? = null, negativeOptionText: AndroidString? = null,
-                            onNegativeOptionClicked: (() -> Unit)? = null, isCancelable: Boolean = true,
+fun Context.showAlertDialog(title: AndroidString?,
+                            message: AndroidString,
+                            positiveOptionText: AndroidString? = null,
+                            onPositiveOptionClicked: (() -> Unit)? = null,
+                            negativeOptionText: AndroidString? = null,
+                            onNegativeOptionClicked: (() -> Unit)? = null,
+                            isCancelable: Boolean = true,
                             onCancel: (() -> Unit)? = null): AlertDialog {
     return MaterialAlertDialogBuilder(this).apply {
         val titleText = getString(title)
@@ -62,6 +71,21 @@ fun Context.showAlertDialog(title: AndroidString?, message: AndroidString, posit
             onCancel?.invoke()
         }
     }.setCancelable(isCancelable).show()
+}
+
+/**
+ * Show a dialog that displays a list of selectable choices
+ */
+fun Context.showChoiceDialog(title: AndroidString?, items: ArrayList<PreferenceItemUiModel>, onItemClick: (Int) -> Unit): AlertDialog {
+    val customView = LayoutInflater.from(this).inflate(R.layout.dialog_list_view, null)
+    customView.findViewById<RecyclerView>(R.id.dialog_list_view_recycler_view).apply {
+        adapter = DialogRecyclerViewAdapter(this@showChoiceDialog, items, onItemClick)
+        layoutManager = LinearLayoutManager(this@showChoiceDialog, RecyclerView.VERTICAL, false)
+    }
+    return MaterialAlertDialogBuilder(this)
+        .setTitle(getString(title))
+        .setView(customView)
+        .show()
 }
 
 /**
