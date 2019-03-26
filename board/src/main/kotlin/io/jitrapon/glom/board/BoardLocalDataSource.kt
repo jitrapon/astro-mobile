@@ -130,7 +130,7 @@ class BoardLocalDataSource(database: BoardDatabase,
         }
     }
 
-    override fun editItem(item: BoardItem): Completable {
+    override fun editItem(item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
             when (item) {
                 is EventItem -> {
@@ -138,8 +138,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                         eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
                     }
                     else {
-                        //TODO
-//                        calendarDao.updateEvent(item.toDeviceEvent())
+                        calendarDao.updateEvent(item)
                     }
                 }
             }
@@ -161,7 +160,12 @@ class BoardLocalDataSource(database: BoardDatabase,
                     if (it != -1) {
                         val item = inMemoryBoard.items[it]
                         when (item) {
-                            is EventItem -> eventDao.deleteEventById(itemId)
+                            is EventItem -> if (item.itemInfo.source.calendar == null) {
+                                eventDao.deleteEventById(itemId)
+                            }
+                            else {
+                                //TODO
+                            }
                             else -> { /* do nothing */ }
                         }
                         inMemoryBoard.items.removeAt(it)
@@ -176,7 +180,9 @@ class BoardLocalDataSource(database: BoardDatabase,
             synchronized(lock) {
                 val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }
                 when (item) {
-                    is EventItem -> eventDao.updateSyncStatusById(itemId, status.intValue)
+                    is EventItem -> if (item.itemInfo.source.calendar == null) {
+                        eventDao.updateSyncStatusById(itemId, status.intValue)
+                    }
                     else -> { /* unsupported */ }
                 }
             }

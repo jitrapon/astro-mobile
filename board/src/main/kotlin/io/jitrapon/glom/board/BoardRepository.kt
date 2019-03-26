@@ -32,8 +32,9 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
         else localDataSource.createItem(item, remote)
     }
 
-    override fun editItem(item: BoardItem): Completable {
-        return update(localDataSource.editItem(item), remoteDataSource.editItem(item), true)
+    override fun editItem(item: BoardItem, remote: Boolean): Completable {
+        return if (remote) update(localDataSource.editItem(item), remoteDataSource.editItem(item), true)
+        else localDataSource.editItem(item)
     }
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {

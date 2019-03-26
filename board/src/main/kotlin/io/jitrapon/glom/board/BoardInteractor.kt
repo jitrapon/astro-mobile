@@ -123,7 +123,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Edits this board item with a new info
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.editItem(item)
+        boardDataSource.editItem(item, item.syncStatus != SyncStatus.OFFLINE)
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

@@ -6,16 +6,27 @@ import androidx.recyclerview.widget.DiffUtil
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
-import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AnimationItem
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.LiveEvent
+import io.jitrapon.glom.base.model.MessageLevel
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
-import io.jitrapon.glom.board.item.*
+import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.BoardItemDiffCallback
+import io.jitrapon.glom.board.item.BoardItemUiModel
+import io.jitrapon.glom.board.item.BoardItemViewModelStore
+import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventItemUiModel
-import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceInteractor
-import java.util.*
+import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import kotlin.math.absoluteValue
@@ -261,7 +272,7 @@ class BoardViewModel : BaseViewModel() {
                     saveItem = null
                 }
 
-                // start syncing data to server and local database
+                // start syncing data to server and local database depending on the item's sync status
                 if (createNew) {
                     syncItem(boardInteractor::createItem, boardItem, AndroidString(R.string.board_item_created))
                 }
@@ -287,8 +298,14 @@ class BoardViewModel : BaseViewModel() {
                 if (index != -1) {
                     when (it) {
                         is AsyncSuccessResult -> {
-                            items[index].status = UiModel.Status.SUCCESS
-                            boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.SUCCESS)
+                            // update the sync status accordingly to the item's previous status
+                            // if the item is marked as syncable, i.e. not offline, then it should be updated
+                            // to success state. Otherwise, mark this item again as offline
+                            items[index].status = if (boardItem.syncStatus != SyncStatus.OFFLINE)
+                                UiModel.Status.SUCCESS else UiModel.Status.POSITIVE
+                            boardInteractor.setItemSyncStatus(items[index].itemId,
+                                if (boardItem.syncStatus != SyncStatus.OFFLINE) SyncStatus.SUCCESS
+                                else SyncStatus.OFFLINE)
 
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null

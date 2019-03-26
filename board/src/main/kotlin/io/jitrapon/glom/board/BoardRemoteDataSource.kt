@@ -30,7 +30,7 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
         return api.createBoardItem(circleInteractor.getActiveCircleId(), item.serialize())
     }
 
-    override fun editItem(item: BoardItem): Completable {
+    override fun editItem(item: BoardItem, remote: Boolean): Completable {
         return api.editBoardItem(circleInteractor.getActiveCircleId(), item.itemId, item.serializeItemInfo())
     }
 

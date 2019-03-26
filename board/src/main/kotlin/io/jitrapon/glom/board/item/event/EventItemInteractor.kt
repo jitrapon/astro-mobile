@@ -218,6 +218,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     fun setItemDate(date: Date?, isStartDate: Boolean) {
         if (!isItemEditable) return
 
+        // if this item is a calendar event, the start date and end date must not be null
+        if (date == null && event.itemInfo.source.calendar != null) {
+            return
+        }
+
         isItemModified = true
 
         if (isStartDate) {
@@ -227,7 +232,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             // if the new start date surpasses end date, reset the end date
             // or if the new start date is null, we should also reset the end date
             if (((startDateTemp != null && endDateTemp != null) && (startDateTemp >= endDateTemp)) || startDateTemp == null) {
-                endDateTemp = null
+                endDateTemp = if (event.itemInfo.source.calendar != null && startDateTemp != null)
+                    Date(startDateTemp).addHour(1).time else null
             }
             eventItemDataSource.setDate(startDateTemp, endDateTemp)
         }

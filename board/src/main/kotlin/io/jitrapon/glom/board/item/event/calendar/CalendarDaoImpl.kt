@@ -2,12 +2,15 @@ package io.jitrapon.glom.board.item.event.calendar
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.CalendarContract
+import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.WorkerThread
 import androidx.core.database.getIntOrNull
@@ -15,6 +18,7 @@ import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
+import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.jitrapon.glom.base.util.hasWriteCalendarPermission
 import io.jitrapon.glom.board.item.BoardItem
@@ -97,7 +101,6 @@ class CalendarDaoImpl(private val context: Context) :
         accessLevel >= CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR
 
     @SuppressLint("MissingPermission")
-    @WorkerThread
     override fun getEventsSync(calendars: List<DeviceCalendar>, startSearchTime: Long, endSearchTime: Long?): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             ArrayList<EventItem>().apply {
@@ -148,6 +151,23 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }
         else throw NoCalendarPermissionException()
+    }
+
+    override fun updateEvent(event: EventItem) {
+        val eventId = event.itemId.toLong()
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+            put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+            put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+            put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+            put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+            put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+            put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+        }
+        val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+        val rows = contentResolver.update(updateUri, values, null, null)
+        if (rows < 1) throw Exception()
     }
 
     @SuppressLint("MissingPermission")
