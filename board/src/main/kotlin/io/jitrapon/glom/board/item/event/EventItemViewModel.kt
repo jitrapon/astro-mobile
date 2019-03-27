@@ -332,8 +332,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     isNewItem = new
                     EventItemDetailUiModel(
                         AndroidString(text = it.eventName, status = editableStatus) to false,
-                        getEventDetailDate(it.startTime, true)?.apply { status = editableStatus },
-                        getEventDetailDate(it.endTime, false)?.apply { status = editableStatus },
+                        getEventDetailDate(it.startTime, true, it.source)?.apply { if (!isItemEditable) status = editableStatus },
+                        getEventDetailDate(it.endTime, false, it.source)?.apply { if (!isItemEditable) status = editableStatus },
                         it.location,
                         getEventDetailLocation(it.location)?.apply { status = editableStatus },
                         getEventDetailLocationDescription(it.location)?.apply { status = editableStatus },
@@ -386,7 +386,7 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns a formatted date in event detail
      */
-    private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean): AndroidString? {
+    private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean, source: EventSource): AndroidString? {
         dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
                                                         else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
         return AndroidString(text = StringBuilder().apply {
@@ -394,7 +394,7 @@ class EventItemViewModel : BoardItemViewModel() {
             append(date.toDateString(true))
             append("   ")
             append(date.toTimeString())
-        }.toString())
+        }.toString(), status = if (isStartDate && source.calendar != null) UiModel.Status.EMPTY else UiModel.Status.SUCCESS)
     }
 
     /**
@@ -514,8 +514,8 @@ class EventItemViewModel : BoardItemViewModel() {
                 observableAttendees.value = getEventDetailAttendees(it.attendees)
                 observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
 
-                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true)
-                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false)
+                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, it.source)
+                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, it.source)
                 observableDateTimePicker.value = null
 
                 it.location?.apply {
@@ -670,7 +670,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 })
                 if (suggestion.selectData.second == true) {
                     observableStartDate.value = getEventDetailDate(interactor.getSelectedDate()?.time,
-                            suggestion.selectData.second as Boolean)
+                            suggestion.selectData.second as Boolean, interactor.event.itemInfo.source)
                 }
             }
             is PlaceInfo -> {
@@ -776,8 +776,8 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.let {
             it.setItemDate(date, isStartDate)
 
-            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true)
-            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false)
+            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, it.event.itemInfo.source)
+            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, it.event.itemInfo.source)
             observableDateTimePicker.value = null
         }
     }

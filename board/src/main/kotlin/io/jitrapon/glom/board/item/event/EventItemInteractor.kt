@@ -150,6 +150,13 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
      * the new item, along with a flag indicating if the item has been modified
      */
     fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
+        // if this item is a calendar item, and the end date is not set by the user
+        // set it to be equal to the start date so that the calendar provider allows
+        // us to save
+        if (event.itemInfo.source.calendar != null && event.itemInfo.endTime == null) {
+            event.itemInfo.endTime = event.itemInfo.startTime
+        }
+
         onComplete(AsyncSuccessResult(event to isItemModified))
         isItemModified = false
     }
@@ -218,10 +225,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     fun setItemDate(date: Date?, isStartDate: Boolean) {
         if (!isItemEditable) return
 
-        // if this item is a calendar event, the start date and end date must not be null
-        if (date == null && event.itemInfo.source.calendar != null) {
-            return
-        }
+        // if this item is a calendar event, the start date must not be null
+        if (date == null && event.itemInfo.source.calendar != null && isStartDate) return
 
         isItemModified = true
 
@@ -232,8 +237,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             // if the new start date surpasses end date, reset the end date
             // or if the new start date is null, we should also reset the end date
             if (((startDateTemp != null && endDateTemp != null) && (startDateTemp >= endDateTemp)) || startDateTemp == null) {
-                endDateTemp = if (event.itemInfo.source.calendar != null && startDateTemp != null)
-                    Date(startDateTemp).addHour(1).time else null
+                endDateTemp = null
             }
             eventItemDataSource.setDate(startDateTemp, endDateTemp)
         }
