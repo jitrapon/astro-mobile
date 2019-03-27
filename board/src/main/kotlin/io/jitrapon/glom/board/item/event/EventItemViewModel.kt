@@ -150,7 +150,7 @@ class EventItemViewModel : BoardItemViewModel() {
         var showYear = startDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
 
         // if end datetime is not present, only show start time
-        if (end == null) return Date(start).let {
+        if (end == null || end == start) return Date(start).let {
             AndroidString(text = "${it.toDateString(showYear)} (${it.toTimeString()})")
         }
 
