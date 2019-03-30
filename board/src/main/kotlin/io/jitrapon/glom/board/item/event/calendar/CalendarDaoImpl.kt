@@ -137,7 +137,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
                                 null, false, false,
                                 arrayListOf(),
-                                EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)], null)
+                                EventSource(null, map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)], null, null)
                             ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
                         ))
                     }
@@ -151,6 +151,22 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }
         else throw NoCalendarPermissionException()
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun createEvent(event: EventItem, calId: Long) {
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+            put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+            put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+            put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+            put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+            put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+            put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+            put(CalendarContract.Events.CALENDAR_ID, calId)
+        }
+        contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
     }
 
     override fun updateEvent(event: EventItem) {
@@ -167,6 +183,13 @@ class CalendarDaoImpl(private val context: Context) :
         }
         val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
         val rows = contentResolver.update(updateUri, values, null, null)
+        if (rows < 1) throw Exception()
+    }
+
+
+    override fun deleteEvent(event: EventItem) {
+        val deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.itemId.toLong())
+        val rows = contentResolver.delete(deleteUri, null, null)
         if (rows < 1) throw Exception()
     }
 

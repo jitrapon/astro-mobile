@@ -11,7 +11,7 @@ import java.util.Date
 import java.util.LinkedHashMap
 import kotlin.collections.HashMap
 
-fun BoardItemResponse.deserialize(): EventItem {
+fun BoardItemResponse.deserialize(circleId: String): EventItem {
     return EventItem(
             BoardItem.TYPE_EVENT,
             itemId,
@@ -47,7 +47,7 @@ fun BoardItemResponse.deserialize(): EventItem {
                         it["is_date_poll_opened"] as Boolean,
                         it["is_place_poll_opened"] as Boolean,
                         ArrayList(it["attendees"] as List<String>),
-                        EventSource(null, null, null))
+                        EventSource(null, null, null, circleId))
             },
             isEditable ?: false,
             SyncStatus.SUCCESS,
@@ -89,7 +89,7 @@ fun EventItem.serializeInfo(): MutableMap<String, Any?> {
     }
 }
 
-fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardItem> {
+fun List<EventItemFullEntity>.toEventItems(userId: String?, circleId: String): MutableList<BoardItem> {
     val items = ArrayList<BoardItem>()
     for (entity in this) {
         entity.entity.let {
@@ -102,7 +102,7 @@ fun List<EventItemFullEntity>.toEventItems(userId: String?): MutableList<BoardIt
                             ArrayList<String>().apply { if (it.isOwner) { userId?.let(::add) } },
                             EventInfo(it.name, it.startTime, it.endTime, location, it.note, it.timeZone,
                                     it.isFullDay, null, it.datePollStatus, it.placePollStatus,
-                                    entity.attendees.toMutableList(), EventSource(null, null, null)),
+                                    entity.attendees.toMutableList(), EventSource(null, null, null, circleId)),
                             it.isEditable, it.syncStatus.toSyncStatus()))
         }
     }

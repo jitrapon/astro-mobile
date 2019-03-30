@@ -52,7 +52,7 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
         return ArrayList<BoardItem>().apply {
             this@deserialize.forEach {
                 when (it.itemType) {
-                    BoardItem.TYPE_EVENT -> add(it.deserialize())
+                    BoardItem.TYPE_EVENT -> add(it.deserialize(circleInteractor.getActiveCircleId()))
                 }
             }
         }

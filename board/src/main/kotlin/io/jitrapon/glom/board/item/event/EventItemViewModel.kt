@@ -595,7 +595,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     }, {
                         observableViewAction.value = PresentChoices(AndroidString(R.string.event_item_select_sources), it) { position ->
                             observableSource.value = interactor.setItemSource(
-                                if (position == 0) EventSource(null, null, null)
+                                if (position == 0) EventSource(null, null, null, interactor.circleId)
                                 else result.result[position - 1]
                             ).let { source ->
                                 getEventDetailSource(source)

@@ -43,7 +43,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                         .doOnNext { AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms") }
                         .subscribeOn(Schedulers.io()),
                 BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
-                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId())
+                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId(), circleId)
                     items.addAll(deviceEvents)
                     Board(circleId, items, getSyncTime())
                 })
@@ -120,7 +120,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                     eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
                 }
                 else {
-                    //TODO
+                    calendarDao.createEvent(item, item.itemInfo.newSource?.calendar?.calId ?: item.itemInfo.source.calendar?.calId!!)
                 }
             }
         }.doOnComplete {
@@ -134,11 +134,40 @@ class BoardLocalDataSource(database: BoardDatabase,
         return Completable.fromCallable {
             when (item) {
                 is EventItem -> {
-                    if (item.itemInfo.source.calendar == null) {
-                        eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                    // determine if we need to move this event to a device calendar
+                    val oldSource = item.itemInfo.source
+                    val newSource = item.itemInfo.newSource
+                    if (oldSource.isBoard()) {
+
+                        // case 1: current source is this board, and new source is a device calendar
+                        if (newSource?.calendar != null) {
+                            eventDao.deleteEventById(item.itemId)
+                            calendarDao.createEvent(item, newSource.calendar.calId)
+                        }
+
+                        // case 2: both current source and new source are this board
+                        else {
+                            eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                        }
                     }
-                    else {
-                        calendarDao.updateEvent(item)
+                    else if (oldSource.calendar != null) {
+
+                        // case 3: current source is a device calendar, and new source is this board
+                        if (newSource != null && newSource.isBoard()) {
+                            calendarDao.deleteEvent(item)
+                            eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                        }
+
+                        // case 4: current source is a device calendar, and new source is another calendar
+                        else if (newSource?.calendar != null && newSource.calendar != oldSource.calendar) {
+                            calendarDao.deleteEvent(item)
+                            calendarDao.createEvent(item, newSource.calendar.calId)
+                        }
+
+                        // case 5: current source is a device calendar, and new source is the same calendar
+                        else {
+                            calendarDao.updateEvent(item)
+                        }
                     }
                 }
             }
@@ -164,7 +193,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                                 eventDao.deleteEventById(itemId)
                             }
                             else {
-                                //TODO
+                                calendarDao.deleteEvent(item)
                             }
                             else -> { /* do nothing */ }
                         }

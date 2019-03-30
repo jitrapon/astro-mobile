@@ -64,6 +64,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     val placePolls: List<EventPlacePoll>
         get() = eventItemDataSource.getPlacePolls(event, false).blockingFirst()
 
+    val circleId: String?
+        get() = circleInteractor.getActiveCircleId()
+
     /* whether or not the current user ID owns this item */
     private var isUserAnOwner: Boolean = false
 
@@ -550,6 +553,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
 
     fun setItemSource(eventSource: EventSource): EventSource {
         return eventSource.apply {
+            if (eventSource != event.itemInfo.source) {
+                isItemModified = true
+            }
             eventItemDataSource.setSource(this)
         }
     }

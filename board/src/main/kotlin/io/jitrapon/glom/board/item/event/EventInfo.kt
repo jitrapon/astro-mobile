@@ -60,7 +60,7 @@ data class EventInfo(var eventName: String,
         parcel.writeByte(if (placePollStatus) 1 else 0)
         parcel.writeStringList(attendees)
         parcel.writeParcelable(source, flags)
-        parcel.writeParcelable(source, flags)
+        parcel.writeParcelable(newSource, flags)
     }
 
     override fun describeContents(): Int = 0
@@ -75,12 +75,14 @@ data class EventInfo(var eventName: String,
 data class EventSource(val sourceIconUrl: String?,
                        val calendar: DeviceCalendar?,
                        val description: String?,
+                       val circleId: String?,
                        override var retrievedTime: Date? = null,
                        override val error: Throwable? = null
 ): DataModel {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
         parcel.readParcelable(DeviceCalendar::class.java.classLoader),
+        parcel.readString(),
         parcel.readString()
     )
 
@@ -88,6 +90,7 @@ data class EventSource(val sourceIconUrl: String?,
         parcel.writeString(sourceIconUrl)
         parcel.writeParcelable(calendar, flags)
         parcel.writeString(description)
+        parcel.writeString(circleId)
     }
 
     override fun describeContents(): Int {
@@ -106,5 +109,5 @@ data class EventSource(val sourceIconUrl: String?,
 
     fun isWritable(): Boolean = (calendar != null && calendar.isWritable) || calendar == null
 
-    fun isEmpty(): Boolean = calendar == null && sourceIconUrl == null && description == null
+    fun isBoard(): Boolean = calendar == null && !circleId.isNullOrEmpty()
 }

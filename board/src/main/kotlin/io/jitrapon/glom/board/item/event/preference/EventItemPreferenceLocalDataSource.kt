@@ -131,7 +131,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
     override fun getSyncedSources(): Flowable<List<EventSource>> {
         return getSyncedCalendars().map {
             it.map { cal ->
-                EventSource(null, cal, null)
+                EventSource(null, cal, null, null)
             }
         }
     }
