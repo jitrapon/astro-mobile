@@ -10,9 +10,7 @@ import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.CalendarContract
-import android.util.Log
 import androidx.annotation.ColorInt
-import androidx.annotation.WorkerThread
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
@@ -97,7 +95,7 @@ class CalendarDaoImpl(private val context: Context) :
     /**
      * Whether or not a calendar is read-only
      */
-    private fun isCalendarWritable(isVisible: Boolean, accessLevel: Int): Boolean =
+    private fun isCalendarWritable(isVisible: Boolean, accessLevel: Int): Boolean = isVisible &&
         accessLevel >= CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR
 
     @SuppressLint("MissingPermission")
@@ -182,15 +180,13 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
         }
         val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
-        val rows = contentResolver.update(updateUri, values, null, null)
-        if (rows < 1) throw Exception()
+        contentResolver.update(updateUri, values, null, null)
     }
 
 
     override fun deleteEvent(event: EventItem) {
         val deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.itemId.toLong())
-        val rows = contentResolver.delete(deleteUri, null, null)
-        if (rows < 1) throw Exception()
+        contentResolver.delete(deleteUri, null, null)
     }
 
     @SuppressLint("MissingPermission")

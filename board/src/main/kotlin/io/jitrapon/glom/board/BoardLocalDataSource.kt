@@ -169,7 +169,12 @@ class BoardLocalDataSource(database: BoardDatabase,
                             calendarDao.updateEvent(item)
                         }
                     }
+                    item.apply {
+                        itemInfo.source = itemInfo.newSource ?: itemInfo.source
+                        itemInfo.newSource = null
+                    }
                 }
+                else -> throw NotImplementedError()
             }
         }.doOnComplete {
             synchronized(lock) {
