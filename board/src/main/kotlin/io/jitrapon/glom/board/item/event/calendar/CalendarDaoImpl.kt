@@ -166,7 +166,9 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
             put(CalendarContract.Events.CALENDAR_ID, calId)
         }
-        contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
+        contentResolver.insert(CalendarContract.Events.CONTENT_URI, values).let {
+            event.itemId = it!!.lastPathSegment!!
+        }
     }
 
     override fun updateEvent(event: EventItem, calId: Long?) {
