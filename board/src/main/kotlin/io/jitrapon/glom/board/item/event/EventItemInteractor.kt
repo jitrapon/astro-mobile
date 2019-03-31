@@ -156,8 +156,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
         // if this item is a calendar item, and the end date is not set by the user
         // set it to be equal to the start date so that the calendar provider allows
         // us to save
-        if (event.itemInfo.source.calendar != null && event.itemInfo.endTime == null) {
-            event.itemInfo.endTime = event.itemInfo.startTime
+        event.itemInfo.apply {
+            if ((source.calendar != null || newSource?.calendar != null) && endTime == null) {
+                endTime = startTime
+            }
         }
 
         onComplete(AsyncSuccessResult(event to isItemModified))

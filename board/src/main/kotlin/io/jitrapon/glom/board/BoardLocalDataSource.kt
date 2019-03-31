@@ -116,12 +116,8 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> if (item.itemInfo.source.calendar == null) {
-                    eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
-                }
-                else {
-                    calendarDao.createEvent(item, item.itemInfo.newSource?.calendar?.calId ?: item.itemInfo.source.calendar?.calId!!)
-                }
+                is EventItem -> insertOrUpdateEvent(item, true)
+                else -> throw NotImplementedError()
             }
         }.doOnComplete {
             synchronized(lock) {
@@ -133,7 +129,7 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun editItem(item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
             when (item) {
-                is EventItem -> editEventItem(item)
+                is EventItem -> insertOrUpdateEvent(item, false)
                 else -> throw NotImplementedError()
             }
         }.doOnComplete {
@@ -206,7 +202,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             }
     }
 
-    private fun editEventItem(item: EventItem) {
+    private fun insertOrUpdateEvent(item: EventItem, isNew: Boolean) {
         val oldSource = item.itemInfo.source
         val newSource = item.itemInfo.newSource
         if (oldSource.isBoard()) {
@@ -214,7 +210,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             // case 1: current source is this board, and new source is a device calendar
             if (newSource?.calendar != null) {
                 calendarDao.createEvent(item, newSource.calendar.calId)
-                eventDao.deleteEventById(item.itemId)
+                if (!isNew) eventDao.deleteEventById(item.itemId)
             }
 
             // case 2: both current source and new source are this board
@@ -227,17 +223,19 @@ class BoardLocalDataSource(database: BoardDatabase,
             // case 3: current source is a device calendar, and new source is this board
             if (newSource != null && newSource.isBoard()) {
                 eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
-                calendarDao.deleteEvent(item)
+                if (!isNew) calendarDao.deleteEvent(item)
             }
 
             // case 4: current source is a device calendar, and new source is another calendar
             else if (newSource?.calendar != null && oldSource.calendar.calId != newSource.calendar.calId) {
-                calendarDao.updateEvent(item, newSource.calendar.calId)
+                if (!isNew) calendarDao.updateEvent(item, newSource.calendar.calId)
+                else calendarDao.createEvent(item, newSource.calendar.calId)
             }
 
             // case 5: current source is a device calendar, and new source is the same calendar
             else {
-                calendarDao.updateEvent(item)
+                if (!isNew) calendarDao.updateEvent(item)
+                else calendarDao.createEvent(item, oldSource.calendar.calId)
             }
         }
         item.apply {
