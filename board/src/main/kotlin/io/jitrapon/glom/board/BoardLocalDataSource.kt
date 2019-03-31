@@ -209,8 +209,8 @@ class BoardLocalDataSource(database: BoardDatabase,
 
             // case 1: current source is this board, and new source is a device calendar
             if (newSource?.calendar != null) {
-                calendarDao.createEvent(item, newSource.calendar.calId)
                 if (!isNew) eventDao.deleteEventById(item.itemId)
+                calendarDao.createEvent(item, newSource.calendar.calId)
             }
 
             // case 2: both current source and new source are this board
