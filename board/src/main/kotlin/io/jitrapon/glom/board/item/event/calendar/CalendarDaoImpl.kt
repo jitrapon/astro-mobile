@@ -114,7 +114,9 @@ class CalendarDaoImpl(private val context: Context) :
                     }.toString()
                     cur = contentResolver.query(uri,
                         EVENT_CALENDAR_PROJECTION,
-                        "${CalendarContract.Events.CALENDAR_ID} in ($ids) AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery",
+                        "${CalendarContract.Events.CALENDAR_ID} in ($ids) " +
+                                "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
+                                "AND ${CalendarContract.Events.DELETED} = 0",
                         null, null)
                     cur ?: return ArrayList()
                     val map = calendars.associateBy { it.calId }
@@ -167,7 +169,7 @@ class CalendarDaoImpl(private val context: Context) :
         contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
     }
 
-    override fun updateEvent(event: EventItem) {
+    override fun updateEvent(event: EventItem, calId: Long?) {
         val eventId = event.itemId.toLong()
         val values = ContentValues().apply {
             put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
@@ -178,6 +180,7 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+            calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
         }
         val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
         contentResolver.update(updateUri, values, null, null)
