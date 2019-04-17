@@ -30,6 +30,7 @@ import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
 import io.jitrapon.glom.board.item.event.widget.PlacePicker
+import io.jitrapon.glom.board.item.event.widget.STYLE_BOTTOM_SHEET
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 
@@ -285,8 +286,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                         show(picker, onDateTimeSet = { date ->
                             viewModel.setDate(date, isStartDate)
                         }, onCancel = {
-                            viewModel.cancelSetDate()
-                        })
+                            //do nothing
+                        }, style = STYLE_BOTTOM_SHEET)
                     }
                 }
             })

@@ -40,23 +40,39 @@ object DateTimeFormat {
         }
     }
 
+    @JvmField val DATE_FORMAT_DAY_OF_WEEK = object : ThreadLocal<DateFormat>() {
+        override fun initialValue(): DateFormat? {
+            return SimpleDateFormat("EEE", Locale.getDefault())
+        }
+    }
+
+    @JvmField val DATE_FORMAT_DAY_OF_MONTH = object : ThreadLocal<DateFormat>() {
+        override fun initialValue(): DateFormat? {
+            return SimpleDateFormat("dd", Locale.getDefault())
+        }
+    }
+
     const val MILLISECOND_IN_DAY = 1000 * 60 * 60 * 24
     const val TODAY = "Today"
     const val YESTERDAY = "Yesterday"
     const val TOMORROW = "Tomorrow"
 }
 
-fun Date.toDateString(showYear: Boolean = true): String = if (showYear) DateTimeFormat.DATE_FORMAT_WITH_YEAR.get().format(this) else
-    DateTimeFormat.DATE_FORMAT_NO_YEAR.get().format(this)
+fun Date.toDateString(showYear: Boolean = true): String = if (showYear) DateTimeFormat.DATE_FORMAT_WITH_YEAR.get()!!.format(this) else
+    DateTimeFormat.DATE_FORMAT_NO_YEAR.get()!!.format(this)
 
 fun Date.toRelativeDayString(): String {
     return when (Date().daysBetween(this)) {
         -1 -> YESTERDAY
         0 -> TODAY
         1 -> TOMORROW
-        else -> RELATIVE_DAY_FORMAT.get().format(this)
+        else -> RELATIVE_DAY_FORMAT.get()!!.format(this)
     }
 }
+
+fun Date.shortWeekday(): String = DateTimeFormat.DATE_FORMAT_DAY_OF_WEEK.get()!!.format(this)
+
+fun Date.dayOfMonth(): String = DateTimeFormat.DATE_FORMAT_DAY_OF_MONTH.get()!!.format(this)
 
 /**
  * Get days between two Date objects, comparing them by midnight time at 00:00:00
@@ -82,7 +98,7 @@ fun Date.daysBetween(other: Date): Int {
     return (((endTimeMs - startTimeMs) / (MILLISECOND_IN_DAY)).toInt())
 }
 
-fun Date.toTimeString(): String = DateTimeFormat.TIME_FORMAT.get().format(this)
+fun Date.toTimeString(): String = DateTimeFormat.TIME_FORMAT.get()!!.format(this)
 
 fun Date.add(field: Int, amount: Int): Date {
     return Calendar.getInstance().let {
@@ -148,7 +164,9 @@ fun Date.withinDuration(other: Date, seconds: Int): Boolean {
 
 fun Date.setTime(year: Int, month: Int, day: Int): Date {
     return Calendar.getInstance().let {
+        it.time = this@setTime
         it.set(year, month, day)
+        this@setTime.time = it.time.time
         it.time
     }
 }
@@ -159,3 +177,15 @@ fun Date.sameDateAs(other: Date): Boolean {
     return (cal1[Calendar.DAY_OF_MONTH] == cal2[Calendar.DAY_OF_MONTH]) && (cal1[Calendar.MONTH] == cal2[Calendar.MONTH]) &&
             (cal1[Calendar.YEAR] == cal2[Calendar.YEAR])
 }
+
+val Date.hourOfDay: Int
+    get() = Calendar.getInstance().run {
+        time = this@hourOfDay
+        get(Calendar.HOUR_OF_DAY)
+    }
+
+val Date.hourToMinute: Pair<Int, Int>
+    get() = Calendar.getInstance().run {
+        time = this@hourToMinute
+        get(Calendar.HOUR_OF_DAY) to get(Calendar.MINUTE)
+    }

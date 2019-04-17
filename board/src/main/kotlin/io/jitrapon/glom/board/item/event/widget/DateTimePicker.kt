@@ -7,10 +7,17 @@ import android.content.DialogInterface
 import android.text.format.DateFormat
 import android.widget.DatePicker
 import android.widget.TimePicker
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.DateTimePickerUiModel
 import io.jitrapon.glom.base.util.toDayMonthYear
+import io.jitrapon.glom.board.item.event.widget.datetimepicker.BottomSheetDateTimePicker
 import java.util.*
+
+const val STYLE_DIALOG = 0x0
+const val STYLE_BOTTOM_SHEET = 0x1
+const val PICKER_BOTTOM_SHEET_TAG = "picker_bottom_sheet"
 
 /**
  * Wrapper around an implementation of a DateTime picker for abstracting away the details of this widget
@@ -54,36 +61,54 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
     /* callback for when date is set by the DateRangePicker dialog */
     private var onDateRangeSetListener: ((Pair<Date, Date?>) -> Unit)? = null
 
+    /* Bottom sheet menu for picking date and time */
+    private val bottomSheet: BottomSheetDateTimePicker by lazy { BottomSheetDateTimePicker() }
+
     /**
      * Call this to display the date and time dialog
      */
-    fun show(picker: DateTimePickerUiModel, onDateTimeSet: (Date) -> Unit, onCancel: () -> Unit) {
+    fun show(picker: DateTimePickerUiModel, onDateTimeSet: (Date) -> Unit, onCancel: () -> Unit, style: Int) {
         onDateSetListener = onDateTimeSet
         onCancelListener = onCancel
 
-        if (this.picker != picker) {
-            val (day, month, year) = picker.defaultDate.toDayMonthYear()
-            calendar.time = picker.defaultDate
-            datePicker = GlomDatePickerDialog(context, this, year, month, day, dimBehind = false).apply {
-                setOnNeutralButtonClicked {
-                    it.dismiss()
-                    onDateTimeSet(calendar.let {
-                        it[Calendar.YEAR] = datePicker.year ?: 0
-                        it[Calendar.MONTH] = datePicker.month ?: 0
-                        it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth ?: 0
-                        it.time
-                    })
+        if (style == STYLE_DIALOG) {
+            if (this.picker != picker) {
+                val (day, month, year) = picker.defaultDate.toDayMonthYear()
+                calendar.time = picker.defaultDate
+                datePicker = GlomDatePickerDialog(context, this, year, month, day, dimBehind = false).apply {
+                    setOnNeutralButtonClicked {
+                        it.dismiss()
+                        onDateTimeSet(calendar.let {
+                            it[Calendar.YEAR] = datePicker.year ?: 0
+                            it[Calendar.MONTH] = datePicker.month ?: 0
+                            it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth ?: 0
+                            it.time
+                        })
+                    }
+                    create()
+                    setOnCancelListener {
+                        onCancel()
+                    }
                 }
-                create()
-                setOnCancelListener {
-                    onCancel()
-                }
+                this.picker = picker
             }
-            this.picker = picker
+            datePicker.apply {
+                setMinDate(picker.minDate)
+                show()
+            }
         }
-        datePicker.apply {
-            setMinDate(picker.minDate)
-            show()
+        else if (style == STYLE_BOTTOM_SHEET) {
+            if (bottomSheet.isAdded) return
+
+            val fragmentManager = when (context) {
+                is AppCompatActivity -> context.supportFragmentManager
+                is Fragment -> context.fragmentManager
+                else -> throw Exception("Context must be either an instance of AppCompatActivity or Fragment")
+            }
+            bottomSheet.apply {
+                init(picker, onDateTimeSet)
+                show(fragmentManager!!, PICKER_BOTTOM_SHEET_TAG)
+            }
         }
     }
 

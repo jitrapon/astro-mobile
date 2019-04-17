@@ -1,0 +1,7 @@
+<com.google.android.material.chip.Chip
+    style="@style/Chip.DateTimePicker"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:text="@string/date_picker_choice_morning"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" />

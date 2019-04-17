@@ -51,7 +51,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private val observableEndDate = MutableLiveData<AndroidString>()
 
     /* observable model for the DateTime picker. When set if not null, show dialog */
-    private val observableDateTimePicker = MutableLiveData<Pair<DateTimePickerUiModel, Boolean>>()
+    private val observableDateTimePicker = LiveEvent<Pair<DateTimePickerUiModel, Boolean>>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -766,7 +766,10 @@ class EventItemViewModel : BoardItemViewModel() {
         else {
             endDate ?: startDate?.addHour(1) ?: Date().roundToNextHalfHour().addHour(1)
         }
-        observableDateTimePicker.value = DateTimePickerUiModel(defaultDate, if (!isStartDate && startDate != null) startDate else null) to isStartDate
+        observableDateTimePicker.value = DateTimePickerUiModel(
+            defaultDate,
+            if (!isStartDate && startDate != null) startDate else null,
+            interactor.event.itemInfo.isFullDay) to isStartDate
     }
 
     /**
@@ -780,10 +783,6 @@ class EventItemViewModel : BoardItemViewModel() {
             observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, it.event.itemInfo.source)
             observableDateTimePicker.value = null
         }
-    }
-
-    fun cancelSetDate() {
-        observableDateTimePicker.value = null
     }
 
     /**

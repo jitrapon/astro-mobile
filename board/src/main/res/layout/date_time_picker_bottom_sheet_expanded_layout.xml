@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/date_time_picker_bottom_sheet_expanded_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:contentDescription="@string/date_picker_expanded_view"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
+
+    <LinearLayout
+        android:id="@+id/date_time_picker_bottom_sheet_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <TimePicker
+            android:id="@+id/date_time_picker_bottom_sheet_timepicker"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:timePickerMode="spinner"
+            android:numbersSelectorColor="?colorPrimary"
+            android:scaleX="1.1"
+            android:scaleY="1.1"/>
+
+        <io.jitrapon.glom.board.item.event.widget.GlomCalendarView
+            android:id="@+id/date_time_picker_bottom_sheet_calendar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:mcv_calendarMode="month"
+            app:mcv_tileHeight="36dp"
+            app:mcv_selectionColor="?android:attr/colorAccent"
+            app:mcv_leftArrowMask="@drawable/ic_left"
+            app:mcv_rightArrowMask="@drawable/ic_right"
+            app:mcv_arrowColor="@color/warm_grey" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/date_time_picker_bottom_sheet_action_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@+id/date_time_picker_bottom_sheet_content" >
+
+        <io.jitrapon.glom.base.ui.widget.GlomButton
+            android:id="@+id/date_time_picker_bottom_sheet_expanded_cancel_button"
+            style="@style/Widget.Glom.Button.Flat"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/bottom_action_button_height"
+            android:text="@android:string/cancel"
+            android:layout_weight="0.5" />
+
+        <io.jitrapon.glom.base.ui.widget.GlomButton
+            android:id="@+id/date_time_picker_bottom_sheet_expanded_done_button"
+            style="@style/Widget.Glom.Button.Flat"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/bottom_action_button_height"
+            android:text="@string/done_button"
+            android:layout_weight="0.5" />
+
+    </LinearLayout>
+
+</RelativeLayout>
+
+
+

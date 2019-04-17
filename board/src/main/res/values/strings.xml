@@ -69,4 +69,13 @@
     <string name="event_item_source_placeholder">Save to your calendar?</string>
     <string name="event_item_source_none">This board</string>
     <string name="event_item_select_sources">Save this to…</string>
+    <string name="date_picker_full_day">Full day</string>
+    <string name="date_picker_choice_morning">Morning</string>
+    <string name="date_picker_choice_noon">Noon</string>
+    <string name="date_picker_choice_afternoon">Afternoon</string>
+    <string name="date_picker_choice_evening">Evening</string>
+    <string name="date_picker_choice_night">Night</string>
+    <string name="date_picker_more_options">Swipe up for more options</string>
+    <string name="date_picker_collapsed_view">date_picker_collapsed_view</string>
+    <string name="date_picker_expanded_view">date_picker_expanded_view</string>
 </resources>

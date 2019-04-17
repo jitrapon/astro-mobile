@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="52dp"
+    android:layout_height="52dp"
+    android:gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:id="@+id/date_time_picker_date_item_layout"
+    android:contentDescription="@string/date_picker_collapsed_view" >
+    
+    <TextView
+        android:id="@+id/date_time_picker_date_item_day_of_week"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="FRI"
+        android:textAllCaps="true"
+        android:textColor="?android:attr/textColorPrimary" />
+
+    <TextView
+        android:id="@+id/date_time_picker_date_item_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="31"
+        android:textAllCaps="true"
+        android:textColor="?android:attr/textColorSecondary" />
+
+</LinearLayout>

@@ -43,4 +43,16 @@
         <item name="android:background">@color/white</item>
     </style>
 
+    <style name="Chip.DateTimePicker" parent="Widget.MaterialComponents.Chip.Action">
+        <item name="chipBackgroundColor">@drawable/bg_chip</item>
+        <item name="chipStrokeColor">@drawable/bg_chip_stroke_color</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipIconTint">@drawable/bg_chip_icon_tint</item>
+        <item name="android:textColor">@drawable/bg_chip_text_color</item>
+        <item name="android:checkable">true</item>
+        <item name="android:selectable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="checkedIconVisible">false</item>
+    </style>
+
 </resources>

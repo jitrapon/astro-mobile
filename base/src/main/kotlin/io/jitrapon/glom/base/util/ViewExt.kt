@@ -72,6 +72,12 @@ fun View.show(animateDuration: Long? = null) {
             alpha = 0.0f
             animate().alpha(1.0f)
                     .setDuration(it)
+                    .setListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            super.onAnimationEnd(animation)
+                            visibility = View.VISIBLE
+                        }}
+                    )
         }
     }
 }
@@ -144,8 +150,8 @@ inline fun View.findViewsWithContentDescription(description: CharSequence, apply
  * Sets this view's layout params margin in DP
  */
 fun View.setMargin(left: Int? = null, top: Int? = null, right: Int? = null, bottom: Int? = null) {
-    val params = (layoutParams as ViewGroup.MarginLayoutParams).apply {
+    (layoutParams as? ViewGroup.MarginLayoutParams)?.apply {
         setMargins(left?.px ?: leftMargin, top?.px ?: topMargin, right?.px ?: rightMargin, bottom?.px ?: bottomMargin)
+        layoutParams = this
     }
-    layoutParams = params
 }

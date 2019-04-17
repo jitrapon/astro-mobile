@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/date_time_picker_layout"
+    app:layout_behavior="io.jitrapon.glom.board.item.event.widget.datetimepicker.BottomSheetDatePicker.DateTimePickerBottomSheetBehavior" >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/date_picker_more_options"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="12sp"
+        android:layout_marginTop="2dp"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <TextView
+        android:id="@+id/date_time_picker_bottom_sheet_displayed_date"
+        style="@style/TextAppearance.MaterialComponents.Headline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="?android:attr/textColorPrimary"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_displayed_time"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Sun, Jan 20, 2019" />
+
+    <TextView
+        tools:visibility="visible"
+        android:id="@+id/date_time_picker_bottom_sheet_displayed_time"
+        style="@style/TextAppearance.MaterialComponents.Headline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        tools:text="2:00 PM"
+        android:maxLines="2"
+        android:textColor="?android:attr/colorPrimary"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_displayed_date"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin"
+        android:textStyle="bold"
+        android:layout_marginStart="12dp" />
+
+    <View
+        android:id="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/light_grey"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_displayed_date"
+        android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="@dimen/bottom_sheet_item_horizontal_margin" />
+
+    <TextView
+        android:id="@+id/date_time_picker_bottom_sheet_full_day_text"
+        style="@style/TextAppearance.H3.Selectable"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingStart="@dimen/bottom_sheet_item_horizontal_margin"
+        android:paddingEnd="@dimen/bottom_sheet_item_horizontal_margin"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="@string/date_picker_full_day"
+        android:textColor="?android:attr/textColorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_bottom_sheet_full_day_toggle" />
+
+    <include
+        tools:visibility="visible"
+        android:id="@+id/date_time_picker_date_item_1"
+        layout="@layout/date_time_picker_date_item"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_2"
+        app:layout_constraintHorizontal_chainStyle="spread"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        android:layout_marginTop="@dimen/spacing_normal"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <include
+        tools:visibility="visible"
+        layout="@layout/date_time_picker_date_item"
+        android:id="@+id/date_time_picker_date_item_2"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_date_item_1"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_date_item_1"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_3"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <include
+        tools:visibility="visible"
+        layout="@layout/date_time_picker_date_item"
+        android:id="@+id/date_time_picker_date_item_3"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_date_item_2"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_date_item_2"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_4"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <include
+        tools:visibility="visible"
+        layout="@layout/date_time_picker_date_item"
+        android:id="@+id/date_time_picker_date_item_4"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_date_item_3"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_date_item_3"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_5"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <include
+        tools:visibility="visible"
+        layout="@layout/date_time_picker_date_item"
+        android:id="@+id/date_time_picker_date_item_5"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_date_item_4"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_date_item_4"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <HorizontalScrollView
+        tools:visibility="visible"
+        android:id="@+id/date_time_picker_bottom_sheet_time_of_day_scroll_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_date_item_1"
+        android:layout_marginTop="@dimen/spacing_normal"
+        android:scrollbars="none"
+        android:contentDescription="@string/date_picker_collapsed_view" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/date_time_picker_bottom_sheet_morning_choice"
+                style="@style/Chip.DateTimePicker"
+                android:layout_marginStart="@dimen/bottom_sheet_item_horizontal_margin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_picker_choice_morning"
+                app:chipIcon="@drawable/ic_add" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/date_time_picker_bottom_sheet_noon_choice"
+                style="@style/Chip.DateTimePicker"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_picker_choice_noon"
+                app:chipIcon="@drawable/ic_add" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/date_time_picker_bottom_sheet_afternoon_choice"
+                style="@style/Chip.DateTimePicker"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_picker_choice_afternoon"
+                app:chipIcon="@drawable/ic_add" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/date_time_picker_bottom_sheet_evening_choice"
+                style="@style/Chip.DateTimePicker"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_picker_choice_evening"
+                app:chipIcon="@drawable/ic_add" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/date_time_picker_bottom_sheet_night_choice"
+                style="@style/Chip.DateTimePicker"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_picker_choice_night"
+                app:chipIcon="@drawable/ic_add"
+                android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin" />
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <HorizontalScrollView
+        tools:visibility="visible"
+        android:id="@+id/date_time_picker_bottom_sheet_time_scroll_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_of_day_scroll_view"
+        android:scrollbars="none"
+        android:contentDescription="@string/date_picker_collapsed_view" >
+
+        <LinearLayout
+            android:id="@+id/date_time_picker_bottom_sheet_time_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/bottom_sheet_item_horizontal_margin"
+            android:paddingEnd="@dimen/bottom_sheet_item_horizontal_margin" />
+
+    </HorizontalScrollView>
+
+    <ViewStub
+        android:id="@+id/date_time_picker_bottom_sheet_calendar_view_stub"
+        android:inflatedId="@+id/date_time_picker_bottom_sheet_expanded_layout"
+        android:layout="@layout/date_time_picker_bottom_sheet_expanded_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="@dimen/spacing_normal"
+        android:contentDescription="@string/date_picker_expanded_view" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:id="@+id/date_time_picker_bottom_sheet_cancel_button"
+        style="@style/Widget.Glom.Button.Flat"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/bottom_action_button_height"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_scroll_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_done_button"
+        android:text="@android:string/cancel"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:id="@+id/date_time_picker_bottom_sheet_done_button"
+        style="@style/Widget.Glom.Button.Flat"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/bottom_action_button_height"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_scroll_view"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_cancel_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/done_button"
+        android:contentDescription="@string/date_picker_collapsed_view" />
+
+    <Space
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="600dp"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

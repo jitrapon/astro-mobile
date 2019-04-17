@@ -8,6 +8,7 @@
         <item name="colorPrimary">@color/lightish_red</item>
         <item name="colorPrimaryDark">@color/reddish</item>
         <item name="colorAccent">@color/lightish_red</item>
+        <item name="colorSecondary">@color/lightish_red</item>
 
         <item name="windowActionBar">false</item>
         <item name="android:windowBackground">@color/background</item>
@@ -29,6 +30,7 @@
         <item name="android:textAppearanceLarge">@style/TextAppearance.H1</item>
 
         <item name="android:navigationBarColor">@color/black</item>
+        <item name="switchStyle">@style/Widget.MaterialComponents.CompoundButton.Switch</item>
     </style>
     <style name="Theme.Glom" parent="Theme.Glom.Base" />
 
@@ -63,6 +65,13 @@
 
     <style name="TextAppearance.H3" parent="@style/TextAppearance.AppCompat.Medium" >
         <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="TextAppearance.H3.Selectable" parent="TextAppearance.H3" >
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
     </style>
 
     <style name="TextAppearance.H4" parent="@style/TextAppearance.AppCompat.Small">
@@ -164,6 +173,7 @@
     <!-- style for all bottom sheet -->
     <style name="Widget.Glom.Design.BottomSheet.Modal" parent="@style/Widget.Design.BottomSheet.Modal">
         <item name="android:background">@drawable/bg_bottom_sheet_dialog</item>
+        <item name="colorControlNormal">?colorPrimary</item>
     </style>
 
     <style name="Theme.Glom.BottomSheet.Dialog.Base" parent="@style/Theme.MaterialComponents.Light.BottomSheetDialog" >
