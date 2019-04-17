@@ -70,6 +70,8 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     private var calendarView: GlomCalendarView? = null
     private var timePicker: TimePicker? = null
 
+    private var hasExpanded = false
+
     override fun getLayoutId() = R.layout.date_time_picker_bottom_sheet
 
     fun init(uiModel: DateTimePickerUiModel, onDateTimeSetListener: (Date) -> Unit) {
@@ -79,7 +81,6 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     private val bottomSheetStateCallback = object : BottomSheetBehavior.BottomSheetCallback() {
 
-        private var hasExpanded = false
         private var hasExpandedView = false
         private var hasCollapsedView = true
 
@@ -292,5 +293,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+
+        hasExpanded = false
     }
 }
