@@ -106,10 +106,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
+    override fun setDate(startDateMs: Long?, endDateMs: Long?, fullDay: Boolean) {
         inMemoryItem.itemInfo.apply {
             startTime = startDateMs
             endTime = endDateMs
+            isFullDay = fullDay
         }
     }
 

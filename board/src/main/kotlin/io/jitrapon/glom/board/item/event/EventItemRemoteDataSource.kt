@@ -109,7 +109,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                 }
     }
 
-    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
+    override fun setDate(startDateMs: Long?, endDateMs: Long?, fullDay: Boolean) {
         throw NotImplementedError()
     }
 

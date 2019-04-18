@@ -283,8 +283,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             getObservableDateTimePicker().observe(this@EventItemActivity, Observer {
                 it?.let { (picker, isStartDate) ->
                     dateTimePicker.apply {
-                        show(picker, onDateTimeSet = { date ->
-                            viewModel.setDate(date, isStartDate)
+                        show(picker, onDateTimeSet = { date, isFullDay ->
+                            viewModel.setDate(date, isStartDate, isFullDay)
                         }, onCancel = {
                             //do nothing
                         }, style = STYLE_BOTTOM_SHEET)

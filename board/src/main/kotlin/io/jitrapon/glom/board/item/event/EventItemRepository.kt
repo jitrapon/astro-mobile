@@ -80,8 +80,8 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 false)
     }
 
-    override fun setDate(startDateMs: Long?, endDateMs: Long?) {
-        localDataSource.setDate(startDateMs, endDateMs)
+    override fun setDate(startDateMs: Long?, endDateMs: Long?, fullDay: Boolean) {
+        localDataSource.setDate(startDateMs, endDateMs, fullDay)
     }
 
     override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {

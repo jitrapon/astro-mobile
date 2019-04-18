@@ -227,7 +227,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     /**
      * Updates this cached event's date, processing whether the start and end dates are set correctly
      */
-    fun setItemDate(date: Date?, isStartDate: Boolean) {
+    fun setItemDate(date: Date?, isStartDate: Boolean, isFullDay: Boolean) {
         if (!isItemEditable) return
 
         // if this item is a calendar event, the start date must not be null
@@ -244,7 +244,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             if (((startDateTemp != null && endDateTemp != null) && (startDateTemp >= endDateTemp)) || startDateTemp == null) {
                 endDateTemp = null
             }
-            eventItemDataSource.setDate(startDateTemp, endDateTemp)
+            eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
         }
         else {
             var startDateTemp = event.itemInfo.startTime
@@ -255,7 +255,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             if (endDateTemp != null && (startDateTemp == null || startDateTemp >= endDateTemp)) {
                 startDateTemp = Date(endDateTemp).addHour(-1).time
             }
-            eventItemDataSource.setDate(startDateTemp, endDateTemp)
+            eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
         }
     }
 

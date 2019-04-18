@@ -37,7 +37,7 @@ interface EventItemDataSource {
 
     fun setDateRemote(item: EventItem, startDate: Date?, endDate: Date?): Completable
 
-    fun setDate(startDateMs: Long?, endDateMs: Long?)
+    fun setDate(startDateMs: Long?, endDateMs: Long?, fullDay: Boolean)
 
     fun getPlacePolls(item: EventItem, refresh: Boolean = true): Flowable<List<EventPlacePoll>>
 

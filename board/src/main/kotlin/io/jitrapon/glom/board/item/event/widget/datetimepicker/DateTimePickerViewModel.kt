@@ -115,6 +115,10 @@ class DateTimePickerViewModel : BaseViewModel() {
         observableTimeChoices.value = timeChoices
     }
 
+    fun toggleFullDay() {
+        observableFullDay.value = observableFullDay.value?.not()
+    }
+
     private fun getDate(date: Date): AndroidString = AndroidString(text = date.toDateString(true))
 
     private fun getTime(date: Date): AndroidString = AndroidString(text = date.toTimeString())

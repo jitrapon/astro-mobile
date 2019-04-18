@@ -154,6 +154,7 @@
         android:contentDescription="@string/date_picker_collapsed_view" >
 
         <LinearLayout
+            android:id="@+id/date_time_picker_bottom_sheet_time_of_day_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal" >

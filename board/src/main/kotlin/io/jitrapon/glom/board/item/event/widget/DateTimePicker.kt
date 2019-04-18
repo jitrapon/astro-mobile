@@ -38,7 +38,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
     private var picker: DateTimePickerUiModel? = null
 
     /* callback for when date is set by the DatePicker dialog */
-    private var onDateSetListener: ((Date) -> Unit)? = null
+    private var onDateSetListener: ((Date, Boolean) -> Unit)? = null
 
     /* callback for when date is cancelled */
     private var onCancelListener: (() -> Unit)? = null
@@ -67,7 +67,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
     /**
      * Call this to display the date and time dialog
      */
-    fun show(picker: DateTimePickerUiModel, onDateTimeSet: (Date) -> Unit, onCancel: () -> Unit, style: Int) {
+    fun show(picker: DateTimePickerUiModel, onDateTimeSet: (Date, Boolean) -> Unit, onCancel: () -> Unit, style: Int) {
         onDateSetListener = onDateTimeSet
         onCancelListener = onCancel
 
@@ -83,7 +83,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
                             it[Calendar.MONTH] = datePicker.month ?: 0
                             it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth ?: 0
                             it.time
-                        })
+                        }, true)
                     }
                     create()
                     setOnCancelListener {
@@ -244,7 +244,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
                 set(Calendar.HOUR_OF_DAY, hourOfDay)
                 set(Calendar.MINUTE, minute)
                 time
-            })
+            }, false)
         }
     }
 }

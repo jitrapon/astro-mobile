@@ -97,7 +97,7 @@ class EventItemViewModel : BoardItemViewModel() {
             EventItemUiModel(
                     itemId = it.itemId,
                     title = AndroidString(text = it.itemInfo.eventName),
-                    dateTime = getEventDate(it.itemInfo.startTime, it.itemInfo.endTime),
+                    dateTime = getEventDate(it.itemInfo.startTime, it.itemInfo.endTime, it.itemInfo.isFullDay),
                     location = getEventLocation(it.itemInfo.location),
                     mapLatLng = getEventLatLng(it.itemInfo.location),
                     attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
@@ -143,7 +143,7 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns a formatted date range
      */
-    private fun getEventDate(start: Long?, end: Long?): AndroidString? {
+    private fun getEventDate(start: Long?, end: Long?, isFullDay: Boolean): AndroidString? {
         start ?: return null
         val startDate = Calendar.getInstance().apply { time = Date(start) }
         val currentDate = Calendar.getInstance()
@@ -151,7 +151,8 @@ class EventItemViewModel : BoardItemViewModel() {
 
         // if end datetime is not present, only show start time
         if (end == null || end == start) return Date(start).let {
-            AndroidString(text = "${it.toDateString(showYear)} (${it.toTimeString()})")
+            val time = if (isFullDay) "" else " (${it.toTimeString()})"
+            AndroidString(text = "${it.toDateString(showYear)}$time")
         }
 
         // if end datetime is present
@@ -164,17 +165,20 @@ class EventItemViewModel : BoardItemViewModel() {
             showYear = showYear || startYearNotEqEndYear
             AndroidString(text = StringBuilder().apply {
                 append(Date(start).let {
-                    "${it.toDateString(showYear)} (${it.toTimeString()})"
+                    val time = if (isFullDay) "" else " (${it.toTimeString()})"
+                    "${it.toDateString(showYear)}$time"
                 })
                 append(" - ")
                 append(Date(end).let {
-                    "${it.toDateString(showYear)} (${it.toTimeString()})"
+                    val time = if (isFullDay) "" else " (${it.toTimeString()})"
+                    "${it.toDateString(showYear)}$time"
                 })
             }.toString())
         }
         else {
             Date(start).let {
-                AndroidString(text = "${it.toDateString(showYear)} (${it.toTimeString()} - ${Date(end).toTimeString()})")
+                val time = if (isFullDay) "" else " (${it.toTimeString()} - ${Date(end).toTimeString()})"
+                AndroidString(text = "${it.toDateString(showYear)}$time")
             }
         }
     }
@@ -332,8 +336,8 @@ class EventItemViewModel : BoardItemViewModel() {
                     isNewItem = new
                     EventItemDetailUiModel(
                         AndroidString(text = it.eventName, status = editableStatus) to false,
-                        getEventDetailDate(it.startTime, true, it.source)?.apply { if (!isItemEditable) status = editableStatus },
-                        getEventDetailDate(it.endTime, false, it.source)?.apply { if (!isItemEditable) status = editableStatus },
+                        getEventDetailDate(it.startTime, true, it.source, it.isFullDay)?.apply { if (!isItemEditable) status = editableStatus },
+                        getEventDetailDate(it.endTime, false, it.source, it.isFullDay)?.apply { if (!isItemEditable) status = editableStatus },
                         it.location,
                         getEventDetailLocation(it.location)?.apply { status = editableStatus },
                         getEventDetailLocationDescription(it.location)?.apply { status = editableStatus },
@@ -386,14 +390,16 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns a formatted date in event detail
      */
-    private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean, source: EventSource): AndroidString? {
+    private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean, source: EventSource, isFullDay: Boolean): AndroidString? {
         dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
                                                         else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
         return AndroidString(text = StringBuilder().apply {
             val date = Date(dateAsEpochMs)
             append(date.toDateString(true))
-            append("   ")
-            append(date.toTimeString())
+            if (!isFullDay) {
+                append("   ")
+                append(date.toTimeString())
+            }
         }.toString(), status = if (isStartDate && source.calendar != null) UiModel.Status.EMPTY else UiModel.Status.SUCCESS)
     }
 
@@ -514,8 +520,8 @@ class EventItemViewModel : BoardItemViewModel() {
                 observableAttendees.value = getEventDetailAttendees(it.attendees)
                 observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
 
-                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, it.source)
-                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, it.source)
+                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, it.source, it.isFullDay)
+                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, it.source, it.isFullDay)
                 observableDateTimePicker.value = null
 
                 it.location?.apply {
@@ -669,8 +675,9 @@ class EventItemViewModel : BoardItemViewModel() {
                     bold { append(displayText) }
                 })
                 if (suggestion.selectData.second == true) {
+                    val info = interactor.event.itemInfo
                     observableStartDate.value = getEventDetailDate(interactor.getSelectedDate()?.time,
-                            suggestion.selectData.second as Boolean, interactor.event.itemInfo.source)
+                            suggestion.selectData.second as Boolean, info.source, info.isFullDay)
                 }
             }
             is PlaceInfo -> {
@@ -775,12 +782,14 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Updates the date of the event
      */
-    fun setDate(date: Date?, isStartDate: Boolean) {
+    fun setDate(date: Date?, isStartDate: Boolean, isFullDay: Boolean? = null) {
         interactor.let {
-            it.setItemDate(date, isStartDate)
+            val fullDay = isFullDay ?: it.event.itemInfo.isFullDay
+            it.setItemDate(date, isStartDate, fullDay)
 
-            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, it.event.itemInfo.source)
-            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, it.event.itemInfo.source)
+            val info = it.event.itemInfo
+            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, info.source, fullDay)
+            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, info.source, fullDay)
             observableDateTimePicker.value = null
         }
     }
