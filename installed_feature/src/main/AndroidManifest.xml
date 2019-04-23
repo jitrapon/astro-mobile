@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    package="io.jitrapon.glom.installed_feature">
+
+    <dist:module dist:instant="false" dist:onDemand="false"
+        dist:title="installed">
+        <dist:fusing dist:include="true" />
+    </dist:module>
+</manifest>

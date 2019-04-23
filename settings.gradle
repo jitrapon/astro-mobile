@@ -1,1 +1,1 @@
-include ':board', ':app', ':base', ':instantapp', ':map', ':explore', ':profile', ':auth'
+include ':board', ':installed_feature', ':app', ':map', ':explore', ':profile', ':auth'
