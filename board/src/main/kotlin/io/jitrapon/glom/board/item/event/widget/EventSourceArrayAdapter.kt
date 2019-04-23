@@ -21,12 +21,12 @@ class EventSourceArrayAdapter(private val context: Context, private val viewMode
 
     inner class EventSourceViewHolder(view: View) {
 
-        internal val icon: ImageView = view.findViewById(R.id.list_item_left_icon)
-        internal val text: TextView = view.findViewById(R.id.list_item_title)
+        internal val icon: ImageView = view.findViewById(io.jitrapon.glom.R.id.list_item_left_icon)
+        internal val text: TextView = view.findViewById(io.jitrapon.glom.R.id.list_item_title)
 
         init {
-            view.findViewById<CheckBox>(R.id.list_item_checkbox).hide()
-            view.findViewById<ImageView>(R.id.list_item_right_icon).hide()
+            view.findViewById<CheckBox>(io.jitrapon.glom.R.id.list_item_checkbox).hide()
+            view.findViewById<ImageView>(io.jitrapon.glom.R.id.list_item_right_icon).hide()
         }
     }
 
@@ -44,7 +44,7 @@ class EventSourceArrayAdapter(private val context: Context, private val viewMode
         val view: View
         val vh: EventSourceViewHolder
         if (convertView == null) {
-            view = layoutInflater.inflate(R.layout.list_item_no_icon, parent, false)
+            view = layoutInflater.inflate(io.jitrapon.glom.R.layout.list_item_no_icon, parent, false)
             vh = EventSourceViewHolder(view)
             view?.tag = vh
         }

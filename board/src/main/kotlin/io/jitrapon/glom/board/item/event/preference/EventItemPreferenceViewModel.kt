@@ -105,7 +105,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
     private fun showNoCalendarPermissionWarning() {
         observableViewAction.value = Snackbar(
             AndroidString(R.string.error_no_calendar_permissions),
-            AndroidString(R.string.permission_grant_action),
+            AndroidString(io.jitrapon.glom.R.string.permission_grant_action),
             ::requestCalendarPermissions,
             duration = com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE,
             level = MessageLevel.WARNING)
@@ -189,8 +189,8 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                 UiModel.Status.SUCCESS, CALENDAR_HEADER_INDEX,
                 AndroidString(R.string.event_item_preference_calendars), false,
                 null, shouldExpand, null, null,
-                AndroidImage(R.drawable.ic_calendar_multiple),
-                AndroidImage(R.drawable.ic_chevron_up))
+                AndroidImage(io.jitrapon.glom.R.drawable.ic_calendar_multiple),
+                AndroidImage(io.jitrapon.glom.R.drawable.ic_chevron_up))
         )
         if (shouldExpand) {
             if (preference.calendarPreference.calendars.isEmpty()) {
@@ -215,7 +215,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                                 AndroidString(text = calendar.displayName), false,
                                 null, null,
                                 calendar.isSyncedToBoard, calendar.calId.toString(),
-                                AndroidImage(R.drawable.ic_checkbox_blank_circle, tint = calendar.color),
+                                AndroidImage(io.jitrapon.glom.R.drawable.ic_checkbox_blank_circle, tint = calendar.color),
                                 null))
                     }
                 }
@@ -230,7 +230,7 @@ class EventItemPreferenceViewModel : BaseViewModel() {
                 AndroidString(text = title), false,
                 null, shouldExpand, null, null,
                 AndroidImage(R.drawable.ic_emoticon_neutral),
-                AndroidImage(R.drawable.ic_chevron_up))
+                AndroidImage(io.jitrapon.glom.R.drawable.ic_chevron_up))
         )
         if (shouldExpand) {
             items.add(PreferenceItemUiModel(

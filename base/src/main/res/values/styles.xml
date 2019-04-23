@@ -195,4 +195,17 @@
     <!-- style for fab -->
     <style name="Widget.Glom.FloatingActionButton" parent="Widget.MaterialComponents.FloatingActionButton" />
 
+    <!-- line -->
+    <style name="LineSdkAuthActivity">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@style/LineSdkAuthAnimationStyle</item>
+    </style>
+    <style name="LineSdkAuthAnimationStyle">
+        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
+    </style>
 </resources>

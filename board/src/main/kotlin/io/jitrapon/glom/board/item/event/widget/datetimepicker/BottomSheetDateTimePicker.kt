@@ -298,10 +298,10 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         view.date_time_picker_date_item_day_of_week.text = context!!.getString(uiModel.dayOfWeek)
         view.date_time_picker_date_item_date.text = context!!.getString(uiModel.dayOfMonth)
         if (uiModel.status == UiModel.Status.POSITIVE) {
-            view.background = context!!.drawable(R.drawable.bg_solid_circle)
+            view.background = context!!.drawable(io.jitrapon.glom.R.drawable.bg_solid_circle)
             view.backgroundTintList = ColorStateList.valueOf(context!!.colorPrimary())
-            view.date_time_picker_date_item_day_of_week.setTextColor(context!!.color(R.color.white))
-            view.date_time_picker_date_item_date.setTextColor(context!!.color(R.color.white))
+            view.date_time_picker_date_item_day_of_week.setTextColor(context!!.color(io.jitrapon.glom.R.color.white))
+            view.date_time_picker_date_item_date.setTextColor(context!!.color(io.jitrapon.glom.R.color.white))
         }
         else {
             view.background = null

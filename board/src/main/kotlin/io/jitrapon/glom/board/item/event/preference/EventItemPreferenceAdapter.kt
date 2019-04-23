@@ -22,7 +22,7 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
     : RecyclerView.Adapter<EventItemPreferenceAdapter.ListItemViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListItemViewHolder {
-        return ListItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_small_icon, parent, false), viewModel::selectItem)
+        return ListItemViewHolder(LayoutInflater.from(parent.context).inflate(io.jitrapon.glom.R.layout.list_item_small_icon, parent, false), viewModel::selectItem)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -52,11 +52,11 @@ class EventItemPreferenceAdapter(private val context: Context, private val viewM
      */
     inner class ListItemViewHolder(itemView: View, onItemClicked: (Int) -> Unit): RecyclerView.ViewHolder(itemView) {
 
-        val leftImage: ImageView = itemView.findViewById(R.id.list_item_left_icon)
-        val title: TextView = itemView.findViewById(R.id.list_item_title)
-        val description: TextView = itemView.findViewById(R.id.list_item_description)
-        val rightImage: ImageView = itemView.findViewById(R.id.list_item_right_icon)
-        private val checkbox: CheckBox = itemView.findViewById(R.id.list_item_checkbox)
+        val leftImage: ImageView = itemView.findViewById(io.jitrapon.glom.R.id.list_item_left_icon)
+        val title: TextView = itemView.findViewById(io.jitrapon.glom.R.id.list_item_title)
+        val description: TextView = itemView.findViewById(io.jitrapon.glom.R.id.list_item_description)
+        val rightImage: ImageView = itemView.findViewById(io.jitrapon.glom.R.id.list_item_right_icon)
+        private val checkbox: CheckBox = itemView.findViewById(io.jitrapon.glom.R.id.list_item_checkbox)
 
         init {
             itemView.setOnClickListener {

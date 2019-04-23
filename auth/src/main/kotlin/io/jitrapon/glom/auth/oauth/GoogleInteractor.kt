@@ -24,7 +24,7 @@ class GoogleInteractor : BaseOauthInteractor {
         if (client == null) {
             client = GoogleSignIn.getClient(activity,
                 GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(activity.getString(R.string.google_oauth_server_key))
+                    .requestIdToken(activity.getString(io.jitrapon.glom.R.string.google_oauth_server_key))
                     .requestEmail()
                     .build())
         }

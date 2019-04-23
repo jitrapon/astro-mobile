@@ -559,8 +559,8 @@ class EventItemViewModel : BoardItemViewModel() {
         return EventSourceUiModel(
                 when {
                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
-                    source.calendar?.color != null -> AndroidImage(resId = R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
-                    else -> AndroidImage(resId = R.drawable.ic_calendar_multiple, tint = null)
+                    source.calendar?.color != null -> AndroidImage(resId = io.jitrapon.glom.R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
+                    else -> AndroidImage(resId = io.jitrapon.glom.R.drawable.ic_calendar_multiple, tint = null)
                 },
                 when {
                     source.calendar != null -> AndroidString(text = source.calendar.displayName)
@@ -587,7 +587,7 @@ class EventItemViewModel : BoardItemViewModel() {
                             PreferenceItemUiModel(
                                 when {
                                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
-                                    source.calendar?.color != null -> AndroidImage(resId = R.drawable.ic_checkbox_blank_circle, tint = source.calendar.color)
+                                    source.calendar?.color != null -> AndroidImage(resId = io.jitrapon.glom.R.drawable.ic_checkbox_blank_circle, tint = source.calendar.color)
                                     else -> null
                                 },
                                 when {

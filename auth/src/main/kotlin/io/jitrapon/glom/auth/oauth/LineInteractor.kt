@@ -34,7 +34,7 @@ class LineInteractor : BaseOauthInteractor {
 
             val intent = LineLoginApi.getLoginIntent(
                 authView,
-                authView.getString(R.string.line_channel_id),
+                authView.getString(io.jitrapon.glom.R.string.line_channel_id),
                 LineAuthenticationParams.Builder().scopes(permissions).build()
             )
             authView.startActivityForResult(intent, RESULT_CODE_LINE_LOGIN)

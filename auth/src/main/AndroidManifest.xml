@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.jitrapon.glom.auth" >
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.jitrapon.glom.auth">
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 
     <application
         android:icon="@mipmap/ic_launcher"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        tools:replace="android:allowBackup" >
         <activity android:name=".AuthActivity"
             android:theme="@style/Theme.Glom.Translucent" >
 
@@ -24,14 +26,24 @@
             </intent-filter>
         </activity>
 
+        <!-- line -->
+        <activity
+            android:name="com.linecorp.linesdk.auth.internal.LineAuthenticationActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/LineSdkAuthActivity"
+            tools:replace="android:theme" />
+
         <!-- facebook login -->
         <meta-data android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"/>
 
         <activity android:name="com.facebook.FacebookActivity"
-            android:configChanges=
-                "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-            android:label="@string/application_name" />
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/application_name"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            tools:replace="android:theme" />
         <activity
             android:name="com.facebook.CustomTabActivity"
             android:exported="true">

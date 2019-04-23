@@ -219,7 +219,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                 )
             }
             syncStatus.apply {
-                loadFromResource(io.jitrapon.glom.board.R.drawable.ic_sync)
+                loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
                 hide()
             }
             planStatus.setOnClickListener {
@@ -353,7 +353,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                 when (it) {
                     UiModel.Status.LOADING -> {
                         syncStatus.apply {
-                            loadFromResource(R.drawable.ic_sync)
+                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
                             show()
                             isEnabled = true
 //                            startAnimation(ANIM_ROTATION)     // cause no shared element transition
@@ -371,14 +371,14 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                     }
                     UiModel.Status.ERROR -> {
                         syncStatus.apply {
-                            loadFromResource(R.drawable.ic_sync_failed)
+                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_failed)
                             show()
                             isEnabled = true
                         }
                     }
                     UiModel.Status.POSITIVE -> {
                         syncStatus.apply {
-                            loadFromResource(R.drawable.ic_sync_offline)
+                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_offline)
                             show()
                             isEnabled = true
                         }
@@ -400,7 +400,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                     }
                     it.colorInt != null -> sourceIcon.apply {
                         show()
-                        loadFromResource(R.drawable.ic_checkbox_blank_circle)
+                        loadFromResource(io.jitrapon.glom.R.drawable.ic_checkbox_blank_circle)
                         tint(it.colorInt)
                     }
                     else -> sourceIcon.apply {
