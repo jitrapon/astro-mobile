@@ -4,7 +4,7 @@ import android.text.TextUtils
 import android.util.SparseArray
 import androidx.annotation.WorkerThread
 import androidx.core.util.set
-import com.google.android.gms.location.places.Place
+import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -182,8 +182,8 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                     if (places.isNotEmpty()) {
                         places.first().let { result ->
                             val location = EventLocation(
-                                result.latLng.latitude,
-                                result.latLng.longitude,
+                                result.latLng?.latitude,
+                                result.latLng?.longitude,
                                 result.id,
                                 null,
                                 if (!TextUtils.isEmpty(customName)) customName else result.name.toString(),
@@ -471,8 +471,11 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                                     val placeInfo = result[i]
                                     put(pollId, placeInfo)
                                     placePolls.firstOrNull { it.id == pollId }?.let {
-                                        it.location = EventLocation(placeInfo.latLng.latitude, placeInfo.latLng.longitude,
-                                                placeInfo.id, null, placeInfo.name?.toString(), null, placeInfo.address?.toString())
+                                        it.location = EventLocation(placeInfo.latLng?.latitude, placeInfo.latLng?.longitude,
+                                                placeInfo.id, null,
+                                            placeInfo.name, null,
+                                            placeInfo.address
+                                        )
                                     }
                                 }
                             }))
@@ -564,6 +567,10 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
 
     //endregion
     //region autocomplete
+
+    fun clearSession() {
+        placeProvider?.clearSession()
+    }
 
     companion object {
         private const val FIELD_COUNT       = 5 // this changes according to how many fields we have below

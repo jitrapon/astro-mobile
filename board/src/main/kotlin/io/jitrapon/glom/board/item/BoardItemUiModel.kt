@@ -1,6 +1,6 @@
 package io.jitrapon.glom.board.item
 
-import com.google.android.gms.location.places.Place
+import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.model.UiModel
 
 /**

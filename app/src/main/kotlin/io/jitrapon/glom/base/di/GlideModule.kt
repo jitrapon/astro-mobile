@@ -74,7 +74,7 @@ class GlidePlaceDataFetcher(private val placeProvider: PlaceProvider, private va
      */
     override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
         placeProvider.getPlacePhoto(placeId, width, height, {
-            callback.onDataReady(it.bitmap.toInputStream())
+            callback.onDataReady(it.toInputStream())
         }, {
             callback.onLoadFailed(it)
         })

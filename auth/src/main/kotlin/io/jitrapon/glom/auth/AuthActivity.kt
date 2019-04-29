@@ -215,7 +215,7 @@ class AuthActivity : BaseActivity(), AuthView {
                 .build()
         credentialsClient.request(request).addOnCompleteListener {
             if (it.isSuccessful) {
-                onCredentialRetrieved(it.result.credential)
+                onCredentialRetrieved(it.result!!.credential)
             }
             else {
                 val exception = it.exception

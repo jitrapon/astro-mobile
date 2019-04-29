@@ -51,7 +51,7 @@ class GoogleInteractor : BaseOauthInteractor {
                 try {
                     when {
                         it.isSuccessful -> {
-                            it.result.idToken.let { token ->
+                            it.result!!.idToken.let { token ->
                                 if (token == null) {
                                     onComplete(AsyncErrorResult(BaseOauthInteractor.NoAccessTokenException()))
                                 }

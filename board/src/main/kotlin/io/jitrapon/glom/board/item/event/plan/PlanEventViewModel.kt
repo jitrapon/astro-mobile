@@ -3,7 +3,7 @@ package io.jitrapon.glom.board.item.event.plan
 import android.text.TextUtils
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.location.places.Place
+import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.isNullOrEmpty

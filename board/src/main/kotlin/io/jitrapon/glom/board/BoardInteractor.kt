@@ -3,7 +3,7 @@ package io.jitrapon.glom.board
 import android.os.Parcel
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
-import com.google.android.gms.location.places.Place
+import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor

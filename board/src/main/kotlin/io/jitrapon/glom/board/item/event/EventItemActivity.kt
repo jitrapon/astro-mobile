@@ -189,6 +189,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             event_item_map.onDestroy()
         }
 
+        viewModel.closeItem()
         super.onDestroy()
     }
 

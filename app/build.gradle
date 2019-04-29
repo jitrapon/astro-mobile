@@ -159,7 +159,7 @@ dependencies {
     api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroidVersion"
 
     // google play services
-    api "com.google.android.gms:play-services-places:$rootProject.playServicesPlaceVersion"
+    api "com.google.android.libraries.places:places:$rootProject.placeVersion"
 
     // networking
     api ("com.squareup.retrofit2:retrofit:$rootProject.retrofitVersion") {

@@ -144,7 +144,7 @@ open class BaseInteractor {
     /**
      * Disposes all disposable instances
      */
-    fun cleanup() {
+    open fun cleanup() {
         compositeDisposable.clear()
     }
 

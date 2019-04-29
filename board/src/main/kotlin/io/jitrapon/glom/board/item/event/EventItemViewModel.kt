@@ -8,8 +8,8 @@ import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -715,7 +715,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun selectPlace(place: Place?) {
         place?.let {
-            EventLocation(it.latLng.latitude, it.latLng.longitude, it.id, null, it.name.toString(), null, it.address.toString()).apply {
+            EventLocation(it.latLng?.latitude, it.latLng?.longitude, it.id, null, it.name.toString(), null, it.address.toString()).apply {
                 interactor.setItemLocation(this)
                 observableLocation.value = getEventDetailLocation(this)
                 observableLocationDescription.value = getEventDetailLocationDescription(this)
@@ -823,6 +823,10 @@ class EventItemViewModel : BoardItemViewModel() {
 
     //endregion
     //region view states
+
+    fun closeItem() {
+        interactor.clearSession()
+    }
 
     /**
      * Indicates whether or not this view has items or not

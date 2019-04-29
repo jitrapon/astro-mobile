@@ -1,9 +1,8 @@
 package io.jitrapon.glom.base.component
 
-import com.google.android.gms.location.places.AutocompletePrediction
-import com.google.android.gms.location.places.Place
-import com.google.android.gms.location.places.PlacePhotoResponse
-import io.reactivex.Maybe
+import android.graphics.Bitmap
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.Place
 import io.reactivex.Single
 
 /**
@@ -20,17 +19,17 @@ interface PlaceProvider {
     fun getPlaces(placeIds: Array<String>): Single<Array<Place>>
 
     /**
-     * Given a place ID, return the first image of a place
+     * Given a place ID, return the Bitmap associated with the Place
      */
-    fun getPlacePhoto(placeId: String): Maybe<PlacePhotoResponse>
-
-    /**
-     * Given a place ID, return the
-     */
-    fun getPlacePhoto(placeId: String, width: Int, height: Int, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit)
+    fun getPlacePhoto(placeId: String, width: Int, height: Int, onSuccess: (Bitmap) -> Unit, onError: (Exception) -> Unit)
 
     /**
      * Given a query, return an array auto-complete prediction objects
      */
     fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>>
+
+    /**
+     * Forces cleaning up of session data
+     */
+    fun clearSession()
 }

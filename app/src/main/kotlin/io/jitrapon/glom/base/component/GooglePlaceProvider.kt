@@ -1,214 +1,193 @@
 package io.jitrapon.glom.base.component
 
-import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
 import android.text.TextUtils
-import com.google.android.gms.location.places.*
+import androidx.annotation.WorkerThread
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.instantapps.InstantApps
-import io.reactivex.Maybe
+import com.google.android.gms.tasks.Tasks
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
+import com.google.android.libraries.places.api.model.TypeFilter
+import com.google.android.libraries.places.api.net.FetchPhotoRequest
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.internal.it
+import io.jitrapon.glom.R
+import io.jitrapon.glom.base.util.AppLogger
 import io.reactivex.Single
+import java.util.Arrays
 
 /**
  * Lifecycle-aware components that abstracts away logic to retrieve Place information
  * using the Google Place API.
  *
- * This class should be initialized in one of the Android's view classes
- * (i.e. Activity or Fragment), and be passed onto the domain classes afterwards. This is
- * because those classes contain the Lifecycle and context necessary to construct this class.
- *
- * TODO results should be cached for 1 day
- *
  * Created by Jitrapon on 11/30/2017.
  */
-class GooglePlaceProvider(context: Context? = null, activity: Activity? = null) : PlaceProvider {
+class GooglePlaceProvider(context: Context) : PlaceProvider {
 
-    private var isInstantApp: Boolean = false
+    private enum class SKUType {
+        BASIC, CONTACT, ATMOSPHERE
+    }
 
     //region constructors
 
     /**
-     * GeoDataClient instance to talk to a Google server
+     * Place API client
      */
-    private val client: GeoDataClient by lazy {
-        if (context == null && activity == null) throw IllegalArgumentException("Context and Activity must not be null")
-        if (context != null) {
-            isInstantApp = InstantApps.isInstantApp(context)
-            Places.getGeoDataClient(context)
-        }
-        else {
-            isInstantApp = InstantApps.isInstantApp(activity!!)
-            Places.getGeoDataClient(activity)
-        }
+    private val client: PlacesClient by lazy {
+        Places.initialize(context.applicationContext, context.getString(R.string.google_geo_api_key))
+        Places.createClient(context)
     }
+
+    /**
+     * Token for autocomplete session and fetch place
+     */
+    private var sessionToken: AutocompleteSessionToken? = null
 
     /**
      * Search LatLng boundary
      */
-    private val bounds: LatLngBounds = LatLngBounds(LatLng(13.7244409, 100.3522243), LatLng(13.736717, 100.523186))
-
-    /**
-     * Search filter
-     */
-    private val filter: AutocompleteFilter = AutocompleteFilter.Builder()
-            .setCountry("th")
-            .setTypeFilter(AutocompleteFilter.TYPE_FILTER_NONE)
-            .build()
+    private val bounds: RectangularBounds = RectangularBounds.newInstance(LatLng(13.7244409, 100.3522243), LatLng(13.736717, 100.523186))
 
     //endregion
     //region lifecycle
 
+    /**
+     * Synchronously retrieve a Place information
+     */
+    @WorkerThread
+    private fun getPlaceDetails(placeId: String, vararg skuTypes: SKUType): Place {
+        val fields = ArrayList<Place.Field>().apply {
+            for (type in skuTypes) {
+                when (type) {
+                    SKUType.BASIC -> addAll(arrayListOf(
+                        Place.Field.ADDRESS,
+                        Place.Field.ID,
+                        Place.Field.LAT_LNG,
+                        Place.Field.NAME,
+                        Place.Field.OPENING_HOURS,
+                        Place.Field.PHOTO_METADATAS,
+                        Place.Field.PLUS_CODE,
+                        Place.Field.TYPES,
+                        Place.Field.VIEWPORT)
+                    )
+                    SKUType.CONTACT -> addAll(arrayListOf(
+                        Place.Field.PHONE_NUMBER,
+                        Place.Field.WEBSITE_URI)
+                    )
+                    SKUType.ATMOSPHERE -> addAll(arrayListOf(
+                        Place.Field.PRICE_LEVEL,
+                        Place.Field.RATING,
+                        Place.Field.USER_RATINGS_TOTAL
+                    ))
+                }
+            }
+        }
+        AppLogger.d("Fetching place for placeID=$placeId, sessionToken=$sessionToken, fields=$fields...")
+
+        return client.fetchPlace(FetchPlaceRequest.builder(placeId, fields)
+            .setSessionToken(sessionToken)
+            .build()
+        ).let {
+            Tasks.await(it).place
+        }
+    }
+
     override fun getPlaces(placeIds: Array<String>): Single<Array<Place>> {
         return Single.create { single ->
-            // place APIs doesn't work with Instant App yet
-            if (isInstantApp || placeIds.isEmpty()) {
+            if (placeIds.isEmpty()) {
                 single.onSuccess(emptyArray())
             }
             else {
-                client.getPlaceById(*placeIds).let {
-                    it.addOnCompleteListener {
-                        try {
-                            val places = it.result
-                            if (it.isSuccessful) {
-                                val result = ArrayList<Place>()
-                                places.filter { it.isDataValid }
-                                        .forEach { result.add(it.freeze()) }
-                                places.release()
-                                single.onSuccess(result.toTypedArray())
-                            } else {
-                                it.exception?.let {
-                                    single.onError(it)
-                                }
-                            }
-                        }
-                        catch (ex: Exception) {
-                            single.onError(ex)
-                        }
+                val result = ArrayList<Place>()
+                for (placeId in placeIds) {
+                    try {
+                        val place = getPlaceDetails(placeId, SKUType.BASIC, SKUType.CONTACT)
+                        result.add(place)
+
+                        AppLogger.d("Found place for placeID=$placeId, name=${place.name}")
                     }
-                    it.addOnFailureListener {
-                        single.onError(it)
+                    catch (ex: Exception) {
+                        sessionToken = null
+
+                        AppLogger.e(ex)
+                        single.onError(ex)
+                        return@create
                     }
                 }
+                sessionToken = null
+
+                single.onSuccess(result.toTypedArray())
             }
         }
     }
 
-    override fun getPlacePhoto(placeId: String): Maybe<PlacePhotoResponse> {
-        return Maybe.create { maybe ->
-            if (isInstantApp || placeId.isEmpty()) {
-                maybe.onComplete()
-            }
-            else {
-                client.getPlacePhotos(placeId).let {
-                    it.addOnCompleteListener {
-                        val photosMetadata = it.result.photoMetadata
-                        if (photosMetadata.count == 0) {
-                            photosMetadata.release()
-                            maybe.onComplete()
+    override fun getPlacePhoto(placeId: String, width: Int, height: Int,
+                               onSuccess: (Bitmap) -> Unit, onError: (Exception) -> Unit) {
+        client.fetchPlace(FetchPlaceRequest.builder(placeId, Arrays.asList(Place.Field.PHOTO_METADATAS)).build())
+            .addOnSuccessListener {
+                try {
+                    val photoRequest = FetchPhotoRequest.builder(it.place.photoMetadatas!![0])
+                        .setMaxWidth(width)
+                        .setMaxHeight(height)
+                        .build()
+                    client.fetchPhoto(photoRequest)
+                        .addOnSuccessListener { photoResponse ->
+                            onSuccess(photoResponse.bitmap)
                         }
-                        else {
-                            val meta = photosMetadata[0]
-                            meta.maxWidth
-                            client.getPhoto(meta).let {
-                                it.addOnCompleteListener {
-                                    photosMetadata.release()
-                                    maybe.onSuccess(it.result)
-                                }
-                                it.addOnFailureListener {
-                                    photosMetadata.release()
-                                    maybe.onError(it)
-                                }
-                            }
+                        .addOnFailureListener { ex ->
+                            onError(ex)
                         }
-                    }
-                    it.addOnFailureListener {
-                        maybe.onError(it)
-                    }
+                }
+                catch (ex: Exception) {
+                    onError(ex)
                 }
             }
-        }
-    }
-
-    override fun getPlacePhoto(placeId: String, width: Int, height: Int, onSuccess: (PlacePhotoResponse) -> Unit, onError: (Exception) -> Unit) {
-        if (isInstantApp || placeId.isEmpty()) {
-            onError(Exception("Place ID is empty or operation not supported in instant app mode"))
-        }
-        else {
-            client.getPlacePhotos(placeId).let {
-                it.addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        val photosMetadata = it.result.photoMetadata
-                        if (photosMetadata.count == 0) {
-                            photosMetadata.release()
-                            onError(Exception("There are no photos available for this place ID"))
-                        }
-                        else {
-                            val meta = photosMetadata[0]
-                            client.getScaledPhoto(meta, width, height).let {
-                                it.addOnCompleteListener {
-                                    photosMetadata.release()
-                                    onSuccess(it.result)
-                                }
-                                it.addOnFailureListener {
-                                    photosMetadata.release()
-                                    onError(it)
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        if (it.exception != null) {
-                            onError(it.exception!!)
-                        }
-                        else {
-                            onError(Exception("Unknown error"))
-                        }
-                    }
-                }
-                it.addOnFailureListener {
-                    onError(it)
-                }
+            .addOnFailureListener {
+                onError(it)
             }
-        }
     }
 
     override fun getAutocompletePrediction(query: String): Single<Array<AutocompletePrediction>> {
-        return getAutocompletePrediction(query, bounds, filter)
-    }
-
-    private fun getAutocompletePrediction(query: String, bounds: LatLngBounds, filter: AutocompleteFilter): Single<Array<AutocompletePrediction>> {
         return Single.create { single ->
             if (TextUtils.isEmpty(query)) {
                 single.onSuccess(emptyArray())
             }
             else {
-                client.getAutocompletePredictions(query, bounds, filter).let {
-                    it.addOnCompleteListener {
-                        val result = ArrayList<AutocompletePrediction>()
-                        if (it.isSuccessful) {
-                            if (it.result != null && it.result.count > 0) {
-                                it.result.filter { it.isDataValid }
-                                        .forEach { result.add(it.freeze()) }
-                                it.result.release()
-                                single.onSuccess(result.toTypedArray())
-                            }
-                            else {
-                                single.onSuccess(emptyArray())
-                            }
-                        }
-                        else {
-                            it.exception?.let {
-                                single.onError(it)
-                            }
-                        }
+                // this session token is used until a Fetch Place request is called
+                // or clearSession() is manually called
+                sessionToken = sessionToken ?: AutocompleteSessionToken.newInstance()
+                val request = FindAutocompletePredictionsRequest.builder()
+                    .setLocationBias(bounds)
+                    .setCountry("th")
+                    .setSessionToken(sessionToken)
+                    .setQuery(query)
+                    .build()
+                AppLogger.d("Finding place autocomplete predictions from query=$query, sessionToken=$sessionToken")
+                client.findAutocompletePredictions(request).addOnSuccessListener { response ->
+                    for (prediction in response.autocompletePredictions) {
+                       val name = prediction.getPrimaryText(null)
+                       AppLogger.d("Place predicted to be placeID=${prediction.placeId}, name=$name")
                     }
-                    it.addOnFailureListener {
-                        single.onError(it)
-                    }
+                    single.onSuccess(response.autocompletePredictions.toTypedArray())
+                }
+                .addOnFailureListener {
+                    single.onError(it)
                 }
             }
         }
+    }
+
+    override fun clearSession() {
+        AppLogger.d("Clearing session token")
+
+        sessionToken = null
     }
 
     //endregion

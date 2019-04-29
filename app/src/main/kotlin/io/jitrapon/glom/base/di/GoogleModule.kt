@@ -12,5 +12,5 @@ class GoogleModule {
 
     @Provides
     @Singleton
-    fun providePlaceProvider(application: Application): PlaceProvider = GooglePlaceProvider(context = application)
+    fun providePlaceProvider(application: Application): PlaceProvider = GooglePlaceProvider(application)
 }
