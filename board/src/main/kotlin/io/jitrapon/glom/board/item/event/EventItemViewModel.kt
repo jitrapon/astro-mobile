@@ -357,7 +357,7 @@ class EventItemViewModel : BoardItemViewModel() {
             observableEndDate.value = it.endDate
             observableLocation.value = it.locationName
             observableLocationDescription.value = it.locationDescription
-            it.location?.let { loadPlaceAsync(it.name, it.googlePlaceId) }
+            it.location?.let { loadPlaceAsync(it.name, it.googlePlaceId, it.latitude, it.longitude) }
             observableLocationLatLng.value = it.locationLatLng
             observableAttendeeTitle.value = it.attendeeTitle
             observableAttendees.value = it.attendees
@@ -706,7 +706,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     observableLocation.value = getEventDetailLocation(this)
                     observableLocationDescription.value = getEventDetailLocationDescription(this)
                     observableLocationLatLng.value = getEventDetailLocationLatLng(this)
-                    loadPlaceAsync(it.name, it.googlePlaceId)
+                    loadPlaceAsync(it.name, it.googlePlaceId, it.latitude, it.longitude)
                 }
             }
         }
@@ -724,8 +724,8 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun loadPlaceAsync(customName: String?, googlePlaceId: String?) {
-        if (!TextUtils.isEmpty(googlePlaceId)) {
+    private fun loadPlaceAsync(customName: String?, googlePlaceId: String?, latitude: Double?, longitude: Double?) {
+        if (!TextUtils.isEmpty(googlePlaceId) && latitude == null && longitude == null) {
             interactor.loadPlaceInfo(customName) { result ->
                 when (result) {
                     is AsyncSuccessResult -> {
