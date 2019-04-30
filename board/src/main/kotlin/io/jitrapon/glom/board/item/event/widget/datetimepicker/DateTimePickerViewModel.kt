@@ -104,7 +104,8 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     fun selectTimeChoice(choice: TimeChoiceUiModel) {
         observableSelectedTimeChoice.value = choice
-        currentDate.time = choice.date.time
+        val (hour, minute) = choice.date.hourToMinute
+        currentDate.time = currentDate.setTime(hour, minute).time
         observableTime.value = getTime(currentDate)
     }
 
