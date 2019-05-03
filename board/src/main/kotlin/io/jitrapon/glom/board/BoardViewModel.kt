@@ -306,7 +306,7 @@ class BoardViewModel : BaseViewModel() {
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
                         requestPlaceInfoItemIds = if (boardInteractor.hasPlaceInfo(boardItem)) listOf(it) else null
-                        requestAddressItemIds = if (boardInteractor.hasOnlyLocationName(boardItem)) listOf(it) else null
+                        requestAddressItemIds = null
                     }
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
