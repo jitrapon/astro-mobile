@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item
 
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.model.UiModel
 
@@ -41,5 +42,12 @@ interface BoardItemUiModel : UiModel {
      *
      * @return The payload that indicates the field change
      */
-    fun updateLocationText(place: Place?): Int
+    fun updateLocationText(name: String?): Int
+
+    /**
+     * Updates location LatLng
+     *
+     * @return The payload that indicates the field change
+     */
+    fun updateLocationLatLng(latLng: LatLng?): Int
 }

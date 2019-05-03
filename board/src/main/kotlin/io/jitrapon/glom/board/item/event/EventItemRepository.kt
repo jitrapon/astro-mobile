@@ -114,11 +114,12 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
                 false)
     }
 
-    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
-        return update(
-                localDataSource.setPlace(item, location),
-                remoteDataSource.setPlace(item, location),
+    override fun updateLocation(item: EventItem, location: EventLocation?, remote: Boolean): Completable {
+        return if (remote) update(
+                localDataSource.updateLocation(item, location, remote),
+                remoteDataSource.updateLocation(item, location, remote),
                 false)
+        else localDataSource.updateLocation(item, location, remote)
     }
 
     override fun setLocation(location: EventLocation?) {

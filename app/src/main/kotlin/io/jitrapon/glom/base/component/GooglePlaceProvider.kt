@@ -2,8 +2,11 @@ package io.jitrapon.glom.base.component
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.location.Address
+import android.location.Geocoder
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
+import androidx.collection.ArrayMap
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.tasks.Tasks
@@ -20,8 +23,10 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.get
 import io.reactivex.Single
 import java.util.Arrays
+import java.util.Locale
 
 /**
  * Lifecycle-aware components that abstracts away logic to retrieve Place information
@@ -43,6 +48,13 @@ class GooglePlaceProvider(context: Context) : PlaceProvider {
     private val client: PlacesClient by lazy {
         Places.initialize(context.applicationContext, context.getString(R.string.google_geo_api_key))
         Places.createClient(context)
+    }
+
+    /**
+     * Geocoder API client
+     */
+    private val geocoder: Geocoder by lazy {
+        Geocoder(context.applicationContext, Locale.getDefault())
     }
 
     /**
@@ -188,6 +200,33 @@ class GooglePlaceProvider(context: Context) : PlaceProvider {
         AppLogger.d("Clearing session token")
 
         sessionToken = null
+    }
+
+    override fun geocode(queries: List<String>): Single<Map<String, Address?>> {
+        return Single.create { single ->
+            if (!Geocoder.isPresent()) {
+                AppLogger.w("Geocoder is not present")
+                single.onSuccess(emptyMap())
+            }
+            else {
+                try {
+                    AppLogger.d("Geocoding from ${queries.size} queries")
+                    val result = ArrayMap<String, Address?>()
+                    for (query in queries) {
+                        val address = geocoder.getFromLocationName(query, 1).get(0, null)
+                        result[query] = address
+
+                        AppLogger.d("Found geocoding result for query=$query")
+                    }
+                    single.onSuccess(result)
+                }
+                catch (ex: Exception) {
+                    AppLogger.e(ex)
+
+                    single.onError(ex)
+                }
+            }
+        }
     }
 
     //endregion

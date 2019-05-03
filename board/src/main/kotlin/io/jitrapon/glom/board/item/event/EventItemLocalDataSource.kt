@@ -148,14 +148,16 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
+    override fun updateLocation(item: EventItem, location: EventLocation?, remote: Boolean): Completable {
         return Completable.fromCallable {
             if (location == null) {
                 eventDao.updatePlace(item.itemId)
             }
             else {
-                eventDao.updatePlace(item.itemId, location.googlePlaceId, location.placeId, location.latitude,
+                if (item.itemInfo.source.isBoard()) {
+                    eventDao.updatePlace(item.itemId, location.googlePlaceId, location.placeId, location.latitude,
                         location.longitude, location.name, location.description, location.address)
+                }
             }
         }.doOnComplete {
             item.itemInfo.apply {

@@ -140,12 +140,22 @@ class BoardFragment : BaseFragment() {
                         board_status_viewswitcher.reset()
                         board_recycler_view.show(REVEAL_ANIM_DELAY)
 
-                        // loads additional place information for items that have them
+                        // loads additional place information for items that have Place IDs
                         it.requestPlaceInfoItemIds.let {
                             when {
                                 it == null -> { /* do nothing */ }
                                 it.isEmpty() -> viewModel.loadPlaceInfo(placeProvider, null)
                                 else -> viewModel.loadPlaceInfo(placeProvider, it)
+                            }
+                        }
+
+                        // loads additional place information for items that have addresses but no
+                        // LatLng
+                        it.requestAddressItemIds.let {
+                            when {
+                                it == null -> { /* do nothing */ }
+                                it.isEmpty() -> viewModel.loadAddressInfo(placeProvider, null)
+                                else -> viewModel.loadAddressInfo(placeProvider, it)
                             }
                         }
 

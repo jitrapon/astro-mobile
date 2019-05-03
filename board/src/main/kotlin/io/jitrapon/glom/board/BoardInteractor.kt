@@ -1,9 +1,12 @@
 package io.jitrapon.glom.board
 
+import android.location.Address
 import android.os.Parcel
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
+import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -25,7 +28,10 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Function3
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.Date
+import java.util.UUID
 
 /**
  * Interactor for dealing with Board business logic
@@ -204,6 +210,12 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 && TextUtils.isEmpty((item.itemInfo as? EventInfo)?.location?.name)
     }
 
+    fun hasOnlyLocationName(item: BoardItem): Boolean {
+        return item.itemInfo is EventInfo &&
+                !(item.itemInfo as? EventInfo)?.location?.name.isNullOrBlank() &&
+                (item.itemInfo as? EventInfo)?.location?.googlePlaceId == null
+    }
+
     /**
      * Loads place info for board items that have a Google PlaceId associated
      *
@@ -247,8 +259,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
             }.toTypedArray()
         }.flatMap {
             placeProvider.getPlaces(it)
-        }
-                .retryWhen(::errorIsUnauthorized)
+        }.retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -266,6 +277,64 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }).autoDispose()
+    }
+
+    /**
+     * Loads addresses info for board items that have a location name, but no Google Place IDs or LatLng.
+     */
+    fun loadItemAddressInfo(placeProvider: PlaceProvider?,
+                            itemIdsWithPlace: List<String>?,
+                            onComplete: (AsyncResult<Map<String, Pair<String?, Address?>>>) -> Unit) {
+        if (placeProvider == null) {
+            onComplete(AsyncErrorResult(Exception("Place provider implmentation is NULL")))
+            return
+        }
+        val queryMap = ArrayMap<String, String>()   // list to store item IDs and queries
+
+        // first, we filter out all the board items that have location names in them.
+        // they will be stored in itemIds
+        // this callable will return filtered items as an array of item IDs
+        Single.fromCallable {
+            // if item IDs not provided, take all the loaded board items as starting point
+            val items = if (itemIdsWithPlace.isNullOrEmpty()) {
+                getCurrentBoard().items.takeLast(itemsLoaded)
+            }
+
+            // if item IDs are specified, make sure that the starting list contains valid item IDs
+            else {
+                itemIdsWithPlace!!.map { itemId ->
+                    getCurrentBoard().items.find { it.itemId == itemId }!!
+                }
+            }
+
+            // filter from the starting list the items that actually have location names
+            // with no Place IDs
+            items.filter { item ->
+                val hasOnlyLocationName = hasOnlyLocationName(item)
+                if (hasOnlyLocationName) {
+                    val query = (item.itemInfo as EventInfo).location!!.name
+                    queryMap[query] = item.itemId
+                }
+                hasOnlyLocationName
+            }.map {
+                (it.itemInfo as EventInfo).location?.name!!
+            }.toList()
+        }.flatMap {
+            placeProvider.geocode(it)
+        }.map {
+            ArrayMap<String, Pair<String?, Address?>>().apply {
+                for ((query, address) in it.entries) {
+                    this[queryMap[query]] = query to address
+                }
+            }
+        }.retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(it))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     /**

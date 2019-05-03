@@ -19,7 +19,7 @@ object BoardItemViewModelStore {
      * Retrieves a ViewModel instance for a BoardItem. If one is not created, it will be
      * instantiated first and returned.
      */
-    fun <T> obtainViewModelForItem(clazz: Class<T>): BoardItemViewModel? {
+    fun <T : BoardItem> obtainViewModelForItem(clazz: Class<T>): BoardItemViewModel? {
         return when (clazz) {
             EventItem::class.java -> {
                 var viewModel = itemViewModelStore[BoardItem.TYPE_EVENT]

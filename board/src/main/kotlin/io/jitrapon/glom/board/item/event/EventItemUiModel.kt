@@ -58,9 +58,14 @@ data class EventItemUiModel(override val itemId: String,
         }
     }
 
-    override fun updateLocationText(place: Place?): Int {
-        location = AndroidString(text = place?.name.toString())
+    override fun updateLocationText(name: String?): Int {
+        location = AndroidString(text = name)
         return LOCATION
+    }
+
+    override fun updateLocationLatLng(latLng: LatLng?): Int {
+        mapLatLng = latLng
+        return MAPLATLNG
     }
 
     override fun getStatusChangePayload(): Int = SYNCSTATUS

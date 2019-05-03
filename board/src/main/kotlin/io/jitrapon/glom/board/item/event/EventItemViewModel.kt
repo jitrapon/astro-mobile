@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event
 
+import android.location.Address
 import android.text.Editable
 import android.text.SpannableStringBuilder
 import android.text.SpannedString
@@ -203,6 +204,22 @@ class EventItemViewModel : BoardItemViewModel() {
         else null
     }
 
+    fun updateEventLocationFromPlace(itemId: String, place: Place?) {
+        interactor.updateItemPlace(itemId, place?.name, place?.address, place?.latLng, place?.id, false) {
+            if (it is AsyncErrorResult) {
+                AppLogger.e(it.error)
+            }
+        }
+    }
+
+    fun updateEventLocationFromAddress(itemId: String, name: String?, address: Address?) {
+        interactor.updateItemPlace(itemId, name, address?.fullAddress, address?.latLng, null, false) {
+            if (it is AsyncErrorResult) {
+                AppLogger.e(it.error)
+            }
+        }
+    }
+
     /**
      * Returns a latlng corresponding to the location of the event
      */
@@ -266,6 +283,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 }
                 boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
                     requestPlaceInfoItemIds = null
+                    requestAddressItemIds = null
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(ATTENDSTATUS)) }
                 }
@@ -284,6 +302,7 @@ class EventItemViewModel : BoardItemViewModel() {
                             }
                             boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
                                 requestPlaceInfoItemIds = null
+                                requestAddressItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
                                         arrayListOf(ATTENDSTATUS, ATTENDEES)) }
@@ -299,6 +318,7 @@ class EventItemViewModel : BoardItemViewModel() {
                             }
                             boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
                                 requestPlaceInfoItemIds = null
+                                requestAddressItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
                                         arrayListOf(ATTENDSTATUS, ATTENDEES)) }
@@ -711,7 +731,6 @@ class EventItemViewModel : BoardItemViewModel() {
             }
         }
     }
-
 
     fun selectPlace(place: Place?) {
         place?.let {

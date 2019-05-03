@@ -160,7 +160,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
                 }
     }
 
-    override fun setPlace(item: EventItem, location: EventLocation?): Completable {
+    override fun updateLocation(item: EventItem, location: EventLocation?, remote: Boolean): Completable {
         return api.setPlace(circleInteractor.getActiveCircleId(), item.itemId, UpdatePlaceRequest(if (location == null) null else EventPlacePollRequest(location.placeId, location.googlePlaceId)))
                 .flatMapCompletable {
                     Completable.fromCallable {

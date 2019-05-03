@@ -18,6 +18,7 @@ import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.latLng
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.item.BoardItem
@@ -25,7 +26,10 @@ import io.jitrapon.glom.board.item.BoardItemDiffCallback
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModelStore
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.SyncStatus.Companion.map
+import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemUiModel
+import io.jitrapon.glom.board.item.event.EventItemViewModel
 import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -56,9 +60,6 @@ class BoardViewModel : BaseViewModel() {
 
     /* live data for selected board item and list of shared views for transition */
     private val observableBoardItem = LiveEvent<Triple<BoardItem, List<Pair<android.view.View, String>>?, Boolean>>()
-
-    /* default filtering type of items */
-    private var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
     /* last grouping key that was emitted from the interactor. This is to indicate
         whether or not to append a new list of items to the last group, or to start a new group.
@@ -101,7 +102,6 @@ class BoardViewModel : BaseViewModel() {
      * Loads board data and items asynchronously, default to loading event items
      *
      * @param refresh If true, old data will be discarded and will be refreshed from the server again
-     * @param itemType Board item type to load, see types in BoardItem.kt
      */
     fun loadBoard(refresh: Boolean) {
         observableBoard.value = boardUiModel.apply {
@@ -112,7 +112,7 @@ class BoardViewModel : BaseViewModel() {
         loadData(refresh, boardInteractor::loadBoard, if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    onBoardItemChanges(it.result.second, listOf())
+                    onBoardItemChanges(it.result.second, listOf(), listOf())
 
                     setUserProfileIcon(userInteractor.getCurrentUserAvatar())
                 }
@@ -135,7 +135,9 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Handle changes to board item list, applying DiffUtil if necessary
      */
-    private fun onBoardItemChanges(data: androidx.collection.ArrayMap<*, List<BoardItem>>, requiredPlaceitemIds: List<String>?, newItem: BoardItem? = null) {
+    private fun onBoardItemChanges(data: androidx.collection.ArrayMap<*, List<BoardItem>>,
+                                   requiredPlaceItemIds: List<String>?, requiredAddressItemIds: List<String>?,
+                                   newItem: BoardItem? = null) {
         errorIdCounter.set(0)
 
         runAsync({
@@ -149,7 +151,8 @@ class BoardViewModel : BaseViewModel() {
                 status = if (uiModel.isEmpty()) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
                 items = uiModel.toMutableList()
                 diffResult = diff
-                requestPlaceInfoItemIds = requiredPlaceitemIds
+                requestPlaceInfoItemIds = requiredPlaceItemIds
+                requestAddressItemIds = requiredAddressItemIds
                 saveItem = newItem
             }
         }, onError = {
@@ -178,14 +181,25 @@ class BoardViewModel : BaseViewModel() {
                         observableBoard.value = boardUiModel.apply {
                             saveItem = null
                             requestPlaceInfoItemIds = null
+                            requestAddressItemIds = null
                             itemsChangedIndices = ArrayList()
                             diffResult = null
                             val map = it.result
-                            items?.let {
-                                it.forEachIndexed { index, item ->
+                            items?.let { items ->
+                                items.forEachIndexed { index, item ->
                                     if (map.containsKey(item.itemId)) {
-                                        val changePayload = item.updateLocationText(map[item.itemId])
-                                        itemsChangedIndices?.add(index to arrayListOf(changePayload))
+                                        val place = map[item.itemId]
+                                        val locationTextPayload = item.updateLocationText(place?.name)
+                                        val locationLatLngPayload = item.updateLocationLatLng(place?.latLng)
+                                        itemsChangedIndices?.add(index to arrayListOf(locationTextPayload, locationLatLngPayload))
+
+                                        // update this item location with the retrieved info locally
+                                        // so that we don't have to fetch this info again
+                                        if (item is EventItemUiModel) {
+                                            (BoardItemViewModelStore.obtainViewModelForItem(
+                                                EventItem::class.java
+                                            ) as? EventItemViewModel)?.updateEventLocationFromPlace(item.itemId, place)
+                                        }
                                     }
                                 }
                             }
@@ -195,6 +209,43 @@ class BoardViewModel : BaseViewModel() {
                 is AsyncErrorResult -> {
                     handleError(it.error)
                 }
+            }
+        }
+    }
+
+    /**
+     * Retrieves addresses for board items that need to show them.
+     *
+     * @param placeProvider Subclass of PlaceProvider that implements get place info
+     */
+    fun loadAddressInfo(placeProvider: PlaceProvider?, itemIds: List<String>?) {
+        boardInteractor.loadItemAddressInfo(placeProvider, itemIds) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    if (it.result.isNotEmpty()) {
+                        // set the corresponding board items with the address
+                        observableBoard.value = boardUiModel.apply {
+                            saveItem = null
+                            requestPlaceInfoItemIds = null
+                            requestAddressItemIds = null
+                            itemsChangedIndices = ArrayList()
+                            diffResult = null
+                            boardUiModel.items?.forEachIndexed { index, item ->
+                                it.result[item.itemId]?.let { (name, address) ->
+                                    val locationLatLngPayload = item.updateLocationLatLng(address?.latLng)
+                                    itemsChangedIndices?.add(index to arrayListOf(locationLatLngPayload))
+
+                                    if (item is EventItemUiModel) {
+                                        (BoardItemViewModelStore.obtainViewModelForItem(
+                                            EventItem::class.java
+                                        ) as? EventItemViewModel)?.updateEventLocationFromAddress(item.itemId, name, address)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                is AsyncErrorResult -> handleError(it.error)
             }
         }
     }
@@ -230,7 +281,7 @@ class BoardViewModel : BaseViewModel() {
     fun addNewItem(item: BoardItem) {
         boardInteractor.addItem(item) {
             when (it) {
-                is AsyncSuccessResult -> onBoardItemChanges(it.result, listOf(), item)
+                is AsyncSuccessResult -> onBoardItemChanges(it.result, listOf(), listOf(), item)
                 is AsyncErrorResult -> handleError(it.error)
             }
         }
@@ -255,6 +306,7 @@ class BoardViewModel : BaseViewModel() {
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
                         requestPlaceInfoItemIds = if (boardInteractor.hasPlaceInfo(boardItem)) listOf(it) else null
+                        requestAddressItemIds = if (boardInteractor.hasOnlyLocationName(boardItem)) listOf(it) else null
                     }
                     diffResult = null
                     itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
@@ -310,6 +362,7 @@ class BoardViewModel : BaseViewModel() {
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
                                 requestPlaceInfoItemIds = null
+                                requestAddressItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
                                     add(index to arrayListOf(items[index].getStatusChangePayload()))
@@ -329,6 +382,7 @@ class BoardViewModel : BaseViewModel() {
                             observableBoard.value = boardUiModel.apply {
                                 saveItem = null
                                 requestPlaceInfoItemIds = null
+                                requestAddressItemIds = null
                                 diffResult = null
                                 itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
                                     add(index to arrayListOf(items[index].getStatusChangePayload()))
@@ -356,7 +410,7 @@ class BoardViewModel : BaseViewModel() {
                     boardInteractor.deleteItemLocal(item.itemId) {
                         when (it) {
                             is AsyncSuccessResult -> {
-                                onBoardItemChanges(it.result, listOf(), null)
+                                onBoardItemChanges(it.result, listOf(), listOf(), null)
 
                                 syncDeletedItem(item.itemId)
                             }

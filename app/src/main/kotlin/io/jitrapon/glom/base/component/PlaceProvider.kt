@@ -1,6 +1,7 @@
 package io.jitrapon.glom.base.component
 
 import android.graphics.Bitmap
+import android.location.Address
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.Place
 import io.reactivex.Single
@@ -32,4 +33,9 @@ interface PlaceProvider {
      * Forces cleaning up of session data
      */
     fun clearSession()
+
+    /**
+     * Converts a list of addresses into geographic coordinates (LatLng)
+     */
+    fun geocode(queries: List<String>): Single<Map<String, Address?>>
 }

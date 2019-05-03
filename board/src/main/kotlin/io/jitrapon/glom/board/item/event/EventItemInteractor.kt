@@ -4,6 +4,7 @@ import android.text.TextUtils
 import android.util.SparseArray
 import androidx.annotation.WorkerThread
 import androidx.core.util.set
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
@@ -538,7 +539,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
         eventItemDataSource.getPlacePolls(event, false)
                 .flatMapCompletable { polls ->
                     polls.first { it.id == id }.let { poll ->
-                        eventItemDataSource.setPlace(event, poll.location)
+                        eventItemDataSource.updateLocation(event, poll.location, true)
                     }
                 }
                 .retryWhen(::errorIsUnauthorized)
@@ -551,6 +552,31 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                 }, {
                     onComplete(AsyncErrorResult(it))
                 }).autoDispose()
+    }
+
+    fun updateItemPlace(itemId: String, placeName: String?, placeAddress: String?,
+                        latLng: LatLng?, placeId: String?, remote: Boolean, onComplete: (AsyncResult<Unit>) -> Unit) {
+        Single.fromCallable {
+            board.items.find {
+                it.itemId == itemId && it is EventItem
+            } ?: throw Exception("Item with item ID $itemId does " +
+                    "not exist or does not satisfy criteria to be updated with new location")
+        }.flatMapCompletable {
+            val location = (it as EventItem).itemInfo.location?.copy(
+                latitude = latLng?.latitude,
+                longitude = latLng?.longitude,
+                name = placeName,
+                address = placeAddress,
+                placeId = placeId)
+            eventItemDataSource.updateLocation(it, location, remote)
+        }.retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(Unit))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     //endregion

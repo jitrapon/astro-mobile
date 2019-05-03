@@ -15,4 +15,5 @@ data class BoardUiModel(override var status: UiModel.Status = UiModel.Status.SUC
                         var diffResult: DiffUtil.DiffResult? = null,
                         var itemsChangedIndices: MutableList<Pair<Int, Any?>>? = null,
                         var requestPlaceInfoItemIds: List<String>? = null,
+                        var requestAddressItemIds: List<String>? = null,
                         var saveItem: BoardItem? = null) : UiModel
