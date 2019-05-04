@@ -11,7 +11,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -418,10 +417,11 @@ class EventItemViewModel : BoardItemViewModel() {
         dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
                                                         else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
         return AndroidString(text = StringBuilder().apply {
-            val date = Date(dateAsEpochMs).apply {
+            val date = Date(dateAsEpochMs).run {
                 if (!isStartDate && isFullDay) {
                     addDay(-1)
                 }
+                else this
             }
             append(date.toDateString(true))
             if (!isFullDay) {
