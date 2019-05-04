@@ -256,15 +256,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                 if (isFullDay) {
                     // we need to handle the standard of full-day events
                     // end date time actually one day ahead of actual date
-                    it.addDay(1).setTime(7, 0, second = 59, millisecond = 999).time
+                    it.addDay(1).setTime(7, 0).time
                 }
-                else {
-                    val (sec, ms) = it.secondToMillisecond
-                    if (sec == 59 && ms == 999) {
-                        it.addDay(-1).setTime(7, 0, 0, 0).time
-                    }
-                    else it.time
-                }
+                else it.time
             }
 
             // we should set the start time accordingly to one hour prior to the new end time
