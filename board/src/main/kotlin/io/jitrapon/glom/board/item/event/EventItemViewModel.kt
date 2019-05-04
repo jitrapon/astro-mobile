@@ -11,6 +11,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -146,12 +147,15 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     private fun getEventDate(start: Long?, end: Long?, isFullDay: Boolean): AndroidString? {
         start ?: return null
+        val endMs = if (isFullDay && end != null) {
+            Date(end).addDay(-1).time
+        } else end
         val startDate = Calendar.getInstance().apply { time = Date(start) }
         val currentDate = Calendar.getInstance()
         var showYear = startDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
 
         // if end datetime is not present, only show start time
-        if (end == null || end == start) return Date(start).let {
+        if (endMs == null || endMs == start) return Date(start).let {
             val time = if (isFullDay) "" else " (${it.toTimeString()})"
             AndroidString(text = "${it.toDateString(showYear)}$time")
         }
@@ -160,7 +164,7 @@ class EventItemViewModel : BoardItemViewModel() {
         // show one date with time range if end datetime is within the same day
         // (i.e. 20 Jun, 2017 (10:30 AM - 3:00 PM), otherwise
         // show 20 Jun, 2017 (10:30 AM) - 21 Jun, 2017 (10:30 AM)
-        val endDate = Calendar.getInstance().apply { time = Date(end) }
+        val endDate = Calendar.getInstance().apply { time = Date(endMs) }
         val startYearNotEqEndYear = startDate[Calendar.YEAR] != endDate[Calendar.YEAR]
         return if (startYearNotEqEndYear || startDate[Calendar.DAY_OF_YEAR] != endDate[Calendar.DAY_OF_YEAR]) {
             showYear = showYear || startYearNotEqEndYear
@@ -170,7 +174,7 @@ class EventItemViewModel : BoardItemViewModel() {
                     "${it.toDateString(showYear)}$time"
                 })
                 append(" - ")
-                append(Date(end).let {
+                append(Date(endMs).let {
                     val time = if (isFullDay) "" else " (${it.toTimeString()})"
                     "${it.toDateString(showYear)}$time"
                 })
@@ -178,7 +182,7 @@ class EventItemViewModel : BoardItemViewModel() {
         }
         else {
             Date(start).let {
-                val time = if (isFullDay) "" else " (${it.toTimeString()} - ${Date(end).toTimeString()})"
+                val time = if (isFullDay) "" else " (${it.toTimeString()} - ${Date(endMs).toTimeString()})"
                 AndroidString(text = "${it.toDateString(showYear)}$time")
             }
         }
@@ -414,7 +418,11 @@ class EventItemViewModel : BoardItemViewModel() {
         dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
                                                         else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
         return AndroidString(text = StringBuilder().apply {
-            val date = Date(dateAsEpochMs)
+            val date = Date(dateAsEpochMs).apply {
+                if (!isStartDate && isFullDay) {
+                    addDay(-1)
+                }
+            }
             append(date.toDateString(true))
             if (!isFullDay) {
                 append("   ")

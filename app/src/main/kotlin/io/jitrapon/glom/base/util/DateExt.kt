@@ -126,11 +126,17 @@ fun Date.roundToNextHalfHour(): Date {
     }
 }
 
-fun Date.setTime(hour: Int, minute: Int): Date {
+fun Date.setTime(hour: Int, minute: Int, second: Int? = null, millisecond: Int? = null): Date {
     return Calendar.getInstance().run {
         time = this@setTime
         set(Calendar.HOUR_OF_DAY, hour)
         set(Calendar.MINUTE, minute)
+        second?.let {
+            set(Calendar.SECOND, second)
+        }
+        millisecond?.let {
+            set(Calendar.MILLISECOND, millisecond)
+        }
         Date(time.time)
     }
 }
@@ -188,4 +194,10 @@ val Date.hourToMinute: Pair<Int, Int>
     get() = Calendar.getInstance().run {
         time = this@hourToMinute
         get(Calendar.HOUR_OF_DAY) to get(Calendar.MINUTE)
+    }
+
+val Date.secondToMillisecond: Pair<Int, Int>
+    get() = Calendar.getInstance().run {
+        time = this@secondToMillisecond
+        get(Calendar.SECOND) to get(Calendar.MILLISECOND)
     }
