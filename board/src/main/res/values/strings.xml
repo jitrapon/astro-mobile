@@ -54,7 +54,8 @@
     <string name="event_plan_place_no_selection">no place selected</string>
     <string name="event_plan_place_select">set place as\n%1$s</string>
     <string name="event_plan_place_select_completed">Place set as %1$s</string>
-    <string name="event_item_view_place_picker">map</string>
+    <string name="event_item_action_view_map">map</string>
+    <string name="event_item_action_navigate">direction</string>
     <string name="event_plan_place_add_button">Add a place</string>
     <string name="board_action_new_item">Create New</string>
     <string name="board_action_customize">Customize</string>
@@ -78,4 +79,5 @@
     <string name="date_picker_more_options">Swipe up for more options</string>
     <string name="date_picker_collapsed_view">date_picker_collapsed_view</string>
     <string name="date_picker_expanded_view">date_picker_expanded_view</string>
+    <string name="event_item_action_call_place">call</string>
 </resources>

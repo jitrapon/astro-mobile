@@ -13,7 +13,6 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -144,7 +143,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_plan_button.setOnClickListener {
             viewModel.showEventDetailPlan(event_item_title.text.toString())
         }
-        event_item_view_placepicker_button.setOnClickListener {
+        event_item_map_button.setOnClickListener {
             viewModel.showPlacePicker()
         }
         event_item_source_text_view.setOnClickListener {
