@@ -16,6 +16,7 @@ import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemInteractor
+import io.jitrapon.glom.board.item.event.EventItemUiModel
 import io.jitrapon.glom.board.item.event.UserUiModel
 import java.util.*
 import javax.inject.Inject
@@ -182,22 +183,22 @@ class PlanEventViewModel : BaseViewModel() {
      */
     private fun getJoinButtonStatus(): ButtonUiModel {
         return if (isUserAttending)
-            ButtonUiModel(AndroidString(R.string.event_item_leave), UiModel.Status.NEGATIVE)
-        else ButtonUiModel(AndroidString(R.string.event_item_join), UiModel.Status.POSITIVE)
+            ButtonUiModel(AndroidString(R.string.event_item_action_leave), null, UiModel.Status.NEGATIVE)
+        else ButtonUiModel(AndroidString(R.string.event_item_action_join), null, UiModel.Status.POSITIVE)
     }
 
     /**
      * Toggles the state of the attend status
      */
     fun toggleAttendStatus() {
-        val newStatus = if (isUserAttending) 0 else 2
+        val newStatus = if (isUserAttending) EventItemUiModel.AttendStatus.GOING else EventItemUiModel.AttendStatus.DECLINED
         observableViewAction.value = Loading(true)
 
         interactor.setItemDetailAttendStatus(newStatus) {
             observableViewAction.value = Loading(false)
             when (it) {
                 is AsyncSuccessResult -> {
-                    isUserAttending = newStatus == 2
+                    isUserAttending = newStatus == EventItemUiModel.AttendStatus.GOING
                     it.result?.let {
                         observableAttendeesLabel.value = getAttendeesLabel(it)
                         observableAttendees.value = it.toUiModel()
@@ -676,8 +677,8 @@ class PlanEventViewModel : BaseViewModel() {
                 if (location.googlePlaceId != null) null else AndroidString(text = location.description),
                 avatar ?: location.googlePlaceId,
                 users.size,
-                if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), UiModel.Status.POSITIVE) else
-                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), UiModel.Status.LOADING), false, uiStatus)
+                if (isAiSuggested) ButtonUiModel(AndroidString(R.string.event_plan_place_add), null, UiModel.Status.POSITIVE) else
+                    ButtonUiModel(AndroidString(R.string.event_plan_place_added), null, UiModel.Status.LOADING), false, uiStatus)
     }
 
     fun getPlacePollItem(position: Int) = placePlan.placePolls[position]

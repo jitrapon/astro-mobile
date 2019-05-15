@@ -128,18 +128,6 @@
                     android:clickable="true"
                     android:focusable="true" />
 
-                <View
-                    android:id="@+id/event_item_time_separator"
-                    android:layout_width="0dp"
-                    android:layout_height="1dip"
-                    android:layout_marginEnd="@dimen/card_content_padding"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/dark_grey"
-                    android:contentDescription="@string/event_item_transition_view"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_end_time" />
-
                 <io.jitrapon.glom.board.item.event.widget.GlomTextView
                     android:id="@+id/event_item_end_time"
                     style="@style/CardView.TextView"
@@ -158,6 +146,50 @@
                     android:drawableTint="@color/grey"
                     android:clickable="true"
                     android:focusable="true" />
+
+                <io.jitrapon.glom.base.ui.widget.GlomButton
+                    android:id="@+id/event_item_datetime_action_button_1"
+                    style="@style/Widget.Glom.Button.Flat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    tools:text="label"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_end_time"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
+                    android:contentDescription="@string/event_item_transition_view" />
+
+                <io.jitrapon.glom.base.ui.widget.GlomButton
+                    android:id="@+id/event_item_datetime_action_button_2"
+                    style="@style/Widget.Glom.Button.Flat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    tools:text="label"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_end_time"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_datetime_action_button_1"
+                    android:contentDescription="@string/event_item_transition_view" />
+
+                <io.jitrapon.glom.base.ui.widget.GlomButton
+                    android:id="@+id/event_item_datetime_action_button_3"
+                    style="@style/Widget.Glom.Button.Flat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    tools:text="label"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_end_time"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_datetime_action_button_2"
+                    android:contentDescription="@string/event_item_transition_view" />
+
+                <View
+                    android:id="@+id/event_item_time_separator"
+                    android:layout_width="0dp"
+                    android:layout_height="1dip"
+                    android:layout_marginEnd="@dimen/card_content_padding"
+                    android:background="@color/dark_grey"
+                    android:contentDescription="@string/event_item_transition_view"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_datetime_action_button_1" />
 
                 <ImageView
                     android:id="@+id/event_item_location_icon"
@@ -213,48 +245,37 @@
                     map:liteMode="true" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
-                    android:id="@+id/event_item_map_button"
+                    android:id="@+id/event_item_location_action_button_1"
                     style="@style/Widget.Glom.Button.Flat"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/event_item_transition_view"
-                    android:text="@string/event_item_action_view_map"
+                    tools:text="label"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_map"
-                    app:layout_constraintStart_toStartOf="@+id/event_item_location_primary" />
+                    app:layout_constraintStart_toStartOf="@+id/event_item_location_primary"
+                    android:contentDescription="@string/event_item_transition_view" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
-                    android:id="@+id/event_item_direction_button"
+                    android:id="@+id/event_item_location_action_button_2"
                     style="@style/Widget.Glom.Button.Flat"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/event_item_transition_view"
-                    android:text="@string/event_item_action_navigate"
+                    android:text="label"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_map"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_map_button" />
+                    app:layout_constraintStart_toEndOf="@+id/event_item_location_action_button_1" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
-                    android:id="@+id/event_item_call_button"
+                    android:id="@+id/event_item_location_action_button_3"
                     style="@style/Widget.Glom.Button.Flat"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="@string/event_item_transition_view"
-                    android:text="@string/event_item_action_call_place"
+                    android:text="label"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_map"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_direction_button" />
-
-                <io.jitrapon.glom.base.ui.widget.GlomButton
-                    android:id="@+id/event_item_url_button"
-                    style="@style/Widget.Glom.Button.Flat"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:contentDescription="@string/event_item_transition_view"
-                    android:text="@string/event_item_action_call_place"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_map"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_direction_button" />
+                    app:layout_constraintStart_toEndOf="@+id/event_item_location_action_button_2" />
 
                 <View
                     android:id="@+id/event_item_source_separator"
@@ -265,7 +286,7 @@
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_map_button" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_location_action_button_1" />
 
                 <ImageView
                     android:id="@+id/event_item_source_icon"
@@ -322,30 +343,28 @@
                     app:layout_constraintTop_toBottomOf="@+id/event_item_location_separator" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
-                    style="@style/Widget.Glom.Button.Raised.Colored"
-                    android:theme="@style/Theme.Glom.Button.Raised.White"
-                    android:id="@+id/event_item_plan_button"
+                    style="@style/Widget.Glom.Button.Flat"
+                    android:theme="@style/Theme.Glom.Button.Raised.Colored"
+                    android:id="@+id/event_item_attendees_action_button_1"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/event_item_plan"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginStart="45dp"
+                    android:text="label"
+                    app:layout_constraintStart_toStartOf="@+id/event_item_attendees"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
                     android:contentDescription="@string/event_item_transition_view" />
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
-                    style="@style/Widget.Glom.Button.Raised.Colored"
+                    style="@style/Widget.Glom.Button.Flat"
                     android:theme="@style/Theme.Glom.Button.Raised.Colored"
-                    android:id="@+id/event_item_join_button"
+                    android:id="@+id/event_item_attendees_action_button_2"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/event_item_join"
-                    android:layout_marginStart="8dp"
+                    android:text="label"
+                    app:layout_constraintStart_toEndOf="@+id/event_item_attendees_action_button_1"
                     android:layout_marginTop="@dimen/card_expand_space_margin"
-                    android:contentDescription="@string/event_item_transition_view"
-                    app:layout_constraintStart_toEndOf="@+id/event_item_plan_button" />
+                    android:contentDescription="@string/event_item_transition_view" />
 
                 <View
                     android:id="@+id/event_item_note_separator"
@@ -357,7 +376,7 @@
                     android:contentDescription="@string/event_item_transition_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/event_item_start_time"
-                    app:layout_constraintTop_toBottomOf="@+id/event_item_join_button" />
+                    app:layout_constraintTop_toBottomOf="@+id/event_item_attendees_action_button_1" />
 
                 <ImageView
                     android:id="@+id/event_item_attendees_icon"

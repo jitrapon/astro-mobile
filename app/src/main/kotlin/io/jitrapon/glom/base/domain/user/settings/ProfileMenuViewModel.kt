@@ -50,8 +50,8 @@ class ProfileMenuViewModel : BaseViewModel() {
     }
 
     private fun getLoginButtonState(isLoading: Boolean, isSignedIn: Boolean, isAnonymous: Boolean): ButtonUiModel {
-        return if (isSignedIn && !isAnonymous) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), if (isLoading) UiModel.Status.LOADING else UiModel.Status.NEGATIVE)
-        else ButtonUiModel(AndroidString(R.string.auth_sign_in_label), if (isLoading) UiModel.Status.LOADING else UiModel.Status.POSITIVE)
+        return if (isSignedIn && !isAnonymous) ButtonUiModel(AndroidString(R.string.auth_sign_out_label), null,  if (isLoading) UiModel.Status.LOADING else UiModel.Status.NEGATIVE)
+        else ButtonUiModel(AndroidString(R.string.auth_sign_in_label), null, if (isLoading) UiModel.Status.LOADING else UiModel.Status.POSITIVE)
     }
 
     private fun getLoginInfoState(isLoading: Boolean, isSignedIn: Boolean, isAnonymous: Boolean): UiModel.Status =

@@ -354,11 +354,12 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
         }
     }
 
-    fun setItemDetailAttendStatus(statusCode: Int, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
+    fun setItemDetailAttendStatus(status: EventItemUiModel.AttendStatus, onComplete: ((AsyncResult<List<String>?>) -> Unit)) {
         val item = event
-        when (statusCode) {
-            2 -> eventItemDataSource.joinEvent(item)
-            else -> eventItemDataSource.leaveEvent(item)
+        when (status) {
+            EventItemUiModel.AttendStatus.GOING -> eventItemDataSource.joinEvent(item)
+            EventItemUiModel.AttendStatus.DECLINED -> eventItemDataSource.leaveEvent(item)
+            else -> throw NotImplementedError()
         }.retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

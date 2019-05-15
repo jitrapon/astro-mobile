@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -126,9 +127,6 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
             }
         }
-        event_item_join_button.setOnClickListener {
-            viewModel.setEventDetailAttendStatus()
-        }
         noteTextWatcher = event_item_note.doOnTextChanged { s, _, _, _ ->
             viewModel.onNoteTextChanged(s)
         }
@@ -140,15 +138,17 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             it.setItem(getBoardItemFromIntent(), isNewItem())
             addLocationAutocompleteCallbacks(event_item_location_primary)
         }
-        event_item_plan_button.setOnClickListener {
-            viewModel.showEventDetailPlan(event_item_title.text.toString())
-        }
-        event_item_map_button.setOnClickListener {
-            viewModel.showPlacePicker()
-        }
         event_item_source_text_view.setOnClickListener {
             viewModel.showEventDetailSources()
         }
+        event_item_datetime_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_datetime_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_datetime_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_location_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_location_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_location_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_attendees_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_attendees_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
     }
 
     override fun onResume() {
@@ -353,16 +353,6 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 (event_item_attendees.adapter as EventItemAttendeeAdapter).setItems(it)
             })
 
-            // observe on plan status
-            getObservablePlanStatus().observe(this@EventItemActivity, Observer {
-                it?.let(event_item_plan_button::applyState)
-            })
-
-            // observe on attend status
-            getObservableAttendStatus().observe(this@EventItemActivity, Observer {
-                it?.let(event_item_join_button::applyState)
-            })
-
             // observe on event note
             getObservableNote().observe(this@EventItemActivity, Observer {
                 event_item_note.apply {
@@ -397,6 +387,22 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                     isEnabled = it?.status != UiModel.Status.NEGATIVE
                 }
                 event_item_source_icon.load(this@EventItemActivity, it.sourceIcon)
+            })
+
+            // observe on action buttons
+            getObservableDateTimeActions().observe(this@EventItemActivity, Observer {
+                it.getOrNull(0)?.let(event_item_datetime_action_button_1::applyState)
+                it.getOrNull(1)?.let(event_item_datetime_action_button_2::applyState)
+                it.getOrNull(2)?.let(event_item_datetime_action_button_3::applyState)
+            })
+            getObservableLocationActions().observe(this@EventItemActivity, Observer {
+                it.getOrNull(0)?.let(event_item_location_action_button_1::applyState)
+                it.getOrNull(1)?.let(event_item_location_action_button_2::applyState)
+                it.getOrNull(2)?.let(event_item_location_action_button_3::applyState)
+            })
+            getObservableAttendeesActions().observe(this@EventItemActivity, Observer {
+                it.getOrNull(0)?.let(event_item_attendees_action_button_1::applyState)
+                it.getOrNull(1)?.let(event_item_attendees_action_button_2::applyState)
             })
         }
     }

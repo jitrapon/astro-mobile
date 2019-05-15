@@ -30,6 +30,7 @@ class GlomButton : AppCompatButton {
         uiModel.text?.let {
             text = context.getString(it)
         }
+        tag = uiModel.tag
     }
 
     fun setPositiveTheme() {

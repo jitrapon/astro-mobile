@@ -12,8 +12,32 @@ import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.model.AndroidImage
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AnimationItem
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.ButtonUiModel
+import io.jitrapon.glom.base.model.DateTimePickerUiModel
+import io.jitrapon.glom.base.model.LiveEvent
+import io.jitrapon.glom.base.model.MessageLevel
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.PlaceInfo
+import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.model.PresentChoices
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.InputValidator
+import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.addHour
+import io.jitrapon.glom.base.util.fullAddress
+import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.latLng
+import io.jitrapon.glom.base.util.roundToNextHalfHour
+import io.jitrapon.glom.base.util.toDateString
+import io.jitrapon.glom.base.util.toRelativeDayString
+import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.BoardInjector
 import io.jitrapon.glom.board.BoardViewModel
@@ -25,7 +49,9 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
 import io.jitrapon.glom.board.item.SyncStatus
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.Date
 import javax.inject.Inject
 
 /**
@@ -72,9 +98,6 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable list of event attendees */
     private val observableAttendees = MutableLiveData<List<UserUiModel>>()
 
-    /* observable button model for attend status */
-    private val observableAttendStatus = MutableLiveData<ButtonUiModel>()
-
     /* cached attend status */
     private var attendStatus: EventItemUiModel.AttendStatus = EventItemUiModel.AttendStatus.MAYBE
 
@@ -86,6 +109,15 @@ class EventItemViewModel : BoardItemViewModel() {
 
     /* observable source of this event */
     private val observableSource = MutableLiveData<EventSourceUiModel>()
+
+    /* observable action buttons for date time section */
+    private val observableDateTimeActions = MutableLiveData<ArrayList<ButtonUiModel>>()
+
+    /* observable action buttons for location section */
+    private val observableLocationActions = MutableLiveData<ArrayList<ButtonUiModel>>()
+
+    /* observable action buttons for attendees section */
+    private val observableAttendeesActions = MutableLiveData<ArrayList<ButtonUiModel>>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -357,6 +389,7 @@ class EventItemViewModel : BoardItemViewModel() {
                 itemInfo.let {
                     prevName = it.eventName
                     isNewItem = new
+                    attendStatus = getEventAttendStatus(it.attendees)
                     EventItemDetailUiModel(
                         AndroidString(text = it.eventName, status = editableStatus) to false,
                         getEventDetailDate(it.startTime, true, it.source, it.isFullDay)?.apply { if (!isItemEditable) status = editableStatus },
@@ -367,10 +400,11 @@ class EventItemViewModel : BoardItemViewModel() {
                         getEventDetailLocationLatLng(it.location),
                         getEventDetailAttendeeTitle(it.attendees),
                         getEventDetailAttendees(it.attendees),
-                        getEventDetailAttendStatus(it.attendees),
                         getEventDetailNote(it.note)?.apply { status = editableStatus },
-                        getEventDetailPlanStatus(it.datePollStatus, it.placePollStatus),
-                        getEventDetailSource(it.source)
+                        getEventDetailSource(it.source),
+                        getEventDetailDateTimeActions(),
+                        getEventDetailLocationActions(),
+                        getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                     )
                 }
             }
@@ -384,10 +418,11 @@ class EventItemViewModel : BoardItemViewModel() {
             observableLocationLatLng.value = it.locationLatLng
             observableAttendeeTitle.value = it.attendeeTitle
             observableAttendees.value = it.attendees
-            observableAttendStatus.value = it.attendButton
             observableNote.value = it.note
-            observablePlanStatus.value = it.planButton
             observableSource.value = it.source
+            observableDateTimeActions.value = it.dateTimeActionButtons
+            observableAttendeesActions.value = it.attendeesActionButtons
+            observableLocationActions.value = it.locationActionButtons
         }, {
             handleError(it)
         })
@@ -483,61 +518,51 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Update the attend status for the current user
      */
-    fun setEventDetailAttendStatus() {
-        val buttonText: AndroidString
-        val newStatus = when (attendStatus) {
-            EventItemUiModel.AttendStatus.GOING -> {
-                buttonText = AndroidString(R.string.event_item_join)
-                EventItemUiModel.AttendStatus.MAYBE
-            }
-            EventItemUiModel.AttendStatus.MAYBE -> {
-                buttonText = AndroidString(R.string.event_item_leave)
-                EventItemUiModel.AttendStatus.GOING
-            }
-            EventItemUiModel.AttendStatus.DECLINED -> {
-                buttonText = AndroidString(R.string.event_item_leave)
-                EventItemUiModel.AttendStatus.GOING
-            }
+    private fun setEventDetailAttendStatus() {
+        val nextStatus = when (attendStatus) {
+            EventItemUiModel.AttendStatus.GOING -> EventItemUiModel.AttendStatus.MAYBE
+            EventItemUiModel.AttendStatus.MAYBE -> EventItemUiModel.AttendStatus.GOING
+            EventItemUiModel.AttendStatus.DECLINED -> EventItemUiModel.AttendStatus.GOING
         }
-        val statusCode = when (newStatus) {
-            EventItemUiModel.AttendStatus.GOING -> 2
-            EventItemUiModel.AttendStatus.MAYBE -> 1
-            EventItemUiModel.AttendStatus.DECLINED -> 0
-        }
-        observableAttendStatus.value = observableAttendStatus.value!!.apply {
-            text = null
-            status = UiModel.Status.LOADING
-        }
-        interactor.setItemDetailAttendStatus(statusCode) {
+
+        observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.LOADING)
+
+        interactor.setItemDetailAttendStatus(nextStatus) {
             when (it) {
                 is AsyncSuccessResult -> {
-                    it.result?.let {
-                        observableAttendees.value = getEventDetailAttendees(it)
-                        observableAttendeeTitle.value = getEventDetailAttendeeTitle(it)
-                    }
-                    attendStatus = newStatus
-                    observableAttendStatus.value = observableAttendStatus.value!!.apply {
-                        text = buttonText
-                        status = UiModel.Status.SUCCESS
+                    it.result?.let { userIds ->
+                        attendStatus = getEventAttendStatus(userIds)
+                        observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
+                        observableAttendees.value = getEventDetailAttendees(userIds)
+                        observableAttendeeTitle.value = getEventDetailAttendeeTitle(userIds)
                     }
                 }
                 is AsyncErrorResult -> {
-                    observableAttendStatus.value = observableAttendStatus.value!!.apply {
-                        text = null
-                        status = UiModel.Status.SUCCESS
-                    }
                     handleError(it.error)
                 }
             }
         }
     }
 
-    private fun getEventDetailAttendStatus(attendees: List<String>): ButtonUiModel {
-        attendStatus = getEventAttendStatus(attendees)
+    private fun getEventDetailAttendStatus(joinActionItem: ActionItem,
+                                           leaveActionItem: ActionItem,
+                                           status: UiModel.Status): ButtonUiModel {
         return when (attendStatus) {
-            EventItemUiModel.AttendStatus.GOING -> ButtonUiModel(AndroidString(R.string.event_item_leave))
-            EventItemUiModel.AttendStatus.MAYBE -> ButtonUiModel(AndroidString(R.string.event_item_join))
-            EventItemUiModel.AttendStatus.DECLINED -> ButtonUiModel(AndroidString(R.string.event_item_join))
+            EventItemUiModel.AttendStatus.GOING -> ButtonUiModel(
+                AndroidString(leaveActionItem.title),
+                AndroidImage(leaveActionItem.drawable),
+                leaveActionItem,
+                status)
+            EventItemUiModel.AttendStatus.MAYBE -> ButtonUiModel(
+                AndroidString(joinActionItem.title),
+                AndroidImage(joinActionItem.drawable),
+                joinActionItem,
+                status)
+            EventItemUiModel.AttendStatus.DECLINED -> ButtonUiModel(
+                AndroidString(joinActionItem.title),
+                AndroidImage(joinActionItem.drawable),
+                joinActionItem,
+                status)
         }
     }
 
@@ -546,7 +571,8 @@ class EventItemViewModel : BoardItemViewModel() {
             if (interactor.isItemModified()) {
                 observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
                 observableAttendees.value = getEventDetailAttendees(it.attendees)
-                observableAttendStatus.value = getEventDetailAttendStatus(it.attendees)
+                attendStatus = getEventAttendStatus(it.attendees)
+                observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
 
                 observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, it.source, it.isFullDay)
                 observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, it.source, it.isFullDay)
@@ -571,14 +597,9 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.setItemNote(s)
     }
 
-    private fun getEventDetailPlanStatus(datePollStatus: Boolean, placePollStatus: Boolean): ButtonUiModel {
-        return if (datePollStatus || placePollStatus) ButtonUiModel(AndroidString(R.string.event_item_view_plan))
-        else ButtonUiModel(AndroidString(R.string.event_item_plan))
-    }
-
-    fun showEventDetailPlan(name: String) {
+    private fun showEventDetailPlan(name: String) {
         interactor.event.let {
-            it.itemInfo.eventName = name       // update the name to be the currently displayed one
+            it.itemInfo.eventName = name
             observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, it to false)
         }
     }
@@ -844,7 +865,7 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Navigates to the Place Picker widget
      */
-    fun showPlacePicker() {
+    private fun showPlacePicker() {
         observableNavigation.value = Navigation(NAVIGATE_TO_PLACE_PICKER, null)
     }
 
@@ -864,6 +885,62 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns the event name before change
      */
     fun getPreviousName(): String? = prevName
+
+    //endregion
+    //region action buttons
+
+    fun handleActionItem(uiModel: Any?, vararg arguments: Any?) {
+        (uiModel as? ActionItem)?.let {
+            when (it) {
+                ActionItem.PLAN_DATETIME -> {
+                    (arguments.getOrNull(0) as? String)?.let { name ->
+                        showEventDetailPlan(name)
+                    }
+                }
+                ActionItem.PLAN_LOCATION -> {
+                    (arguments.getOrNull(0) as? String)?.let { name ->
+                        showEventDetailPlan(name)
+                    }
+                }
+                ActionItem.MAP -> {
+
+                }
+                ActionItem.DIRECTION -> {
+
+                }
+                ActionItem.CALL -> {
+
+                }
+                ActionItem.JOIN, ActionItem.LEAVE -> {
+                    setEventDetailAttendStatus()
+                }
+                else -> {}
+            }
+        }
+    }
+
+    private fun ActionItem.toUiModel(): ButtonUiModel = ButtonUiModel(AndroidString(title), AndroidImage(drawable), this)
+
+    private fun getEventDetailDateTimeActions(): ArrayList<ButtonUiModel> {
+        return ArrayList<ButtonUiModel>().apply {
+            add(ActionItem.PLAN_DATETIME.toUiModel())
+        }
+    }
+
+    private fun getEventDetailLocationActions(): ArrayList<ButtonUiModel> {
+        return ArrayList<ButtonUiModel>().apply {
+            add(ActionItem.PLAN_LOCATION.toUiModel())
+            add(ActionItem.MAP.toUiModel())
+            add(ActionItem.DIRECTION.toUiModel())
+            add(ActionItem.CALL.toUiModel())
+        }
+    }
+
+    private fun getEventDetailAttendeesActions(status: UiModel.Status): ArrayList<ButtonUiModel> {
+        return ArrayList<ButtonUiModel>().apply {
+            add(getEventDetailAttendStatus(ActionItem.JOIN, ActionItem.LEAVE, status))
+        }
+    }
 
     //endregion
     //region observables
@@ -886,13 +963,17 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableAttendees(): LiveData<List<UserUiModel>> = observableAttendees
 
-    fun getObservableAttendStatus(): LiveData<ButtonUiModel> = observableAttendStatus
-
     fun getObservableNote(): LiveData<AndroidString?> = observableNote
 
     fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
     fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
+
+    fun getObservableDateTimeActions(): LiveData<ArrayList<ButtonUiModel>> = observableDateTimeActions
+
+    fun getObservableLocationActions(): LiveData<ArrayList<ButtonUiModel>> = observableLocationActions
+
+    fun getObservableAttendeesActions(): LiveData<ArrayList<ButtonUiModel>> = observableAttendeesActions
 
     override fun cleanUp() {
         interactor.cleanup()
