@@ -141,14 +141,22 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_source_text_view.setOnClickListener {
             viewModel.showEventDetailSources()
         }
-        event_item_datetime_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_datetime_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_datetime_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_location_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_location_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_location_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_attendees_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag) }
-        event_item_attendees_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag) }
+        event_item_datetime_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_datetime_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_datetime_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_location_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_location_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_location_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_attendees_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
+        event_item_attendees_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag,
+            *getCommonViewActionArguments().toTypedArray()) }
     }
 
     override fun onResume() {
@@ -459,6 +467,14 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 viewModel.selectPlace(parent.getItemAtPosition(position) as Suggestion)
             }
         }
+    }
+
+    private fun getCommonViewActionArguments(): List<String?> {
+        return listOf(
+            event_item_title.text?.toString(),
+            event_item_location_primary.text?.toString(),
+            event_item_note.text?.toString()
+        )
     }
 
     //endregion

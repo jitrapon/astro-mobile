@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.setTime
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.*
@@ -38,7 +39,7 @@ class BoardLocalDataSource(database: BoardDatabase,
                 .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
                 .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
                 .subscribeOn(Schedulers.io()),
-                getEventsFromDeviceCalendars(Date().addDay(0), Date().addDay(30))
+                getEventsFromDeviceCalendars(Date().setTime(0, 0), Date().addDay(30))
                         .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
                         .doOnNext { AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms") }
                         .subscribeOn(Schedulers.io()),

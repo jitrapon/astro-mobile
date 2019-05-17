@@ -539,6 +539,8 @@ class EventItemViewModel : BoardItemViewModel() {
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
+
+                    observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                 }
             }
         }
