@@ -12,46 +12,17 @@ import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.AndroidImage
-import io.jitrapon.glom.base.model.AndroidString
-import io.jitrapon.glom.base.model.AnimationItem
-import io.jitrapon.glom.base.model.AsyncErrorResult
-import io.jitrapon.glom.base.model.AsyncSuccessResult
-import io.jitrapon.glom.base.model.ButtonUiModel
-import io.jitrapon.glom.base.model.DateTimePickerUiModel
-import io.jitrapon.glom.base.model.LiveEvent
-import io.jitrapon.glom.base.model.MessageLevel
-import io.jitrapon.glom.base.model.Navigation
-import io.jitrapon.glom.base.model.PlaceInfo
-import io.jitrapon.glom.base.model.PreferenceItemUiModel
-import io.jitrapon.glom.base.model.PresentChoices
-import io.jitrapon.glom.base.model.Snackbar
-import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.InputValidator
-import io.jitrapon.glom.base.util.addDay
-import io.jitrapon.glom.base.util.addHour
-import io.jitrapon.glom.base.util.fullAddress
-import io.jitrapon.glom.base.util.isNullOrEmpty
-import io.jitrapon.glom.base.util.latLng
-import io.jitrapon.glom.base.util.roundToNextHalfHour
-import io.jitrapon.glom.base.util.toDateString
-import io.jitrapon.glom.base.util.toRelativeDayString
-import io.jitrapon.glom.base.util.toTimeString
+import io.jitrapon.glom.base.model.*
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.base.viewmodel.runAsync
-import io.jitrapon.glom.board.BoardInjector
-import io.jitrapon.glom.board.BoardViewModel
-import io.jitrapon.glom.board.Const
+import io.jitrapon.glom.board.*
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
-import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
 import io.jitrapon.glom.board.item.SyncStatus
-import java.util.ArrayList
-import java.util.Calendar
-import java.util.Date
+import java.util.*
 import javax.inject.Inject
 
 /**
@@ -847,12 +818,12 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Navigates to a third-party map application
      */
-    fun navigateToMap() {
+    fun navigateToMap(withDirection: Boolean) {
         observableViewAction.value = interactor.getItemLocation()?.let {
             val latLng = if (it.latitude != null && it.longitude != null) {
                 LatLng(it.latitude, it.longitude)
             } else null
-            Navigation(Const.NAVIGATE_TO_MAP_SEARCH, Triple(latLng, it.name, it.googlePlaceId))
+            Navigation(Const.NAVIGATE_TO_MAP_SEARCH, NavigationArguments(latLng, it.name, it.googlePlaceId, withDirection))
         }
     }
 
@@ -905,10 +876,10 @@ class EventItemViewModel : BoardItemViewModel() {
                     }
                 }
                 ActionItem.MAP -> {
-
+                    navigateToMap(false)
                 }
                 ActionItem.DIRECTION -> {
-
+                    navigateToMap(true)
                 }
                 ActionItem.CALL -> {
 

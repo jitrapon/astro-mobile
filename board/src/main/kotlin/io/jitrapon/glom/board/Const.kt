@@ -1,5 +1,7 @@
 package io.jitrapon.glom.board
 
+import com.google.android.gms.maps.model.LatLng
+
 /**
  * All constants for this module that should not belong in Strings.xml
  * i.e. used for storing constants such as Intent ACTIONS, EXTRAS, REQUEST CODES, etc.
@@ -22,3 +24,8 @@ object Const {
     const val EXTRA_BOARD_ITEM_TYPE = "android.intent.EXTRA_BOARD_ITEM_TYPE"
     const val BOARD_ITEM_PREFERENCE_REQUEST_CODE = 1004
 }
+
+data class NavigationArguments(val latLng: LatLng?,
+                               val query: String?,
+                               val placeId: String?,
+                               val withDirection: Boolean)

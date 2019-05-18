@@ -13,7 +13,6 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -21,6 +20,7 @@ import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
+import io.jitrapon.glom.board.NavigationArguments
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemActivity
@@ -205,7 +205,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         with(map) {
             setStyle(this@EventItemActivity, R.raw.map_style)
             setOnMapClickListener {
-                viewModel.navigateToMap()
+                viewModel.navigateToMap(false)
             }
 
             // if there is a tag previously, set the location now
@@ -499,27 +499,44 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     override fun navigate(action: String, payload: Any?) {
         if (Const.NAVIGATE_TO_MAP_SEARCH == action) {
-            (payload as? Triple<*,*,*>).let {
-                launchMap(it?.first as? LatLng, it?.second as? String, it?.third as? String)
+            (payload as? NavigationArguments).let {
+                launchMap(it?.latLng, it?.query, it?.placeId, it?.withDirection ?: false)
             }
         }
     }
 
-    private fun launchMap(latLng: LatLng?, query: String?, placeId: String?) {
+    private fun launchMap(latLng: LatLng?, query: String?, placeId: String?, withDirection: Boolean = false) {
         var url = Uri.Builder().apply {
             scheme("https")
             authority("www.google.com")
             appendPath("maps")
-            appendPath("search")
-            appendQueryParameter("api", "1")
-            if (latLng != null) {
-                appendQueryParameter("query", "${latLng.latitude},${latLng.longitude}")
+
+            if (withDirection) {
+                appendPath("dir")
+                appendQueryParameter("api", "1")
+                if (latLng != null) {
+                    appendQueryParameter("destination", "${latLng.latitude},${latLng.longitude}")
+                }
+                else if (!query.isNullOrEmpty()){
+                    appendQueryParameter("destination", query)
+                }
+                if (!TextUtils.isEmpty(placeId)) {
+                    appendQueryParameter("destination_place_id", placeId)
+                }
+//                appendQueryParameter("dir_action", "navigate")
             }
             else {
-                appendQueryParameter("query", if (TextUtils.isEmpty(query)) "place" else query)
-            }
-            if (!TextUtils.isEmpty(placeId)) {
-                appendQueryParameter("query_place_id", placeId)
+                appendPath("search")
+                appendQueryParameter("api", "1")
+                if (latLng != null) {
+                    appendQueryParameter("query", "${latLng.latitude},${latLng.longitude}")
+                }
+                else if (!query.isNullOrEmpty()){
+                    appendQueryParameter("query", query)
+                }
+                if (!TextUtils.isEmpty(placeId)) {
+                    appendQueryParameter("query_place_id", placeId)
+                }
             }
         }.toString()
         val indexOfQueryStart = url.indexOf('?')
