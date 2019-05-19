@@ -399,18 +399,18 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // observe on action buttons
             getObservableDateTimeActions().observe(this@EventItemActivity, Observer {
-                it.getOrNull(0)?.let(event_item_datetime_action_button_1::applyState)
-                it.getOrNull(1)?.let(event_item_datetime_action_button_2::applyState)
-                it.getOrNull(2)?.let(event_item_datetime_action_button_3::applyState)
+                it.getOrNull(0).let(event_item_datetime_action_button_1::applyState)
+                it.getOrNull(1).let(event_item_datetime_action_button_2::applyState)
+                it.getOrNull(2).let(event_item_datetime_action_button_3::applyState)
             })
             getObservableLocationActions().observe(this@EventItemActivity, Observer {
-                it.getOrNull(0)?.let(event_item_location_action_button_1::applyState)
-                it.getOrNull(1)?.let(event_item_location_action_button_2::applyState)
-                it.getOrNull(2)?.let(event_item_location_action_button_3::applyState)
+                it.getOrNull(0).let(event_item_location_action_button_1::applyState)
+                it.getOrNull(1).let(event_item_location_action_button_2::applyState)
+                it.getOrNull(2).let(event_item_location_action_button_3::applyState)
             })
             getObservableAttendeesActions().observe(this@EventItemActivity, Observer {
-                it.getOrNull(0)?.let(event_item_attendees_action_button_1::applyState)
-                it.getOrNull(1)?.let(event_item_attendees_action_button_2::applyState)
+                it.getOrNull(0).let(event_item_attendees_action_button_1::applyState)
+                it.getOrNull(1).let(event_item_attendees_action_button_2::applyState)
             })
         }
     }

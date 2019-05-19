@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.ui.widget
 import android.content.Context
 import android.graphics.PorterDuff
 import android.util.AttributeSet
+import android.view.View
 import androidx.appcompat.widget.AppCompatButton
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.ButtonUiModel
@@ -25,12 +26,18 @@ class GlomButton : AppCompatButton {
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(context, attrs, defStyleAttr)
 
-    fun applyState(uiModel: ButtonUiModel) {
-        isEnabled = uiModel.status != UiModel.Status.LOADING
-        uiModel.text?.let {
-            text = context.getString(it)
+    fun applyState(uiModel: ButtonUiModel?) {
+        if (uiModel == null) {
+            visibility = View.GONE
         }
-        tag = uiModel.tag
+        else {
+            visibility = View.VISIBLE
+            isEnabled = uiModel.status != UiModel.Status.LOADING
+            uiModel.text?.let {
+                text = context.getString(it)
+            }
+            tag = uiModel.tag
+        }
     }
 
     fun setPositiveTheme() {

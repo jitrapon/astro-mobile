@@ -831,8 +831,19 @@ class EventItemViewModel : BoardItemViewModel() {
      * Update the location text
      */
     fun onLocationTextChanged(charSequence: CharSequence) {
-        if (charSequence.isEmpty()) interactor.setItemLocation(null)
-        else interactor.setItemLocation(charSequence)
+        if (charSequence.isEmpty()) {
+            interactor.setItemLocation(null)
+
+            observableLocationActions.value = getEventDetailLocationActions()
+        }
+        else {
+            interactor.setItemLocation(charSequence)
+
+            val actions = observableLocationActions.value
+            if (!actions.isNullOrEmpty() && actions!!.size < 3) {
+                observableLocationActions.value = getEventDetailLocationActions()
+            }
+        }
     }
 
     /**
