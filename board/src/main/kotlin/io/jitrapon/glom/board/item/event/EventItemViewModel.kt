@@ -902,10 +902,10 @@ class EventItemViewModel : BoardItemViewModel() {
 
     private fun getEventDetailLocationActions(): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
+            val hasLocation = interactor.event.itemInfo.location != null
             add(ActionItem.PLAN_LOCATION.toUiModel())
             add(ActionItem.MAP.toUiModel())
-            add(ActionItem.DIRECTION.toUiModel())
-            add(ActionItem.CALL.toUiModel())
+            if (hasLocation) add(ActionItem.DIRECTION.toUiModel())
         }
     }
 
