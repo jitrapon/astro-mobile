@@ -344,7 +344,6 @@
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
                     style="@style/Widget.Glom.Button.Flat"
-                    android:theme="@style/Theme.Glom.Button.Raised.Colored"
                     android:id="@+id/event_item_attendees_action_button_1"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"
@@ -356,7 +355,6 @@
 
                 <io.jitrapon.glom.base.ui.widget.GlomButton
                     style="@style/Widget.Glom.Button.Flat"
-                    android:theme="@style/Theme.Glom.Button.Raised.Colored"
                     android:id="@+id/event_item_attendees_action_button_2"
                     app:layout_constraintTop_toBottomOf="@+id/event_item_attendees"
                     android:layout_width="wrap_content"

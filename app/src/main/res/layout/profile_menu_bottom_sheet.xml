@@ -29,8 +29,7 @@
         android:maxLines="2" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.Colored"
+        style="@style/Widget.Glom.Button.Raised"
         android:id="@+id/profile_menu_bottom_sheet_auth_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

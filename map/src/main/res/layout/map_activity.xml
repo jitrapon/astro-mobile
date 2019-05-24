@@ -21,24 +21,43 @@
     <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Flat"
         android:id="@+id/map_button1"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="30dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="flat"
+        android:text="Label"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="16dp" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.Colored"
+        style="@style/Widget.Glom.Button.Outlined"
         android:id="@+id/map_button2"
-        app:layout_constraintTop_toBottomOf="@+id/map_button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="raised normal"
+        android:text="Label"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map_button1" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        style="@style/Widget.Glom.Button.Flat.Colored"
+        android:id="@+id/map_button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Label"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map_button2" />
+
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:id="@+id/map_button4"
+        style="@style/Widget.Glom.Button.Raised"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Label"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map_button3" />
 
     <include
         android:id="@+id/map_bottom_navigation"

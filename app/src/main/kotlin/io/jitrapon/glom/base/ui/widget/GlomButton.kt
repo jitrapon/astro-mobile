@@ -5,6 +5,7 @@ import android.graphics.PorterDuff
 import android.util.AttributeSet
 import android.view.View
 import androidx.appcompat.widget.AppCompatButton
+import com.google.android.material.button.MaterialButton
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.ButtonUiModel
 import io.jitrapon.glom.base.model.UiModel
@@ -18,7 +19,7 @@ import io.jitrapon.glom.base.util.getString
  *
  * Created by Jitrapon
  */
-class GlomButton : AppCompatButton {
+class GlomButton : MaterialButton {
 
     constructor(context: Context): super(context)
 
@@ -42,7 +43,7 @@ class GlomButton : AppCompatButton {
 
     fun setPositiveTheme() {
         background.setColorFilter(context.colorPrimary(), PorterDuff.Mode.MULTIPLY)
-        setTextColor(context.color(io.jitrapon.glom.R.color.white))
+        setTextColor(context.color(R.color.white))
     }
 
     fun setNegativeTheme() {

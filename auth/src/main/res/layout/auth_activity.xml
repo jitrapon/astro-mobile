@@ -85,9 +85,9 @@
         android:textColor="@color/white"
         android:visibility="gone" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+    <androidx.appcompat.widget.AppCompatButton
+        style="@style/Widget.Glom.Button.Legacy.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Legacy.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
         android:foreground="?android:attr/selectableItemBackground"
         android:id="@+id/auth_continue_with_email"
@@ -101,9 +101,9 @@
         android:layout_marginEnd="42dp"
         android:layout_marginBottom="18dp" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+    <androidx.appcompat.widget.AppCompatButton
+        style="@style/Widget.Glom.Button.Legacy.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Legacy.Raised.White.Round"
         android:background="@drawable/rounded_corner_background_transparent"
         android:foreground="?android:attr/selectableItemBackground"
         android:id="@+id/auth_create_account"
@@ -132,9 +132,9 @@
         app:titleColor="@color/white"
         app:lineColor="@color/white" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+    <androidx.appcompat.widget.AppCompatButton
+        style="@style/Widget.Glom.Button.Legacy.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Legacy.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
         android:backgroundTint="@color/com_facebook_button_login_background_color"
         android:foreground="?android:attr/selectableItemBackground"
@@ -155,9 +155,9 @@
         android:textColor="@color/white"
         android:textAllCaps="false" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+    <androidx.appcompat.widget.AppCompatButton
+        style="@style/Widget.Glom.Button.Legacy.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Legacy.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
         android:id="@+id/auth_google_button"
         android:layout_width="0dp"
@@ -175,9 +175,9 @@
         android:textColor="@color/common_google_signin_btn_text_light"
         android:textAllCaps="false" />
 
-    <io.jitrapon.glom.base.ui.widget.GlomButton
-        style="@style/Widget.Glom.Button.Raised.Colored"
-        android:theme="@style/Theme.Glom.Button.Raised.White.Round"
+    <androidx.appcompat.widget.AppCompatButton
+        style="@style/Widget.Glom.Button.Legacy.Raised.Colored"
+        android:theme="@style/Theme.Glom.Button.Legacy.Raised.White.Round"
         android:background="@drawable/rounded_corner_background"
         android:backgroundTint="@color/spring_green"
         android:id="@+id/auth_line_button"
