@@ -22,6 +22,8 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_DATE_PAGE
+import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_PLACE_PAGE
 import java.util.*
 import javax.inject.Inject
 
@@ -74,9 +76,6 @@ class EventItemViewModel : BoardItemViewModel() {
 
     /* observable event note */
     private val observableNote = MutableLiveData<AndroidString?>()
-
-    /* observable plan status */
-    private val observablePlanStatus = MutableLiveData<ButtonUiModel>()
 
     /* observable source of this event */
     private val observableSource = MutableLiveData<EventSourceUiModel>()
@@ -373,8 +372,8 @@ class EventItemViewModel : BoardItemViewModel() {
                         getEventDetailAttendees(it.attendees),
                         getEventDetailNote(it.note)?.apply { status = editableStatus },
                         getEventDetailSource(it.source),
-                        getEventDetailDateTimeActions(),
-                        getEventDetailLocationActions(),
+                        getEventDetailDateTimeActions(it.datePollStatus),
+                        getEventDetailLocationActions(it.location, it.placePollStatus),
                         getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                     )
                 }
@@ -570,10 +569,10 @@ class EventItemViewModel : BoardItemViewModel() {
         interactor.setItemNote(s)
     }
 
-    private fun showEventDetailPlan(name: String) {
+    private fun showEventDetailPlan(name: String, page: Int) {
         interactor.event.let {
             it.itemInfo.eventName = name
-            observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, it to false)
+            observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, Triple(it, false, page))
         }
     }
 
@@ -815,6 +814,10 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+    private fun navigateToPlacePicker() {
+        observableViewAction.value = Navigation(NAVIGATE_TO_PLACE_PICKER)
+    }
+
     /**
      * Navigates to a third-party map application
      */
@@ -834,14 +837,16 @@ class EventItemViewModel : BoardItemViewModel() {
         if (charSequence.isEmpty()) {
             interactor.setItemLocation(null)
 
-            observableLocationActions.value = getEventDetailLocationActions()
+            observableLocationActions.value = getEventDetailLocationActions(interactor.event.itemInfo.location,
+                    interactor.event.itemInfo.placePollStatus)
         }
         else {
+            val prevLocation = interactor.event.itemInfo.location
             interactor.setItemLocation(charSequence)
 
-            val actions = observableLocationActions.value
-            if (!actions.isNullOrEmpty() && actions!!.size < 3) {
-                observableLocationActions.value = getEventDetailLocationActions()
+            if (prevLocation == null && interactor.event.itemInfo.location != null) {
+                observableLocationActions.value = getEventDetailLocationActions(interactor.event.itemInfo.location,
+                        interactor.event.itemInfo.placePollStatus)
             }
         }
     }
@@ -878,13 +883,16 @@ class EventItemViewModel : BoardItemViewModel() {
             when (it) {
                 ActionItem.PLAN_DATETIME -> {
                     (arguments.getOrNull(0) as? String)?.let { name ->
-                        showEventDetailPlan(name)
+                        showEventDetailPlan(name, PLAN_EVENT_DATE_PAGE)
                     }
                 }
                 ActionItem.PLAN_LOCATION -> {
                     (arguments.getOrNull(0) as? String)?.let { name ->
-                        showEventDetailPlan(name)
+                        showEventDetailPlan(name, PLAN_EVENT_PLACE_PAGE)
                     }
+                }
+                ActionItem.PICK_PLACE -> {
+                    navigateToPlacePicker()
                 }
                 ActionItem.MAP -> {
                     navigateToMap(false)
@@ -903,20 +911,23 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun ActionItem.toUiModel(): ButtonUiModel = ButtonUiModel(AndroidString(title), AndroidImage(drawable), this)
+    private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
+            ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
 
-    private fun getEventDetailDateTimeActions(): ArrayList<ButtonUiModel> {
+    private fun getEventDetailDateTimeActions(status: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
-            add(ActionItem.PLAN_DATETIME.toUiModel())
+            add(ActionItem.PLAN_DATETIME.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
         }
     }
 
-    private fun getEventDetailLocationActions(): ArrayList<ButtonUiModel> {
+    private fun getEventDetailLocationActions(location: EventLocation?, status: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
-            val hasLocation = interactor.event.itemInfo.location != null
-            add(ActionItem.PLAN_LOCATION.toUiModel())
-            add(ActionItem.MAP.toUiModel())
-            if (hasLocation) add(ActionItem.DIRECTION.toUiModel())
+            val hasLocationStatus = if (!location?.name.isNullOrEmpty() ||
+                    (location?.latitude != null && location.longitude != null)) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS
+            add(ActionItem.PLAN_LOCATION.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.PICK_PLACE.toUiModel())
+            add(ActionItem.MAP.toUiModel(hasLocationStatus))
+            add(ActionItem.DIRECTION.toUiModel(hasLocationStatus))
         }
     }
 
@@ -948,8 +959,6 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableAttendees(): LiveData<List<UserUiModel>> = observableAttendees
 
     fun getObservableNote(): LiveData<AndroidString?> = observableNote
-
-    fun getObservablePlanStatus(): LiveData<ButtonUiModel> = observablePlanStatus
 
     fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
 

@@ -6,13 +6,16 @@ import android.os.Bundle
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import io.jitrapon.glom.base.ui.BaseActivity
-import io.jitrapon.glom.base.ui.widget.GlomProgressDialog
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.event.EventItem
-import io.jitrapon.glom.board.item.event.widget.PlacePicker
 import kotlinx.android.synthetic.main.plan_event_activity.*
+
+const val EXTRA_FIRST_VISIBLE_PAGE = "android.intent.EXTRA_FIRST_VISIBLE_PAGE"
+const val PLAN_EVENT_OVERVIEW_PAGE = 0
+const val PLAN_EVENT_DATE_PAGE = 1
+const val PLAN_EVENT_PLACE_PAGE = 2
 
 /**
  * This activity hosts the entry point to the event overview, as well as, date and place polls for an event.
@@ -23,8 +26,6 @@ import kotlinx.android.synthetic.main.plan_event_activity.*
 class PlanEventActivity : BaseActivity() {
 
     private lateinit var viewModel: PlanEventViewModel
-
-    private val placePicker: PlacePicker by lazy { PlacePicker() }
 
     //region lifecycle
 
@@ -70,7 +71,7 @@ class PlanEventActivity : BaseActivity() {
                         finish()
                     }
                     else if (it.action == Const.NAVIGATE_TO_PLACE_PICKER) {
-                        placePicker.launch(this@PlanEventActivity, Const.PLACE_PICKER_RESULT_CODE)
+                        //TODO
                     }
                 }
             })
@@ -84,11 +85,11 @@ class PlanEventActivity : BaseActivity() {
     private fun createViewPager() {
         event_plan_viewpager.apply {
             offscreenPageLimit = 2
-            val firstVisiblePageIndex = viewModel.getFirstVisiblePageIndex()
+            val firstVisiblePageIndex = viewModel.getFirstVisiblePageIndex(intent.getIntExtra(EXTRA_FIRST_VISIBLE_PAGE, -1))
             createWithFragments(this@PlanEventActivity, arrayOf(
                     PlanEventOverviewFragment.newInstance(),
-                    PlanEventDateFragment.newInstance(firstVisiblePageIndex == 1),
-                    PlanEventPlaceFragment.newInstance(firstVisiblePageIndex == 2)))
+                    PlanEventDateFragment.newInstance(firstVisiblePageIndex == PLAN_EVENT_DATE_PAGE),
+                    PlanEventPlaceFragment.newInstance(firstVisiblePageIndex == PLAN_EVENT_PLACE_PAGE)))
             doOnFragmentSelected<PlanEventDateFragment>(supportFragmentManager) { it.onVisible() }
             doOnFragmentSelected<PlanEventPlaceFragment>(supportFragmentManager) { it.onVisible() }
             setCurrentItem(firstVisiblePageIndex, false)
@@ -106,7 +107,8 @@ class PlanEventActivity : BaseActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == Const.PLACE_PICKER_RESULT_CODE) {
-            viewModel.addPlaceToPoll(placePicker.getPlaceFromResult(this@PlanEventActivity, resultCode, data))
+            //TODO
+//            viewModel.addPlaceToPoll()
         }
     }
 

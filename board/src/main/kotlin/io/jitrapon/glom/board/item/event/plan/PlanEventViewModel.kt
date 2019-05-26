@@ -141,9 +141,10 @@ class PlanEventViewModel : BaseViewModel() {
         observableNavigation.value = Navigation(Const.NAVIGATE_BACK, if (interactor.isItemModified()) interactor.event else null)
     }
 
-    fun getFirstVisiblePageIndex(): Int {
+    fun getFirstVisiblePageIndex(defaultPage: Int = -1): Int {
         return interactor.event.itemInfo.let {
             when {
+                defaultPage != -1 -> defaultPage
                 it.datePollStatus -> 1
                 it.placePollStatus -> 2
                 else -> 0
@@ -183,8 +184,8 @@ class PlanEventViewModel : BaseViewModel() {
      */
     private fun getJoinButtonStatus(): ButtonUiModel {
         return if (isUserAttending)
-            ButtonUiModel(AndroidString(R.string.event_item_action_leave), null, UiModel.Status.NEGATIVE)
-        else ButtonUiModel(AndroidString(R.string.event_item_action_join), null, UiModel.Status.POSITIVE)
+            ButtonUiModel(AndroidString(R.string.event_item_action_leave), null, null, UiModel.Status.NEGATIVE)
+        else ButtonUiModel(AndroidString(R.string.event_item_action_join), null, null, UiModel.Status.POSITIVE)
     }
 
     /**

@@ -55,4 +55,10 @@
         <item name="checkedIconVisible">false</item>
     </style>
 
+    <style name="ImageButton.BoardItem" parent="Widget.Glom.Button.Flat" >
+        <item name="android:layout_width">@dimen/board_item_action_button_size</item>
+        <item name="android:layout_height">@dimen/board_item_action_button_size</item>
+        <item name="android:background">?selectableItemBackgroundBorderless</item>
+    </style>
+
 </resources>

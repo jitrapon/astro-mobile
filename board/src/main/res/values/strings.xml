@@ -80,4 +80,5 @@
     <string name="date_picker_collapsed_view">date_picker_collapsed_view</string>
     <string name="date_picker_expanded_view">date_picker_expanded_view</string>
     <string name="event_item_action_call_place">call</string>
+    <string name="event_item_pick_place">search location</string>
 </resources>

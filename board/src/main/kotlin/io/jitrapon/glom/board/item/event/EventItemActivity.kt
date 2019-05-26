@@ -19,17 +19,17 @@ import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoratio
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
-import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
 import io.jitrapon.glom.board.NavigationArguments
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemActivity
 import io.jitrapon.glom.board.item.BoardItemViewModelStore
 import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
+import io.jitrapon.glom.board.item.event.placepicker.PlacePickerActivity
+import io.jitrapon.glom.board.item.event.plan.EXTRA_FIRST_VISIBLE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
-import io.jitrapon.glom.board.item.event.widget.PlacePicker
 import io.jitrapon.glom.board.item.event.widget.STYLE_BOTTOM_SHEET
 import kotlinx.android.synthetic.main.event_item_activity.*
 
@@ -61,9 +61,6 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
     /* Google Map object */
     private var map: GoogleMap? = null
-
-    /* Place picker widget */
-    private val placePicker: PlacePicker by lazy { PlacePicker() }
 
     //region lifecycle
 
@@ -153,6 +150,8 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             *getCommonViewActionArguments().toTypedArray()) }
         event_item_location_action_button_3.setOnClickListener { viewModel.handleActionItem(it.tag,
             *getCommonViewActionArguments().toTypedArray()) }
+        event_item_location_action_button_4.setOnClickListener { viewModel.handleActionItem(it.tag,
+                *getCommonViewActionArguments().toTypedArray()) }
         event_item_attendees_action_button_1.setOnClickListener { viewModel.handleActionItem(it.tag,
             *getCommonViewActionArguments().toTypedArray()) }
         event_item_attendees_action_button_2.setOnClickListener { viewModel.handleActionItem(it.tag,
@@ -374,15 +373,13 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // observe on navigation event
             getObservableNavigation().observe(this@EventItemActivity, Observer {
                 if (it.action == NAVIGATE_TO_EVENT_PLAN) {
-                    val (boardItem, isNewItem) = it.payload as Pair<*, *>
+                    val (boardItem, isNewItem, firstVisiblePage) = it.payload as Triple<*, *, *>
 
                     startActivity(PlanEventActivity::class.java, Const.PLAN_EVENT_REQUEST_CODE, {
                         putExtra(Const.EXTRA_BOARD_ITEM, boardItem as EventItem)
                         putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, isNewItem as Boolean)
+                        putExtra(EXTRA_FIRST_VISIBLE_PAGE, firstVisiblePage as Int)
                     }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
-                }
-                else if (it.action == NAVIGATE_TO_PLACE_PICKER) {
-                    placePicker.launch(this@EventItemActivity, Const.PLACE_PICKER_RESULT_CODE)
                 }
             })
 
@@ -407,6 +404,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 it.getOrNull(0).let(event_item_location_action_button_1::applyState)
                 it.getOrNull(1).let(event_item_location_action_button_2::applyState)
                 it.getOrNull(2).let(event_item_location_action_button_3::applyState)
+                it.getOrNull(3).let(event_item_location_action_button_4::applyState)
             })
             getObservableAttendeesActions().observe(this@EventItemActivity, Observer {
                 it.getOrNull(0).let(event_item_attendees_action_button_1::applyState)
@@ -487,7 +485,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             }
         }
         else if (requestCode == Const.PLACE_PICKER_RESULT_CODE) {
-            viewModel.selectPlace(placePicker.getPlaceFromResult(this@EventItemActivity, resultCode, data))
+//            viewModel.selectPlace()
         }
     }
 
@@ -502,6 +500,11 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             (payload as? NavigationArguments).let {
                 launchMap(it?.latLng, it?.query, it?.placeId, it?.withDirection ?: false)
             }
+        }
+        else if (Const.NAVIGATE_TO_PLACE_PICKER == action) {
+            startActivity(PlacePickerActivity::class.java, Const.PLACE_PICKER_RESULT_CODE, {
+
+            }, animTransition = io.jitrapon.glom.R.anim.slide_up to 0)
         }
     }
 

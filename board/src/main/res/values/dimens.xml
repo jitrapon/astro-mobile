@@ -17,6 +17,7 @@
     <dimen name="card_expand_top_margin">280dp</dimen>
     <dimen name="card_expand_horizontal_margin">10dp</dimen>
     <dimen name="card_expand_space_margin">10dp</dimen>
+    <dimen name="board_item_action_button_size">52dp</dimen>
 
     <!-- event plan -->
     <dimen name="event_plan_name_height">176dp</dimen>

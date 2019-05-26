@@ -37,7 +37,7 @@
         app:layout_constraintTop_toTopOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintBottom_toBottomOf="@+id/profile_menu_bottom_sheet_user_avatar"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="@dimen/bottom_sheet_header_item_margin"/>
+        android:layout_marginEnd="@dimen/bottom_sheet_header_item_margin" />
 
     <View
         android:id="@+id/profile_menu_bottom_sheet_line_divider_top"
