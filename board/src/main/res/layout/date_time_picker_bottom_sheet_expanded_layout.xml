@@ -13,15 +13,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" >
 
-        <TimePicker
-            android:id="@+id/date_time_picker_bottom_sheet_timepicker"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:timePickerMode="spinner"
-            android:numbersSelectorColor="?colorPrimary"
-            android:scaleX="1.1"
-            android:scaleY="1.1"/>
-
         <io.jitrapon.glom.board.item.event.widget.GlomCalendarView
             android:id="@+id/date_time_picker_bottom_sheet_calendar"
             android:layout_width="match_parent"
@@ -32,6 +23,15 @@
             app:mcv_leftArrowMask="@drawable/ic_left"
             app:mcv_rightArrowMask="@drawable/ic_right"
             app:mcv_arrowColor="@color/warm_grey" />
+
+        <TimePicker
+            android:id="@+id/date_time_picker_bottom_sheet_timepicker"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:timePickerMode="spinner"
+            android:numbersSelectorColor="?colorPrimary"
+            android:scaleX="1.1"
+            android:scaleY="1.1"/>
 
     </LinearLayout>
 
