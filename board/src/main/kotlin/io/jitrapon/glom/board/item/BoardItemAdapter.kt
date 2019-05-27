@@ -247,7 +247,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
         override fun onMapReady(googleMap: GoogleMap?) {
             MapsInitializer.initialize(fragment.context!!.applicationContext)
             map = googleMap ?: return
-            map!!.setStyle(fragment.context!!, R.raw.map_style)
+            map!!.setStyle(fragment.context!!, io.jitrapon.glom.R.raw.map_style)
             setMapLocation()
         }
 
@@ -304,7 +304,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
         private fun setMapLocation() {
             (mapView.tag as? LatLng)?.let {
                 mapView.show()
-                map?.showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
+                map?.showLiteMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
             }
         }
 

@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import dagger.Component
 import io.jitrapon.glom.base.di.BaseComponent
 import io.jitrapon.glom.board.item.event.EventItemViewModel
+import io.jitrapon.glom.board.item.event.placepicker.PlacePickerViewModel
 import io.jitrapon.glom.board.item.event.plan.PlanEventViewModel
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceViewModel
 
@@ -14,4 +15,5 @@ interface BoardComponent {
     fun inject(viewModel: EventItemViewModel)
     fun inject(viewModel: PlanEventViewModel)
     fun inject(viewModel: EventItemPreferenceViewModel)
+    fun inject(viewModel: PlacePickerViewModel)
 }

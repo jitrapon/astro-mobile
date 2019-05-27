@@ -81,4 +81,5 @@
     <string name="date_picker_expanded_view">date_picker_expanded_view</string>
     <string name="event_item_action_call_place">call</string>
     <string name="event_item_pick_place">search location</string>
+    <string name="error_no_location_permission">Enable location permission to view your location. Allow?</string>
 </resources>

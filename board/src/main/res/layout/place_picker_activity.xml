@@ -7,10 +7,9 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <fragment
+        android:id="@+id/place_picker_map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/place_picker_map"
         android:name="com.google.android.gms.maps.SupportMapFragment" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

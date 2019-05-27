@@ -32,4 +32,5 @@
     <!-- permissions -->
     <string name="permission_grant_action">Allow</string>
     <string name="permission_calendar_rationale">Granting calendar permission optionally enables you to choose which of your device calendar to sync. This can be turned off at a later time. Allow now?</string>
+    <string name="permission_location_place_picker_rationale">Granting location permission optionally enables your location to be visible on the map. Your location will remain private and never be shared. Allow now?</string>
 </resources>

@@ -160,6 +160,16 @@ abstract class BaseViewModel : ViewModel() {
     }
 
     /**
+     * Called to show system dialog to allow user to grant permissions to Location
+     */
+    fun showGrantLocationPermissionDialog(onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
+        observableViewAction.value = RequestPermission(
+            AndroidString(R.string.permission_location_place_picker_rationale), onPermissionsGranted,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    }
+
+    /**
      * Observable navigation events
      */
     fun getObservableNavigation(): LiveData<Navigation> = observableNavigation

@@ -202,7 +202,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap?) {
         this.map = map ?: return
         with(map) {
-            setStyle(this@EventItemActivity, R.raw.map_style)
+            setStyle(this@EventItemActivity, io.jitrapon.glom.R.raw.map_style)
             setOnMapClickListener {
                 viewModel.navigateToMap(false)
             }
@@ -210,7 +210,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
             // if there is a tag previously, set the location now
             (event_item_map.tag as? LatLng)?.let {
                 event_item_map.show()
-                showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
+                showLiteMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL)
             }
         }
     }
@@ -341,7 +341,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 else {
                     map.let { map ->
                         if (map != null) event_item_map.show()
-                        map?.showMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL) ?: event_item_map.apply {
+                        map?.showLiteMap(it, EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL) ?: event_item_map.apply {
                             event_item_map.tag = it
                             onCreate(null)
                             getMapAsync(this@EventItemActivity)

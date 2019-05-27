@@ -216,7 +216,8 @@ class GooglePlaceProvider(context: Context) : PlaceProvider {
                         val address = geocoder.getFromLocationName(query, 1).get(0, null)
                         result[query] = address
 
-                        AppLogger.d("Found geocoding result for query=$query")
+                        if (address == null) AppLogger.d("No geocoding result found for query=$query")
+                        else AppLogger.d("Found geocoding result for query=$query")
                     }
                     single.onSuccess(result)
                 }
