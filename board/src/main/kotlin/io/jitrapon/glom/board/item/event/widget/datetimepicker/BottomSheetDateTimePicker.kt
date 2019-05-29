@@ -16,43 +16,14 @@ import com.google.android.material.chip.Chip
 import io.jitrapon.glom.base.model.DateTimePickerUiModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomBottomSheetDialogFragment
-import io.jitrapon.glom.base.util.attrColor
-import io.jitrapon.glom.base.util.color
-import io.jitrapon.glom.base.util.colorPrimary
-import io.jitrapon.glom.base.util.drawable
-import io.jitrapon.glom.base.util.findViewsWithContentDescription
-import io.jitrapon.glom.base.util.getString
-import io.jitrapon.glom.base.util.hide
-import io.jitrapon.glom.base.util.obtainViewModel
-import io.jitrapon.glom.base.util.px
-import io.jitrapon.glom.base.util.setMargin
-import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.event.widget.GlomCalendarView
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_afternoon_choice
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_calendar_view_stub
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_cancel_button
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_displayed_date
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_displayed_time
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_done_button
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_evening_choice
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_full_day_text
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_full_day_toggle
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_morning_choice
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_night_choice
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_layout
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_of_day_layout
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_1
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_2
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_3
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_4
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_5
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_layout
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.date_time_picker_bottom_sheet_expanded_cancel_button
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.date_time_picker_bottom_sheet_expanded_done_button
-import kotlinx.android.synthetic.main.date_time_picker_date_item.view.date_time_picker_date_item_date
-import kotlinx.android.synthetic.main.date_time_picker_date_item.view.date_time_picker_date_item_day_of_week
+import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.*
+import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.*
+import kotlinx.android.synthetic.main.date_time_picker_date_item.view.*
 import java.util.Date
+import kotlin.collections.ArrayList
 
 const val ANIMATION_DELAY = 100L
 
@@ -189,6 +160,16 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
         date_time_picker_bottom_sheet_full_day_text.setOnClickListener { viewModel.toggleFullDay() }
         date_time_picker_bottom_sheet_full_day_toggle.setOnClickListener { viewModel.toggleFullDay() }
+
+        date_time_picker_bottom_sheet_edit_text.apply {
+            hide()
+        }
+        date_time_picker_bottom_sheet_edit_button.setOnClickListener {
+            date_time_picker_bottom_sheet_edit_text.show()
+            date_time_picker_bottom_sheet_edit_text.requestFocus()
+            date_time_picker_bottom_sheet_displayed_date.hide(null, true)
+            date_time_picker_bottom_sheet_displayed_time.hide(null, true)
+        }
     }
 
     override fun onCreateViewModel(activity: FragmentActivity) {

@@ -83,4 +83,5 @@
     <string name="event_item_pick_place">search location</string>
     <string name="error_no_location_permission">Enable location permission to view your location. Allow?</string>
     <string name="event_item_edit_time">Edit Time</string>
+    <string name="event_item_date_time_hint">e.g. tmr afternoon</string>
 </resources>

@@ -5,17 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.DateTimePickerUiModel
 import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.util.addDay
-import io.jitrapon.glom.base.util.dayOfMonth
-import io.jitrapon.glom.base.util.hourOfDay
-import io.jitrapon.glom.base.util.hourToMinute
-import io.jitrapon.glom.base.util.setTime
-import io.jitrapon.glom.base.util.shortWeekday
-import io.jitrapon.glom.base.util.toDateString
-import io.jitrapon.glom.base.util.toDayMonthYear
-import io.jitrapon.glom.base.util.toTimeString
+import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import java.util.Date
+import kotlin.collections.ArrayList
 
 const val SIMPLE_VIEW_NUM_DATE_CHOICES = 5
 
@@ -119,7 +112,7 @@ class DateTimePickerViewModel : BaseViewModel() {
         observableFullDay.value = observableFullDay.value?.not()
     }
 
-    private fun getDate(date: Date): AndroidString = AndroidString(text = date.toDateString(true))
+    private fun getDate(date: Date): AndroidString = AndroidString(text = date.toDateString(false))
 
     private fun getTime(date: Date): AndroidString = AndroidString(text = date.toTimeString())
 
@@ -150,7 +143,7 @@ class DateTimePickerViewModel : BaseViewModel() {
             in 12..16 -> 1 to timeChoices.apply { setTimeChoices(this, date, 12, 16) }
             in 17..20 -> 2 to timeChoices.apply { setTimeChoices(this, date, 17, 20) }
             in 21..23 -> 3 to timeChoices.apply { setTimeChoices(this, date, 21, 23) }
-            else -> -1 to timeChoices
+            else -> 3 to timeChoices.apply { setTimeChoices(this, date, 21, 23) }
         }
     }
 

@@ -35,11 +35,16 @@
         android:id="@+id/date_time_picker_bottom_sheet_edit_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@+id/date_time_picker_bottom_sheet_edit_button"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_edit_button"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top" />
+        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        android:hint="@string/event_item_date_time_hint"
+        android:autofillHints="datetime"
+        tools:targetApi="o"
+        android:inputType="datetime|text"
+        android:imeActionLabel="@string/done_button" />
 
     <TextView
         android:id="@+id/date_time_picker_bottom_sheet_displayed_date"
