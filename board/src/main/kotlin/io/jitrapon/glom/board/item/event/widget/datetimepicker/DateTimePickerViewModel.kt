@@ -89,10 +89,9 @@ class DateTimePickerViewModel : BaseViewModel() {
         else {
             currentDate.time = when (choice) {
                 0 -> currentDate.setTime(8, 0).time
-                1 -> currentDate.setTime(12, 0).time
-                2 -> currentDate.setTime(14, 0).time
-                3 -> currentDate.setTime(18, 0).time
-                4 -> currentDate.setTime(20, 0).time
+                1 -> currentDate.setTime(14, 0).time
+                2 -> currentDate.setTime(18, 0).time
+                3 -> currentDate.setTime(22, 0).time
                 else -> currentDate.time
             }
             observableTime.value = getTime(currentDate)
@@ -137,22 +136,20 @@ class DateTimePickerViewModel : BaseViewModel() {
     }
 
     /**
-     * Morning is choice 0 (7AM - 10:30AM)
-     * Lunchtime is choice 1, (11AM - 12:30PM)
-     * Afternoon is choice 2. (1:00PM - 4:30PM)
-     * Evening is choice 3. (5PM - 7:30PM)
-     * Night is choice 4. (8PM - 12:00AM))
+     * Morning is choice 0
+     * Afternoon is choice 2
+     * Evening is choice 3
+     * Night is choice 4
      *
      * returns -1 when the date is not in any predefined time of day
      */
     private fun getDayTimeChoices(date: Date): Pair<Int, ArrayList<TimeChoiceUiModel>> {
         val timeChoices = ArrayList<TimeChoiceUiModel>()
         return when (date.hourOfDay) {
-            in 0..10 -> 0 to timeChoices.apply { setTimeChoices(this, date, 7, 10) }
-            in 11..12 -> 1 to timeChoices.apply { setTimeChoices(this, date, 11, 12) }
-            in 13..16 -> 2 to timeChoices.apply { setTimeChoices(this, date, 13, 16) }
-            in 17..19 -> 3 to timeChoices.apply { setTimeChoices(this, date, 17, 19) }
-            in 20..23 -> 4 to timeChoices.apply { setTimeChoices(this, date, 20, 23) }
+            in 6..11 -> 0 to timeChoices.apply { setTimeChoices(this, date, 6, 11) }
+            in 12..16 -> 1 to timeChoices.apply { setTimeChoices(this, date, 12, 16) }
+            in 17..20 -> 2 to timeChoices.apply { setTimeChoices(this, date, 17, 20) }
+            in 21..23 -> 3 to timeChoices.apply { setTimeChoices(this, date, 21, 23) }
             else -> -1 to timeChoices
         }
     }
@@ -160,11 +157,8 @@ class DateTimePickerViewModel : BaseViewModel() {
     private fun setTimeChoices(choices: ArrayList<TimeChoiceUiModel>, date: Date, startHour: Int, endHour: Int) {
         for (i in startHour..endHour) {
             val choice1 = date.setTime(i, 0)
-            val choice2 = date.setTime(i, 30)
             choices.add(TimeChoiceUiModel(AndroidString(text = choice1.toTimeString()), choice1,
                 if (date == choice1) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE))
-            choices.add(TimeChoiceUiModel(AndroidString(text = choice2.toTimeString()), choice2,
-                if (date == choice2) UiModel.Status.POSITIVE else UiModel.Status.NEGATIVE))
         }
     }
 

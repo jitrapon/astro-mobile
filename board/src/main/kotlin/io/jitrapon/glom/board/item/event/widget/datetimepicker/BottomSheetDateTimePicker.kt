@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.TimePicker
 import androidx.core.view.children
 import androidx.core.view.forEach
-import androidx.core.view.isVisible
 import androidx.core.view.plusAssign
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -41,11 +40,8 @@ import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_pi
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_full_day_toggle
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_morning_choice
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_night_choice
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_noon_choice
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_layout
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_of_day_layout
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_of_day_scroll_view
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_bottom_sheet_time_scroll_view
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_1
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_2
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.date_time_picker_date_item_3
@@ -177,10 +173,9 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         date_time_picker_date_item_5.setOnClickListener { viewModel.selectDateChoice(4) }
 
         date_time_picker_bottom_sheet_morning_choice.setOnClickListener { viewModel.selectDayTimeChoice(0) }
-        date_time_picker_bottom_sheet_noon_choice.setOnClickListener { viewModel.selectDayTimeChoice(1) }
-        date_time_picker_bottom_sheet_afternoon_choice.setOnClickListener { viewModel.selectDayTimeChoice(2) }
-        date_time_picker_bottom_sheet_evening_choice.setOnClickListener { viewModel.selectDayTimeChoice(3) }
-        date_time_picker_bottom_sheet_night_choice.setOnClickListener { viewModel.selectDayTimeChoice(4) }
+        date_time_picker_bottom_sheet_afternoon_choice.setOnClickListener { viewModel.selectDayTimeChoice(1) }
+        date_time_picker_bottom_sheet_evening_choice.setOnClickListener { viewModel.selectDayTimeChoice(2) }
+        date_time_picker_bottom_sheet_night_choice.setOnClickListener { viewModel.selectDayTimeChoice(3) }
 
         date_time_picker_bottom_sheet_cancel_button.setOnClickListener { dismiss() }
         date_time_picker_bottom_sheet_done_button.setOnClickListener {
@@ -236,10 +231,9 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         viewModel.getObservableDayTimeChoice().observe(viewLifecycleOwner, Observer {
             it?.let {
                 date_time_picker_bottom_sheet_morning_choice.isChecked = it == 0
-                date_time_picker_bottom_sheet_noon_choice.isChecked = it == 1
-                date_time_picker_bottom_sheet_afternoon_choice.isChecked = it == 2
-                date_time_picker_bottom_sheet_evening_choice.isChecked = it == 3
-                date_time_picker_bottom_sheet_night_choice.isChecked = it == 4
+                date_time_picker_bottom_sheet_afternoon_choice.isChecked = it == 1
+                date_time_picker_bottom_sheet_evening_choice.isChecked = it == 2
+                date_time_picker_bottom_sheet_night_choice.isChecked = it == 3
             }
         })
         viewModel.getObservableTimeChoices().observe(viewLifecycleOwner, Observer {

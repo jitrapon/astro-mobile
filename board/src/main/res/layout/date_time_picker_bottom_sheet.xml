@@ -20,9 +20,30 @@
         android:layout_marginTop="2dp"
         android:contentDescription="@string/date_picker_collapsed_view" />
 
+    <ImageButton
+        android:id="@+id/date_time_picker_bottom_sheet_edit_button"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:srcCompat="@drawable/ic_edit"
+        android:background="?selectableItemBackgroundBorderless"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="@dimen/bottom_sheet_item_horizontal_margin" />
+
+    <EditText
+        android:id="@+id/date_time_picker_bottom_sheet_edit_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/date_time_picker_bottom_sheet_edit_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top" />
+
     <TextView
         android:id="@+id/date_time_picker_bottom_sheet_displayed_date"
-        style="@style/TextAppearance.MaterialComponents.Headline5"
+        style="@style/TextAppearance.H1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/bottom_sheet_header_vertical_item_margin"
@@ -33,12 +54,12 @@
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Sun, Jan 20, 2019" />
+        tools:text="Sun, Jan 20" />
 
     <TextView
         tools:visibility="visible"
         android:id="@+id/date_time_picker_bottom_sheet_displayed_time"
-        style="@style/TextAppearance.MaterialComponents.Headline5"
+        style="@style/TextAppearance.H1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ellipsize="end"
@@ -64,7 +85,7 @@
         android:id="@+id/date_time_picker_bottom_sheet_full_day_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_date_item_1"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="@dimen/bottom_sheet_item_horizontal_margin" />
 
@@ -84,6 +105,18 @@
         app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
         app:layout_constraintTop_toTopOf="@+id/date_time_picker_bottom_sheet_full_day_toggle" />
 
+    <io.jitrapon.glom.base.ui.widget.GlomButton
+        android:id="@+id/date_time_picker_edit_time"
+        style="@style/Widget.Glom.Button.Outlined.Icon"
+        app:icon="@drawable/ic_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/event_item_edit_time"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_date_item_1"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin"
+        app:strokeColor="?colorPrimary" />
+
     <include
         tools:visibility="visible"
         android:id="@+id/date_time_picker_date_item_1"
@@ -93,7 +126,7 @@
         app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_2"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
         android:layout_marginTop="@dimen/spacing_normal"
         android:contentDescription="@string/date_picker_collapsed_view" />
 
@@ -148,8 +181,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_date_item_1"
-        android:layout_marginTop="@dimen/spacing_normal"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
         android:scrollbars="none"
         android:contentDescription="@string/date_picker_collapsed_view" >
 
@@ -166,15 +198,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/date_picker_choice_morning"
-                app:chipIcon="@drawable/ic_add" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/date_time_picker_bottom_sheet_noon_choice"
-                style="@style/Chip.DateTimePicker"
-                android:layout_marginStart="@dimen/spacing_normal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/date_picker_choice_noon"
                 app:chipIcon="@drawable/ic_add" />
 
             <com.google.android.material.chip.Chip
