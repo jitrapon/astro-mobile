@@ -144,13 +144,15 @@ class PlanEventDateFragment : BaseFragment() {
                     val datePolls = viewModel.getDatePolls()
                     var foundInDatePoll = false
                     for (poll in datePolls) {
-                        if (poll.calendarStartDate.sameDateAs(picker.defaultDate)) {
+                        if (poll.calendarStartDate.sameDateAs(picker.startDate)) {
                             foundInDatePoll = true
                             break
                         }
                     }
                     if (!foundInDatePoll) {
-                        event_plan_date_calendar.select(picker.defaultDate, false, false)
+                        picker.startDate?.let { date ->
+                            event_plan_date_calendar.select(date, false, false)
+                        }
                     }
                 })
             }

@@ -25,7 +25,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemActivity
 import io.jitrapon.glom.board.item.BoardItemViewModelStore
 import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
-import io.jitrapon.glom.board.item.event.placepicker.PlacePickerActivity
+import io.jitrapon.glom.board.item.event.widget.placepicker.PlacePickerActivity
 import io.jitrapon.glom.board.item.event.plan.EXTRA_FIRST_VISIBLE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
@@ -96,7 +96,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 viewModel.showDateTimePicker(true)
             }
             setOnDrawableClick {
-                viewModel.setDate(null, true)
+                viewModel.clearDate(true)
             }
         }
         event_item_end_time.apply {
@@ -105,7 +105,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 viewModel.showDateTimePicker(false)
             }
             setOnDrawableClick {
-                viewModel.setDate(null, false)
+                viewModel.clearDate(false)
             }
         }
         locationTextWatcher = event_item_location_primary.doOnTextChanged { s, _, _, _ ->
@@ -288,10 +288,10 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
 
             // open a datetime picker
             getObservableDateTimePicker().observe(this@EventItemActivity, Observer {
-                it?.let { (picker, isStartDate) ->
+                it?.let { picker ->
                     dateTimePicker.apply {
-                        show(picker, onDateTimeSet = { date, isFullDay ->
-                            viewModel.setDate(date, isStartDate, isFullDay)
+                        show(picker, onDateTimeSetListener = { startDate, endDate, isFullDay ->
+                            viewModel.setDate(startDate, endDate, isFullDay)
                         }, onCancel = {
                             //do nothing
                         }, style = STYLE_BOTTOM_SHEET)

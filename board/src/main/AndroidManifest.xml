@@ -32,7 +32,7 @@
             android:theme="@style/Theme.Glom.Translucent" />
         <activity android:name=".item.BoardItemPreferenceActivity"
             android:theme="@style/Theme.Glom.OpaqueStatusBar" />
-        <activity android:name=".item.event.placepicker.PlacePickerActivity"
+        <activity android:name=".item.event.widget.placepicker.PlacePickerActivity"
             android:theme="@style/Theme.Glom.Translucent" />
     </application>
 

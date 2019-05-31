@@ -1,4 +1,4 @@
-package io.jitrapon.glom.board.item.event.placepicker
+package io.jitrapon.glom.board.item.event.widget.placepicker
 
 import android.location.LocationProvider
 import androidx.lifecycle.LiveData

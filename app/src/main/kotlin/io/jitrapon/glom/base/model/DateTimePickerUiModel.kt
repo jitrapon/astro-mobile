@@ -7,7 +7,9 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-data class DateTimePickerUiModel(val defaultDate: Date,
+data class DateTimePickerUiModel(val startDate: Date?,
+                                 val endDate: Date?,
+                                 val showStartDateFirst: Boolean,
                                  val minDate: Date? = null,
                                  val isFullDay: Boolean = false,
                                  override var status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel

@@ -177,7 +177,7 @@ fun Date.setTime(year: Int, month: Int, day: Int): Date {
     }
 }
 
-fun Date.sameDateAs(other: Date): Boolean {
+fun Date.sameDateAs(other: Date?): Boolean {
     val cal1 = Calendar.getInstance().apply { time = this@sameDateAs }
     val cal2 = Calendar.getInstance().apply { time = other }
     return (cal1[Calendar.DAY_OF_MONTH] == cal2[Calendar.DAY_OF_MONTH]) && (cal1[Calendar.MONTH] == cal2[Calendar.MONTH]) &&

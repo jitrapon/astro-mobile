@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.TimePicker
 import androidx.core.view.children
 import androidx.core.view.forEach
+import androidx.core.view.isVisible
 import androidx.core.view.plusAssign
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
@@ -33,7 +34,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     private lateinit var viewModel: DateTimePickerViewModel
 
-    private lateinit var onDateTimeSetListener: (Date, Boolean) -> Unit
+    private lateinit var onDateTimeSetListener: (Date?, Date?, Boolean) -> Unit
 
     private var collapsedViews: ArrayList<View>? = null
 
@@ -49,7 +50,8 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     override fun getLayoutId() = R.layout.date_time_picker_bottom_sheet
 
-    fun init(uiModel: DateTimePickerUiModel, onDateTimeSetListener: (Date, Boolean) -> Unit) {
+    fun init(uiModel: DateTimePickerUiModel,
+             onDateTimeSetListener: (Date?, Date?, Boolean) -> Unit) {
         this.uiModel = uiModel
         this.onDateTimeSetListener = onDateTimeSetListener
     }
@@ -94,10 +96,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                             calendarView = inflated.findViewById(R.id.date_time_picker_bottom_sheet_calendar)
                             timePicker = inflated.findViewById(R.id.date_time_picker_bottom_sheet_timepicker)
                             date_time_picker_bottom_sheet_expanded_cancel_button.setOnClickListener { dismiss() }
-                            date_time_picker_bottom_sheet_expanded_done_button.setOnClickListener {
-                                dismiss()
-                                onDateTimeSetListener(viewModel.getCurrentDate(), viewModel.getObservableFullDay().value ?: false)
-                            }
+                            date_time_picker_bottom_sheet_expanded_done_button.setOnClickListener { viewModel.confirmSelection() }
                         }
                         inflate()
                     }
@@ -149,10 +148,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         date_time_picker_bottom_sheet_night_choice.setOnClickListener { viewModel.selectDayTimeChoice(3) }
 
         date_time_picker_bottom_sheet_cancel_button.setOnClickListener { dismiss() }
-        date_time_picker_bottom_sheet_done_button.setOnClickListener {
-            dismiss()
-            onDateTimeSetListener(viewModel.getCurrentDate(), viewModel.getObservableFullDay().value ?: false)
-        }
+        date_time_picker_bottom_sheet_done_button.setOnClickListener { viewModel.confirmSelection() }
 
         date_time_picker_layout.findViewsWithContentDescription(getString(R.string.date_picker_collapsed_view)) {
             collapsedViews = this
@@ -161,14 +157,19 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         date_time_picker_bottom_sheet_full_day_text.setOnClickListener { viewModel.toggleFullDay() }
         date_time_picker_bottom_sheet_full_day_toggle.setOnClickListener { viewModel.toggleFullDay() }
 
-        date_time_picker_bottom_sheet_edit_text.apply {
-            hide()
-        }
+        date_time_picker_bottom_sheet_edit_text.hide()
         date_time_picker_bottom_sheet_edit_button.setOnClickListener {
             date_time_picker_bottom_sheet_edit_text.show()
-            date_time_picker_bottom_sheet_edit_text.requestFocus()
-            date_time_picker_bottom_sheet_displayed_date.hide(null, true)
-            date_time_picker_bottom_sheet_displayed_time.hide(null, true)
+            date_time_picker_bottom_sheet_displayed_date.hide()
+            date_time_picker_bottom_sheet_displayed_time.hide()
+        }
+        date_time_picker_bottom_sheet_clear_button.setOnClickListener {
+            if (date_time_picker_bottom_sheet_edit_text.isVisible) {
+                date_time_picker_bottom_sheet_edit_text.text.clear()
+            }
+            else {
+                viewModel.clearCurrentDate()
+            }
         }
     }
 
@@ -242,6 +243,13 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                         view.isChecked = view.tag == it
                     }
                 }
+            }
+        })
+        viewModel.getObservableFinishEvent().observe(viewLifecycleOwner, Observer {
+            dismiss()
+
+            it?.let {
+                onDateTimeSetListener(it.start, it.end, it.isFullDay)
             }
         })
     }

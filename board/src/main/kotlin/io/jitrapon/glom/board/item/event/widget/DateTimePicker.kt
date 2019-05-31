@@ -38,7 +38,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
     private var picker: DateTimePickerUiModel? = null
 
     /* callback for when date is set by the DatePicker dialog */
-    private var onDateSetListener: ((Date, Boolean) -> Unit)? = null
+    private var onDateTimeSetListener: ((Date?, Date?, Boolean) -> Unit)? = null
 
     /* callback for when date is cancelled */
     private var onCancelListener: (() -> Unit)? = null
@@ -67,23 +67,25 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
     /**
      * Call this to display the date and time dialog
      */
-    fun show(picker: DateTimePickerUiModel, onDateTimeSet: (Date, Boolean) -> Unit, onCancel: () -> Unit, style: Int) {
-        onDateSetListener = onDateTimeSet
+    fun show(picker: DateTimePickerUiModel,
+             onDateTimeSetListener: (Date?, Date?, Boolean) -> Unit,
+             onCancel: () -> Unit, style: Int) {
+        this.onDateTimeSetListener = onDateTimeSetListener
         onCancelListener = onCancel
 
         if (style == STYLE_DIALOG) {
             if (this.picker != picker) {
-                val (day, month, year) = picker.defaultDate.toDayMonthYear()
-                calendar.time = picker.defaultDate
+                val (day, month, year) = picker.startDate?.toDayMonthYear() ?: Date().toDayMonthYear()
+                calendar.time = picker.startDate
                 datePicker = GlomDatePickerDialog(context, this, year, month, day, dimBehind = false).apply {
                     setOnNeutralButtonClicked {
                         it.dismiss()
-                        onDateTimeSet(calendar.let {
+                        onDateTimeSetListener(calendar.let {
                             it[Calendar.YEAR] = datePicker.year ?: 0
                             it[Calendar.MONTH] = datePicker.month ?: 0
                             it[Calendar.DAY_OF_MONTH] = datePicker.dayOfMonth ?: 0
                             it.time
-                        }, true)
+                        }, null, true)
                     }
                     create()
                     setOnCancelListener {
@@ -106,7 +108,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
                 else -> throw Exception("Context must be either an instance of AppCompatActivity or Fragment")
             }
             bottomSheet.apply {
-                init(picker, onDateTimeSet)
+                init(picker, onDateTimeSetListener)
                 show(fragmentManager!!, PICKER_BOTTOM_SHEET_TAG)
             }
         }
@@ -124,7 +126,7 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
         shouldInvokeCallback = true
 
         if (this.picker != picker) {
-            calendar.time = picker.defaultDate
+            calendar.time = picker.startDate
 
             timePicker = TimePickerDialog(context, this@DateTimePicker, calendar.get(Calendar.HOUR_OF_DAY),
                     calendar.get(Calendar.MINUTE), DateFormat.is24HourFormat(context))
@@ -240,11 +242,11 @@ class DateTimePicker(private val context: Context): DatePickerDialog.OnDateSetLi
             }
         }
         else {
-            onDateSetListener?.invoke(calendar.run {
+            onDateTimeSetListener?.invoke(calendar.run {
                 set(Calendar.HOUR_OF_DAY, hourOfDay)
                 set(Calendar.MINUTE, minute)
                 time
-            }, false)
+            }, null, false)
         }
     }
 }

@@ -11,6 +11,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -51,7 +52,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private val observableEndDate = MutableLiveData<AndroidString>()
 
     /* observable model for the DateTime picker. When set if not null, show dialog */
-    private val observableDateTimePicker = LiveEvent<Pair<DateTimePickerUiModel, Boolean>>()
+    private val observableDateTimePicker = LiveEvent<DateTimePickerUiModel>()
 
     /* indicates whether or not the view should display autocomplete */
     private var shouldShowNameAutocomplete: Boolean = true
@@ -781,37 +782,37 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Displays the datetime picker
      */
-    fun showDateTimePicker(isStartDate: Boolean) {
+    fun showDateTimePicker(showStartDateFirst: Boolean) {
         if (!isItemEditable) return
 
         val startDate = interactor.getItemDate(true)
         val endDate = interactor.getItemDate(false)
-        val defaultDate: Date =
-        if (isStartDate) {
-            startDate ?: Date().roundToNextHalfHour()
-        }
-        else {
-            endDate ?: startDate?.addHour(1) ?: Date().roundToNextHalfHour().addHour(1)
-        }
         observableDateTimePicker.value = DateTimePickerUiModel(
-            if (isStartDate || !interactor.event.itemInfo.isFullDay) defaultDate else defaultDate.addDay(-1),
-            if (!isStartDate && startDate != null) startDate else null,
-            interactor.event.itemInfo.isFullDay) to isStartDate
+            if (!interactor.event.itemInfo.isFullDay) startDate else startDate?.addDay(-1),
+            if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
+            showStartDateFirst,
+            null,
+            interactor.event.itemInfo.isFullDay)
     }
 
     /**
      * Updates the date of the event
      */
-    fun setDate(date: Date?, isStartDate: Boolean, isFullDay: Boolean? = null) {
+    fun setDate(startDate: Date?, endDate: Date?, isFullDay: Boolean? = null) {
         interactor.let {
             val fullDay = isFullDay ?: it.event.itemInfo.isFullDay
-            it.setItemDate(date, isStartDate, fullDay)
+            it.setItemDate(startDate, true, fullDay)
+            it.setItemDate(endDate, false, fullDay)
 
             val info = it.event.itemInfo
             observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, info.source, fullDay)
             observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, info.source, fullDay)
             observableDateTimePicker.value = null
         }
+    }
+
+    fun clearDate(isStartDate: Boolean) {
+        interactor.setItemDate(null, isStartDate, interactor.event.itemInfo.isFullDay)
     }
 
     private fun navigateToPlacePicker() {
@@ -946,7 +947,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableEndDate(): LiveData<AndroidString> = observableEndDate
 
-    fun getObservableDateTimePicker(): LiveData<Pair<DateTimePickerUiModel, Boolean>> = observableDateTimePicker
+    fun getObservableDateTimePicker(): LiveData<DateTimePickerUiModel> = observableDateTimePicker
 
     fun getObservableLocation(): LiveData<AndroidString> = observableLocation
 
