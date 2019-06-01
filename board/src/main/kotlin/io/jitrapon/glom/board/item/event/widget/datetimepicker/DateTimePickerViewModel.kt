@@ -35,7 +35,7 @@ class DateTimePickerViewModel : BaseViewModel() {
     private val observableFinishEvent = LiveEvent<ConfirmDateTimeEvent>()
 
     private var isStartDate: Boolean = false
-    private val startDate: Date = Date()
+    private var startDate: Date = Date()
     private val endDate: Date = Date()
     private val firstDate: Date = Date()
     private var minDate: Date? = null
@@ -49,6 +49,7 @@ class DateTimePickerViewModel : BaseViewModel() {
     private val DEFAULT_EVENING_HOUR_RANGE = 17..20
     private val DEFAULT_NIGHT_HOUR_RANGE = 21..23
 
+
     fun setDateTime(uiModel: DateTimePickerUiModel?) {
         uiModel ?: return
         isStartDate = uiModel.showStartDateFirst
@@ -60,12 +61,15 @@ class DateTimePickerViewModel : BaseViewModel() {
     }
 
     private fun resetDateTime() {
-        val currentDate = if (isStartDate) startDate else endDate
-        firstDate.time = currentDate.time
-        observableDate.value = getDate(currentDate)
-        observableTime.value = getTime(currentDate)
-        observableDateChoices.value = getDateChoices(currentDate, 0)
-        val (dayTimeChoices, timeChoices) = getDayTimeChoices(currentDate)
+        val currentDate = if (isStartDate) startDate else endDate   //TODO initialize startDate as firstDate and endDate
+        firstDate.time = if (currentDate.time == 0L) Date().time else currentDate.time
+        if (isStartDate) startDate.time = firstDate.time else endDate.time = firstDate.time
+        //TODO
+
+        observableDate.value = getDate(firstDate)
+        observableTime.value = getTime(firstDate)
+        observableDateChoices.value = getDateChoices(firstDate, 0)
+        val (dayTimeChoices, timeChoices) = getDayTimeChoices(firstDate)
         observableDayTimeChoice.value = dayTimeChoices
         observableTimeChoices.value = timeChoices
     }
@@ -234,8 +238,8 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     fun confirmSelection() {
         observableFinishEvent.value = ConfirmDateTimeEvent(
-            start = startDate,
-            end = endDate,
+            start = if (startDate.time == 0L) null else startDate,
+            end = if (endDate.time == 0L) null else endDate,
             isFullDay = observableFullDay.value ?: false
         )
     }

@@ -228,46 +228,39 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     /**
      * Updates this cached event's date, processing whether the start and end dates are set correctly
      */
-    fun setItemDate(date: Date?, isStartDate: Boolean, isFullDay: Boolean) {
+    fun setItemDate(startDate: Date?, endDate: Date?, isFullDay: Boolean) {
         if (!isItemEditable) return
 
         // if this item is a calendar event, the start date must not be null
-        if (date == null && event.itemInfo.source.calendar != null && isStartDate) return
+        if (startDate == null && event.itemInfo.source.calendar != null) return
 
         isItemModified = true
 
-        if (isStartDate) {
-            val startDateTemp = date?.let {
-                if (isFullDay) it.setTime(7, 0).time
-                else it.time
-            }
-            var endDateTemp = event.itemInfo.endTime
-
-            // if the new start date surpasses end date, reset the end date
-            // or if the new start date is null, we should also reset the end date
-            if (((startDateTemp != null && endDateTemp != null) && (startDateTemp >= endDateTemp)) || startDateTemp == null) {
-                endDateTemp = null
-            }
-            eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
+        val startDateTemp = startDate?.let {
+            if (isFullDay) it.setTime(7, 0).time
+            else it.time
         }
-        else {
-            var startDateTemp = event.itemInfo.startTime
-            val endDateTemp = date?.let {
-                if (isFullDay) {
-                    // we need to handle the standard of full-day events
-                    // end date time actually one day ahead of actual date
-                    it.addDay(1).setTime(7, 0).time
-                }
-                else it.time
+        var endDateTemp = endDate?.let {
+            if (isFullDay) {
+                // we need to handle the standard of full-day events
+                // end date time actually one day ahead of actual date
+                it.addDay(1).setTime(7, 0).time
             }
-
-            // we should set the start time accordingly to one hour prior to the new end time
-            // if it is less than the start time already set, or if the start time has not been set
-            if (endDateTemp != null && (startDateTemp == null || startDateTemp >= endDateTemp)) {
-                startDateTemp = Date(endDateTemp).addHour(-1).time
-            }
-            eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
+            else it.time
         }
+//        // we should set the start time accordingly to one hour prior to the new end time
+//        // if it is less than the start time already set, or if the start time has not been set
+//        if (endDateTemp != null && (startDateTemp == null || startDateTemp > endDateTemp)) {
+//            startDateTemp = Date(endDateTemp).addHour(-1).time
+//        }
+//
+        // if the new start date surpasses end date, reset the end date
+        // or if the new start date is cleared, we should also reset the end date
+        if (((startDateTemp != null && endDateTemp != null) &&
+                        (startDateTemp > endDateTemp)) || startDateTemp == null) {
+            endDateTemp = null
+        }
+        eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
     }
 
     fun getItemDate(startDate: Boolean): Date? {

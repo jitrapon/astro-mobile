@@ -35,6 +35,7 @@
         android:id="@+id/date_time_picker_bottom_sheet_edit_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_edit_button"
         app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_clear_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"

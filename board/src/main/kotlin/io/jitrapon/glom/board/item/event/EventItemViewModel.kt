@@ -11,7 +11,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -801,8 +800,7 @@ class EventItemViewModel : BoardItemViewModel() {
     fun setDate(startDate: Date?, endDate: Date?, isFullDay: Boolean? = null) {
         interactor.let {
             val fullDay = isFullDay ?: it.event.itemInfo.isFullDay
-            it.setItemDate(startDate, true, fullDay)
-            it.setItemDate(endDate, false, fullDay)
+            it.setItemDate(startDate, endDate, fullDay)
 
             val info = it.event.itemInfo
             observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, info.source, fullDay)
@@ -812,7 +810,14 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     fun clearDate(isStartDate: Boolean) {
-        interactor.setItemDate(null, isStartDate, interactor.event.itemInfo.isFullDay)
+        val fullDay = interactor.event.itemInfo.isFullDay
+        val info = interactor.event.itemInfo
+        interactor.setItemDate(if (isStartDate) null else info.startTime?.let(::Date),
+                if (!isStartDate) null else info.endTime?.let(::Date),
+                fullDay)
+        observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, info.source, fullDay)
+        observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, info.source, fullDay)
+        observableDateTimePicker.value = null
     }
 
     private fun navigateToPlacePicker() {
