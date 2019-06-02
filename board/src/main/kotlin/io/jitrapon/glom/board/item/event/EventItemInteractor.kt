@@ -159,7 +159,17 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
         // us to save
         event.itemInfo.apply {
             if ((source.calendar != null || newSource?.calendar != null) && endTime == null) {
-                endTime = startTime
+                endTime = startTime.let {
+                    if (it == null) null
+                    else {
+                        if (isFullDay) {
+                            // we need to handle the standard of full-day events
+                            // end date time actually one day ahead of actual date
+                            Date(it).addDay(1).setTime(7, 0).time
+                        }
+                        else startTime
+                    }
+                }
             }
         }
 
@@ -248,12 +258,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             }
             else it.time
         }
-//        // we should set the start time accordingly to one hour prior to the new end time
-//        // if it is less than the start time already set, or if the start time has not been set
-//        if (endDateTemp != null && (startDateTemp == null || startDateTemp > endDateTemp)) {
-//            startDateTemp = Date(endDateTemp).addHour(-1).time
-//        }
-//
+
         // if the new start date surpasses end date, reset the end date
         // or if the new start date is cleared, we should also reset the end date
         if (((startDateTemp != null && endDateTemp != null) &&

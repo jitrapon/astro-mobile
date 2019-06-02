@@ -1,10 +1,11 @@
 package io.jitrapon.glom.board.item.event.widget.datetimepicker
 
+import android.app.TimePickerDialog
 import android.content.DialogInterface
 import android.content.res.ColorStateList
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.TimePicker
 import androidx.core.view.children
 import androidx.core.view.forEach
 import androidx.core.view.isVisible
@@ -23,7 +24,7 @@ import io.jitrapon.glom.board.item.event.widget.GlomCalendarView
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.*
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.*
 import kotlinx.android.synthetic.main.date_time_picker_date_item.view.*
-import java.util.Date
+import java.util.*
 import kotlin.collections.ArrayList
 
 const val ANIMATION_DELAY = 100L
@@ -41,12 +42,13 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     private var expandedViews: ArrayList<View> = ArrayList()
 
     private var calendarView: GlomCalendarView? = null
-    private var timePicker: TimePicker? = null
 
     private var hasExpanded = false
 
     private val collapsedPeekHeight
-            get() = 340.px
+            get() = 330.px
+    private val collapsedPeekHeightNoTimeChoices
+            get() = 278.px
 
     override fun getLayoutId() = R.layout.date_time_picker_bottom_sheet
 
@@ -94,7 +96,6 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                         setOnInflateListener { _, inflated ->
                             expandedViews.add(inflated)
                             calendarView = inflated.findViewById(R.id.date_time_picker_bottom_sheet_calendar)
-                            timePicker = inflated.findViewById(R.id.date_time_picker_bottom_sheet_timepicker)
                             date_time_picker_bottom_sheet_expanded_cancel_button.setOnClickListener { dismiss() }
                             date_time_picker_bottom_sheet_expanded_done_button.setOnClickListener { viewModel.confirmSelection() }
                         }
@@ -103,7 +104,6 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
                     if (!hasExpanded) {
                         resetCalendar()
-                        resetTimePicker()
                     }
 
                     hasExpanded = true
@@ -131,7 +131,11 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
         (dialog as? BottomSheetDialog)?.behavior?.apply {
             setBottomSheetCallback(bottomSheetStateCallback)
-            peekHeight = collapsedPeekHeight
+            peekHeight = if (viewModel.getObservableTimeChoices().value.isNullOrEmpty()) {
+                collapsedPeekHeightNoTimeChoices
+            } else {
+                collapsedPeekHeight
+            }
         }
     }
 
@@ -171,6 +175,9 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                 viewModel.clearCurrentDate()
             }
         }
+        date_time_picker_edit_time.setOnClickListener {
+            viewModel.showTimePicker()
+        }
     }
 
     override fun onCreateViewModel(activity: FragmentActivity) {
@@ -183,22 +190,41 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         subscribeToViewActionObservables(viewModel.observableViewAction)
 
         viewModel.getObservableDate().observe(viewLifecycleOwner, Observer {
-            date_time_picker_bottom_sheet_displayed_date.text = context!!.getString(it)
+            if (it == null) {
+                date_time_picker_bottom_sheet_displayed_date.hide()
+                date_time_picker_bottom_sheet_edit_text.show()
+            }
+            else {
+                date_time_picker_bottom_sheet_displayed_date.apply {
+                    show()
+                    text = context!!.getString(it)
+                }
+                date_time_picker_bottom_sheet_edit_text.hide()
+            }
         })
         viewModel.getObservableTime().observe(viewLifecycleOwner, Observer {
-            date_time_picker_bottom_sheet_displayed_time.text = context!!.getString(it)
+            if (it == null) {
+                date_time_picker_bottom_sheet_displayed_time.hide()
+            }
+            else {
+                date_time_picker_bottom_sheet_displayed_time.apply {
+                    show()
+                    text = context!!.getString(it)
+                }
+            }
         })
         viewModel.getObservableFullDay().observe(viewLifecycleOwner, Observer {
             it?.let { isFullDay ->
+                val isEnabled = !isFullDay && viewModel.getObservableDate().value != null
                 date_time_picker_bottom_sheet_displayed_time.visibility = if (isFullDay) View.GONE else View.VISIBLE
                 date_time_picker_bottom_sheet_full_day_toggle.isChecked = isFullDay
                 date_time_picker_bottom_sheet_time_of_day_layout.forEach { view ->
-                    view.isEnabled = !isFullDay
+                    view.isEnabled = isEnabled
                 }
                 date_time_picker_bottom_sheet_time_layout.forEach { view ->
-                    view.isEnabled = !isFullDay
+                    view.isEnabled = isEnabled
                 }
-                timePicker?.isEnabled = !isFullDay
+                date_time_picker_edit_time.isEnabled = isEnabled
             }
         })
         viewModel.getObservableSimpleDateChoices().observe(viewLifecycleOwner, Observer {
@@ -211,27 +237,69 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
             }
         })
         viewModel.getObservableDayTimeChoice().observe(viewLifecycleOwner, Observer {
-            it?.let {
-                date_time_picker_bottom_sheet_morning_choice.isChecked = it == 0
-                date_time_picker_bottom_sheet_afternoon_choice.isChecked = it == 1
-                date_time_picker_bottom_sheet_evening_choice.isChecked = it == 2
-                date_time_picker_bottom_sheet_night_choice.isChecked = it == 3
+            it?.let { choice ->
+                if (choice == NOT_SELECTED_INDEX) {
+                    date_time_picker_bottom_sheet_morning_choice.apply {
+                        isChecked = false
+                        isEnabled = false
+                    }
+                    date_time_picker_bottom_sheet_afternoon_choice.apply {
+                        isChecked = false
+                        isEnabled = false
+                    }
+                    date_time_picker_bottom_sheet_evening_choice.apply {
+                        isChecked = false
+                        isEnabled = false
+                    }
+                    date_time_picker_bottom_sheet_night_choice.apply {
+                        isChecked = false
+                        isEnabled = false
+                    }
+                }
+                else {
+                    val isFullDay = viewModel.getObservableFullDay().value?.not() ?: false
+                    date_time_picker_bottom_sheet_morning_choice.apply {
+                        isChecked = choice == 0
+                        isEnabled = isFullDay
+                    }
+                    date_time_picker_bottom_sheet_afternoon_choice.apply {
+                        isChecked = choice == 1
+                        isEnabled = isFullDay
+                    }
+                    date_time_picker_bottom_sheet_evening_choice.apply {
+                        isChecked = choice == 2
+                        isEnabled = isFullDay
+                    }
+                    date_time_picker_bottom_sheet_night_choice.apply {
+                        isChecked = choice == 3
+                        isEnabled = isFullDay
+                    }
+                    date_time_picker_edit_time.isEnabled = isFullDay
+                }
             }
         })
         viewModel.getObservableTimeChoices().observe(viewLifecycleOwner, Observer {
             it?.let { choices ->
                 date_time_picker_bottom_sheet_time_layout.removeAllViews()
-                for (choice in choices) {
-                    (LayoutInflater.from(context).inflate(R.layout.date_time_picker_chip, null) as Chip).apply {
-                        text = context.getString(choice.timeOfDay)
-                        setOnClickListener {
-                            viewModel.selectTimeChoice(choice)
+                if (choices.isEmpty()) {
+                    date_time_picker_bottom_sheet_time_layout.hide()
+                }
+                else {
+                    (dialog as? BottomSheetDialog)?.behavior?.setPeekHeight(collapsedPeekHeight, true)
+
+                    date_time_picker_bottom_sheet_time_layout.show()
+                    for (choice in choices) {
+                        (LayoutInflater.from(context).inflate(R.layout.date_time_picker_chip, null) as Chip).apply {
+                            text = context.getString(choice.timeOfDay)
+                            setOnClickListener {
+                                viewModel.selectTimeChoice(choice)
+                            }
+                            tag = choice
+                            isChecked = choice.status == UiModel.Status.POSITIVE
+                            date_time_picker_bottom_sheet_time_layout += this
+                            setMargin(right = 3f.px)
+                            isEnabled = viewModel.getObservableFullDay().value?.not() ?: false
                         }
-                        tag = choice
-                        isChecked = choice.status == UiModel.Status.POSITIVE
-                        date_time_picker_bottom_sheet_time_layout += this
-                        setMargin(right = 3f.px)
-                        isEnabled = viewModel.getObservableFullDay().value?.not() ?: false
                     }
                 }
             }
@@ -252,6 +320,15 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                 onDateTimeSetListener(it.start, it.end, it.isFullDay)
             }
         })
+        viewModel.getObservableTimePicker().observe(viewLifecycleOwner, Observer {
+            val calendar = Calendar.getInstance().apply {
+                time = it
+            }
+            TimePickerDialog(context, { _, hourOfDay, minute ->
+                viewModel.setTime(hourOfDay, minute)
+            }, calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE), DateFormat.is24HourFormat(context)).show()
+        })
     }
 
     private fun resetCalendar() {
@@ -262,17 +339,6 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
             setSelectableDateRange(viewModel.getMinDate() to null)
             onDateSelected { date, isSelected ->
                 if (isSelected) viewModel.selectCalendarDate(date)
-            }
-        }
-    }
-
-    private fun resetTimePicker() {
-        timePicker?.apply {
-            val (hourOfDay, minute) = viewModel.getCurrentTime()
-            hour = hourOfDay
-            setMinute(minute)
-            setOnTimeChangedListener { _, h, m ->
-                viewModel.setTime(h, m)
             }
         }
     }

@@ -126,6 +126,15 @@ fun Date.roundToNextHalfHour(): Date {
     }
 }
 
+fun Date.roundToNextHour(): Date {
+    return Calendar.getInstance().run {
+        time = this@roundToNextHour
+        add(Calendar.HOUR_OF_DAY, 1)
+        set(Calendar.MINUTE, 0)
+        Date(time.time)
+    }
+}
+
 fun Date.setTime(hour: Int, minute: Int, second: Int? = null, millisecond: Int? = null): Date {
     return Calendar.getInstance().run {
         time = this@setTime

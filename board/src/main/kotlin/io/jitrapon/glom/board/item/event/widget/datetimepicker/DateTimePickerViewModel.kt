@@ -12,6 +12,7 @@ import java.util.Date
 import kotlin.collections.ArrayList
 
 const val SIMPLE_VIEW_NUM_DATE_CHOICES = 5
+const val NOT_SELECTED_INDEX = -1
 
 /**
  * ViewModel class responsible for the bottom sheet date time picker
@@ -34,12 +35,18 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     private val observableFinishEvent = LiveEvent<ConfirmDateTimeEvent>()
 
+    private val observableTimePicker = LiveEvent<Date>()
+
     private var isStartDate: Boolean = false
     private var startDate: Date = Date()
     private val endDate: Date = Date()
     private val firstDate: Date = Date()
     private var minDate: Date? = null
-    
+
+    private val MORNING_CHOICE = 0
+    private val AFTERNOON_CHOICE = 1
+    private val EVENING_CHOICE = 2
+    private val NIGHT_CHOICE = 3
     private val DEFAULT_MORNING_HOUR = 8
     private val DEFAULT_AFTERNOON_HOUR = 14
     private val DEFAULT_EVENING_HOUR = 18
@@ -49,27 +56,51 @@ class DateTimePickerViewModel : BaseViewModel() {
     private val DEFAULT_EVENING_HOUR_RANGE = 17..20
     private val DEFAULT_NIGHT_HOUR_RANGE = 21..23
 
-
     fun setDateTime(uiModel: DateTimePickerUiModel?) {
         uiModel ?: return
         isStartDate = uiModel.showStartDateFirst
-        startDate.time = uiModel.startDate?.time ?: 0L
-        endDate.time = uiModel.endDate?.time ?: 0L
+        startDate.time = uiModel.startDate?.time ?: 0L  // time 0 ms from epoch means that this date is NULL
+        endDate.time = uiModel.endDate?.time ?: 0L      // time 0 ms from epoch means that this date is NULL
         minDate = uiModel.minDate
         observableFullDay.value = uiModel.isFullDay
         resetDateTime()
     }
 
-    private fun resetDateTime() {
-        val currentDate = if (isStartDate) startDate else endDate   //TODO initialize startDate as firstDate and endDate
-        firstDate.time = if (currentDate.time == 0L) Date().time else currentDate.time
-        if (isStartDate) startDate.time = firstDate.time else endDate.time = firstDate.time
-        //TODO
+    private fun resetStartDateIfNeeded() {
+        // we should set the start time accordingly to one hour prior to the new end time
+        // if it is less than the start time already set, or if the start time has not been set
+        if (endDate.time != 0L && (startDate.time == 0L || startDate.time > endDate.time)) {
+            startDate = endDate.addHour(-1)
+        }
+    }
 
-        observableDate.value = getDate(firstDate)
-        observableTime.value = getTime(firstDate)
-        observableDateChoices.value = getDateChoices(firstDate, 0)
-        val (dayTimeChoices, timeChoices) = getDayTimeChoices(firstDate)
+    private fun resetEndDateIfNeeded() {
+        if (startDate.time > endDate.time) {
+            endDate.time = 0L
+        }
+    }
+
+    private fun resetDateTime() {
+        resetStartDateIfNeeded()
+
+        val currDate = if (isStartDate) startDate else endDate
+        val selectedDateChoiceIndex: Int
+        val autoSelectTimeChoice: Boolean
+        if (currDate.time == 0L) {
+            firstDate.time = if (isStartDate || startDate.time == 0L) Date().roundToNextHour().time else
+                startDate.addHour(1).time
+            selectedDateChoiceIndex = NOT_SELECTED_INDEX
+            autoSelectTimeChoice = false
+        } else {
+            firstDate.time = currDate.time
+            selectedDateChoiceIndex = 0
+            autoSelectTimeChoice = true
+        }
+
+        observableDate.value = getDate(currDate)
+        observableTime.value = getTime(currDate)
+        observableDateChoices.value = getDateChoices(firstDate, selectedDateChoiceIndex)
+        val (dayTimeChoices, timeChoices) = getDayTimeChoices(firstDate, autoSelectTimeChoice)
         observableDayTimeChoice.value = dayTimeChoices
         observableTimeChoices.value = timeChoices
     }
@@ -79,14 +110,22 @@ class DateTimePickerViewModel : BaseViewModel() {
 
         observableDateChoices.value = getDateChoices(firstDate, position)
         observableDateChoices.value?.get(position)?.date?.let {
+            if (observableDayTimeChoice.value == NOT_SELECTED_INDEX) {
+                selectDayTimeChoice(MORNING_CHOICE)
+            }
+
             val (day, month, year) = it.toDayMonthYear()
             if (isStartDate) {
                 startDate.setTime(year, month, day)
                 observableDate.value = getDate(startDate)
+
+                resetEndDateIfNeeded()
             } 
             else {
                 endDate.setTime(year, month, day)
                 observableDate.value = getDate(endDate)
+
+                resetStartDateIfNeeded()
             }
         }
     }
@@ -109,10 +148,14 @@ class DateTimePickerViewModel : BaseViewModel() {
         if (isStartDate) {
             startDate.time = startDate.setTime(hourOfDay, minute).time
             observableTime.value = getTime(startDate)
+
+            resetEndDateIfNeeded()
         }
         else {
             endDate.time = endDate.setTime(hourOfDay, minute).time
             observableTime.value = getTime(endDate)
+
+            resetStartDateIfNeeded()
         }
     }
 
@@ -139,10 +182,10 @@ class DateTimePickerViewModel : BaseViewModel() {
         else {
             if (isStartDate) {
                 startDate.time = when (choice) {
-                    0 -> startDate.setTime(DEFAULT_MORNING_HOUR, 0).time
-                    1 -> startDate.setTime(DEFAULT_AFTERNOON_HOUR, 0).time
-                    2 -> startDate.setTime(DEFAULT_EVENING_HOUR, 0).time
-                    3 -> startDate.setTime(DEFAULT_NIGHT_HOUR, 0).time
+                    MORNING_CHOICE -> startDate.setTime(DEFAULT_MORNING_HOUR, 0).time
+                    AFTERNOON_CHOICE -> startDate.setTime(DEFAULT_AFTERNOON_HOUR, 0).time
+                    EVENING_CHOICE -> startDate.setTime(DEFAULT_EVENING_HOUR, 0).time
+                    NIGHT_CHOICE -> startDate.setTime(DEFAULT_NIGHT_HOUR, 0).time
                     else -> startDate.time
                 }
                 observableTime.value = getTime(startDate)
@@ -152,10 +195,10 @@ class DateTimePickerViewModel : BaseViewModel() {
             }
             else {
                 endDate.time = when (choice) {
-                    0 -> endDate.setTime(DEFAULT_MORNING_HOUR, 0).time
-                    1 -> endDate.setTime(DEFAULT_AFTERNOON_HOUR, 0).time
-                    2 -> endDate.setTime(DEFAULT_EVENING_HOUR, 0).time
-                    3 -> endDate.setTime(DEFAULT_NIGHT_HOUR, 0).time
+                    MORNING_CHOICE -> endDate.setTime(DEFAULT_MORNING_HOUR, 0).time
+                    AFTERNOON_CHOICE -> endDate.setTime(DEFAULT_AFTERNOON_HOUR, 0).time
+                    EVENING_CHOICE -> endDate.setTime(DEFAULT_EVENING_HOUR, 0).time
+                    NIGHT_CHOICE -> endDate.setTime(DEFAULT_NIGHT_HOUR, 0).time
                     else -> endDate.time
                 }
                 observableTime.value = getTime(endDate)
@@ -163,6 +206,17 @@ class DateTimePickerViewModel : BaseViewModel() {
                 observableDayTimeChoice.value = dayTimeChoices
                 observableTimeChoices.value = timeChoices
             }
+        }
+    }
+
+    fun showTimePicker() {
+        observableTimePicker.value = if (isStartDate) {
+            if (startDate.time == 0L) Date().roundToNextHour()
+            else startDate
+        }
+        else {
+            if (endDate.time == 0L) Date().roundToNextHour()
+            else endDate
         }
     }
 
@@ -191,10 +245,10 @@ class DateTimePickerViewModel : BaseViewModel() {
         observableFullDay.value = observableFullDay.value?.not()
     }
 
-    private fun getDate(date: Date): AndroidString = if (date.time == 0L) AndroidString(text = null)
+    private fun getDate(date: Date): AndroidString? = if (date.time == 0L) null
         else AndroidString(text = date.toDateString(false))
 
-    private fun getTime(date: Date): AndroidString = if (date.time == 0L) AndroidString(text = null)
+    private fun getTime(date: Date): AndroidString? = if (date.time == 0L) null
         else AndroidString(text = date.toTimeString())
 
     private fun getDateChoices(firstDate: Date, selectedPosition: Int): Array<DateChoiceUiModel> {
@@ -217,13 +271,14 @@ class DateTimePickerViewModel : BaseViewModel() {
      *
      * returns -1 when the date is not in any predefined time of day
      */
-    private fun getDayTimeChoices(date: Date): Pair<Int, ArrayList<TimeChoiceUiModel>> {
+    private fun getDayTimeChoices(date: Date, autoSelectFromDate: Boolean = true): Pair<Int, ArrayList<TimeChoiceUiModel>> {
         val timeChoices = ArrayList<TimeChoiceUiModel>()
-        return when (date.hourOfDay) {
-            in DEFAULT_MORNING_HOUR_RANGE -> 0 to timeChoices.apply { setTimeChoices(this, date, DEFAULT_MORNING_HOUR_RANGE) }
-            in DEFAULT_AFTERNOON_HOUR_RANGE -> 1 to timeChoices.apply { setTimeChoices(this, date, DEFAULT_AFTERNOON_HOUR_RANGE) }
-            in DEFAULT_EVENING_HOUR_RANGE -> 2 to timeChoices.apply { setTimeChoices(this, date, DEFAULT_EVENING_HOUR_RANGE) }
-            in DEFAULT_NIGHT_HOUR_RANGE -> 3 to timeChoices.apply { setTimeChoices(this, date, DEFAULT_NIGHT_HOUR_RANGE) }
+        return if (!autoSelectFromDate) NOT_SELECTED_INDEX to timeChoices
+        else when (date.hourOfDay) {
+            in DEFAULT_MORNING_HOUR_RANGE -> MORNING_CHOICE to timeChoices.apply { setTimeChoices(this, date, DEFAULT_MORNING_HOUR_RANGE) }
+            in DEFAULT_AFTERNOON_HOUR_RANGE -> AFTERNOON_CHOICE to timeChoices.apply { setTimeChoices(this, date, DEFAULT_AFTERNOON_HOUR_RANGE) }
+            in DEFAULT_EVENING_HOUR_RANGE -> EVENING_CHOICE to timeChoices.apply { setTimeChoices(this, date, DEFAULT_EVENING_HOUR_RANGE) }
+            in DEFAULT_NIGHT_HOUR_RANGE -> NIGHT_CHOICE to timeChoices.apply { setTimeChoices(this, date, DEFAULT_NIGHT_HOUR_RANGE) }
             else -> 3 to timeChoices.apply { setTimeChoices(this, date, DEFAULT_NIGHT_HOUR_RANGE) }
         }
     }
@@ -248,9 +303,9 @@ class DateTimePickerViewModel : BaseViewModel() {
         this.isStartDate = isStartDate
     }
 
-    fun getObservableDate(): LiveData<AndroidString> = observableDate
+    fun getObservableDate(): LiveData<AndroidString?> = observableDate
 
-    fun getObservableTime(): LiveData<AndroidString> = observableTime
+    fun getObservableTime(): LiveData<AndroidString?> = observableTime
 
     fun getObservableFullDay(): LiveData<Boolean> = observableFullDay
 
@@ -268,5 +323,5 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     fun getMinDate(): Date? = minDate
 
-    fun getCurrentTime(): Pair<Int, Int> = startDate.hourToMinute
+    fun getObservableTimePicker(): LiveData<Date> = observableTimePicker
 }

@@ -787,7 +787,7 @@ class EventItemViewModel : BoardItemViewModel() {
         val startDate = interactor.getItemDate(true)
         val endDate = interactor.getItemDate(false)
         observableDateTimePicker.value = DateTimePickerUiModel(
-            if (!interactor.event.itemInfo.isFullDay) startDate else startDate?.addDay(-1),
+            startDate,
             if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
             showStartDateFirst,
             null,
