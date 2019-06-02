@@ -47,8 +47,6 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     private val collapsedPeekHeight
             get() = 330.px
-    private val collapsedPeekHeightNoTimeChoices
-            get() = 278.px
 
     override fun getLayoutId() = R.layout.date_time_picker_bottom_sheet
 
@@ -131,11 +129,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
         (dialog as? BottomSheetDialog)?.behavior?.apply {
             setBottomSheetCallback(bottomSheetStateCallback)
-            peekHeight = if (viewModel.getObservableTimeChoices().value.isNullOrEmpty()) {
-                collapsedPeekHeightNoTimeChoices
-            } else {
-                collapsedPeekHeight
-            }
+            peekHeight = collapsedPeekHeight
         }
     }
 
@@ -285,9 +279,8 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                     date_time_picker_bottom_sheet_time_layout.hide()
                 }
                 else {
-                    (dialog as? BottomSheetDialog)?.behavior?.setPeekHeight(collapsedPeekHeight, true)
-
                     date_time_picker_bottom_sheet_time_layout.show()
+                    val hasSelectedDayTimeChoice = viewModel.getObservableDayTimeChoice().value != NOT_SELECTED_INDEX
                     for (choice in choices) {
                         (LayoutInflater.from(context).inflate(R.layout.date_time_picker_chip, null) as Chip).apply {
                             text = context.getString(choice.timeOfDay)
@@ -298,7 +291,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                             isChecked = choice.status == UiModel.Status.POSITIVE
                             date_time_picker_bottom_sheet_time_layout += this
                             setMargin(right = 3f.px)
-                            isEnabled = viewModel.getObservableFullDay().value?.not() ?: false
+                            isEnabled = viewModel.getObservableFullDay().value?.not()?.and(hasSelectedDayTimeChoice) ?: false
                         }
                     }
                 }
