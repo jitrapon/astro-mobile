@@ -116,9 +116,6 @@ dependencies {
     api("com.google.android.material:material:$rootProject.materialVersion") {
         force = true
     }
-    api("androidx.cardview:cardview:$rootProject.cardViewVersion") {
-        force = true
-    }
     api "androidx.constraintlayout:constraintlayout:$rootProject.constraintLayoutVersion"
 
     // media loading
