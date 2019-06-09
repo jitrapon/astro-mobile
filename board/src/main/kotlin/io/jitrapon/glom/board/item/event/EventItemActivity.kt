@@ -25,12 +25,12 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemActivity
 import io.jitrapon.glom.board.item.BoardItemViewModelStore
 import io.jitrapon.glom.board.item.SHOW_ANIM_DELAY
-import io.jitrapon.glom.board.item.event.widget.placepicker.PlacePickerActivity
 import io.jitrapon.glom.board.item.event.plan.EXTRA_FIRST_VISIBLE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PlanEventActivity
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
 import io.jitrapon.glom.board.item.event.widget.STYLE_BOTTOM_SHEET
+import io.jitrapon.glom.board.item.event.widget.placepicker.PlacePickerActivity
 import kotlinx.android.synthetic.main.event_item_activity.*
 
 
@@ -556,7 +556,7 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
         event_item_title.clearFocus()
         event_item_root_layout.findViewsWithContentDescription(getString(R.string.event_item_transition_view)) {
             forEach {
-                it.hide()
+                it.hide(null, true)
             }
             untransitionedViews = this
         }
