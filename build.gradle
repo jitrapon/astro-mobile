@@ -20,8 +20,8 @@ buildscript {
         materialVersion = '1.1.0-alpha03'
         constraintLayoutVersion = '2.0.0-beta1'
         lifecycleVersion = '2.0.0'
-        roomVersion = '2.0.0-rc01'
-        pagingVersion = '2.0.0-rc01'
+        roomVersion = '2.1.0-rc01'
+        pagingVersion = '2.1.0'
         browserVersion = '1.0.0'
 
         placeVersion = '1.1.0'
