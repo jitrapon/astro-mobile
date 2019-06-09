@@ -16,10 +16,10 @@ buildscript {
         minSdkVersion = 23
         minSdkInstantVersion = 21
 
-        ktxVersion = '1.0.0'
+        ktxVersion = '1.2.0-alpha01'
         materialVersion = '1.1.0-alpha03'
         constraintLayoutVersion = '2.0.0-beta1'
-        lifecycleVersion = '2.0.0'
+        lifecycleVersion = '2.2.0-alpha01'
         roomVersion = '2.1.0-rc01'
         pagingVersion = '2.1.0'
         browserVersion = '1.0.0'
@@ -29,7 +29,7 @@ buildscript {
 
         daggerVersion = '2.23.1'
         facebookSdkVersion = '[4,5)'
-        glideVersion = '4.8.0'
+        glideVersion = '4.9.0'
         retrofitVersion = '2.6.0'
         instantAppVersion = '1.1.0'
         rxJavaVersion = '2.2.9'
