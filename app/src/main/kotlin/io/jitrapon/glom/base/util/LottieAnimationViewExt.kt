@@ -8,7 +8,6 @@ import io.jitrapon.glom.base.model.AnimationItem
 object AnimationState {
 
     var currentAnimation: AnimationItem? = null
-    var useHardWareAcceleration: Boolean = true
     var loopForever: Boolean = false
 }
 
@@ -17,13 +16,13 @@ object AnimationState {
  * animation should be restarted if it's currently playing. False will let the currently playing animation finishes.
  */
 fun LottieAnimationView.animate(animation: AnimationItem, shouldRestartIfPlaying: Boolean = true,
-         loopForever: Boolean = false, useHardwareAcceleration: Boolean = true) {
+         loopForever: Boolean = false) {
     try {
-        AnimationState.useHardWareAcceleration = useHardwareAcceleration
         if (shouldRestartIfPlaying && isAnimating && AnimationState.currentAnimation == animation) progress = 0f
         else {
+            show()
             removeAnimatorListener(animatorListener)
-            setAnimation(animation.fileName)
+            setAnimationFromUrl(animation.url)
             AnimationState.currentAnimation = animation
             progress = 0f
             repeatCount = if (loopForever) LottieDrawable.INFINITE else 0
@@ -42,10 +41,9 @@ var LottieAnimationView.animatorListener: Animator.AnimatorListener
         }
 
         override fun onAnimationEnd(p0: Animator?) {
-            if (AnimationState.useHardWareAcceleration) useHardwareAcceleration(false)
             if (!AnimationState.loopForever) {
                 removeAnimatorListener(this)
-                hide(500L)
+                hide(500L, true)
             }
         }
 
@@ -53,8 +51,6 @@ var LottieAnimationView.animatorListener: Animator.AnimatorListener
         }
 
         override fun onAnimationStart(p0: Animator?) {
-            show()
-            if (AnimationState.useHardWareAcceleration) useHardwareAcceleration()
         }
     }
 

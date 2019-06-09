@@ -5,7 +5,7 @@ package io.jitrapon.glom.base.model
  *
  * Created by Jitrapon
  */
-enum class AnimationItem(val fileName: String): UiActionModel {
+enum class AnimationItem(val url: String): UiActionModel {
 
-    JOIN_EVENT("animations/join_event.json"),
+    JOIN_EVENT("https://assets9.lottiefiles.com/packages/lf20_ld8FMO.json"),
 }
