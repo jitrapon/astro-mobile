@@ -4,11 +4,10 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import androidx.annotation.IntRange
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.util.AttributeSet
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.jitrapon.glom.R
 
 /**
@@ -76,11 +75,6 @@ class BadgedBottomNavigationView(context: Context, attrs: AttributeSet) : Bottom
     }
 
     //region exposed functions
-
-    fun showBadge(@IntRange(from = 0) itemPosition: Int) {
-        badgePosition = itemPosition
-        invalidate()
-    }
 
     fun clearBadge() {
         badgePosition = NO_BADGE_POSITION
