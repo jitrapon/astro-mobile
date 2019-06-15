@@ -3,11 +3,11 @@ package io.jitrapon.glom.board.item.event.widget
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.DialogInterface
-import androidx.appcompat.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.WindowManager
+import androidx.appcompat.app.AlertDialog
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.util.setTime
+import io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
 import java.util.*
 
 /**
@@ -34,11 +34,11 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
 
         title?.let (::setTitle)
         setView(LayoutInflater.from(getContext()).inflate(io.jitrapon.glom.board.R.layout.event_date_picker_dialog, null).apply {
-            findViewById<GlomCalendarView>(io.jitrapon.glom.board.R.id.event_date_picker_calendar_view)?.let {
-                calendarView = it
-                it.setSelectionMode(selectionMode)
-                it.select(Date().setTime(year, monthOfYear, dayOfMonth), true)
-            }
+//            findViewById<GlomCalendarView>(io.jitrapon.glom.board.R.id.event_date_picker_calendar_view)?.let {
+//                calendarView = it
+//                it.setSelectionMode(selectionMode)
+//                it.select(Date().setTime(year, monthOfYear, dayOfMonth), true)
+//            }
             setButton(DialogInterface.BUTTON_NEUTRAL, context.getString(R.string.done_button), this@GlomDatePickerDialog)
             setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel), this@GlomDatePickerDialog)
             setButton(DialogInterface.BUTTON_POSITIVE, context.getString(R.string.date_picker_set_time_button), this@GlomDatePickerDialog)
@@ -66,12 +66,12 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
         when (which) {
             BUTTON_POSITIVE -> {
                 listener?.let {
-                    calendarView.clearFocus()
-                    calendarView.let { calendar ->
-                        if (calendar.hasSelected) {
-                            it.onDateSet(null, calendar.year!!, calendar.month!!, calendar.day!!)
-                        }
-                    }
+//                    calendarView.clearFocus()
+//                    calendarView.let { calendar ->
+//                        if (calendar.hasSelected) {
+//                            it.onDateSet(null, calendar.year!!, calendar.month!!, calendar.day!!)
+//                        }
+//                    }
                 }
             }
             BUTTON_NEGATIVE -> cancel()

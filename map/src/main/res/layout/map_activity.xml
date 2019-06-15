@@ -7,17 +7,6 @@
     tools:context=".MapActivity"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <TextView
-        android:id="@+id/map_textview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TODO Map"
-        android:textSize="20sp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
     <io.jitrapon.glom.base.ui.widget.GlomButton
         style="@style/Widget.Glom.Button.Flat"
         android:id="@+id/map_button1"
@@ -58,6 +47,18 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/map_button3" />
+
+    <com.kizitonwose.calendarview.CalendarView
+        android:id="@+id/calendar_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map_button4"
+        app:cv_dayViewResource="@layout/calendar_day_layout"
+        app:cv_scrollMode="paged"
+        app:cv_orientation="horizontal"
+        app:cv_outDateStyle="endOfRow" />
 
     <include
         android:id="@+id/map_bottom_navigation"

@@ -31,7 +31,4 @@ dependencies {
 
     // views
     implementation "com.romandanylyk:pageindicatorview:1.0.1@aar"
-    implementation ("com.github.prolificinteractive:material-calendarview:1.5.0") {
-        exclude group: 'com.android.support'
-    }
 }

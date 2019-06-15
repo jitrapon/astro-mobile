@@ -2,7 +2,7 @@ package io.jitrapon.glom.base
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
-import com.google.android.gms.maps.MapsInitializer
+import com.jakewharton.threetenabp.AndroidThreeTen
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.DeviceUtils
@@ -31,5 +31,8 @@ class GlomApplication : Application() {
 
         // initialize device utility classes
         DeviceUtils.init(this)
+
+        // initialize timezones
+        AndroidThreeTen.init(this)
     }
 }

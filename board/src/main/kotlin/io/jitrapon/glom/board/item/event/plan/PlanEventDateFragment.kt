@@ -3,16 +3,13 @@ package io.jitrapon.glom.board.item.event.plan
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.lifecycle.Observer
-import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.VerticalSpaceItemDecoration
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
-import io.jitrapon.glom.board.item.event.widget.GlomCalendarView
 import kotlinx.android.synthetic.main.plan_event_date_fragment.*
-import java.util.*
 
 /**
  * Screen that shows date polls of the event plan
@@ -56,10 +53,10 @@ class PlanEventDateFragment : BaseFragment() {
      * Called when any view must be initialized
      */
     override fun onSetupView(view: View) {
-        event_plan_date_calendar.apply {
-            setSelectionMode(GlomCalendarView.SelectionMode.NONE)
-            setSelectableDateRange(Date() to null)
-        }
+//        event_plan_date_calendar.apply {
+//            setSelectionMode(GlomCalendarView.SelectionMode.NONE)
+//            setSelectableDateRange(Date() to null)
+//        }
         event_plan_date_vote_progressbar.hide()
         event_plan_date_poll_recyclerview.apply {
             adapter = EventPollAdapter(viewModel, TYPE_DATE_POLL)
@@ -95,23 +92,23 @@ class PlanEventDateFragment : BaseFragment() {
                     }
                     UiModel.Status.SUCCESS -> {
                         if (it.itemsChangedIndices.isNullOrEmpty()) {
-                            event_plan_date_calendar.apply {
-                                clear()
-                                setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
-                                for (datePoll in it.datePolls) {
-                                    val endDate = datePoll.calendarEndDate
-                                    if (endDate == null) {
-                                        select(datePoll.calendarStartDate, false)
-                                    }
-                                    else {
-                                        selectRange(datePoll.calendarStartDate, endDate)
-                                    }
-                                }
-                                onDateSelected { date, _ ->
-                                    select(date, false)
-                                    viewModel.showDateTimeRangePicker(date)
-                                }
-                            }
+//                            event_plan_date_calendar.apply {
+//                                clear()
+//                                setSelectionMode(GlomCalendarView.SelectionMode.MULTIPLE)
+//                                for (datePoll in it.datePolls) {
+//                                    val endDate = datePoll.calendarEndDate
+//                                    if (endDate == null) {
+//                                        select(datePoll.calendarStartDate, false)
+//                                    }
+//                                    else {
+//                                        selectRange(datePoll.calendarStartDate, endDate)
+//                                    }
+//                                }
+//                                onDateSelected { date, _ ->
+//                                    select(date, false)
+//                                    viewModel.showDateTimeRangePicker(date)
+//                                }
+//                            }
 
                             event_plan_date_vote_progressbar.hide()
                             event_plan_date_poll_recyclerview.adapter!!.notifyDataSetChanged()
@@ -123,9 +120,9 @@ class PlanEventDateFragment : BaseFragment() {
                         }
                     }
                     else -> {
-                        event_plan_date_calendar.apply {
-                            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
-                        }
+//                        event_plan_date_calendar.apply {
+//                            selectionMode = MaterialCalendarView.SELECTION_MODE_NONE
+//                        }
 
                         event_plan_date_vote_progressbar.hide()
                     }
@@ -150,9 +147,9 @@ class PlanEventDateFragment : BaseFragment() {
                         }
                     }
                     if (!foundInDatePoll) {
-                        picker.startDate?.let { date ->
-                            event_plan_date_calendar.select(date, false, false)
-                        }
+//                        picker.startDate?.let { date ->
+//                            event_plan_date_calendar.select(date, false, false)
+//                        }
                     }
                 })
             }

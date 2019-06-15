@@ -20,7 +20,6 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomBottomSheetDialogFragment
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.item.event.widget.GlomCalendarView
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.*
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.*
 import kotlinx.android.synthetic.main.date_time_picker_date_item.view.*
@@ -41,7 +40,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
 
     private var expandedViews: ArrayList<View> = ArrayList()
 
-    private var calendarView: GlomCalendarView? = null
+//    private var calendarView: GlomCalendarView? = null
 
     private var hasExpanded = false
 
@@ -93,7 +92,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                     date_time_picker_bottom_sheet_calendar_view_stub?.apply {
                         setOnInflateListener { _, inflated ->
                             expandedViews.add(inflated)
-                            calendarView = inflated.findViewById(R.id.date_time_picker_bottom_sheet_calendar)
+//                            calendarView = inflated.findViewById(R.id.date_time_picker_bottom_sheet_calendar)
                             date_time_picker_bottom_sheet_expanded_cancel_button.setOnClickListener { dismiss() }
                             date_time_picker_bottom_sheet_expanded_done_button.setOnClickListener { viewModel.confirmSelection() }
                         }
@@ -325,15 +324,15 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     }
 
     private fun resetCalendar() {
-        calendarView?.apply {
-            clear()
-            select(viewModel.getCurrentDate(), scrollToDate = false, selected = true)
-            viewModel.selectCalendarDate(viewModel.getCurrentDate())
-            setSelectableDateRange(viewModel.getMinDate() to null)
-            onDateSelected { date, isSelected ->
-                if (isSelected) viewModel.selectCalendarDate(date)
-            }
-        }
+//        calendarView?.apply {
+//            clear()
+//            select(viewModel.getCurrentDate(), scrollToDate = false, selected = true)
+//            viewModel.selectCalendarDate(viewModel.getCurrentDate())
+//            setSelectableDateRange(viewModel.getMinDate() to null)
+//            onDateSelected { date, isSelected ->
+//                if (isSelected) viewModel.selectCalendarDate(date)
+//            }
+//        }
     }
 
     private fun setSimpleDateText(view: View, uiModel: DateChoiceUiModel) {

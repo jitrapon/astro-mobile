@@ -185,4 +185,8 @@ dependencies {
 
     // animation
     api "com.airbnb.android:lottie:$rootProject.lottieVersion"
+
+    // time
+    api 'com.jakewharton.threetenabp:threetenabp:1.2.1'
+    api 'com.github.kizitonwose:CalendarView:0.1.2'
 }

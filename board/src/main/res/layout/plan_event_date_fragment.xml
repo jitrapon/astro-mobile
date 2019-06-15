@@ -37,15 +37,15 @@
         app:cardCornerRadius="3dp"
         app:cardElevation="@dimen/event_plan_calendar_elevation" >
 
-        <io.jitrapon.glom.board.item.event.widget.GlomCalendarView
-            android:id="@+id/event_plan_date_calendar"
-            app:mcv_tileWidth="48dp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:mcv_selectionColor="?android:attr/colorAccent"
-            app:mcv_leftArrowMask="@drawable/ic_left"
-            app:mcv_rightArrowMask="@drawable/ic_right"
-            app:mcv_arrowColor="@color/warm_grey" />
+        <!--<io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView-->
+            <!--android:id="@+id/event_plan_date_calendar"-->
+            <!--app:mcv_tileWidth="48dp"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:mcv_selectionColor="?android:attr/colorAccent"-->
+            <!--app:mcv_leftArrowMask="@drawable/ic_left"-->
+            <!--app:mcv_rightArrowMask="@drawable/ic_right"-->
+            <!--app:mcv_arrowColor="@color/warm_grey" />-->
 
     </androidx.cardview.widget.CardView>
 
