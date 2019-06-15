@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/board_constraint_layout"
+<androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/map_constraint_layout"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -48,17 +48,27 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/map_button3" />
 
-    <com.kizitonwose.calendarview.CalendarView
-        android:id="@+id/calendar_view"
-        android:layout_width="wrap_content"
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/map_button4"
-        app:cv_dayViewResource="@layout/calendar_day_layout"
-        app:cv_scrollMode="paged"
-        app:cv_orientation="horizontal"
-        app:cv_outDateStyle="endOfRow" />
+        app:cardCornerRadius="8dp"
+        app:cardBackgroundColor="@color/white"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" >
+
+        <com.kizitonwose.calendarview.CalendarView
+            android:id="@+id/calendar_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cv_dayViewResource="@layout/calendar_day_layout"
+            app:cv_scrollMode="paged"
+            app:cv_orientation="horizontal"
+            app:cv_outDateStyle="endOfRow" />
+
+    </com.google.android.material.card.MaterialCardView>
 
     <include
         android:id="@+id/map_bottom_navigation"

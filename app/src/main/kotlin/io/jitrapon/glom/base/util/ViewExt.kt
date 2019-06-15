@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.util
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.content.Context
+import android.content.res.Resources
 import android.text.TextUtils
 import android.view.View
 import android.view.View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION
@@ -155,3 +156,10 @@ fun View.setMargin(left: Int? = null, top: Int? = null, right: Int? = null, bott
         layoutParams = this
     }
 }
+
+fun View.parentWidth(): Int {
+    return (parent as? ViewGroup)?.width ?: (parent as? View)?.width ?: screenWidth
+}
+
+val screenWidth: Int
+    get() = Resources.getSystem().displayMetrics.widthPixels
