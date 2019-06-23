@@ -49,6 +49,7 @@
         app:layout_constraintTop_toBottomOf="@+id/map_button3" />
 
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/calendar_view_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
@@ -59,14 +60,37 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp" >
 
-        <com.kizitonwose.calendarview.CalendarView
-            android:id="@+id/calendar_view"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cv_dayViewResource="@layout/calendar_day_layout"
-            app:cv_scrollMode="paged"
-            app:cv_orientation="horizontal"
-            app:cv_outDateStyle="endOfRow" />
+            android:orientation="vertical" >
+
+            <TextView
+                style="@style/TextAppearance.H4"
+                android:id="@+id/calendar_view_month_textview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                tools:text="May 2019"
+                android:layout_marginTop="@dimen/spacing_micro"
+                android:layout_marginBottom="@dimen/spacing_micro" />
+
+            <include
+                android:id="@+id/calendar_item_day_legend"
+                layout="@layout/calendar_item_day_legend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
+                android:id="@+id/calendar_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cv_dayViewResource="@layout/calendar_item_date"
+                app:cv_scrollMode="paged"
+                app:cv_orientation="horizontal"
+                app:cv_outDateStyle="endOfRow" />
+
+        </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
 

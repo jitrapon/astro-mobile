@@ -7,6 +7,7 @@ import io.jitrapon.glom.base.util.DateTimeFormat.TODAY
 import io.jitrapon.glom.base.util.DateTimeFormat.TOMORROW
 import io.jitrapon.glom.base.util.DateTimeFormat.YESTERDAY
 import java.text.DateFormat
+import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -210,3 +211,5 @@ val Date.secondToMillisecond: Pair<Int, Int>
         time = this@secondToMillisecond
         get(Calendar.SECOND) to get(Calendar.MILLISECOND)
     }
+
+fun getShortWeekDays(): Array<String> = DateFormatSymbols.getInstance().shortWeekdays
