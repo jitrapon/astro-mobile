@@ -13,10 +13,8 @@ import com.kizitonwose.calendarview.model.DayOwner
 import com.kizitonwose.calendarview.ui.DayBinder
 import com.kizitonwose.calendarview.ui.ViewContainer
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.util.attrColor
-import io.jitrapon.glom.base.util.getShortWeekDays
-import io.jitrapon.glom.base.util.parentWidth
-import io.jitrapon.glom.base.util.px
+import io.jitrapon.glom.base.util.*
+import org.threeten.bp.LocalDate
 import org.threeten.bp.YearMonth
 import org.threeten.bp.temporal.WeekFields
 import java.util.*
@@ -39,6 +37,9 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     private var onDateSetListener: ((Date, Boolean) -> Unit)? = null
 
+    private var selectedDate: LocalDate? = null
+    private val today = LocalDate.now()
+
     /**
      * All the selection mode of the calendar
      */
@@ -54,12 +55,45 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
             // Called every time we need to reuse a container.
             override fun bind(container: DayViewContainer, day: CalendarDay) {
-                container.date.text = day.date.dayOfMonth.toString()
-                if (day.owner == DayOwner.THIS_MONTH) {
-                    container.date.setTextColor(context.attrColor(android.R.attr.textColorPrimary))
-                }
-                else {
-                    container.date.setTextColor(context.attrColor(android.R.attr.textColorSecondary))
+                container.date.apply {
+                    container.day = day
+                    text = day.date.dayOfMonth.toString()
+
+                    if (day.owner == DayOwner.THIS_MONTH) {
+                        when (day.date) {
+                            selectedDate -> {
+                                setBackgroundResource(R.drawable.bg_solid_circle)
+                                background.setTint(context.colorPrimary())
+                                if (day.date == today) {
+                                    setTextColor(context.attrColor(android.R.attr.textColorPrimaryInverse))
+                                }
+                                else {
+                                    setTextColor(context.attrColor(android.R.attr.textColorSecondaryInverse))
+                                }
+                            }
+                            today -> {
+                                background = null
+                                setTextColor(context.colorPrimary())
+                            }
+                            else -> {
+                                background = null
+                                setTextColor(context.attrColor(android.R.attr.textColorPrimary))
+                            }
+                        }
+                    }
+                    else {
+                        when (day.date) {
+                            selectedDate -> {
+                                setBackgroundResource(R.drawable.bg_solid_circle)
+                                background.setTint(context.colorPrimary())
+                                setTextColor(context.attrColor(android.R.attr.textColorSecondaryInverse))
+                            }
+                            else -> {
+                                background = null
+                                setTextColor(context.attrColor(android.R.attr.textColorSecondary))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -158,9 +192,30 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
         dayWidth = (((parentWidth() - (monthPaddingStart + monthPaddingEnd)) / NUM_DAYS_IN_WEEK) + 0.5).toInt()
         dayHeight = COLLAPSED_STATE_HEIGHT_DP.px
     }
-}
 
-class DayViewContainer(view: View) : ViewContainer(view) {
+    inner class DayViewContainer(view: View) : ViewContainer(view) {
 
-    val date = view.findViewById<TextView>(R.id.calendar_item_date_textview)
+        val date = view.findViewById<TextView>(R.id.calendar_item_date_textview)
+
+        // Will be set when this container is bound. See the dayBinder.
+        lateinit var day: CalendarDay
+
+        init {
+            view.setOnClickListener {
+                if (day.owner == DayOwner.THIS_MONTH) {
+                    // unselect day
+                    if (selectedDate == day.date) {
+                        selectedDate = null
+                        notifyDayChanged(day)
+                    }
+                    else {
+                        val oldDate = selectedDate
+                        selectedDate = day.date
+                        notifyDateChanged(day.date)
+                        oldDate?.let(::notifyDateChanged)
+                    }
+                }
+            }
+        }
+    }
 }
