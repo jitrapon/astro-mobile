@@ -46,7 +46,7 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
     }
 
     fun setSelectionMode(selectionMode: GlomCalendarView.SelectionMode) {
-        calendarView.setSelectionMode(selectionMode)
+        calendarView.selectionMode = selectionMode
     }
 
     fun setMinDate(minDate: Date?) {

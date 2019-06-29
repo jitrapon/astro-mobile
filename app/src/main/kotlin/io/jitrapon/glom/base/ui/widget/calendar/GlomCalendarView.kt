@@ -37,7 +37,8 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     private var onDateSetListener: ((Date, Boolean) -> Unit)? = null
 
-    private var selectedDate: LocalDate? = null
+    private var selectedDates = mutableSetOf<LocalDate>()
+
     private val today = LocalDate.now()
 
     /**
@@ -50,50 +51,13 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
     @SuppressLint("SetTextI18n")
     fun init(monthTextView: TextView, dayLegendView: ViewGroup) {
         dayBinder = object : DayBinder<DayViewContainer> {
-            // Called only when a new container is needed.
+
             override fun create(view: View) = DayViewContainer(view)
 
-            // Called every time we need to reuse a container.
             override fun bind(container: DayViewContainer, day: CalendarDay) {
-                container.date.apply {
-                    container.day = day
-                    text = day.date.dayOfMonth.toString()
-
-                    if (day.owner == DayOwner.THIS_MONTH) {
-                        when (day.date) {
-                            selectedDate -> {
-                                setBackgroundResource(R.drawable.bg_solid_circle)
-                                background.setTint(context.colorPrimary())
-                                if (day.date == today) {
-                                    setTextColor(context.attrColor(android.R.attr.textColorPrimaryInverse))
-                                }
-                                else {
-                                    setTextColor(context.attrColor(android.R.attr.textColorSecondaryInverse))
-                                }
-                            }
-                            today -> {
-                                background = null
-                                setTextColor(context.colorPrimary())
-                            }
-                            else -> {
-                                background = null
-                                setTextColor(context.attrColor(android.R.attr.textColorPrimary))
-                            }
-                        }
-                    }
-                    else {
-                        when (day.date) {
-                            selectedDate -> {
-                                setBackgroundResource(R.drawable.bg_solid_circle)
-                                background.setTint(context.colorPrimary())
-                                setTextColor(context.attrColor(android.R.attr.textColorSecondaryInverse))
-                            }
-                            else -> {
-                                background = null
-                                setTextColor(context.attrColor(android.R.attr.textColorSecondary))
-                            }
-                        }
-                    }
+                with(container) {
+                    this.day = day
+                    bindDay()
                 }
             }
         }
@@ -104,13 +68,18 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
         val daysInWeek = getShortWeekDays().takeLast(7)
         dayLegendView.children.forEachIndexed { index, view ->
-            (view as TextView).apply {
+            (view as? TextView)?.apply {
                 text = daysInWeek[index].toUpperCase()
             }
         }
 
         viewTreeObserver.addOnGlobalLayoutListener(this)
     }
+
+    /**
+     * Sets the date selection mode for the calendar
+     */
+    var selectionMode: SelectionMode = SelectionMode.SINGLE
 
     /**
      * Whether or not user has selected any dates
@@ -135,13 +104,6 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
      */
     val day: Int?
         get() = null
-
-    /**
-     * Sets the date selection mode for the calendar
-     */
-    fun setSelectionMode(mode: SelectionMode) {
-
-    }
 
     /**
      * Enables or disables date range to be selectable on the calendar
@@ -195,27 +157,78 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     inner class DayViewContainer(view: View) : ViewContainer(view) {
 
-        val date = view.findViewById<TextView>(R.id.calendar_item_date_textview)
+        private val dateText: TextView = view.findViewById(R.id.calendar_item_date_textview)
+        private val selectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator)
 
-        // Will be set when this container is bound. See the dayBinder.
         lateinit var day: CalendarDay
 
         init {
             view.setOnClickListener {
-                if (day.owner == DayOwner.THIS_MONTH) {
-                    // unselect day
-                    if (selectedDate == day.date) {
-                        selectedDate = null
-                        notifyDayChanged(day)
-                    }
-                    else {
-                        val oldDate = selectedDate
-                        selectedDate = day.date
-                        notifyDateChanged(day.date)
-                        oldDate?.let(::notifyDateChanged)
+                if (selectionMode != SelectionMode.NONE) {
+                    if (day.inThisMonth) {
+                        if (day.isSelected) unselectDay(day)
+                        else selectDay(day)
                     }
                 }
             }
         }
+
+        fun bindDay() {
+            dateText.text = day.date.dayOfMonth.toString()
+
+            if (day.isSelected) {
+                selectIndicator.show()
+                dateText.setTextColor(
+                        if (day.inThisMonth) context.attrColor(android.R.attr.textColorPrimaryInverse)
+                        else context.attrColor(android.R.attr.textColorSecondaryInverse)
+                )
+            }
+            else {
+                selectIndicator.hide()
+                dateText.setTextColor(
+                        when {
+                            day.date == today -> context.colorPrimary()
+                            day.inThisMonth -> context.attrColor(android.R.attr.textColorPrimary)
+                            else -> context.attrColor(android.R.attr.textColorSecondary)
+                        }
+                )
+            }
+        }
+
+        internal fun selectDay(day: CalendarDay) {
+            when (selectionMode) {
+                SelectionMode.SINGLE -> {
+                    selectedDates.apply {
+                        val previouslySelectedDate = if (isNotEmpty()) first() else null
+                        add(day.date)
+                        notifyDayChanged(day)
+                        previouslySelectedDate?.let {
+                            remove(it)
+                            notifyDateChanged(it)
+                        }
+                    }
+                }
+                else -> Unit
+            }
+        }
+
+        internal fun unselectDay(day: CalendarDay) {
+            if (selectedDates.remove(day.date)) {
+                when (selectionMode) {
+                    SelectionMode.SINGLE -> notifyDayChanged(day)
+                    else -> Unit
+                }
+            }
+        }
     }
+
+    //region helpers
+
+    private val CalendarDay.inThisMonth: Boolean
+        get() = owner == DayOwner.THIS_MONTH
+
+    private val CalendarDay.isSelected: Boolean
+        get() = selectedDates.contains(date)
+
+    //endregion
 }
