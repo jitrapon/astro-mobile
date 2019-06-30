@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    android:id="@+id/calendar_item_layout"
+<androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/calendar_item_layout"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clickable="true"
-    android:focusable="true" >
+    android:focusable="true"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <View
         android:id="@+id/calendar_item_selected_indicator"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
         android:background="@drawable/bg_solid_circle"
-        android:backgroundTint="?colorPrimary" />
+        android:backgroundTint="?colorPrimary"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/calendar_item_date_textview"
@@ -23,4 +26,4 @@
         android:textSize="16sp"
         tools:text="22" />
 
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

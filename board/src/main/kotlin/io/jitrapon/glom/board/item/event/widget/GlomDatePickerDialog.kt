@@ -51,7 +51,7 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
 
     fun setMinDate(minDate: Date?) {
         minDate?.let {
-            calendarView.setSelectableDateRange(it to null)
+//            calendarView.setSelectableDateRange(it to null)
         }
     }
 
@@ -81,9 +81,9 @@ class GlomDatePickerDialog(context: Context, private val listener: DatePickerDia
 
     //endregion
 
-    val year: Int? get() = calendarView.year
+    val year: Int? get() = null
 
-    val month: Int? get() = calendarView.month
+    val month: Int? get() = null
 
-    val dayOfMonth: Int? get() = calendarView.day
+    val dayOfMonth: Int? get() = null
 }

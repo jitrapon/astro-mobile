@@ -16,6 +16,7 @@ import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.*
 import org.threeten.bp.LocalDate
 import org.threeten.bp.YearMonth
+import org.threeten.bp.ZoneId
 import org.threeten.bp.temporal.WeekFields
 import java.util.*
 
@@ -35,7 +36,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     constructor(context: Context, attrs: AttributeSet): super(context, attrs)
 
-    private var onDateSetListener: ((Date, Boolean) -> Unit)? = null
+    private var onDateSelectListener: ((date: Date, isSelected: Boolean) -> Unit)? = null
 
     private var selectedDates = mutableSetOf<LocalDate>()
 
@@ -45,11 +46,16 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
      * All the selection mode of the calendar
      */
     enum class SelectionMode {
-        NONE, SINGLE, MULTIPLE, RANGE
+        SINGLE, MULTIPLE, RANGE
     }
 
     @SuppressLint("SetTextI18n")
-    fun init(monthTextView: TextView, dayLegendView: ViewGroup) {
+    fun init(monthTextView: TextView, dayLegendView: ViewGroup, selectionMode: SelectionMode = SelectionMode.SINGLE,
+             isEditable: Boolean = true, onDateSelectListener: ((Date, Boolean) -> Unit)? = null) {
+        this.selectionMode = selectionMode
+        this.editable = isEditable
+        this.onDateSelectListener = onDateSelectListener
+
         dayBinder = object : DayBinder<DayViewContainer> {
 
             override fun create(view: View) = DayViewContainer(view)
@@ -79,45 +85,12 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
     /**
      * Sets the date selection mode for the calendar
      */
-    var selectionMode: SelectionMode = SelectionMode.SINGLE
+    var selectionMode: SelectionMode = SelectionMode.MULTIPLE
 
     /**
-     * Whether or not user has selected any dates
+     * Whether or not this calendar's selections are editable
      */
-    val hasSelected: Boolean
-        get() = false
-
-    /**
-     * The year of the currently selected date
-     */
-    val year: Int?
-        get() = null
-
-    /**
-     * The month of the currently selected date
-     */
-    val month: Int?
-        get() = null
-
-    /**
-     * The day of the currently selected date
-     */
-    val day: Int?
-        get() = null
-
-    /**
-     * Enables or disables date range to be selectable on the calendar
-     */
-    fun setSelectableDateRange(range: Pair<Date?, Date?>) {
-
-    }
-
-    /**
-     * Called when a date is selected or unselected,
-     */
-    fun onDateSelected(func: (Date, Boolean) -> Unit) {
-
-    }
+    var editable: Boolean = true
 
     /**
      * Selects a date. If it's already selected, nothing happens.
@@ -127,6 +100,9 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     }
 
+    /**
+     * Clears all date selection
+     */
     fun clear() {
 
     }
@@ -148,11 +124,12 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
         val firstMonth = currentMonth.minusMonths(10)
         val lastMonth = currentMonth.plusMonths(10)
         val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-        setup(firstMonth, lastMonth, firstDayOfWeek)
-        scrollToMonth(currentMonth)
 
         dayWidth = (((parentWidth() - (monthPaddingStart + monthPaddingEnd)) / NUM_DAYS_IN_WEEK) + 0.5).toInt()
         dayHeight = COLLAPSED_STATE_HEIGHT_DP.px
+
+        setup(firstMonth, lastMonth, firstDayOfWeek)
+        scrollToMonth(currentMonth)
     }
 
     inner class DayViewContainer(view: View) : ViewContainer(view) {
@@ -164,10 +141,10 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
         init {
             view.setOnClickListener {
-                if (selectionMode != SelectionMode.NONE) {
+                if (editable) {
                     if (day.inThisMonth) {
-                        if (day.isSelected) unselectDay(day)
-                        else selectDay(day)
+                        if (day.isSelected) unselectDay(day, true)
+                        else selectDay(day, true)
                     }
                 }
             }
@@ -195,7 +172,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             }
         }
 
-        internal fun selectDay(day: CalendarDay) {
+        internal fun selectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
             when (selectionMode) {
                 SelectionMode.SINGLE -> {
                     selectedDates.apply {
@@ -206,16 +183,34 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                             remove(it)
                             notifyDateChanged(it)
                         }
+
+                        if (shouldInvokeCallback) {
+                            onDateSelectListener?.invoke(day.toDate(), true)
+                        }
+                    }
+                }
+                SelectionMode.MULTIPLE -> {
+                    selectedDates.add(day.date)
+                    notifyDayChanged(day)
+
+                    if (shouldInvokeCallback) {
+                        onDateSelectListener?.invoke(day.toDate(), true)
                     }
                 }
                 else -> Unit
             }
         }
 
-        internal fun unselectDay(day: CalendarDay) {
+        internal fun unselectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
             if (selectedDates.remove(day.date)) {
                 when (selectionMode) {
-                    SelectionMode.SINGLE -> notifyDayChanged(day)
+                    SelectionMode.SINGLE, SelectionMode.MULTIPLE -> {
+                        notifyDayChanged(day)
+
+                        if (shouldInvokeCallback) {
+                            onDateSelectListener?.invoke(day.toDate(), false)
+                        }
+                    }
                     else -> Unit
                 }
             }
@@ -229,6 +224,8 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     private val CalendarDay.isSelected: Boolean
         get() = selectedDates.contains(date)
+
+    private fun CalendarDay.toDate(): Date = Date(date.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000)
 
     //endregion
 }
