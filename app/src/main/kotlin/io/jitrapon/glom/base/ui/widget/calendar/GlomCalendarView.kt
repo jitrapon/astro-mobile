@@ -1,4 +1,6 @@
 package io.jitrapon.glom.base.ui.widget.calendar
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
@@ -6,19 +8,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.TextView
+import androidx.core.animation.doOnEnd
 import androidx.core.view.children
 import com.kizitonwose.calendarview.CalendarView
 import com.kizitonwose.calendarview.model.CalendarDay
 import com.kizitonwose.calendarview.model.DayOwner
 import com.kizitonwose.calendarview.ui.DayBinder
 import com.kizitonwose.calendarview.ui.ViewContainer
-import io.jitrapon.glom.R
 import io.jitrapon.glom.base.util.*
 import org.threeten.bp.LocalDate
 import org.threeten.bp.YearMonth
 import org.threeten.bp.ZoneId
 import org.threeten.bp.temporal.WeekFields
 import java.util.*
+
+
 
 const val NUM_DAYS_IN_WEEK = 7f
 const val COLLAPSED_STATE_HEIGHT_DP = 48
@@ -134,10 +138,14 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
     inner class DayViewContainer(view: View) : ViewContainer(view) {
 
-        private val dateText: TextView = view.findViewById(R.id.calendar_item_date_textview)
-        private val selectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator)
+        private val dateText: TextView = view.findViewById(io.jitrapon.glom.R.id.calendar_item_date_textview)
+        private val selectIndicator: View = view.findViewById(io.jitrapon.glom.R.id.calendar_item_selected_indicator)
+        private val leftSelectIndicator: View = view.findViewById(io.jitrapon.glom.R.id.calendar_item_selected_indicator_left_half)
+        private val rightSelectIndicator: View = view.findViewById(io.jitrapon.glom.R.id.calendar_item_selected_indicator_right_half)
 
         lateinit var day: CalendarDay
+
+        private val appearanceAnimationDelay = 100L
 
         init {
             view.setOnClickListener {
@@ -148,27 +156,66 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                     }
                 }
             }
+            leftSelectIndicator.hide()
+            rightSelectIndicator.hide()
+            selectIndicator.hide()
         }
 
         fun bindDay() {
             dateText.text = day.date.dayOfMonth.toString()
 
             if (day.isSelected) {
+                showSelected()
+            }
+            else {
+                hideSelected()
+            }
+        }
+
+        private fun showSelected(animate: Boolean = true) {
+            val textColor = if (day.inThisMonth) context.attrColor(android.R.attr.textColorPrimaryInverse) else
+                context.attrColor(android.R.attr.textColorSecondaryInverse)
+            if (animate) {
                 selectIndicator.show()
-                dateText.setTextColor(
-                        if (day.inThisMonth) context.attrColor(android.R.attr.textColorPrimaryInverse)
-                        else context.attrColor(android.R.attr.textColorSecondaryInverse)
-                )
+                val animX = ObjectAnimator.ofFloat(selectIndicator, "scaleX", 1.0f)
+                val animY = ObjectAnimator.ofFloat(selectIndicator, "scaleY", 1.0f)
+                AnimatorSet().apply {
+                    duration = appearanceAnimationDelay
+                    playTogether(animX, animY)
+                    doOnEnd {
+                        dateText.setTextColor(textColor)
+                    }
+                    start()
+                }
+            }
+            else {
+                selectIndicator.show()
+                dateText.setTextColor(textColor)
+            }
+        }
+
+        private fun hideSelected(animate: Boolean = true) {
+            val textColor = when {
+                day.date == today -> context.colorPrimary()
+                day.inThisMonth -> context.attrColor(android.R.attr.textColorPrimary)
+                else -> context.attrColor(android.R.attr.textColorSecondary)
+            }
+            if (animate) {
+                val animX = ObjectAnimator.ofFloat(selectIndicator, "scaleX", 0.0f)
+                val animY = ObjectAnimator.ofFloat(selectIndicator, "scaleY", 0.0f)
+                AnimatorSet().apply {
+                    duration = appearanceAnimationDelay
+                    playTogether(animX, animY)
+                    doOnEnd {
+                        selectIndicator.hide()
+                        dateText.setTextColor(textColor)
+                    }
+                    start()
+                }
             }
             else {
                 selectIndicator.hide()
-                dateText.setTextColor(
-                        when {
-                            day.date == today -> context.colorPrimary()
-                            day.inThisMonth -> context.attrColor(android.R.attr.textColorPrimary)
-                            else -> context.attrColor(android.R.attr.textColorSecondary)
-                        }
-                )
+                dateText.setTextColor(textColor)
             }
         }
 

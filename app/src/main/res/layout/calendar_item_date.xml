@@ -6,9 +6,10 @@
     android:layout_height="match_parent"
     android:clickable="true"
     android:focusable="true"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <View
+        tools:visibility="gone"
         android:id="@+id/calendar_item_selected_indicator"
         android:layout_width="0dp"
         android:layout_height="match_parent"
@@ -16,6 +17,31 @@
         android:backgroundTint="?colorPrimary"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <View
+        tools:visibility="gone"
+        android:id="@+id/calendar_item_selected_indicator_left_half"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:background="?colorPrimary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <View
+        android:id="@+id/calendar_item_selected_indicator_right_half"
+        tools:visibility="gone"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:background="?colorPrimary"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
