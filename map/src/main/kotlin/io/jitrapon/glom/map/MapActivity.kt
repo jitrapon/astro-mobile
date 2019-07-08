@@ -2,7 +2,6 @@ package io.jitrapon.glom.map
 
 import android.os.Bundle
 import android.widget.LinearLayout
-import android.widget.Toast
 import io.jitrapon.glom.base.BaseMainActivity
 import io.jitrapon.glom.base.navigation.NavigationItem
 import io.jitrapon.glom.base.ui.widget.BadgedBottomNavigationView
@@ -21,12 +20,12 @@ class MapActivity : BaseMainActivity() {
 
         tag = "map"
 
-        calendar_view.init(calendar_view_month_textview,
+        calendar_view.init(
+                calendar_view_month_textview,
                 calendar_item_day_legend as LinearLayout,
                 GlomCalendarView.SelectionMode.MULTIPLE,
                 true) { date, isSelected ->
-            val message = if (isSelected) "Selected" else "Unselected"
-            Toast.makeText(this, "$message $date", Toast.LENGTH_LONG).show()
+
         }
     }
 

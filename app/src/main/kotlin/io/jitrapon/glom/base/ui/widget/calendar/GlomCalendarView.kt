@@ -164,11 +164,11 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
         fun bindDay() {
             dateText.text = day.date.dayOfMonth.toString()
 
-            if (day.isSelected) {
-                showSelected()
+            if (day.isSelected && day.inThisMonth) {
+                showSelected(day.inThisMonth)
             }
             else {
-                hideSelected()
+                hideSelected(day.inThisMonth)
             }
         }
 
@@ -244,7 +244,9 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                         onDateSelectListener?.invoke(day.toDate(), true)
                     }
                 }
-                else -> Unit
+                SelectionMode.RANGE -> {
+
+                }
             }
         }
 
