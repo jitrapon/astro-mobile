@@ -188,5 +188,5 @@ dependencies {
 
     // time
     api 'com.jakewharton.threetenabp:threetenabp:1.2.1'
-    api 'com.github.kizitonwose:CalendarView:0.2.0'
+    api 'com.github.kizitonwose:CalendarView:0.2.4'
 }

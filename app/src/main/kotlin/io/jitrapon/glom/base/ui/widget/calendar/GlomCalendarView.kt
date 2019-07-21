@@ -17,6 +17,7 @@ import com.kizitonwose.calendarview.ui.DayBinder
 import com.kizitonwose.calendarview.ui.ViewContainer
 import io.jitrapon.glom.base.util.*
 import org.threeten.bp.LocalDate
+import org.threeten.bp.Month
 import org.threeten.bp.YearMonth
 import org.threeten.bp.ZoneId
 import org.threeten.bp.temporal.WeekFields
@@ -43,14 +44,17 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
     private var onDateSelectListener: ((date: Date, isSelected: Boolean) -> Unit)? = null
 
     private var selectedDates = mutableSetOf<LocalDate>()
+    private var startDate: LocalDate? = null
+    private var endDate: LocalDate? = null
 
     private val today = LocalDate.now()
+    private var currMonth: Month = Month.JANUARY
 
     /**
      * All the selection mode of the calendar
      */
     enum class SelectionMode {
-        SINGLE, MULTIPLE, RANGE
+        SINGLE, MULTIPLE, RANGE_START, RANGE_END
     }
 
     @SuppressLint("SetTextI18n")
@@ -74,6 +78,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
         monthScrollListener = {
             monthTextView.text = "${it.yearMonth.month.name.toLowerCase().capitalize()} ${it.year}"
+            currMonth = it.yearMonth.month
         }
 
         val daysInWeek = getShortWeekDays().takeLast(7)
@@ -163,12 +168,13 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
         fun bindDay() {
             dateText.text = day.date.dayOfMonth.toString()
+            val isDayInThisMonthAndVisible = day.inThisMonth && currMonth == day.date.month
 
-            if (day.isSelected && day.inThisMonth) {
-                showSelected(day.inThisMonth)
+            if (day.isSelected) {
+                showSelected(isDayInThisMonthAndVisible)
             }
             else {
-                hideSelected(day.inThisMonth)
+                hideSelected(isDayInThisMonthAndVisible)
             }
         }
 
@@ -176,7 +182,11 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             val textColor = if (day.inThisMonth) context.attrColor(android.R.attr.textColorPrimaryInverse) else
                 context.attrColor(android.R.attr.textColorSecondaryInverse)
             if (animate) {
-                selectIndicator.show()
+                selectIndicator.apply {
+                    show()
+                    scaleX = 0f
+                    scaleY = 0f
+                }
                 val animX = ObjectAnimator.ofFloat(selectIndicator, "scaleX", 1.0f)
                 val animY = ObjectAnimator.ofFloat(selectIndicator, "scaleY", 1.0f)
                 AnimatorSet().apply {
@@ -192,6 +202,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                 selectIndicator.show()
                 dateText.setTextColor(textColor)
             }
+            AppLogger.d("Show selected on date $day, animate=$animate")
         }
 
         private fun hideSelected(animate: Boolean = true) {
@@ -217,53 +228,83 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                 selectIndicator.hide()
                 dateText.setTextColor(textColor)
             }
+            AppLogger.d("Hide selected on date $day, animate=$animate")
         }
 
-        internal fun selectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
+        private fun selectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
             when (selectionMode) {
                 SelectionMode.SINGLE -> {
-                    selectedDates.apply {
-                        val previouslySelectedDate = if (isNotEmpty()) first() else null
-                        add(day.date)
-                        notifyDayChanged(day)
-                        previouslySelectedDate?.let {
-                            remove(it)
-                            notifyDateChanged(it)
-                        }
-
-                        if (shouldInvokeCallback) {
-                            onDateSelectListener?.invoke(day.toDate(), true)
-                        }
-                    }
+                    selectSingleMode(shouldInvokeCallback)
                 }
                 SelectionMode.MULTIPLE -> {
                     selectedDates.add(day.date)
-                    notifyDayChanged(day)
+                    reloadDay(day.date)
 
                     if (shouldInvokeCallback) {
                         onDateSelectListener?.invoke(day.toDate(), true)
                     }
                 }
-                SelectionMode.RANGE -> {
+                SelectionMode.RANGE_START -> {
+                    startDate = day.date
 
+                    // if no end date is selected, treat this as just a single selection
+                    if (endDate == null) {
+                        selectSingleMode(shouldInvokeCallback)
+                    }
+                    else {
+                        notifyCalendarChanged()
+                    }
+                }
+                SelectionMode.RANGE_END -> TODO()
+            }
+        }
+
+        private fun selectSingleMode(shouldInvokeCallback: Boolean) {
+            selectedDates.apply {
+                val previouslySelectedDate = if (isNotEmpty()) first() else null
+                add(day.date)
+                reloadDay(day.date)
+
+                previouslySelectedDate?.let {
+                    remove(it)
+                    reloadDay(it)
+                }
+
+                if (shouldInvokeCallback) {
+                    onDateSelectListener?.invoke(day.toDate(), true)
                 }
             }
         }
 
-        internal fun unselectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
+        private fun unselectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
             if (selectedDates.remove(day.date)) {
                 when (selectionMode) {
                     SelectionMode.SINGLE, SelectionMode.MULTIPLE -> {
-                        notifyDayChanged(day)
+                        reloadDay(day.date)
 
                         if (shouldInvokeCallback) {
                             onDateSelectListener?.invoke(day.toDate(), false)
+                        }
+                    }
+                    SelectionMode.RANGE_START -> {
+                        if (endDate == null) {
+                            reloadDay(day.date)
+
+                            if (shouldInvokeCallback) {
+                                onDateSelectListener?.invoke(day.toDate(), false)
+                            }
                         }
                     }
                     else -> Unit
                 }
             }
         }
+    }
+
+    private fun reloadDay(date: LocalDate) {
+        notifyDateChanged(date, DayOwner.PREVIOUS_MONTH)
+        notifyDateChanged(date, DayOwner.THIS_MONTH)
+        notifyDateChanged(date, DayOwner.NEXT_MONTH)
     }
 
     //region helpers

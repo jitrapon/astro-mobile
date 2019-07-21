@@ -23,7 +23,7 @@ class MapActivity : BaseMainActivity() {
         calendar_view.init(
                 calendar_view_month_textview,
                 calendar_item_day_legend as LinearLayout,
-                GlomCalendarView.SelectionMode.MULTIPLE,
+                GlomCalendarView.SelectionMode.RANGE_START,
                 true) { date, isSelected ->
 
         }
