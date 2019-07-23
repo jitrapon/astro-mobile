@@ -27,6 +27,10 @@ class MapActivity : BaseMainActivity() {
                 true) { date, isSelected ->
 
         }
+        map_button1.setOnClickListener {
+            calendar_view.selectionMode = if (calendar_view.selectionMode == GlomCalendarView.SelectionMode.RANGE_START)
+                GlomCalendarView.SelectionMode.RANGE_END else GlomCalendarView.SelectionMode.RANGE_START
+        }
     }
 
     override fun getBottomNavBar() = map_bottom_navigation as BadgedBottomNavigationView

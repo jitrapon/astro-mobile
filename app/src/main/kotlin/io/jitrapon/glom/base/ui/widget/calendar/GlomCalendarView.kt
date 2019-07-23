@@ -10,6 +10,7 @@ import android.view.ViewTreeObserver
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
 import androidx.core.view.children
+import androidx.core.view.isVisible
 import com.kizitonwose.calendarview.CalendarView
 import com.kizitonwose.calendarview.model.CalendarDay
 import com.kizitonwose.calendarview.model.DayOwner
@@ -155,8 +156,9 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
         init {
             view.setOnClickListener {
                 if (editable) {
-                    if (day.inThisMonth) {
-                        if (day.isSelected) unselectDay(day, true)
+                    if (day.inThisMonth && currMonth == day.date.month) {
+                        val isDayOnRangeEdge = endDate?.isEqual(day.date) == true
+                        if (day.isSelected || isDayOnRangeEdge) unselectDay(day, isDayOnRangeEdge, true)
                         else selectDay(day, true)
                     }
                 }
@@ -168,17 +170,46 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
 
         fun bindDay() {
             dateText.text = day.date.dayOfMonth.toString()
-            val isDayInThisMonthAndVisible = day.inThisMonth && currMonth == day.date.month
-
+            val shouldAnimateIndicator = day.inThisMonth && currMonth == day.date.month && isNotInRangeMode
             if (day.isSelected) {
-                showSelected(isDayInThisMonthAndVisible)
+                showIndicator(shouldAnimateIndicator)
             }
             else {
-                hideSelected(isDayInThisMonthAndVisible)
+                hideIndicator(shouldAnimateIndicator)
+            }
+
+            if ((selectionMode == SelectionMode.RANGE_START || selectionMode == SelectionMode.RANGE_END)) {
+                if (startDate != null && endDate != null && day.date.isAfter(startDate!!.minusDays(1))
+                        && day.date.isBefore(endDate!!.plusDays(1))) {
+                    if (day.date.isBefore(endDate)) {
+                        rightSelectIndicator.show()
+                    }
+                    if (day.date.isAfter(startDate)) {
+                        leftSelectIndicator.show()
+                    }
+                    if (day.date.isEqual(endDate)) {
+                        showIndicator(false)
+                        rightSelectIndicator.hide()
+                    }
+                    if (day.date.isEqual(startDate)) {
+                        leftSelectIndicator.hide()
+                    }
+                    if (leftSelectIndicator.isVisible && rightSelectIndicator.isVisible) {
+                        dateText.setTextColor(context.attrColor(android.R.attr.textColorPrimaryInverse))
+                    }
+                }
+                else {
+                    leftSelectIndicator.hide()
+                    rightSelectIndicator.hide()
+                }
+            }
+            else {
+                leftSelectIndicator.hide()
+                rightSelectIndicator.hide()
             }
         }
 
-        private fun showSelected(animate: Boolean = true) {
+        private fun showIndicator(animate: Boolean = true) {
             val textColor = if (day.inThisMonth) context.attrColor(android.R.attr.textColorPrimaryInverse) else
                 context.attrColor(android.R.attr.textColorSecondaryInverse)
             if (animate) {
@@ -199,13 +230,16 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                 }
             }
             else {
-                selectIndicator.show()
+                selectIndicator.apply {
+                    show()
+                    scaleX = 1f
+                    scaleY = 1f
+                }
                 dateText.setTextColor(textColor)
             }
-            AppLogger.d("Show selected on date $day, animate=$animate")
         }
 
-        private fun hideSelected(animate: Boolean = true) {
+        private fun hideIndicator(animate: Boolean = true) {
             val textColor = when {
                 day.date == today -> context.colorPrimary()
                 day.inThisMonth -> context.attrColor(android.R.attr.textColorPrimary)
@@ -228,7 +262,6 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                 selectIndicator.hide()
                 dateText.setTextColor(textColor)
             }
-            AppLogger.d("Hide selected on date $day, animate=$animate")
         }
 
         private fun selectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
@@ -248,14 +281,20 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                     startDate = day.date
 
                     // if no end date is selected, treat this as just a single selection
-                    if (endDate == null) {
-                        selectSingleMode(shouldInvokeCallback)
-                    }
-                    else {
+                    selectSingleMode(shouldInvokeCallback)
+                    if (endDate != null) {
                         notifyCalendarChanged()
                     }
                 }
-                SelectionMode.RANGE_END -> TODO()
+                SelectionMode.RANGE_END -> {
+                    endDate = day.date
+
+                    if (shouldInvokeCallback) {
+                        onDateSelectListener?.invoke(day.toDate(), true)
+                    }
+
+                    notifyCalendarChanged()
+                }
             }
         }
 
@@ -276,8 +315,8 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             }
         }
 
-        private fun unselectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
-            if (selectedDates.remove(day.date)) {
+        private fun unselectDay(day: CalendarDay, isUnselectingRange: Boolean, shouldInvokeCallback: Boolean) {
+            if (selectedDates.remove(day.date) || isUnselectingRange) {
                 when (selectionMode) {
                     SelectionMode.SINGLE, SelectionMode.MULTIPLE -> {
                         reloadDay(day.date)
@@ -287,15 +326,28 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                         }
                     }
                     SelectionMode.RANGE_START -> {
+                        startDate = null
                         if (endDate == null) {
                             reloadDay(day.date)
+                        }
+                        else {
+                            endDate = null
+                            notifyCalendarChanged()
+                        }
 
-                            if (shouldInvokeCallback) {
-                                onDateSelectListener?.invoke(day.toDate(), false)
-                            }
+                        if (shouldInvokeCallback) {
+                            onDateSelectListener?.invoke(day.toDate(), false)
                         }
                     }
-                    else -> Unit
+                    SelectionMode.RANGE_END -> {
+                        endDate = null
+
+                        if (shouldInvokeCallback) {
+                            onDateSelectListener?.invoke(day.toDate(), false)
+                        }
+
+                        notifyCalendarChanged()
+                    }
                 }
             }
         }
@@ -308,6 +360,11 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     //region helpers
+
+    private val isNotInRangeMode: Boolean
+        get() = (selectionMode == SelectionMode.RANGE_START && endDate == null) ||
+                selectionMode == SelectionMode.SINGLE ||
+                selectionMode == SelectionMode.MULTIPLE
 
     private val CalendarDay.inThisMonth: Boolean
         get() = owner == DayOwner.THIS_MONTH
