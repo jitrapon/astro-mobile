@@ -157,8 +157,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             view.setOnClickListener {
                 if (editable) {
                     if (day.inThisMonth && currMonth == day.date.month) {
-                        val isDayOnRangeEdge = endDate?.isEqual(day.date) == true
-                        if (day.isSelected || isDayOnRangeEdge) unselectDay(day, isDayOnRangeEdge, true)
+                        if (day.isSelected) unselectDay(day, true)
                         else selectDay(day, true)
                     }
                 }
@@ -179,8 +178,7 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             }
 
             if ((selectionMode == SelectionMode.RANGE_START || selectionMode == SelectionMode.RANGE_END)) {
-                if (startDate != null && endDate != null && day.date.isAfter(startDate!!.minusDays(1))
-                        && day.date.isBefore(endDate!!.plusDays(1))) {
+                if (startDate != null && endDate != null && day.date.inBetween(startDate!!, endDate!!)) {
                     if (day.date.isBefore(endDate)) {
                         rightSelectIndicator.show()
                     }
@@ -287,9 +285,14 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
                     }
                 }
                 SelectionMode.RANGE_END -> {
-                    endDate = day.date
+                    if ((startDate != null && startDate!! >= day.date) || endDate == day.date) {
+                        endDate = null
+                    }
+                    else {
+                        endDate = day.date
+                    }
 
-                    if (shouldInvokeCallback) {
+                    if (shouldInvokeCallback && endDate != null) {
                         onDateSelectListener?.invoke(day.toDate(), true)
                     }
 
@@ -315,8 +318,13 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
             }
         }
 
-        private fun unselectDay(day: CalendarDay, isUnselectingRange: Boolean, shouldInvokeCallback: Boolean) {
-            if (selectedDates.remove(day.date) || isUnselectingRange) {
+        private fun unselectDay(day: CalendarDay, shouldInvokeCallback: Boolean) {
+            if (selectionMode == SelectionMode.RANGE_END) {
+                endDate = null
+
+                notifyCalendarChanged()
+            }
+            else if (selectedDates.remove(day.date)) {
                 when (selectionMode) {
                     SelectionMode.SINGLE, SelectionMode.MULTIPLE -> {
                         reloadDay(day.date)
@@ -360,6 +368,10 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     //region helpers
+
+    private fun LocalDate.inBetween(startDate: LocalDate, endDate: LocalDate): Boolean {
+        return isAfter(startDate.minusDays(1)) && isBefore(endDate.plusDays(1))
+    }
 
     private val isNotInRangeMode: Boolean
         get() = (selectionMode == SelectionMode.RANGE_START && endDate == null) ||
