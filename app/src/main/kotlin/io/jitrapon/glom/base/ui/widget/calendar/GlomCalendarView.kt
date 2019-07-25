@@ -107,14 +107,14 @@ class GlomCalendarView : CalendarView, ViewTreeObserver.OnGlobalLayoutListener {
      * Calling this will not trigger the onDateSelected callback.
      */
     fun select(date: Date, scrollToDate: Boolean, selected: Boolean = true) {
-
+        //TODO
     }
 
     /**
      * Clears all date selection
      */
     fun clear() {
-
+        //TODO
     }
 
     /**
