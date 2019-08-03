@@ -6,6 +6,7 @@ import android.content.res.ColorStateList
 import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
 import androidx.core.view.forEach
 import androidx.core.view.isVisible
@@ -18,10 +19,10 @@ import com.google.android.material.chip.Chip
 import io.jitrapon.glom.base.model.DateTimePickerUiModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomBottomSheetDialogFragment
+import io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.board.R
 import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet.*
-import kotlinx.android.synthetic.main.date_time_picker_bottom_sheet_expanded_layout.*
 import kotlinx.android.synthetic.main.date_time_picker_date_item.view.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -37,10 +38,8 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     private lateinit var onDateTimeSetListener: (Date?, Date?, Boolean) -> Unit
 
     private var collapsedViews: ArrayList<View>? = null
-
     private var expandedViews: ArrayList<View> = ArrayList()
-
-//    private var calendarView: GlomCalendarView? = null
+    private var calendarView: GlomCalendarView? = null
 
     private var hasExpanded = false
 
@@ -63,21 +62,24 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
         override fun onSlide(bottomSheet: View, slideOffset: Float) {
             if (!hasCollapsedView && slideOffset < 0.35) {
                 expandedViews.forEach {
-                    it.hide(ANIMATION_DELAY, invisible = true)
+                    it.hide()
                 }
                 collapsedViews?.forEach {
-                    it.show(ANIMATION_DELAY)
+                    it.show()
                 }
+
+                // reset the constraint set of the switch to be underneath the date items
+                changeViewAnchors(false)
 
                 hasExpandedView = false
                 hasCollapsedView = true
             }
             if (!hasExpandedView && slideOffset > 0.65) {
                 expandedViews.forEach {
-                    it.show(ANIMATION_DELAY)
+                    it.show()
                 }
                 collapsedViews?.forEach {
-                    it.hide(ANIMATION_DELAY, invisible = true)
+                    it.hide()
                 }
 
                 hasExpandedView = true
@@ -92,15 +94,32 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                     date_time_picker_bottom_sheet_calendar_view_stub?.apply {
                         setOnInflateListener { _, inflated ->
                             expandedViews.add(inflated)
-//                            calendarView = inflated.findViewById(R.id.date_time_picker_bottom_sheet_calendar)
-                            date_time_picker_bottom_sheet_expanded_cancel_button.setOnClickListener { dismiss() }
-                            date_time_picker_bottom_sheet_expanded_done_button.setOnClickListener { viewModel.confirmSelection() }
+                            inflated.findViewById<GlomCalendarView>(R.id.calendar_view)?.apply {
+                                calendarView = this
+                                setPadding(0, 0, 0, 16.px)
+                                init(initialSelections = arrayOf(viewModel.startDate, viewModel.endDate),
+                                        selectionMode = viewModel.calendarSelectionMode,
+                                        isEditable = viewModel.isEditable, onDateSelectListener = { date, isSelected ->
+                                    if (isSelected) {
+                                        viewModel.selectCalendarDate(date)
+                                    }
+                                    else {
+                                        viewModel.clearCurrentDate()
+                                    }
+                                })
+                            }
+
+                            // once calendar is found, set the constraint set of
+                            // the switch to be underneath the calendar
+                            changeViewAnchors(true)
                         }
                         inflate()
                     }
 
-                    if (!hasExpanded) {
+                    if (!hasExpanded && calendarView?.isInitialized == true) {
                         resetCalendar()
+
+                        changeViewAnchors(true)
                     }
 
                     hasExpanded = true
@@ -120,6 +139,18 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                 }
                 BottomSheetBehavior.STATE_HALF_EXPANDED -> {}
             }
+        }
+    }
+
+    private fun changeViewAnchors(expanded: Boolean) {
+        (date_time_picker_bottom_sheet_full_day_toggle.layoutParams as ConstraintLayout.LayoutParams).apply {
+            topToBottom = if (expanded) {
+                calendarView!!.id
+            }
+            else {
+                date_time_picker_date_item_1.id
+            }
+            date_time_picker_bottom_sheet_full_day_toggle.requestLayout()
         }
     }
 
@@ -186,6 +217,10 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
             if (it == null) {
                 date_time_picker_bottom_sheet_displayed_date.hide()
                 date_time_picker_bottom_sheet_edit_text.show()
+                date_time_picker_bottom_sheet_full_day_toggle.isEnabled = false
+                date_time_picker_edit_time.isEnabled = false
+                date_time_picker_bottom_sheet_full_day_text.isEnabled = false
+                calendarView?.clear()
             }
             else {
                 date_time_picker_bottom_sheet_displayed_date.apply {
@@ -193,6 +228,9 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                     text = context!!.getString(it)
                 }
                 date_time_picker_bottom_sheet_edit_text.hide()
+                date_time_picker_bottom_sheet_full_day_toggle.isEnabled = true
+                date_time_picker_edit_time.isEnabled = true
+                date_time_picker_bottom_sheet_full_day_text.isEnabled = true
             }
         })
         viewModel.getObservableTime().observe(viewLifecycleOwner, Observer {
@@ -324,15 +362,10 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     }
 
     private fun resetCalendar() {
-//        calendarView?.apply {
-//            clear()
-//            select(viewModel.getCurrentDate(), scrollToDate = false, selected = true)
-//            viewModel.selectCalendarDate(viewModel.getCurrentDate())
-//            setSelectableDateRange(viewModel.getMinDate() to null)
-//            onDateSelected { date, isSelected ->
-//                if (isSelected) viewModel.selectCalendarDate(date)
-//            }
-//        }
+        calendarView?.apply {
+            select(viewModel.startOrEndDate, scrollToDate = false, selected = true)
+            viewModel.selectCalendarDate(viewModel.startOrEndDate)
+        }
     }
 
     private fun setSimpleDateText(view: View, uiModel: DateChoiceUiModel) {

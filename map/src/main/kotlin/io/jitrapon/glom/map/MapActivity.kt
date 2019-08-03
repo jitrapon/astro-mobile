@@ -1,11 +1,14 @@
 package io.jitrapon.glom.map
 
 import android.os.Bundle
-import android.widget.LinearLayout
+import com.google.android.material.snackbar.Snackbar
 import io.jitrapon.glom.base.BaseMainActivity
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.navigation.NavigationItem
 import io.jitrapon.glom.base.ui.widget.BadgedBottomNavigationView
 import io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
+import io.jitrapon.glom.base.util.showSnackbar
 import kotlinx.android.synthetic.main.map_activity.*
 
 class MapActivity : BaseMainActivity() {
@@ -20,16 +23,15 @@ class MapActivity : BaseMainActivity() {
 
         tag = "map"
 
-        calendar_view.init(
-                calendar_view_month_textview,
-                calendar_item_day_legend as LinearLayout,
-                GlomCalendarView.SelectionMode.RANGE_START,
-                true) { date, isSelected ->
-
-        }
-        map_button1.setOnClickListener {
-            calendar_view.selectionMode = if (calendar_view.selectionMode == GlomCalendarView.SelectionMode.RANGE_START)
-                GlomCalendarView.SelectionMode.RANGE_END else GlomCalendarView.SelectionMode.RANGE_START
+        map_button4.setOnClickListener {
+            map_view_stub.setOnInflateListener { _, inflated ->
+                (inflated as? GlomCalendarView)?.init(null, GlomCalendarView.SelectionMode.RANGE_START, true) { date, isSelected ->
+                    showSnackbar(MessageLevel.INFO,
+                            AndroidString(text = "${if (isSelected) "Selected" else "Unselected"} $date"),
+                            duration = Snackbar.LENGTH_LONG)
+                }
+            }
+            map_view_stub.inflate()
         }
     }
 

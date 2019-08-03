@@ -9,7 +9,7 @@ import java.util.*
  */
 data class DateTimePickerUiModel(val startDate: Date?,
                                  val endDate: Date?,
-                                 val showStartDateFirst: Boolean,
+                                 val isStartDate: Boolean,
                                  val minDate: Date? = null,
                                  val isFullDay: Boolean = false,
                                  override var status: UiModel.Status = UiModel.Status.SUCCESS) : UiModel

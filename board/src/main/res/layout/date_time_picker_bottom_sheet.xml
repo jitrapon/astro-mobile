@@ -57,7 +57,8 @@
         android:layout_width="52dp"
         android:layout_height="wrap_content"
         android:tint="@color/warm_grey"
-        android:layout_marginEnd="@dimen/spacing_normal"/>
+        android:layout_marginEnd="@dimen/spacing_normal"
+        android:background="?selectableItemBackgroundBorderless" />
 
     <TextView
         android:id="@+id/date_time_picker_bottom_sheet_displayed_date"
@@ -138,7 +139,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/event_item_edit_time"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_date_item_1"
+        app:layout_constraintTop_toTopOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin" />
 
@@ -207,8 +208,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
-        android:scrollbars="none"
-        android:contentDescription="@string/date_picker_collapsed_view" >
+        android:scrollbars="none" >
 
         <LinearLayout
             android:id="@+id/date_time_picker_bottom_sheet_time_of_day_layout"
@@ -265,8 +265,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_of_day_scroll_view"
-        android:scrollbars="none"
-        android:contentDescription="@string/date_picker_collapsed_view" >
+        android:scrollbars="none" >
 
         <LinearLayout
             android:id="@+id/date_time_picker_bottom_sheet_time_layout"
@@ -280,14 +279,14 @@
 
     <ViewStub
         android:id="@+id/date_time_picker_bottom_sheet_calendar_view_stub"
-        android:inflatedId="@+id/date_time_picker_bottom_sheet_expanded_layout"
-        android:layout="@layout/date_time_picker_bottom_sheet_expanded_layout"
+        android:inflatedId="@+id/calendar_view"
+        android:layout="@layout/calendar_view_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        android:layout_marginTop="@dimen/spacing_normal"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_guideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="@dimen/spacing_normal"
         android:contentDescription="@string/date_picker_expanded_view" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
@@ -298,8 +297,7 @@
         app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_scroll_view"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_done_button"
-        android:text="@android:string/cancel"
-        android:contentDescription="@string/date_picker_collapsed_view" />
+        android:text="@android:string/cancel" />
 
     <io.jitrapon.glom.base.ui.widget.GlomButton
         android:id="@+id/date_time_picker_bottom_sheet_done_button"
@@ -309,14 +307,13 @@
         app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_time_scroll_view"
         app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_cancel_button"
         app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/done_button"
-        android:contentDescription="@string/date_picker_collapsed_view" />
+        android:text="@string/done_button" />
 
     <Space
         android:visibility="invisible"
         android:layout_width="match_parent"
-        android:layout_height="600dp"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_full_day_toggle"
+        android:layout_height="580dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
