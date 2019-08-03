@@ -20,6 +20,17 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <View
+        android:id="@+id/calendar_item_selected_outline_indicator"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_outline_circle"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="0dp"
+        tools:visibility="gone" />
+
+    <View
         tools:visibility="gone"
         android:id="@+id/calendar_item_selected_indicator_left_half"
         android:layout_width="0dp"

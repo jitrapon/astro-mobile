@@ -78,8 +78,8 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     private fun resetStartDateIfNeeded() {
         // we should set the start time accordingly to one hour prior to the new end time
-        // if it is less than the start time already set, or if the start time has not been set
-        if (endDate.time != 0L && (startDate.time == 0L || startDate.time > endDate.time)) {
+        // if it is less than the start time already set
+        if (endDate.time != 0L && (startDate.time > endDate.time)) {
             startDate = endDate.addHour(-1)
         }
     }
@@ -140,7 +140,8 @@ class DateTimePickerViewModel : BaseViewModel() {
                     selectDayTimeChoice(MORNING_CHOICE)
                 }
                 else {
-                    endDate.time = startDate.addHour(1).time
+                    endDate.time = endDate.setTime(startDate.hourOfDay, 0).time
+                    endDate = endDate.addHour(1)
                     val (dayTimeChoices, timeChoices) = getDayTimeChoices(endDate)
                     observableDayTimeChoice.value = dayTimeChoices
                     observableTimeChoices.value = timeChoices
@@ -321,7 +322,10 @@ class DateTimePickerViewModel : BaseViewModel() {
 
     fun confirmSelection() {
         observableFinishEvent.value = ConfirmDateTimeEvent(
-            start = if (startDate.time == 0L) null else startDate,
+            start = if (startDate.time == 0L) {
+                startDate = endDate.addHour(-1)
+                startDate
+            } else startDate,
             end = if (endDate.time == 0L) null else endDate,
             isFullDay = observableFullDay.value ?: false
         )

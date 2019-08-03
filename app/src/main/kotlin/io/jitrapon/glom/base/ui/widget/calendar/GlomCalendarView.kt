@@ -148,15 +148,26 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
                     val startDate = selections[0]
                     if (startDate.time != 0L) {
                         selectDay(startDate.toLocalDate(), false)
+
+                        val endDate = selections[1]
+                        if (endDate.time != 0L) {
+                            selectionMode = SelectionMode.RANGE_END
+                            selectDay(endDate.toLocalDate(), false)
+                        }
+                        selectionMode = initialSelectionMode
+                        if (selectionMode == SelectionMode.RANGE_END) {
+                            reloadDay(startDate.toLocalDate())
+                        }
                     }
-                    val endDate = selections[1]
-                    if (endDate.time != 0L) {
-                        selectionMode = SelectionMode.RANGE_END
-                        selectDay(endDate.toLocalDate(), false)
+                    else {
+                        val endDate = selections[1]
+                        if (endDate.time != 0L) {
+                            selectDay(endDate.toLocalDate(), false)
+                        }
                     }
-                    selectionMode = initialSelectionMode
                 } catch (ex: Exception) {
                     AppLogger.e(ex)
+                    selectionMode = initialSelectionMode
                 }
             }
             else {
@@ -248,13 +259,9 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
                 }
             }
             SelectionMode.RANGE_END -> {
-                if ((startDate != null && startDate!! >= date) || endDate == date) {
-                    endDate = null
-                } else {
-                    endDate = date
-                }
+                endDate = date
 
-                if (shouldInvokeCallback && endDate != null) {
+                if (shouldInvokeCallback) {
                     onDateSelectListener?.invoke(date.toDate(), true)
                 }
 
@@ -283,6 +290,10 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
     private fun unselectDay(date: LocalDate, shouldInvokeCallback: Boolean) {
         if (selectionMode == SelectionMode.RANGE_END) {
             endDate = null
+
+            if (shouldInvokeCallback) {
+                onDateSelectListener?.invoke(date.toDate(), false)
+            }
 
             calendarView.notifyCalendarChanged()
         } else if (selectedDates.remove(date)) {
@@ -326,6 +337,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
         private val selectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator)
         private val leftSelectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator_left_half)
         private val rightSelectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator_right_half)
+        private val outlineIndicator: View = view.findViewById(R.id.calendar_item_selected_outline_indicator)
 
         lateinit var day: CalendarDay
 
@@ -343,6 +355,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
             leftSelectIndicator.hide()
             rightSelectIndicator.hide()
             selectIndicator.hide()
+            outlineIndicator.hide()
         }
 
         fun bindDay() {
@@ -367,6 +380,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
                         rightSelectIndicator.hide()
                     }
                     if (day.date.isEqual(startDate)) {
+                        showIndicator(false)
                         leftSelectIndicator.hide()
                     }
                     if (leftSelectIndicator.isVisible && rightSelectIndicator.isVisible) {
@@ -375,6 +389,11 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
                 } else {
                     leftSelectIndicator.hide()
                     rightSelectIndicator.hide()
+                    if (selectionMode == SelectionMode.RANGE_END) {
+                        if (startDate != null && day.date == startDate!! && endDate == null) {
+                            outlineIndicator.show()
+                        }
+                    }
                 }
             } else {
                 leftSelectIndicator.hide()
@@ -457,7 +476,11 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
         get() = owner == DayOwner.THIS_MONTH
 
     private val CalendarDay.isSelected: Boolean
-        get() = selectedDates.contains(date)
+        get() = if (selectionMode == SelectionMode.RANGE_END) {
+            endDate == date
+        } else {
+            selectedDates.contains(date)
+        }
 
     private fun LocalDate.toDate(): Date = Date(atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000)
 
