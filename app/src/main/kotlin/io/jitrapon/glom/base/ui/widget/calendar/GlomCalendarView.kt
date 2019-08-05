@@ -47,6 +47,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     private var onDateSelectListener: ((date: Date, isSelected: Boolean) -> Unit)? = null
+    private var decoratorSources: ArrayList<DecoratorSource> = arrayListOf()
 
     private var selectedDates = mutableSetOf<LocalDate>()
     private var startDate: LocalDate? = null
@@ -88,9 +89,11 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     @SuppressLint("SetTextI18n")
-    fun init(initialSelections: Array<Date>? = null, selectionMode: SelectionMode = SelectionMode.SINGLE,
-             isEditable: Boolean = true, onDateSelectListener: ((Date, Boolean) -> Unit)? = null) {
+    fun init(initialSelections: Array<Date>? = null, decoratorSources: ArrayList<DecoratorSource> = arrayListOf(),
+             selectionMode: SelectionMode = SelectionMode.SINGLE, isEditable: Boolean = true,
+             onDateSelectListener: ((Date, Boolean) -> Unit)? = null) {
         this.selectionMode = selectionMode
+        this.decoratorSources = decoratorSources
         this.editable = isEditable
         this.onDateSelectListener = onDateSelectListener
         this.initialSelections = initialSelections
@@ -356,6 +359,10 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
             rightSelectIndicator.hide()
             selectIndicator.hide()
             outlineIndicator.hide()
+
+            for (decorator in decoratorSources) {
+                decorator.addView(view)
+            }
         }
 
         fun bindDay() {
@@ -398,6 +405,12 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
             } else {
                 leftSelectIndicator.hide()
                 rightSelectIndicator.hide()
+            }
+
+            for (decorator in decoratorSources) {
+                if (decorator.shouldDecorate(day.date.toDate())) {
+                    decorator.decorate(this)
+                }
             }
         }
 

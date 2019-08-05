@@ -98,6 +98,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                                 calendarView = this
                                 setPadding(0, 0, 0, 16.px)
                                 init(initialSelections = arrayOf(viewModel.startDate, viewModel.endDate),
+                                        decoratorSources = arrayListOf(),
                                         selectionMode = viewModel.calendarSelectionMode,
                                         isEditable = viewModel.isEditable, onDateSelectListener = { date, isSelected ->
                                     if (isSelected) {
