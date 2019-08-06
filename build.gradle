@@ -30,7 +30,7 @@ buildscript {
         daggerVersion = '2.23.1'
         facebookSdkVersion = '[4,5)'
         glideVersion = '4.9.0'
-        retrofitVersion = '2.6.0'
+        retrofitVersion = '2.6.1'
         instantAppVersion = '1.1.0'
         rxJavaVersion = '2.2.9'
         rxAndroidVersion = '2.1.1'
