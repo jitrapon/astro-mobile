@@ -140,10 +140,10 @@ fun View.clearFocusAndHideKeyboard() {
 /**
  * Finds all views in this View that contains the matching content description
  */
-inline fun View.findViewsWithContentDescription(description: CharSequence, applyFunction: ArrayList<View>.() -> Unit) {
-    ArrayList<View>().apply {
-        findViewsWithText(this, description, FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
-        applyFunction(this)
+inline fun View.findViewsWithContentDescription(description: CharSequence, crossinline applyFunction: ArrayList<View>.() -> Unit) {
+    ArrayList<View>().let { views ->
+        findViewsWithText(views, description, FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
+        applyFunction(views)
     }
 }
 

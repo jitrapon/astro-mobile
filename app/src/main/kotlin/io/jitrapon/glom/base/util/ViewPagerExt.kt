@@ -1,12 +1,8 @@
 package io.jitrapon.glom.base.util
 
-import com.google.android.material.tabs.TabLayout
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentPagerAdapter
-import androidx.viewpager.widget.ViewPager
-import androidx.appcompat.app.AppCompatActivity
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.tabs.TabLayout
 
 /**
  * Extension functions to reduce ViewPager boilerplate code
@@ -56,8 +52,8 @@ inline fun androidx.viewpager.widget.ViewPager.doOnPageSelected(crossinline acti
 }
 
 inline fun <reified T> androidx.viewpager.widget.ViewPager.doOnFragmentSelected(fm: androidx.fragment.app.FragmentManager, crossinline action: (fragment: T) -> Unit) {
-    this.doOnPageSelected {
-        this@doOnFragmentSelected.getFragmentAtPosition<T>(fm, it)?.let {
+    this.doOnPageSelected { page ->
+        this@doOnFragmentSelected.getFragmentAtPosition<T>(fm, page)?.let {
             action(it)
         }
     }
