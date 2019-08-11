@@ -10,7 +10,7 @@ import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import io.jitrapon.glom.R
-import io.jitrapon.glom.base.model.DateTimePickerUiModel
+import io.jitrapon.glom.board.DateTimePickerUiModel
 import io.jitrapon.glom.base.util.toDayMonthYear
 import io.jitrapon.glom.board.item.event.widget.datetimepicker.BottomSheetDateTimePicker
 import java.util.*

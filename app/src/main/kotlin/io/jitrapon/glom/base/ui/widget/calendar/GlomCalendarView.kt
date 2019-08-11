@@ -7,6 +7,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewTreeObserver
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
@@ -341,6 +342,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
         private val leftSelectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator_left_half)
         private val rightSelectIndicator: View = view.findViewById(R.id.calendar_item_selected_indicator_right_half)
         private val outlineIndicator: View = view.findViewById(R.id.calendar_item_selected_outline_indicator)
+        val dot: ImageView = view.findViewById(R.id.calendar_item_dot)
 
         lateinit var day: CalendarDay
 
@@ -359,6 +361,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
             rightSelectIndicator.hide()
             selectIndicator.hide()
             outlineIndicator.hide()
+            dot.hide()
 
             for (decorator in decoratorSources) {
                 decorator.addView(view)
@@ -408,9 +411,7 @@ class GlomCalendarView : LinearLayout, ViewTreeObserver.OnGlobalLayoutListener {
             }
 
             for (decorator in decoratorSources) {
-                if (decorator.shouldDecorate(day.date.toDate())) {
-                    decorator.decorate(this)
-                }
+                decorator.decorate(day.date.toDate(), this)
             }
         }
 

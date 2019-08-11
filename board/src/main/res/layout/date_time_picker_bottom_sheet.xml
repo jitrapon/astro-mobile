@@ -9,6 +9,7 @@
     app:layout_behavior="io.jitrapon.glom.board.item.event.widget.datetimepicker.BottomSheetDatePicker.DateTimePickerBottomSheetBehavior" >
 
     <TextView
+        android:id="@+id/date_time_picker_bottom_sheet_top_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/date_picker_more_options"
@@ -32,9 +33,10 @@
         android:layout_marginStart="14dp" />
 
     <EditText
+        style="@style/TextAppearance.H3"
         android:id="@+id/date_time_picker_bottom_sheet_edit_text"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_edit_button"
         app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_clear_button"
         app:layout_constraintEnd_toEndOf="parent"
@@ -44,7 +46,7 @@
         android:autofillHints="datetime"
         tools:targetApi="o"
         android:inputType="datetime|text"
-        android:imeActionLabel="@string/done_button"
+        android:imeOptions="actionDone"
         android:background="@android:color/transparent" />
 
     <ImageButton
@@ -60,46 +62,12 @@
         android:layout_marginEnd="@dimen/spacing_normal"
         android:background="?selectableItemBackgroundBorderless" />
 
-    <TextView
-        android:id="@+id/date_time_picker_bottom_sheet_displayed_date"
-        style="@style/TextAppearance.H1"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:gravity="center"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:textColor="?android:attr/textColorPrimary"
-        app:layout_constraintEnd_toStartOf="@+id/date_time_picker_bottom_sheet_displayed_time"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_guideline"
-        tools:text="Sun, Jan 20" />
-
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/date_time_picker_bottom_sheet_guideline"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="66dp" />
-
-    <TextView
-        tools:visibility="visible"
-        android:id="@+id/date_time_picker_bottom_sheet_displayed_time"
-        style="@style/TextAppearance.H1"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:ellipsize="end"
-        tools:text="2:00 PM"
-        android:maxLines="2"
-        android:textColor="?android:attr/colorPrimary"
-        app:layout_constraintStart_toEndOf="@+id/date_time_picker_bottom_sheet_displayed_date"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/date_time_picker_bottom_sheet_guideline"
-        android:gravity="center"
-        android:textStyle="bold"
-        android:layout_marginStart="@dimen/spacing_normal" />
 
     <View
         android:id="@+id/date_time_picker_bottom_sheet_line_divider_top"

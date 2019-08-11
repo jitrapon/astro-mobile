@@ -784,14 +784,18 @@ class EventItemViewModel : BoardItemViewModel() {
     fun showDateTimePicker(isStartDate: Boolean) {
         if (!isItemEditable) return
 
-        val startDate = interactor.getItemDate(true)
-        val endDate = interactor.getItemDate(false)
-        observableDateTimePicker.value = DateTimePickerUiModel(
-            startDate,
-            if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
-            isStartDate,
-            null,
-            interactor.event.itemInfo.isFullDay)
+        interactor.loadOccupiedDates {
+            val startDate = interactor.getItemDate(true)
+            val endDate = interactor.getItemDate(false)
+            observableDateTimePicker.value = DateTimePickerUiModel(
+                    startDate,
+                    if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
+                    isStartDate,
+                    if (it is AsyncSuccessResult) it.result else null,
+                    null,
+                    interactor.event.itemInfo.isFullDay
+            )
+        }
     }
 
     /**

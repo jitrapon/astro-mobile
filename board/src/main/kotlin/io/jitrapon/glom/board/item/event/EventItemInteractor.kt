@@ -17,6 +17,7 @@ import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
 import io.jitrapon.glom.board.item.BoardItem
@@ -27,6 +28,8 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
+
+
 
 /**
  * Controller that handles all interactions for editing, saving, and updating
@@ -597,6 +600,32 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                 isItemModified = true
             }
             eventItemDataSource.setSource(this)
+        }
+    }
+
+    //endregion
+    //region calendar view
+
+    fun loadOccupiedDates(onComplete: (AsyncResult<HashMap<Date, List<EventItem>>>) -> Unit) {
+        runAsync(::getOccupiedDates, {
+            onComplete(AsyncSuccessResult(it))
+        }, {
+            onComplete(AsyncErrorResult(it))
+        })
+    }
+
+    private fun getOccupiedDates(): HashMap<Date, List<EventItem>> {
+        return HashMap<Date, List<EventItem>>().apply {
+            board.items.filterIsInstance(EventItem::class.java)
+                    .groupBy {
+                        it.itemInfo.startTime?.let { epochTimeMs ->
+                            Date(epochTimeMs).setTime(hour = 0, minute = 0, second = 0)
+                        }
+                    }.forEach { (date, events) ->
+                        date?.let {
+                            put(it, events)
+                        }
+                    }
         }
     }
 

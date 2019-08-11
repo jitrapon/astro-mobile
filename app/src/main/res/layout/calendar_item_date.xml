@@ -63,7 +63,7 @@
         android:textSize="16sp"
         tools:text="22" />
 
-    <View
+    <ImageView
         android:id="@+id/calendar_item_dot"
         android:layout_width="8dp"
         android:layout_height="8dp"
@@ -72,6 +72,6 @@
         app:layout_constraintVertical_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@drawable/bg_solid_circle" />
+        android:src="@drawable/bg_solid_circle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

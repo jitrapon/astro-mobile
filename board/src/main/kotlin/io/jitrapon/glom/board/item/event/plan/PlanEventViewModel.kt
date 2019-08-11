@@ -12,6 +12,7 @@ import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.BoardInjector
 import io.jitrapon.glom.board.Const
+import io.jitrapon.glom.board.DateTimePickerUiModel
 import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.event.EventItem
@@ -350,7 +351,7 @@ class PlanEventViewModel : BaseViewModel() {
     fun getDatePollCount(): Int = datePlan.datePolls.size
 
     fun showDateTimeRangePicker(date: Date) {
-        observableDateTimePicker.value = DateTimePickerUiModel(date, date, true)
+        observableDateTimePicker.value = DateTimePickerUiModel(date, date, true, null)
     }
 
     fun addDatePoll(startDate: Date, endDate: Date?) {

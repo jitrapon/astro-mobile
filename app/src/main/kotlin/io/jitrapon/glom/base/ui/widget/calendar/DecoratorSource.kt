@@ -13,7 +13,5 @@ interface DecoratorSource {
 
     fun addView(view: View)
 
-    fun shouldDecorate(date: Date): Boolean
-
-    fun decorate(view: GlomCalendarView.DayViewContainer)
+    fun decorate(date: Date, view: GlomCalendarView.DayViewContainer)
 }

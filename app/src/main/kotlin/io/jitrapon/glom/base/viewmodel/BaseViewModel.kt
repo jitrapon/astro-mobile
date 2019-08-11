@@ -14,7 +14,7 @@ import io.jitrapon.glom.base.util.withinDuration
 import java.util.*
 
 /* time in seconds before data is refreshed automatically */
-const val REFRESH_INTERVAL = 3600
+const val REFRESH_INTERVAL = 300
 
 /**
  * Base class for all ViewModel classes. The ViewModel responsibility is to delegate logic
