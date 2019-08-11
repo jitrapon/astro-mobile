@@ -84,4 +84,9 @@
     <string name="error_no_location_permission">Enable location permission to view your location. Allow?</string>
     <string name="event_item_edit_time">Edit Time</string>
     <string name="event_item_date_time_hint">e.g. tmr afternoon</string>
+    <plurals name="date_picker_event_count">
+        <item quantity="one">%s event on this date</item>
+        <item quantity="other">%s events on this date</item>
+    </plurals>
+    <string name="event_picker_no_date_selected">Select a date to see more details</string>
 </resources>

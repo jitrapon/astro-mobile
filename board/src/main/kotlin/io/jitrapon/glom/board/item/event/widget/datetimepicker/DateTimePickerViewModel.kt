@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.item.event.widget.datetimepicker
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import io.jitrapon.glom.base.model.AndroidPluralString
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.LiveEvent
 import io.jitrapon.glom.base.model.UiModel
@@ -9,6 +10,7 @@ import io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
 import io.jitrapon.glom.base.util.*
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.DateTimePickerUiModel
+import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.event.EventItem
 import java.util.*
 import kotlin.collections.ArrayList
@@ -36,6 +38,8 @@ class DateTimePickerViewModel : BaseViewModel() {
     private val observableFinishEvent = LiveEvent<ConfirmDateTimeEvent>()
 
     private val observableTimePicker = LiveEvent<Date>()
+
+    private val observableInstruction = MutableLiveData<UiModel>()
 
     private var isStartDate: Boolean = false
     private val firstDate: Date = Date()
@@ -113,6 +117,7 @@ class DateTimePickerViewModel : BaseViewModel() {
         val (dayTimeChoices, timeChoices) = getDayTimeChoices(firstDate, autoSelectTimeChoice)
         observableDayTimeChoice.value = dayTimeChoices
         observableTimeChoices.value = timeChoices
+        observableInstruction.value = getInstruction(startOrEndDate)
     }
 
     fun selectDateChoice(position: Int) {
@@ -122,6 +127,7 @@ class DateTimePickerViewModel : BaseViewModel() {
         observableDateChoices.value?.get(position)?.date?.let {
             setTimeChoices(it)
         }
+        observableInstruction.value = getInstruction(startOrEndDate)
     }
 
     private fun setTimeChoices(it: Date) {
@@ -152,6 +158,7 @@ class DateTimePickerViewModel : BaseViewModel() {
             }
             resetStartDateIfNeeded()
         }
+        observableInstruction.value = getInstruction(startOrEndDate)
     }
 
     fun selectCalendarDate(date: Date) {
@@ -165,6 +172,7 @@ class DateTimePickerViewModel : BaseViewModel() {
 
             setTimeChoices(date)
         }
+        observableInstruction.value = getInstruction(startOrEndDate)
     }
 
     fun setTime(hourOfDay: Int, minute: Int) {
@@ -295,6 +303,14 @@ class DateTimePickerViewModel : BaseViewModel() {
         }
     }
 
+    private fun getInstruction(date: Date): UiModel {
+        return if (date.time == 0L) AndroidString(R.string.event_picker_no_date_selected)
+        else occupiedDates?.let {
+            val eventCount = it[date.setTime(hour = 0, minute = 0, second = 0)]?.size ?: 0
+            AndroidPluralString(R.plurals.date_picker_event_count, eventCount, arrayOf("$eventCount"))
+        } ?: AndroidString(R.string.event_picker_no_date_selected)
+    }
+
     /**
      * Morning is choice 0
      * Afternoon is choice 2
@@ -349,4 +365,6 @@ class DateTimePickerViewModel : BaseViewModel() {
     fun getObservableFinishEvent(): LiveData<ConfirmDateTimeEvent> = observableFinishEvent
 
     fun getObservableTimePicker(): LiveData<Date> = observableTimePicker
+
+    fun getObservableInstruction(): LiveData<UiModel> = observableInstruction
 }

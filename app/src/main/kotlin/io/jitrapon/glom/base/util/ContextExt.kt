@@ -18,6 +18,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.jitrapon.glom.R
+import io.jitrapon.glom.base.model.AndroidPluralString
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.PreferenceItemUiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.DialogRecyclerViewAdapter
@@ -106,6 +107,15 @@ fun Context.getString(string: AndroidString?): CharSequence? {
         }
         return null
     }
+}
+
+/**
+ * Converts an AndroidPluralString object into a CharSequence, ready for display
+ */
+fun Context.getPluralString(string: AndroidPluralString?): CharSequence? {
+    string ?: return null
+    return if (string.formatArgs != null) resources.getQuantityString(string.resId, string.quantity, *string.formatArgs)
+    else resources.getQuantityString(string.resId, string.quantity)
 }
 
 /**

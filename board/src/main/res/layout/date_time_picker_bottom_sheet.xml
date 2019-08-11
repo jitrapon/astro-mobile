@@ -21,6 +21,17 @@
         android:layout_marginTop="2dp"
         android:contentDescription="@string/date_picker_collapsed_view" />
 
+    <TextView
+        style="@style/TextAppearance.H5.Light"
+        android:id="@+id/date_time_picker_bottom_sheet_date_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="Suggested dates below"
+        app:layout_constraintTop_toBottomOf="@id/date_time_picker_bottom_sheet_guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp" />
+
     <ImageButton
         android:id="@+id/date_time_picker_bottom_sheet_edit_button"
         android:layout_width="52dp"
@@ -120,7 +131,7 @@
         app:layout_constraintEnd_toStartOf="@+id/date_time_picker_date_item_2"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_line_divider_top"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_date_info"
         android:layout_marginTop="@dimen/spacing_normal"
         android:contentDescription="@string/date_picker_collapsed_view" />
 
@@ -191,7 +202,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/date_picker_choice_morning"
-                app:chipIcon="@drawable/ic_add" />
+                app:chipIcon="@drawable/ic_sun_up" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/date_time_picker_bottom_sheet_afternoon_choice"
@@ -200,7 +211,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/date_picker_choice_afternoon"
-                app:chipIcon="@drawable/ic_add" />
+                app:chipIcon="@drawable/ic_afternoon" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/date_time_picker_bottom_sheet_evening_choice"
@@ -209,7 +220,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/date_picker_choice_evening"
-                app:chipIcon="@drawable/ic_add" />
+                app:chipIcon="@drawable/ic_sun_down" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/date_time_picker_bottom_sheet_night_choice"
@@ -218,7 +229,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/date_picker_choice_night"
-                app:chipIcon="@drawable/ic_add"
+                app:chipIcon="@drawable/ic_night"
                 android:layout_marginEnd="@dimen/bottom_sheet_item_horizontal_margin" />
 
         </LinearLayout>
@@ -252,7 +263,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_normal"
-        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_guideline"
+        app:layout_constraintTop_toBottomOf="@+id/date_time_picker_bottom_sheet_date_info"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/date_picker_expanded_view" />
@@ -280,7 +291,7 @@
     <Space
         android:visibility="invisible"
         android:layout_width="match_parent"
-        android:layout_height="580dp"
+        android:layout_height="604dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

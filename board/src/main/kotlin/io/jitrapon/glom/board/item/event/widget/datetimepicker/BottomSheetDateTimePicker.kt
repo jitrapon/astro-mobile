@@ -16,6 +16,8 @@ import androidx.lifecycle.Observer
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
+import io.jitrapon.glom.base.model.AndroidPluralString
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomBottomSheetDialogFragment
 import io.jitrapon.glom.base.ui.widget.calendar.GlomCalendarView
@@ -45,7 +47,7 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
     private var hasExpanded = false
 
     private val collapsedPeekHeight
-            get() = 330.px
+            get() = 354.px
 
     override fun getLayoutId() = R.layout.date_time_picker_bottom_sheet
 
@@ -336,6 +338,13 @@ class BottomSheetDateTimePicker : GlomBottomSheetDialogFragment() {
                 viewModel.setTime(hourOfDay, minute)
             }, calendar.get(Calendar.HOUR_OF_DAY),
                     calendar.get(Calendar.MINUTE), DateFormat.is24HourFormat(context)).show()
+        })
+        viewModel.getObservableInstruction().observe(viewLifecycleOwner, Observer {
+            when (it) {
+                is AndroidPluralString -> date_time_picker_bottom_sheet_date_info.text = context!!.getPluralString(it)
+                is AndroidString -> date_time_picker_bottom_sheet_date_info.text = context!!.getString(it)
+                else -> date_time_picker_bottom_sheet_date_info.text = null
+            }
         })
     }
 
