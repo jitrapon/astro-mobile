@@ -19,5 +19,6 @@ enum class ActionItem(@StringRes val title: Int, @DrawableRes val drawable: Int)
     JOIN(R.string.event_item_action_join, R.drawable.ic_emoticon_neutral),
     LEAVE(R.string.event_item_action_leave, R.drawable.ic_emoticon_excited),
     PICK_PLACE(R.string.event_item_pick_place, R.drawable.ic_marker),
+    SET_RECURRENCE(R.string.event_item_action_set_recurrence, R.drawable.ic_set_recurrence),
     INVALID(-1,-1);
 }

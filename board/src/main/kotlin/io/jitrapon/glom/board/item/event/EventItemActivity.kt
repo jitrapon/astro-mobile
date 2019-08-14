@@ -13,6 +13,9 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.maltaisn.recurpicker.Recurrence
+import com.maltaisn.recurpicker.RecurrencePickerDialog
+import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
@@ -39,7 +42,9 @@ import kotlinx.android.synthetic.main.event_item_activity.*
  *
  * @author Jitrapon Tiachunpun
  */
-class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
+class EventItemActivity : BoardItemActivity(),
+        OnMapReadyCallback,
+        RecurrencePickerDialog.RecurrenceSelectedCallback {
 
     private lateinit var viewModel: EventItemViewModel
 
@@ -410,6 +415,16 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
                 it.getOrNull(0).let(event_item_attendees_action_button_1::applyState)
                 it.getOrNull(1).let(event_item_attendees_action_button_2::applyState)
             })
+
+            // observe on recurrence picker
+            getObservableRecurrencePicker().observe(this@EventItemActivity, Observer {
+                if (it == true) {
+                    RecurrencePickerDialog().apply {
+                        setRecurrence(null, System.currentTimeMillis())
+                        show(supportFragmentManager, "recur_picker")
+                    }
+                }
+            })
         }
     }
 
@@ -478,7 +493,19 @@ class EventItemActivity : BoardItemActivity(), OnMapReadyCallback {
     //endregion
     //region other view callbacks
 
+    override fun onRecurrencePickerSelected(r: Recurrence?) {
+        r ?: return
+        showToast(AndroidString(text = "$r"))
+    }
+
+    override fun onRecurrencePickerCancelled(r: Recurrence?) {
+        r ?: return
+        showToast(AndroidString(text = "$r"))
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == Const.PLAN_EVENT_REQUEST_CODE) {
             data?.getParcelableExtra<BoardItem?>(Const.EXTRA_BOARD_ITEM)?.let {
                 viewModel.updateEventFromPlan()

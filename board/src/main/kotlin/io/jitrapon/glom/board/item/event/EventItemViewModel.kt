@@ -89,6 +89,9 @@ class EventItemViewModel : BoardItemViewModel() {
     /* observable action buttons for attendees section */
     private val observableAttendeesActions = MutableLiveData<ArrayList<ButtonUiModel>>()
 
+    /* observable event to show recurrence picker */
+    private val observableRecurrencePickerEvent = LiveEvent<Boolean>()
+
     init {
         BoardInjector.getComponent().inject(this)
     }
@@ -916,9 +919,16 @@ class EventItemViewModel : BoardItemViewModel() {
                 ActionItem.JOIN, ActionItem.LEAVE -> {
                     setEventDetailAttendStatus()
                 }
+                ActionItem.SET_RECURRENCE -> {
+                    showRecurrencePicker()
+                }
                 else -> {}
             }
         }
+    }
+
+    private fun showRecurrencePicker() {
+        observableRecurrencePickerEvent.value = true
     }
 
     private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
@@ -927,6 +937,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private fun getEventDetailDateTimeActions(status: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
             add(ActionItem.PLAN_DATETIME.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.SET_RECURRENCE.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
         }
     }
 
@@ -977,6 +988,8 @@ class EventItemViewModel : BoardItemViewModel() {
     fun getObservableLocationActions(): LiveData<ArrayList<ButtonUiModel>> = observableLocationActions
 
     fun getObservableAttendeesActions(): LiveData<ArrayList<ButtonUiModel>> = observableAttendeesActions
+
+    fun getObservableRecurrencePicker(): LiveData<Boolean> = observableRecurrencePickerEvent
 
     override fun cleanUp() {
         interactor.cleanup()
