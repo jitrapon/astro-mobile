@@ -495,10 +495,10 @@ class EventItemActivity : BoardItemActivity(),
 
     override fun onRecurrencePickerSelected(r: Recurrence?) {
         r ?: return
-        AppLogger.d("Recurrence: " +
-                "startDate=${r.startDate}, endDate=${r.endDate}, daySetting=${r.daySetting}, " +
-                "endCount=${r.endCount}, endType=${r.endType}, frequency=${r.frequency}, isDefault=${r.isDefault}, " +
-                "period=${r.period}")
+//        AppLogger.d("Recurrence: " +
+//                "startDate=${r.startDate}, endDate=${r.endDate}, daySetting=${r.daySetting}, " +
+//                "endCount=${r.endCount}, endType=${r.endType}, frequency=${r.frequency}, isDefault=${r.isDefault}, " +
+//                "period=${r.period}")
     }
 
     override fun onRecurrencePickerCancelled(r: Recurrence?) {
