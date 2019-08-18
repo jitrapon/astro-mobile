@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event
 
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
 import io.jitrapon.glom.board.item.event.plan.EventPlacePoll
 import io.reactivex.Completable
@@ -56,4 +57,6 @@ interface EventItemDataSource {
     fun setNote(note: String?)
 
     fun setSource(source: EventSource)
+
+    fun setRepeatInfo(info: RepeatInfo?)
 }

@@ -185,4 +185,8 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
     override fun setSource(source: EventSource) {
         throw NotImplementedError()
     }
+
+    override fun setRepeatInfo(rrule: String?) {
+        throw NotImplementedError()
+    }
 }

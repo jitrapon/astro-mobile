@@ -493,17 +493,12 @@ class EventItemActivity : BoardItemActivity(),
     //endregion
     //region other view callbacks
 
-    override fun onRecurrencePickerSelected(r: Recurrence?) {
-        r ?: return
-//        AppLogger.d("Recurrence: " +
-//                "startDate=${r.startDate}, endDate=${r.endDate}, daySetting=${r.daySetting}, " +
-//                "endCount=${r.endCount}, endType=${r.endType}, frequency=${r.frequency}, isDefault=${r.isDefault}, " +
-//                "period=${r.period}")
+    override fun onRecurrencePickerSelected(recurrence: Recurrence?) {
+        viewModel.setEventDetailRecurrence(recurrence)
     }
 
     override fun onRecurrencePickerCancelled(r: Recurrence?) {
-        r ?: return
-        showToast(AndroidString(text = "$r"))
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

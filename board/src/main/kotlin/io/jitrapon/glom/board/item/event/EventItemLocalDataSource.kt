@@ -177,4 +177,8 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     override fun setSource(source: EventSource) {
         inMemoryItem.itemInfo.newSource = source
     }
+
+    override fun setRepeatInfo(rrule: String?) {
+        inMemoryItem.itemInfo.repeatInfo =
+    }
 }

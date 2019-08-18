@@ -11,6 +11,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.r
+import com.maltaisn.recurpicker.Recurrence
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.*
@@ -956,6 +958,10 @@ class EventItemViewModel : BoardItemViewModel() {
         return ArrayList<ButtonUiModel>().apply {
             add(getEventDetailAttendStatus(ActionItem.JOIN, ActionItem.LEAVE, status))
         }
+    }
+
+    fun setEventDetailRecurrence(r: Recurrence?) {
+        interactor.setItemRecurrence(r)
     }
 
     //endregion
