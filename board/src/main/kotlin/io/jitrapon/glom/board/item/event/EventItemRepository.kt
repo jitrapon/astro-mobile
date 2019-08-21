@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board.item.event
 
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
@@ -13,8 +14,11 @@ import java.util.*
  *
  * Created by Jitrapon
  */
-class EventItemRepository(private val remoteDataSource: EventItemDataSource, private val localDataSource: EventItemLocalDataSource) :
-        Repository<BoardItem>(), EventItemDataSource {
+class EventItemRepository(
+    private val remoteDataSource: EventItemDataSource,
+    private val localDataSource: EventItemLocalDataSource
+) :
+    Repository<BoardItem>(), EventItemDataSource {
 
     override fun initWith(item: EventItem) {
         localDataSource.initWith(item)
@@ -30,54 +34,67 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
 
     override fun joinEvent(item: EventItem): Completable {
         return update(
-                localDataSource.joinEvent(item),
-                remoteDataSource.joinEvent(item),
-                false
+            localDataSource.joinEvent(item),
+            remoteDataSource.joinEvent(item),
+            false
         )
     }
 
     override fun leaveEvent(item: EventItem): Completable {
         return update(
-                localDataSource.leaveEvent(item),
-                remoteDataSource.leaveEvent(item),
-                false
+            localDataSource.leaveEvent(item),
+            remoteDataSource.leaveEvent(item),
+            false
         )
     }
 
     override fun getDatePolls(item: EventItem, refresh: Boolean): Flowable<List<EventDatePoll>> {
-        return loadTypedList(refresh,
-                localDataSource.getDatePolls(item),
-                remoteDataSource.getDatePolls(item),
-                localDataSource::saveDatePolls)
+        return loadTypedList(
+            refresh,
+            localDataSource.getDatePolls(item),
+            remoteDataSource.getDatePolls(item),
+            localDataSource::saveDatePolls
+        )
     }
 
     override fun saveDatePolls(polls: List<EventDatePoll>): Flowable<List<EventDatePoll>> {
         throw NotImplementedError()
     }
 
-    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Completable {
+    override fun updateDatePollCount(
+        item: EventItem,
+        poll: EventDatePoll,
+        upvote: Boolean
+    ): Completable {
         return update(
-                localDataSource.updateDatePollCount(item, poll, upvote),
-                remoteDataSource.updateDatePollCount(item, poll, upvote),
-                false)
+            localDataSource.updateDatePollCount(item, poll, upvote),
+            remoteDataSource.updateDatePollCount(item, poll, upvote),
+            false
+        )
     }
 
-    override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
+    override fun addDatePoll(
+        item: EventItem,
+        startDate: Date,
+        endDate: Date?
+    ): Flowable<EventDatePoll> {
         return remoteDataSource.addDatePoll(item, startDate, endDate)
     }
 
     override fun setDatePollStatus(item: EventItem, open: Boolean): Completable {
         return update(
-                localDataSource.setDatePollStatus(item, open),
-                remoteDataSource.setDatePollStatus(item, open),
-                false)
+            localDataSource.setDatePollStatus(item, open),
+            remoteDataSource.setDatePollStatus(item, open),
+            false
+        )
     }
 
     override fun setDateRemote(item: EventItem, startDate: Date?, endDate: Date?): Completable {
         return update(
-                localDataSource.setDateRemote(item, startDate, endDate),
-                remoteDataSource.setDateRemote(item, startDate, endDate),
-                false)
+            localDataSource.setDateRemote(item, startDate, endDate),
+            remoteDataSource.setDateRemote(item, startDate, endDate),
+            false
+        )
     }
 
     override fun setDate(startDateMs: Long?, endDateMs: Long?, fullDay: Boolean) {
@@ -85,40 +102,56 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
     }
 
     override fun getPlacePolls(item: EventItem, refresh: Boolean): Flowable<List<EventPlacePoll>> {
-        return loadTypedList(refresh,
-                localDataSource.getPlacePolls(item),
-                remoteDataSource.getPlacePolls(item),
-                localDataSource::savePlacePolls)
+        return loadTypedList(
+            refresh,
+            localDataSource.getPlacePolls(item),
+            remoteDataSource.getPlacePolls(item),
+            localDataSource::savePlacePolls
+        )
     }
 
     override fun savePlacePolls(polls: List<EventPlacePoll>): Flowable<List<EventPlacePoll>> {
         throw NotImplementedError()
     }
 
-    override fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable {
+    override fun updatePlacePollCount(
+        item: EventItem,
+        poll: EventPlacePoll,
+        upvote: Boolean
+    ): Completable {
         return update(
-                localDataSource.updatePlacePollCount(item, poll, upvote),
-                remoteDataSource.updatePlacePollCount(item, poll, upvote),
-                false
+            localDataSource.updatePlacePollCount(item, poll, upvote),
+            remoteDataSource.updatePlacePollCount(item, poll, upvote),
+            false
         )
     }
 
-    override fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll> {
+    override fun addPlacePoll(
+        item: EventItem,
+        placeId: String?,
+        googlePlaceId: String?
+    ): Flowable<EventPlacePoll> {
         return remoteDataSource.addPlacePoll(item, placeId, googlePlaceId)
     }
 
     override fun setPlacePollStatus(item: EventItem, open: Boolean): Completable {
         return update(
-                localDataSource.setPlacePollStatus(item, open),
-                remoteDataSource.setPlacePollStatus(item, open),
-                false)
+            localDataSource.setPlacePollStatus(item, open),
+            remoteDataSource.setPlacePollStatus(item, open),
+            false
+        )
     }
 
-    override fun updateLocation(item: EventItem, location: EventLocation?, remote: Boolean): Completable {
+    override fun updateLocation(
+        item: EventItem,
+        location: EventLocation?,
+        remote: Boolean
+    ): Completable {
         return if (remote) update(
-                localDataSource.updateLocation(item, location, remote),
-                remoteDataSource.updateLocation(item, location, remote),
-                false)
+            localDataSource.updateLocation(item, location, remote),
+            remoteDataSource.updateLocation(item, location, remote),
+            false
+        )
         else localDataSource.updateLocation(item, location, remote)
     }
 
@@ -132,5 +165,9 @@ class EventItemRepository(private val remoteDataSource: EventItemDataSource, pri
 
     override fun setSource(source: EventSource) {
         localDataSource.setSource(source)
+    }
+
+    override fun setRepeatInfo(info: RepeatInfo?) {
+        localDataSource.setRepeatInfo(info)
     }
 }

@@ -36,7 +36,8 @@ fun BoardItemResponse.deserialize(circleId: String): EventItem {
                         it["time_zone"] as? String?,
                         it["is_full_day"] as Boolean,
                         (it["repeat"] as? Map<*, *>)?.let {
-                            RepeatInfo(it["occurence_id"].asNullableInt(),
+                            RepeatInfo(null,
+                                    it["occurence_id"].asNullableInt(),
                                     it["is_reschedule"] as? Boolean?,
                                     it["unit"].asInt(),
                                     it["interval"].asLong(),

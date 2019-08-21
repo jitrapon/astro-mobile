@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.item.event
 
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.jitrapon.glom.board.item.event.plan.*
 import io.reactivex.Completable
@@ -186,7 +187,7 @@ class EventItemRemoteDataSource(private val userInteractor: UserInteractor, priv
         throw NotImplementedError()
     }
 
-    override fun setRepeatInfo(rrule: String?) {
+    override fun setRepeatInfo(info: RepeatInfo?) {
         throw NotImplementedError()
     }
 }

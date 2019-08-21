@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board.item.event
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.board.BoardDatabase
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
 import io.jitrapon.glom.board.item.event.plan.EventPlacePoll
@@ -8,14 +9,13 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 
-class EventItemLocalDataSource(database: BoardDatabase, private val userInteractor: UserInteractor): EventItemDataSource {
-
+class EventItemLocalDataSource(
+    database: BoardDatabase,
+    private val userInteractor: UserInteractor
+) : EventItemDataSource {
     private lateinit var inMemoryItem: EventItem
-
     private var inMemoryDatePolls: MutableList<EventDatePoll> = ArrayList()
-
     private var inMemoryPlacePolls: MutableList<EventPlacePoll> = ArrayList()
-
     /* DAO access object to event items */
     private val eventDao: EventItemDao = database.eventItemDao()
 
@@ -24,7 +24,6 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
     }
 
     override fun getItem(): Flowable<EventItem> = Flowable.just(inMemoryItem)
-
     override fun saveItem(info: EventInfo): Completable {
         return Completable.fromCallable {
             inMemoryItem.setInfo(info)
@@ -70,7 +69,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         return Flowable.just(inMemoryDatePolls)
     }
 
-    override fun updateDatePollCount(item: EventItem, poll: EventDatePoll, upvote: Boolean): Completable {
+    override fun updateDatePollCount(
+        item: EventItem,
+        poll: EventDatePoll,
+        upvote: Boolean
+    ): Completable {
         return Completable.fromCallable {
             inMemoryDatePolls.find { it.id == poll.id }?.let {
                 if (upvote) {
@@ -83,7 +86,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun addDatePoll(item: EventItem, startDate: Date, endDate: Date?): Flowable<EventDatePoll> {
+    override fun addDatePoll(
+        item: EventItem,
+        startDate: Date,
+        endDate: Date?
+    ): Flowable<EventDatePoll> {
         throw NotImplementedError()
     }
 
@@ -123,7 +130,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         return Flowable.just(inMemoryPlacePolls)
     }
 
-    override fun updatePlacePollCount(item: EventItem, poll: EventPlacePoll, upvote: Boolean): Completable {
+    override fun updatePlacePollCount(
+        item: EventItem,
+        poll: EventPlacePoll,
+        upvote: Boolean
+    ): Completable {
         return Completable.fromCallable {
             inMemoryPlacePolls.find { it.id == poll.id }?.let {
                 if (upvote) {
@@ -136,7 +147,11 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun addPlacePoll(item: EventItem, placeId: String?, googlePlaceId: String?): Flowable<EventPlacePoll> {
+    override fun addPlacePoll(
+        item: EventItem,
+        placeId: String?,
+        googlePlaceId: String?
+    ): Flowable<EventPlacePoll> {
         throw NotImplementedError()
     }
 
@@ -148,15 +163,21 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         }
     }
 
-    override fun updateLocation(item: EventItem, location: EventLocation?, remote: Boolean): Completable {
+    override fun updateLocation(
+        item: EventItem,
+        location: EventLocation?,
+        remote: Boolean
+    ): Completable {
         return Completable.fromCallable {
             if (location == null) {
                 eventDao.updatePlace(item.itemId)
             }
             else {
                 if (item.itemInfo.source.isBoard()) {
-                    eventDao.updatePlace(item.itemId, location.googlePlaceId, location.placeId, location.latitude,
-                        location.longitude, location.name, location.description, location.address)
+                    eventDao.updatePlace(
+                        item.itemId, location.googlePlaceId, location.placeId, location.latitude,
+                        location.longitude, location.name, location.description, location.address
+                    )
                 }
             }
         }.doOnComplete {
@@ -178,7 +199,7 @@ class EventItemLocalDataSource(database: BoardDatabase, private val userInteract
         inMemoryItem.itemInfo.newSource = source
     }
 
-    override fun setRepeatInfo(rrule: String?) {
-        inMemoryItem.itemInfo.repeatInfo =
+    override fun setRepeatInfo(info: RepeatInfo?) {
+        inMemoryItem.itemInfo.repeatInfo = info
     }
 }
