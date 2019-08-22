@@ -67,3 +67,7 @@ data class RepeatInfo(val rrule: String?,
         override fun newArray(size: Int): Array<RepeatInfo?> = arrayOfNulls(size)
     }
 }
+
+fun String?.toRepeatInfo(): RepeatInfo? {
+    return null
+}
