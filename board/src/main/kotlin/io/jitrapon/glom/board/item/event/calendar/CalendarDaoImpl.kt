@@ -17,7 +17,6 @@ import androidx.core.database.getStringOrNull
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
@@ -140,40 +139,39 @@ class CalendarDaoImpl(private val context: Context) :
 
                     while (cur.moveToNext()) {
                         val calendar = map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
-                        add(
-                            EventItem(
-                                BoardItem.TYPE_EVENT,
-                                cur.getLong(PROJECTION_EVENT_ID).toString(),
-                                null, null,
-                                cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
-                                    ?: listOf(),
-                                EventInfo(
-                                    cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
-                                    cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
-                                    cur.getLongOrNull(PROJECTION_EVENT_DTEND),
-                                    EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
-                                    cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
-                                    cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
-                                    cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
-                                    cur.getStringOrNull(PROJECTION_EVENT_RRULE).toRepeatInfo(),
-                                    false,
-                                    false,
-                                    arrayListOf(),
-                                    EventSource(
-                                        null,
-                                        map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
-                                        null,
-                                        null
-                                    )
-                                ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                        val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
+                        if (rrule.isNullOrEmpty()) {
+                            add(
+                                EventItem(
+                                    BoardItem.TYPE_EVENT,
+                                    cur.getLong(PROJECTION_EVENT_ID).toString(),
+                                    null, null,
+                                    cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                                        ?: listOf(),
+                                    EventInfo(
+                                        cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
+                                        cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
+                                        cur.getLongOrNull(PROJECTION_EVENT_DTEND),
+                                        EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
+                                        cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
+                                        cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
+                                        cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
+                                        rrule.toRepeatInfo(),
+                                        false,
+                                        false,
+                                        arrayListOf(),
+                                        EventSource(
+                                            null,
+                                            map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                            null,
+                                            null
+                                        )
+                                    ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                                )
                             )
-                        )
-                        if (!cur.getStringOrNull(PROJECTION_EVENT_RRULE).isNullOrEmpty()) {
-                            val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
+                        }
+                        else {
                             val eventId = cur.getStringOrNull(PROJECTION_EVENT_ID)
-                            val name = cur.getStringOrNull(PROJECTION_EVENT_TITLE)
-                            AppLogger.d("eventId=$eventId, name$name, rrule=$rrule")
-
                             cur2 = contentResolver.query(
                                 CalendarContract.Instances.CONTENT_URI.buildUpon().let {
                                     it.appendPath("$startSearchTime")
@@ -189,7 +187,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 null, null
                             )
                             if (cur2 != null) {
-                                var occurenceId = 2
+                                var occurrenceId = 1
                                 while (cur2.moveToNext()) {
                                     val id = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
                                     val startTime = cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN)
@@ -203,7 +201,7 @@ class CalendarDaoImpl(private val context: Context) :
                                             cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
                                                 ?: listOf(),
                                             EventInfo(
-                                                "${cur.getStringOrNull(PROJECTION_EVENT_TITLE)} #$occurenceId",
+                                                "${cur.getStringOrNull(PROJECTION_EVENT_TITLE)} #$occurrenceId",
                                                 startTime,
                                                 endTime,
                                                 EventLocation(
@@ -214,7 +212,7 @@ class CalendarDaoImpl(private val context: Context) :
                                                 cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
                                                 cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
                                                 cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
-                                                cur.getStringOrNull(PROJECTION_EVENT_RRULE).toRepeatInfo(),
+                                                rrule.toRepeatInfo(),
                                                 false,
                                                 false,
                                                 arrayListOf(),
@@ -230,7 +228,7 @@ class CalendarDaoImpl(private val context: Context) :
                                             Date()
                                         )
                                     )
-                                    occurenceId++
+                                    occurrenceId++
                                 }
                             }
                             cur2?.close()
