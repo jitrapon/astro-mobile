@@ -18,6 +18,7 @@ import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.jitrapon.glom.base.util.hasWriteCalendarPermission
@@ -64,13 +65,10 @@ private val EVENT_CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events.AVAILABILITY                // 13   If this event counts as busy time or is free time that can be scheduled over.
 )
 private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
-    CalendarContract.Instances.EVENT_ID,                // 0 The foreign key to the Events table
-    CalendarContract.Instances.BEGIN,                   // 1 The beginning time of the instance, in UTC milliseconds.
-    CalendarContract.Instances.END,                     // 2 The ending time of the instance, in UTC milliseconds.
-    CalendarContract.Instances.END_DAY,                 // 3 The Julian end day of the instance, relative to the local time zone.
-    CalendarContract.Instances.END_MINUTE,              // The end minute of the instance measured from midnight in the local time zone.
-    CalendarContract.Instances.START_DAY,               // The Julian start day of the instance, relative to the local time zone.
-    CalendarContract.Instances.START_MINUTE             // The start minute of the instance measured from midnight in the local time zone.
+    CalendarContract.Instances._ID,                     // 0 The _ID of this occurrence
+    CalendarContract.Instances.EVENT_ID,                // 1 The foreign key to the Events table
+    CalendarContract.Instances.BEGIN,                   // 2 The beginning time of the instance, in UTC milliseconds.
+    CalendarContract.Instances.END                      // 3 The ending time of the instance, in UTC milliseconds.
 )
 // The indices for the projection array above.
 private const val PROJECTION_ID_INDEX: Int = 0
@@ -94,6 +92,10 @@ private const val PROJECTION_EVENT_ALL_DAY = 10
 private const val PROJECTION_EVENT_RRULE = 11
 private const val PROJECTION_EVENT_RDATE = 12
 private const val PROJECTION_EVENT_AVAILABILITY = 13
+private const val PROJECTION_INSTANCE_ID = 0
+private const val PROJECTION_INSTANCE_EVENT_ID = 1
+private const val PROJECTION_INSTANCE_BEGIN = 2
+private const val PROJECTION_INSTANCE_END = 3
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
@@ -114,8 +116,8 @@ class CalendarDaoImpl(private val context: Context) :
     ): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             ArrayList<EventItem>().apply {
-                val uri: Uri = CalendarContract.Events.CONTENT_URI
                 var cur: Cursor? = null
+                var cur2: Cursor? = null
                 try {
                     val endSearchQuery =
                         endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
@@ -126,7 +128,7 @@ class CalendarDaoImpl(private val context: Context) :
                         }
                     }.toString()
                     cur = contentResolver.query(
-                        uri,
+                        CalendarContract.Events.CONTENT_URI,
                         EVENT_CALENDAR_PROJECTION,
                         "${CalendarContract.Events.CALENDAR_ID} in ($ids) " +
                                 "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
@@ -166,12 +168,72 @@ class CalendarDaoImpl(private val context: Context) :
                                 ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
                             )
                         )
-                        val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
-                        val rdate = cur.getStringOrNull(PROJECTION_EVENT_RDATE)
-                        val eventId = cur.getStringOrNull(PROJECTION_EVENT_ID)
-                        val name = cur.getStringOrNull(PROJECTION_EVENT_TITLE)
-                        AppLogger.d("eventId=$eventId, name$name, rrule=$rrule, rdate=$rdate")
                         if (!cur.getStringOrNull(PROJECTION_EVENT_RRULE).isNullOrEmpty()) {
+                            val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
+                            val eventId = cur.getStringOrNull(PROJECTION_EVENT_ID)
+                            val name = cur.getStringOrNull(PROJECTION_EVENT_TITLE)
+                            AppLogger.d("eventId=$eventId, name$name, rrule=$rrule")
+
+                            cur2 = contentResolver.query(
+                                CalendarContract.Instances.CONTENT_URI.buildUpon().let {
+                                    it.appendPath("$startSearchTime")
+                                    it.appendPath(
+                                        "${endSearchTime ?: Date(startSearchTime).addDay(
+                                            30
+                                        ).time}"
+                                    )
+                                    it.build()
+                                },
+                                EVENT_INSTANCE_PROJECTION,
+                                "${CalendarContract.Instances.EVENT_ID} = $eventId",
+                                null, null
+                            )
+                            if (cur2 != null) {
+                                var occurenceId = 2
+                                while (cur2.moveToNext()) {
+                                    val id = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
+                                    val startTime = cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN)
+                                    val endTime = cur2.getLongOrNull(PROJECTION_INSTANCE_END)
+                                    add(
+                                        EventItem(
+                                            BoardItem.TYPE_EVENT,
+                                            "$eventId.$id",
+                                            null,
+                                            null,
+                                            cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                                                ?: listOf(),
+                                            EventInfo(
+                                                "${cur.getStringOrNull(PROJECTION_EVENT_TITLE)} #$occurenceId",
+                                                startTime,
+                                                endTime,
+                                                EventLocation(
+                                                    cur.getStringOrNull(
+                                                        PROJECTION_EVENT_LOCATION
+                                                    )
+                                                ),
+                                                cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
+                                                cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
+                                                cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
+                                                cur.getStringOrNull(PROJECTION_EVENT_RRULE).toRepeatInfo(),
+                                                false,
+                                                false,
+                                                arrayListOf(),
+                                                EventSource(
+                                                    null,
+                                                    map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                                    null,
+                                                    null
+                                                )
+                                            ),
+                                            calendar?.isWritable ?: true,
+                                            SyncStatus.OFFLINE,
+                                            Date()
+                                        )
+                                    )
+                                    occurenceId++
+                                }
+                            }
+                            cur2?.close()
                         }
                     }
                 }
@@ -180,6 +242,7 @@ class CalendarDaoImpl(private val context: Context) :
                 }
                 finally {
                     cur?.close()
+                    cur2?.close()
                 }
             }
         }
