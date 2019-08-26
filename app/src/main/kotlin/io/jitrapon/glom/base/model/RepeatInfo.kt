@@ -2,8 +2,8 @@ package io.jitrapon.glom.base.model
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.google.android.libraries.places.internal.it
-import java.util.*
+import java.util.ArrayList
+import java.util.Date
 
 const val UNTIL_FOREVER = 0L
 const val MAX_ALLOW_OCCURENCE = 999

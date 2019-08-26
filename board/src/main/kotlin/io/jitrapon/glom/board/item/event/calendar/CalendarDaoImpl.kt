@@ -43,7 +43,7 @@ private val CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars.VISIBLE,                 // 5
     CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL    // 6
 )
-private val EVENT_CALENDAR_PROJECTION: Array<String> = arrayOf(
+private val EVENT_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events._ID,                        // 0    The _ID of this event
     CalendarContract.Events.CALENDAR_ID,                // 1    The _ID of the calendar the event belongs to.
     CalendarContract.Events.ORGANIZER,                  // 2    Email of the organizer (owner) of the event.
@@ -67,7 +67,15 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Instances._ID,                     // 0 The _ID of this occurrence
     CalendarContract.Instances.EVENT_ID,                // 1 The foreign key to the Events table
     CalendarContract.Instances.BEGIN,                   // 2 The beginning time of the instance, in UTC milliseconds.
-    CalendarContract.Instances.END                      // 3 The ending time of the instance, in UTC milliseconds.
+    CalendarContract.Instances.END,                     // 3 The ending time of the instance, in UTC milliseconds.
+    CalendarContract.Instances.CALENDAR_ID,
+    CalendarContract.Instances.RRULE,
+    CalendarContract.Instances.ORGANIZER,
+    CalendarContract.Instances.TITLE,
+    CalendarContract.Instances.EVENT_LOCATION,
+    CalendarContract.Instances.DESCRIPTION,
+    CalendarContract.Instances.EVENT_TIMEZONE,
+    CalendarContract.Instances.ALL_DAY
 )
 // The indices for the projection array above.
 private const val PROJECTION_ID_INDEX: Int = 0
@@ -91,10 +99,19 @@ private const val PROJECTION_EVENT_ALL_DAY = 10
 private const val PROJECTION_EVENT_RRULE = 11
 private const val PROJECTION_EVENT_RDATE = 12
 private const val PROJECTION_EVENT_AVAILABILITY = 13
+
 private const val PROJECTION_INSTANCE_ID = 0
 private const val PROJECTION_INSTANCE_EVENT_ID = 1
 private const val PROJECTION_INSTANCE_BEGIN = 2
 private const val PROJECTION_INSTANCE_END = 3
+private const val PROJECTION_INSTANCE_CALENDAR = 4
+private const val PROJECTION_INSTANCE_RRULE = 5
+private const val PROJECTION_INSTANCE_ORGANIZER = 6
+private const val PROJECTION_INSTANCE_TITLE = 7
+private const val PROJECTION_INSTANCE_LOCATION = 8
+private const val PROJECTION_INSTANCE_DESCRIPTION = 9
+private const val PROJECTION_INSTANCE_TIMEZONE = 10
+private const val PROJECTION_INSTANCE_ALL_DAY = 11
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
@@ -118,6 +135,7 @@ class CalendarDaoImpl(private val context: Context) :
                 var cur: Cursor? = null
                 var cur2: Cursor? = null
                 try {
+                    // query all the events without recurrence
                     val endSearchQuery =
                         endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
                     val ids = StringBuffer().apply {
@@ -128,7 +146,7 @@ class CalendarDaoImpl(private val context: Context) :
                     }.toString()
                     cur = contentResolver.query(
                         CalendarContract.Events.CONTENT_URI,
-                        EVENT_CALENDAR_PROJECTION,
+                        EVENT_PROJECTION,
                         "${CalendarContract.Events.CALENDAR_ID} in ($ids) " +
                                 "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
                                 "AND ${CalendarContract.Events.DELETED} = 0",
@@ -136,102 +154,96 @@ class CalendarDaoImpl(private val context: Context) :
                     )
                     cur ?: return ArrayList()
                     val map = calendars.associateBy { it.calId }
-
                     while (cur.moveToNext()) {
                         val calendar = map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
                         val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
-                        if (rrule.isNullOrEmpty()) {
+                        add(
+                            EventItem(
+                                BoardItem.TYPE_EVENT,
+                                cur.getLong(PROJECTION_EVENT_ID).toString(),
+                                null, null,
+                                cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                                    ?: listOf(),
+                                EventInfo(
+                                    cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
+                                    cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
+                                    cur.getLongOrNull(PROJECTION_EVENT_DTEND),
+                                    EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
+                                    cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
+                                    cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
+                                    cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
+                                    rrule.toRepeatInfo(),
+                                    false,
+                                    false,
+                                    arrayListOf(),
+                                    EventSource(
+                                        null,
+                                        map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                        null,
+                                        null
+                                    )
+                                ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                            )
+                        )
+                    }
+
+                    // query all the recurring events
+                    cur2 = contentResolver.query(
+                        CalendarContract.Instances.CONTENT_URI.buildUpon().let {
+                            it.appendPath("$startSearchTime")
+                            it.appendPath(
+                                "${endSearchTime ?: Date(startSearchTime).addDay(
+                                    30
+                                ).time}"
+                            )
+                            it.build()
+                        },
+                        EVENT_INSTANCE_PROJECTION,
+                        "${CalendarContract.Instances.RRULE} IS NOT NULL",
+                        null, null
+                    )
+                    if (cur2 != null) {
+                        while (cur2.moveToNext()) {
+                            val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
+                            val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
+                            val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
+                            val id = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
                             add(
                                 EventItem(
                                     BoardItem.TYPE_EVENT,
-                                    cur.getLong(PROJECTION_EVENT_ID).toString(),
-                                    null, null,
-                                    cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                                    "$eventId.$id",
+                                    null,
+                                    null,
+                                    cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                         ?: listOf(),
                                     EventInfo(
-                                        cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
-                                        cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
-                                        cur.getLongOrNull(PROJECTION_EVENT_DTEND),
-                                        EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
-                                        cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
-                                        cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
-                                        cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
+                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
+                                        cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
+                                        cur2.getLongOrNull(PROJECTION_INSTANCE_END),
+                                        EventLocation(
+                                            cur2.getStringOrNull(
+                                                PROJECTION_INSTANCE_LOCATION
+                                            )
+                                        ),
+                                        cur2.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
+                                        cur2.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
+                                        cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
                                         rrule.toRepeatInfo(),
                                         false,
                                         false,
                                         arrayListOf(),
                                         EventSource(
                                             null,
-                                            map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                            calendar,
                                             null,
                                             null
                                         )
-                                    ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                                    ),
+                                    calendar?.isWritable ?: true,
+                                    SyncStatus.OFFLINE,
+                                    Date()
                                 )
                             )
-                        }
-                        else {
-                            val eventId = cur.getStringOrNull(PROJECTION_EVENT_ID)
-                            cur2 = contentResolver.query(
-                                CalendarContract.Instances.CONTENT_URI.buildUpon().let {
-                                    it.appendPath("$startSearchTime")
-                                    it.appendPath(
-                                        "${endSearchTime ?: Date(startSearchTime).addDay(
-                                            30
-                                        ).time}"
-                                    )
-                                    it.build()
-                                },
-                                EVENT_INSTANCE_PROJECTION,
-                                "${CalendarContract.Instances.EVENT_ID} = $eventId",
-                                null, null
-                            )
-                            if (cur2 != null) {
-                                var occurrenceId = 1
-                                while (cur2.moveToNext()) {
-                                    val id = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
-                                    val startTime = cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN)
-                                    val endTime = cur2.getLongOrNull(PROJECTION_INSTANCE_END)
-                                    add(
-                                        EventItem(
-                                            BoardItem.TYPE_EVENT,
-                                            "$eventId.$id",
-                                            null,
-                                            null,
-                                            cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
-                                                ?: listOf(),
-                                            EventInfo(
-                                                "${cur.getStringOrNull(PROJECTION_EVENT_TITLE)} #$occurrenceId",
-                                                startTime,
-                                                endTime,
-                                                EventLocation(
-                                                    cur.getStringOrNull(
-                                                        PROJECTION_EVENT_LOCATION
-                                                    )
-                                                ),
-                                                cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
-                                                cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
-                                                cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
-                                                rrule.toRepeatInfo(),
-                                                false,
-                                                false,
-                                                arrayListOf(),
-                                                EventSource(
-                                                    null,
-                                                    map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
-                                                    null,
-                                                    null
-                                                )
-                                            ),
-                                            calendar?.isWritable ?: true,
-                                            SyncStatus.OFFLINE,
-                                            Date()
-                                        )
-                                    )
-                                    occurrenceId++
-                                }
-                            }
-                            cur2?.close()
                         }
                     }
                 }
