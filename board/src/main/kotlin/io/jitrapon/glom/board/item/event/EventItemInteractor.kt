@@ -6,7 +6,6 @@ import androidx.annotation.WorkerThread
 import androidx.core.util.set
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.r
 import com.maltaisn.recurpicker.RRuleFormat
 import com.maltaisn.recurpicker.Recurrence
 import io.jitrapon.glom.base.component.PlaceProvider
@@ -24,7 +23,12 @@ import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DATE
 import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DAY_OF_WEEK
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.model.UNTIL_FOREVER
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.addMinute
+import io.jitrapon.glom.base.util.isToday
+import io.jitrapon.glom.base.util.roundToNextHalfHour
+import io.jitrapon.glom.base.util.setTime
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
@@ -35,7 +39,11 @@ import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSourc
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.Date
+import java.util.HashMap
+import java.util.Locale
 
 
 
@@ -627,7 +635,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
             board.items.filterIsInstance(EventItem::class.java)
                     .groupBy {
                         it.itemInfo.startTime?.let { epochTimeMs ->
-                            Date(epochTimeMs).setTime(hour = 0, minute = 0, second = 0)
+                            Date(epochTimeMs).setTime(hour = 0, minute = 0, second = 0, millisecond = 0)
                         }
                     }.forEach { (date, events) ->
                         date?.let {
