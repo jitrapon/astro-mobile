@@ -69,6 +69,5 @@ data class RepeatInfo(val rrule: String?,
 }
 
 fun String?.toRepeatInfo(): RepeatInfo? {
-
     return null
 }
