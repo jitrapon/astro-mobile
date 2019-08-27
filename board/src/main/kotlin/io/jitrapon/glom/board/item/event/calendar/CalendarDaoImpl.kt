@@ -149,7 +149,8 @@ class CalendarDaoImpl(private val context: Context) :
                         EVENT_PROJECTION,
                         "${CalendarContract.Events.CALENDAR_ID} in ($ids) " +
                                 "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
-                                "AND ${CalendarContract.Events.DELETED} = 0",
+                                "AND ${CalendarContract.Events.DELETED} = 0 " +
+                                "AND ${CalendarContract.Events.RRULE} IS NULL",
                         null, null
                     )
                     cur ?: return ArrayList()
