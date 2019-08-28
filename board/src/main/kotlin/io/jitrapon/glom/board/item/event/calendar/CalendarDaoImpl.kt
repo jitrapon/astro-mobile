@@ -157,7 +157,6 @@ class CalendarDaoImpl(private val context: Context) :
                     val map = calendars.associateBy { it.calId }
                     while (cur.moveToNext()) {
                         val calendar = map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
-                        val rrule = cur.getStringOrNull(PROJECTION_EVENT_RRULE)
                         add(
                             EventItem(
                                 BoardItem.TYPE_EVENT,
@@ -173,7 +172,7 @@ class CalendarDaoImpl(private val context: Context) :
                                     cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
                                     cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
                                     cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
-                                    rrule.toRepeatInfo(),
+                                    null,
                                     false,
                                     false,
                                     arrayListOf(),
@@ -208,17 +207,17 @@ class CalendarDaoImpl(private val context: Context) :
                             val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
                             val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
-                            val id = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
+                            val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
                             add(
                                 EventItem(
                                     BoardItem.TYPE_EVENT,
-                                    "$eventId.$id",
+                                    "$eventId.$eventInstanceId",
                                     null,
                                     null,
                                     cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                         ?: listOf(),
                                     EventInfo(
-                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
+                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)} (Recurring)",
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_END),
                                         EventLocation(
@@ -229,7 +228,7 @@ class CalendarDaoImpl(private val context: Context) :
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
                                         cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
-                                        rrule.toRepeatInfo(),
+                                        rrule.toRepeatInfo(eventInstanceId, null),
                                         false,
                                         false,
                                         arrayListOf(),
