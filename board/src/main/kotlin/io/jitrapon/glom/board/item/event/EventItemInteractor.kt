@@ -648,58 +648,7 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
     //endregion
     //region recurrence
     
-    fun setItemRecurrence(r: Recurrence?) {
-        if (r == null) {
-            eventItemDataSource.setRepeatInfo(null)
-            return
-        }
-
-        AppLogger.d("Recurrence: " +
-                "startDate=${r.startDate}, endDate=${r.endDate}, daySetting=${r.daySetting}, " +
-                "endCount=${r.endCount}, endType=${r.endType}, frequency=${r.frequency}, isDefault=${r.isDefault}, " +
-                "period=${r.period}")
-
-        val rrule: String? = RRuleFormat.format(r)
-        AppLogger.d("RRULE: $rrule")
-        val unit = when (r.period) {
-            Recurrence.DAILY -> RepeatInfo.TimeUnit.DAY
-            Recurrence.WEEKLY -> RepeatInfo.TimeUnit.WEEK
-            Recurrence.MONTHLY -> RepeatInfo.TimeUnit.MONTH
-            Recurrence.YEARLY -> RepeatInfo.TimeUnit.YEAR
-            else -> null
-        }
-        val untilTime = if (r.endCount == -1) {
-            if (r.endDate == -1L) UNTIL_FOREVER else r.endDate
-        }
-        else {
-            r.endCount.toLong()
-        }
-        val meta = when (r.period) {
-            Recurrence.WEEKLY -> {
-                val array = ArrayList<Int>()
-                for (i in 0..6) {
-                    if (r.isRepeatedOnDaysOfWeek(1 shl i + 1)) {
-                        array.add(i)
-                    }
-                }
-                array
-            }
-            Recurrence.MONTHLY -> {
-                val array = ArrayList<Int>()
-                when (r.daySetting) {
-                    Recurrence.SAME_DAY_OF_MONTH -> array.add(REPEAT_ON_SAME_DATE)
-                    Recurrence.SAME_DAY_OF_WEEK -> array.add(REPEAT_ON_SAME_DAY_OF_WEEK)
-                    Recurrence.LAST_DAY_OF_MONTH -> array.add(REPEAT_ON_LAST_DAY_OF_MONTH)
-                    else -> Unit
-                }
-                array
-            }
-            else -> null
-        }
-        val repeatInfo = if (unit == null) null
-        else RepeatInfo(
-            rrule, null, null, unit.value, r.frequency.toLong(), untilTime, meta
-        )
+    fun setItemRecurrence(repeatInfo: RepeatInfo?) {
         eventItemDataSource.setRepeatInfo(repeatInfo)
     }
 

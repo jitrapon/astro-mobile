@@ -13,13 +13,22 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-import com.maltaisn.recurpicker.Recurrence
 import com.maltaisn.recurpicker.RecurrencePickerDialog
-import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.util.applyState
+import io.jitrapon.glom.base.util.clearFocusAndHideKeyboard
+import io.jitrapon.glom.base.util.dimen
+import io.jitrapon.glom.base.util.doOnTextChanged
+import io.jitrapon.glom.base.util.findViewsWithContentDescription
+import io.jitrapon.glom.base.util.getString
+import io.jitrapon.glom.base.util.hide
+import io.jitrapon.glom.base.util.load
+import io.jitrapon.glom.base.util.setStyle
+import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.showLiteMap
+import io.jitrapon.glom.base.util.startActivity
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import io.jitrapon.glom.board.NavigationArguments
@@ -34,8 +43,29 @@ import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_L
 import io.jitrapon.glom.board.item.event.widget.DateTimePicker
 import io.jitrapon.glom.board.item.event.widget.STYLE_BOTTOM_SHEET
 import io.jitrapon.glom.board.item.event.widget.placepicker.PlacePickerActivity
-import kotlinx.android.synthetic.main.event_item_activity.*
-
+import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePicker
+import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees
+import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees_action_button_1
+import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees_action_button_2
+import kotlinx.android.synthetic.main.event_item_activity.event_item_datetime_action_button_1
+import kotlinx.android.synthetic.main.event_item_activity.event_item_datetime_action_button_2
+import kotlinx.android.synthetic.main.event_item_activity.event_item_datetime_action_button_3
+import kotlinx.android.synthetic.main.event_item_activity.event_item_end_time
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_action_button_1
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_action_button_2
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_action_button_3
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_action_button_4
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_primary
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_secondary
+import kotlinx.android.synthetic.main.event_item_activity.event_item_location_separator
+import kotlinx.android.synthetic.main.event_item_activity.event_item_map
+import kotlinx.android.synthetic.main.event_item_activity.event_item_note
+import kotlinx.android.synthetic.main.event_item_activity.event_item_root_layout
+import kotlinx.android.synthetic.main.event_item_activity.event_item_source_icon
+import kotlinx.android.synthetic.main.event_item_activity.event_item_source_text_view
+import kotlinx.android.synthetic.main.event_item_activity.event_item_start_time
+import kotlinx.android.synthetic.main.event_item_activity.event_item_title
+import kotlinx.android.synthetic.main.event_item_activity.event_item_title_til
 
 /**
  * Shows dialog-like UI for viewing and/or editing an event in a board.
@@ -43,8 +73,7 @@ import kotlinx.android.synthetic.main.event_item_activity.*
  * @author Jitrapon Tiachunpun
  */
 class EventItemActivity : BoardItemActivity(),
-        OnMapReadyCallback,
-        RecurrencePickerDialog.RecurrenceSelectedCallback {
+        OnMapReadyCallback {
 
     private lateinit var viewModel: EventItemViewModel
 
@@ -418,10 +447,11 @@ class EventItemActivity : BoardItemActivity(),
 
             // observe on recurrence picker
             getObservableRecurrencePicker().observe(this@EventItemActivity, Observer {
-                if (it == true) {
-                    RecurrencePickerDialog().apply {
-                        setRecurrence(null, System.currentTimeMillis())
-                        show(supportFragmentManager, "recur_picker")
+                it?.let {
+                    RecurrencePicker().apply {
+                        show(supportFragmentManager, it) { repeatInfo ->
+                            viewModel.setEventDetailRecurrence(repeatInfo)
+                        }
                     }
                 }
             })
@@ -492,14 +522,6 @@ class EventItemActivity : BoardItemActivity(),
 
     //endregion
     //region other view callbacks
-
-    override fun onRecurrencePickerSelected(recurrence: Recurrence?) {
-        viewModel.setEventDetailRecurrence(recurrence)
-    }
-
-    override fun onRecurrencePickerCancelled(r: Recurrence?) {
-
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

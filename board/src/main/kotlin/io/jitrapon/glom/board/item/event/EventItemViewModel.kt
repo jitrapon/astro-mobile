@@ -26,6 +26,7 @@ import io.jitrapon.glom.board.item.BoardItemViewModel
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_DATE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_PLACE_PAGE
+import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePickerUiModel
 import java.util.*
 import javax.inject.Inject
 
@@ -92,7 +93,7 @@ class EventItemViewModel : BoardItemViewModel() {
     private val observableAttendeesActions = MutableLiveData<ArrayList<ButtonUiModel>>()
 
     /* observable event to show recurrence picker */
-    private val observableRecurrencePickerEvent = LiveEvent<Boolean>()
+    private val observableRecurrencePickerEvent = LiveEvent<RecurrencePickerUiModel>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -929,10 +930,6 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun showRecurrencePicker() {
-        observableRecurrencePickerEvent.value = true
-    }
-
     private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
             ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
 
@@ -960,7 +957,11 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    fun setEventDetailRecurrence(r: Recurrence?) {
+    private fun showRecurrencePicker() {
+        observableRecurrencePickerEvent.value = RecurrencePickerUiModel(interactor.event)
+    }
+
+    fun setEventDetailRecurrence(r: RepeatInfo?) {
         interactor.setItemRecurrence(r)
     }
 
@@ -995,7 +996,7 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableAttendeesActions(): LiveData<ArrayList<ButtonUiModel>> = observableAttendeesActions
 
-    fun getObservableRecurrencePicker(): LiveData<Boolean> = observableRecurrencePickerEvent
+    fun getObservableRecurrencePicker(): LiveData<RecurrencePickerUiModel> = observableRecurrencePickerEvent
 
     override fun cleanUp() {
         interactor.cleanup()

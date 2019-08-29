@@ -33,6 +33,7 @@ data class RepeatInfo(
     val interval: Long,
     val until: Long,
     val meta: List<Int>?,
+    val firstStartTime: Long,
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
@@ -55,7 +56,8 @@ data class RepeatInfo(
         ArrayList<Int>().let {
             parcel.readList(it, null)
             if (it.isEmpty()) null else it
-        })
+        },
+        parcel.readLong())
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(rrule)
@@ -70,6 +72,7 @@ data class RepeatInfo(
         parcel.writeLong(interval)
         parcel.writeLong(until)
         parcel.writeList(meta)
+        parcel.writeLong(firstStartTime)
     }
 
     override fun describeContents(): Int = 0
@@ -80,7 +83,7 @@ data class RepeatInfo(
     }
 }
 
-fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?): RepeatInfo? {
+fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?, firstStartTime: Long): RepeatInfo? {
     this ?: return null
     val tokens = split(";")
     val unit = tokens.find { it.startsWith("FREQ=") }?.removePrefix("FREQ=")?.let {
@@ -145,6 +148,7 @@ fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?): RepeatIn
         unit,
         interval,
         until,
-        meta
+        meta,
+        firstStartTime
     )
 }

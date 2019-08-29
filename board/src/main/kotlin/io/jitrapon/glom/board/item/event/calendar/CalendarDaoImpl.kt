@@ -134,6 +134,7 @@ class CalendarDaoImpl(private val context: Context) :
             ArrayList<EventItem>().apply {
                 var cur: Cursor? = null
                 var cur2: Cursor? = null
+                var cur3: Cursor? = null
                 try {
                     // query all the events without recurrence
                     val endSearchQuery =
@@ -203,11 +204,31 @@ class CalendarDaoImpl(private val context: Context) :
                         null, null
                     )
                     if (cur2 != null) {
+                        val firstStartTimeMap = HashMap<String, Long>()
                         while (cur2.moveToNext()) {
                             val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
                             val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
+
+                            // query the first event time of this recurrence series
+                            var firstStartTime = firstStartTimeMap[eventId]
+                            if (firstStartTime == null && eventId != null) {
+                                cur3 = contentResolver.query(
+                                    CalendarContract.Events.CONTENT_URI,
+                                    arrayOf(CalendarContract.Events.DTSTART),
+                                    "${CalendarContract.Events.DELETED} = 0 " +
+                                            "AND ${CalendarContract.Events._ID} = $eventId",
+                                    null, null
+                                )
+                                if (cur3 != null && cur3.moveToNext()) {
+                                    cur3.getLongOrNull(0)?.let {
+                                        firstStartTime = it
+                                        firstStartTimeMap[eventId] = it
+                                    }
+                                }
+                            }
+
                             add(
                                 EventItem(
                                     BoardItem.TYPE_EVENT,
@@ -217,7 +238,7 @@ class CalendarDaoImpl(private val context: Context) :
                                     cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                         ?: listOf(),
                                     EventInfo(
-                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)} (Recurring)",
+                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_END),
                                         EventLocation(
@@ -228,7 +249,7 @@ class CalendarDaoImpl(private val context: Context) :
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
                                         cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
-                                        rrule.toRepeatInfo(eventInstanceId, null),
+                                        rrule.toRepeatInfo(eventInstanceId, null, firstStartTime ?: 0L),
                                         false,
                                         false,
                                         arrayListOf(),
@@ -253,6 +274,7 @@ class CalendarDaoImpl(private val context: Context) :
                 finally {
                     cur?.close()
                     cur2?.close()
+                    cur3?.close()
                 }
             }
         }
