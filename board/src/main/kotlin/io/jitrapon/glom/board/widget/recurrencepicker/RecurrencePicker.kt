@@ -4,13 +4,13 @@ import androidx.fragment.app.FragmentManager
 import com.maltaisn.recurpicker.RRuleFormat
 import com.maltaisn.recurpicker.Recurrence
 import com.maltaisn.recurpicker.RecurrencePickerDialog
+import io.jitrapon.glom.base.model.MAX_ALLOW_OCCURENCE
 import io.jitrapon.glom.base.model.REPEAT_ON_LAST_DAY_OF_MONTH
 import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DATE
 import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DAY_OF_WEEK
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.model.UNTIL_FOREVER
 import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.board.item.event.EventItem
 import java.util.ArrayList
 
 class RecurrencePicker : RecurrencePickerDialog(),
@@ -35,6 +35,7 @@ class RecurrencePicker : RecurrencePickerDialog(),
                 uiModel.event.itemInfo.repeatInfo.toRecurrence(),
                 uiModel.event.itemInfo.startTime ?: System.currentTimeMillis()
             )
+            setMaxEventCount(MAX_ALLOW_OCCURENCE)
             show(supportFragmentManager, "recur_picker")
         }
         this.onRecurrencePicked = onRecurrencePicked
@@ -49,7 +50,34 @@ class RecurrencePicker : RecurrencePickerDialog(),
             RepeatInfo.TimeUnit.YEAR.value -> Recurrence.YEARLY
             else -> Recurrence.NONE
         }).apply {
-            //TODO
+            frequency = this@toRecurrence.interval.toInt()
+            if (period == Recurrence.WEEKLY) {
+                val repeatDays = this@toRecurrence.meta
+                if (!repeatDays.isNullOrEmpty()) {
+                    var days = 0
+                    for (day in repeatDays) {
+                        days += 1 shl day + 1
+                    }
+                    setWeeklySetting(days)
+                }
+            }
+            else if (period == Recurrence.MONTHLY) {
+                val meta = this@toRecurrence.meta?.getOrNull(0)
+                if (meta != null) {
+                    setMonthlySetting(when (meta) {
+                        REPEAT_ON_SAME_DATE -> Recurrence.SAME_DAY_OF_MONTH
+                        REPEAT_ON_SAME_DAY_OF_WEEK -> Recurrence.SAME_DAY_OF_WEEK
+                        REPEAT_ON_LAST_DAY_OF_MONTH -> Recurrence.LAST_DAY_OF_MONTH
+                        else -> -1
+                    })
+                }
+            }
+            val until = this@toRecurrence.until
+            when {
+                until == UNTIL_FOREVER -> setEndNever()
+                until <= MAX_ALLOW_OCCURENCE -> setEndByCount(until.toInt())
+                else -> setEndByDate(until)
+            }
         }
     }
 
