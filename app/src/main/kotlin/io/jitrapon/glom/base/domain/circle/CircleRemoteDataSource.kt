@@ -23,7 +23,7 @@ class CircleRemoteDataSource : RemoteDataSource(), CircleDataSource {
     }
 
     private fun RepeatInfoResponse.deserialize(): RepeatInfo {
-        return RepeatInfo(null, null, null, unit, interval, until, meta)
+        return RepeatInfo(null, null, null, unit, interval, until, meta, 0L)
     }
 
     private fun List<PlaceInfoResponse>.deserialize(): MutableList<PlaceInfo> {

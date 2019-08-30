@@ -42,7 +42,8 @@ fun BoardItemResponse.deserialize(circleId: String): EventItem {
                                     it["unit"].asInt(),
                                     it["interval"].asLong(),
                                     it["until"].asLong(),
-                                    it["meta"].asNullableIntList()
+                                    it["meta"].asNullableIntList(),
+                                    it["start_time"].asNullableLong() ?: 0L
                             )
                         },
                         it["is_date_poll_opened"] as Boolean,
