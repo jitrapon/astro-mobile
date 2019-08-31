@@ -11,15 +11,40 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.r
-import com.maltaisn.recurpicker.Recurrence
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.model.AndroidImage
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.AnimationItem
+import io.jitrapon.glom.base.model.AsyncErrorResult
+import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.model.ButtonUiModel
+import io.jitrapon.glom.base.model.LiveEvent
+import io.jitrapon.glom.base.model.MessageLevel
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.PlaceInfo
+import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.model.PresentChoices
+import io.jitrapon.glom.base.model.RepeatInfo
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.InputValidator
+import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.fullAddress
+import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.latLng
+import io.jitrapon.glom.base.util.toDateString
+import io.jitrapon.glom.base.util.toRelativeDayString
+import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.base.viewmodel.runAsync
-import io.jitrapon.glom.board.*
+import io.jitrapon.glom.board.BoardInjector
+import io.jitrapon.glom.board.BoardViewModel
+import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_PLACE_PICKER
+import io.jitrapon.glom.board.DateTimePickerUiModel
+import io.jitrapon.glom.board.NavigationArguments
+import io.jitrapon.glom.board.R
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
@@ -27,7 +52,9 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_DATE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_PLACE_PAGE
 import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePickerUiModel
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.Date
 import javax.inject.Inject
 
 /**
@@ -378,7 +405,7 @@ class EventItemViewModel : BoardItemViewModel() {
                         getEventDetailAttendees(it.attendees),
                         getEventDetailNote(it.note)?.apply { status = editableStatus },
                         getEventDetailSource(it.source),
-                        getEventDetailDateTimeActions(it.datePollStatus),
+                        getEventDetailDateTimeActions(it.datePollStatus, it.repeatInfo != null),
                         getEventDetailLocationActions(it.location, it.placePollStatus),
                         getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                     )
@@ -933,10 +960,10 @@ class EventItemViewModel : BoardItemViewModel() {
     private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
             ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
 
-    private fun getEventDetailDateTimeActions(status: Boolean): ArrayList<ButtonUiModel> {
+    private fun getEventDetailDateTimeActions(isPlanning: Boolean, isRecurring: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
-            add(ActionItem.PLAN_DATETIME.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
-            add(ActionItem.SET_RECURRENCE.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.PLAN_DATETIME.toUiModel(if (isPlanning) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.SET_RECURRENCE.toUiModel(if (isRecurring) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
         }
     }
 
