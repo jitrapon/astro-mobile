@@ -960,18 +960,18 @@ class EventItemViewModel : BoardItemViewModel() {
     private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
             ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
 
-    private fun getEventDetailDateTimeActions(isPlanning: Boolean, isRecurring: Boolean): ArrayList<ButtonUiModel> {
+    private fun getEventDetailDateTimeActions(hasDateTimePlan: Boolean, isRecurring: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
-            add(ActionItem.PLAN_DATETIME.toUiModel(if (isPlanning) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.PLAN_DATETIME.toUiModel(if (hasDateTimePlan) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
             add(ActionItem.SET_RECURRENCE.toUiModel(if (isRecurring) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
         }
     }
 
-    private fun getEventDetailLocationActions(location: EventLocation?, status: Boolean): ArrayList<ButtonUiModel> {
+    private fun getEventDetailLocationActions(location: EventLocation?, hasPlacePlan: Boolean): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
             val hasLocationStatus = if (!location?.name.isNullOrEmpty() ||
                     (location?.latitude != null && location.longitude != null)) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS
-            add(ActionItem.PLAN_LOCATION.toUiModel(if (status) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
+            add(ActionItem.PLAN_LOCATION.toUiModel(if (hasPlacePlan) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
             add(ActionItem.PICK_PLACE.toUiModel())
             add(ActionItem.MAP.toUiModel(hasLocationStatus))
             add(ActionItem.DIRECTION.toUiModel(hasLocationStatus))
@@ -990,6 +990,8 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun setEventDetailRecurrence(r: RepeatInfo?) {
         interactor.setItemRecurrence(r)
+        observableDateTimeActions.value =
+            getEventDetailDateTimeActions(interactor.event.itemInfo.datePollStatus, r != null)
     }
 
     //endregion

@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.maltaisn.recurpicker.Recurrence
 import com.maltaisn.recurpicker.RecurrencePickerDialog
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.GlomAutoCompleteTextView
@@ -44,6 +45,7 @@ import io.jitrapon.glom.board.item.event.widget.DateTimePicker
 import io.jitrapon.glom.board.item.event.widget.STYLE_BOTTOM_SHEET
 import io.jitrapon.glom.board.item.event.widget.placepicker.PlacePickerActivity
 import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePicker
+import io.jitrapon.glom.board.widget.recurrencepicker.toRepeatInfo
 import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees
 import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees_action_button_1
 import kotlinx.android.synthetic.main.event_item_activity.event_item_attendees_action_button_2
@@ -73,7 +75,8 @@ import kotlinx.android.synthetic.main.event_item_activity.event_item_title_til
  * @author Jitrapon Tiachunpun
  */
 class EventItemActivity : BoardItemActivity(),
-        OnMapReadyCallback {
+    OnMapReadyCallback,
+    RecurrencePickerDialog.RecurrenceSelectedCallback {
 
     private lateinit var viewModel: EventItemViewModel
 
@@ -449,13 +452,18 @@ class EventItemActivity : BoardItemActivity(),
             getObservableRecurrencePicker().observe(this@EventItemActivity, Observer {
                 it?.let {
                     RecurrencePicker().apply {
-                        show(supportFragmentManager, it) { repeatInfo ->
-                            viewModel.setEventDetailRecurrence(repeatInfo)
-                        }
+                        show(supportFragmentManager, it)
                     }
                 }
             })
         }
+    }
+
+    override fun onRecurrencePickerSelected(r: Recurrence?) {
+        viewModel.setEventDetailRecurrence(r.toRepeatInfo())
+    }
+
+    override fun onRecurrencePickerCancelled(r: Recurrence?) {
     }
 
     /*

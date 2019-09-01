@@ -9,7 +9,9 @@ import io.jitrapon.glom.base.util.DateTimeFormat.YESTERDAY
 import java.text.DateFormat
 import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -213,3 +215,7 @@ val Date.secondToMillisecond: Pair<Int, Int>
     }
 
 fun getShortWeekDays(): Array<String> = DateFormatSymbols.getInstance().shortWeekdays
+
+fun Long.toDurationString(): String {
+    return org.threeten.bp.Duration.ofMillis(this).toString()
+}

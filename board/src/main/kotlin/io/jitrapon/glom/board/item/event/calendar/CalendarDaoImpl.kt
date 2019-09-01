@@ -17,10 +17,13 @@ import androidx.core.database.getStringOrNull
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
+import io.jitrapon.glom.base.util.addHour
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.hasReadCalendarPermission
 import io.jitrapon.glom.base.util.hasWriteCalendarPermission
+import io.jitrapon.glom.base.util.toDurationString
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
@@ -70,6 +73,7 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Instances.END,                     // 3 The ending time of the instance, in UTC milliseconds.
     CalendarContract.Instances.CALENDAR_ID,
     CalendarContract.Instances.RRULE,
+    CalendarContract.Instances.RDATE,
     CalendarContract.Instances.ORGANIZER,
     CalendarContract.Instances.TITLE,
     CalendarContract.Instances.EVENT_LOCATION,
@@ -106,12 +110,13 @@ private const val PROJECTION_INSTANCE_BEGIN = 2
 private const val PROJECTION_INSTANCE_END = 3
 private const val PROJECTION_INSTANCE_CALENDAR = 4
 private const val PROJECTION_INSTANCE_RRULE = 5
-private const val PROJECTION_INSTANCE_ORGANIZER = 6
-private const val PROJECTION_INSTANCE_TITLE = 7
-private const val PROJECTION_INSTANCE_LOCATION = 8
-private const val PROJECTION_INSTANCE_DESCRIPTION = 9
-private const val PROJECTION_INSTANCE_TIMEZONE = 10
-private const val PROJECTION_INSTANCE_ALL_DAY = 11
+private const val PROJECTION_INSTANCE_RDATE = 6
+private const val PROJECTION_INSTANCE_ORGANIZER = 7
+private const val PROJECTION_INSTANCE_TITLE = 8
+private const val PROJECTION_INSTANCE_LOCATION = 9
+private const val PROJECTION_INSTANCE_DESCRIPTION = 10
+private const val PROJECTION_INSTANCE_TIMEZONE = 11
+private const val PROJECTION_INSTANCE_ALL_DAY = 12
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
@@ -208,8 +213,11 @@ class CalendarDaoImpl(private val context: Context) :
                         while (cur2.moveToNext()) {
                             val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
                             val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
+                            val rdate = cur2.getStringOrNull(PROJECTION_INSTANCE_RDATE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
+
+                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate")
 
                             // query the first event time of this recurrence series
                             var firstStartTime = firstStartTimeMap[eventId]
@@ -238,7 +246,7 @@ class CalendarDaoImpl(private val context: Context) :
                                     cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                         ?: listOf(),
                                     EventInfo(
-                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
+                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)} (#)",
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_END),
                                         EventLocation(
@@ -289,9 +297,20 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
             put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
             put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+            if (event.itemInfo.repeatInfo == null) {
+                put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+            }
+            else {
+                //must include duration if event is recurring
+                val duration = event.itemInfo.startTime?.let {
+                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                    endTime - it
+                } ?: throw Exception("Cannot create a recurring event without start time")
+                put(CalendarContract.Events.DURATION, duration.toDurationString())
+            }
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+            put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
             put(CalendarContract.Events.CALENDAR_ID, calId)
         }
         contentResolver.insert(CalendarContract.Events.CONTENT_URI, values).let {
