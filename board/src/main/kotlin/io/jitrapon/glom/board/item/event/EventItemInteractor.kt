@@ -6,8 +6,6 @@ import androidx.annotation.WorkerThread
 import androidx.core.util.set
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.maltaisn.recurpicker.RRuleFormat
-import com.maltaisn.recurpicker.Recurrence
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.datastructure.LimitedBooleanArray
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -18,11 +16,7 @@ import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.PlaceInfo
-import io.jitrapon.glom.base.model.REPEAT_ON_LAST_DAY_OF_MONTH
-import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DATE
-import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DAY_OF_WEEK
 import io.jitrapon.glom.base.model.RepeatInfo
-import io.jitrapon.glom.base.model.UNTIL_FOREVER
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.addMinute
@@ -284,7 +278,18 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
                         (startDateTemp > endDateTemp)) || startDateTemp == null) {
             endDateTemp = null
         }
+        val originalStartTime = event.itemInfo.startTime
+        val originalIsFullDay = event.itemInfo.isFullDay
+        val isDateTimeChanged = !(originalStartTime == startDateTemp && event.itemInfo.endTime == endDateTemp)
         eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
+
+        // if this event has a recurrence schedule,
+        // save the old instance's time
+        setItemRecurrence(event.itemInfo.repeatInfo?.copy(
+            isReschedule = isDateTimeChanged,
+            originalStartTime = originalStartTime,
+            originalIsFullDay = originalIsFullDay
+        ))
     }
 
     fun getItemDate(startDate: Boolean): Date? {
@@ -647,8 +652,9 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
 
     //endregion
     //region recurrence
-    
+
     fun setItemRecurrence(repeatInfo: RepeatInfo?) {
+        //TODO handle the case when recurrence has changed for an instance
         eventItemDataSource.setRepeatInfo(repeatInfo)
     }
 

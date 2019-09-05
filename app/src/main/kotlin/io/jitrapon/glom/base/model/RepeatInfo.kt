@@ -34,10 +34,11 @@ data class RepeatInfo(
     val until: Long,
     val meta: List<Int>?,
     val firstStartTime: Long,
+    val originalStartTime: Long?,
+    val originalIsFullDay: Boolean?,
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
-
     enum class TimeUnit(val value: Int) {
         DAY(1), WEEK(2), MONTH(3), YEAR(4)
     }
@@ -57,7 +58,13 @@ data class RepeatInfo(
             parcel.readList(it, null)
             if (it.isEmpty()) null else it
         },
-        parcel.readLong())
+        parcel.readLong(),
+        parcel.readLong().let {
+            if (it == -1L) null else it
+        },
+        parcel.readInt().let {
+            if (it == -1) null else it == 1
+        })
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(rrule)
@@ -73,6 +80,13 @@ data class RepeatInfo(
         parcel.writeLong(until)
         parcel.writeList(meta)
         parcel.writeLong(firstStartTime)
+        parcel.writeLong(originalStartTime ?: -1L)
+        parcel.writeInt(
+            if (originalIsFullDay == null) -1
+            else {
+                if (originalIsFullDay) 1 else 0
+            }
+        )
     }
 
     override fun describeContents(): Int = 0
@@ -83,7 +97,16 @@ data class RepeatInfo(
     }
 }
 
-fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?, firstStartTime: Long): RepeatInfo? {
+/**
+ * Converts an RRULE-formatted string to a RepeatInfo instance
+ */
+fun String?.toRepeatInfo(
+    occurrenceId: Long?,
+    isRescheduled: Boolean?,
+    firstStartTime: Long,
+    originalStartTime: Long?,
+    originalIsFullDay: Boolean?
+): RepeatInfo? {
     this ?: return null
     val tokens = split(";")
     val unit = tokens.find { it.startsWith("FREQ=") }?.removePrefix("FREQ=")?.let {
@@ -95,10 +118,8 @@ fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?, firstStar
             else -> null
         }
     }?.value ?: return null
-
     val interval = tokens.find { it.startsWith("INTERVAL=") }?.removePrefix("INTERVAL=")
         ?.toLongOrNull() ?: 1
-
     var until = UNTIL_FOREVER
     val rruleDateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ENGLISH)
     val untilTimeMs = tokens.find { it.startsWith("UNTIL=") }?.removePrefix("UNTIL=")?.let {
@@ -117,7 +138,6 @@ fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?, firstStar
     if (untilCount != null) {
         until = untilCount
     }
-
     val meta = arrayListOf<Int>()
     if (unit == RepeatInfo.TimeUnit.WEEK.value) {
         tokens.find { it.startsWith("BYDAY=") }?.removePrefix("BYDAY=")?.let {
@@ -149,6 +169,8 @@ fun String?.toRepeatInfo(occurrenceId: Long?, isRescheduled: Boolean?, firstStar
         interval,
         until,
         meta,
-        firstStartTime
+        firstStartTime,
+        originalStartTime,
+        originalIsFullDay
     )
 }

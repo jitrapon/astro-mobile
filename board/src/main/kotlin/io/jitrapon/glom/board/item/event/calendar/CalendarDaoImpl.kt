@@ -103,7 +103,6 @@ private const val PROJECTION_EVENT_ALL_DAY = 10
 private const val PROJECTION_EVENT_RRULE = 11
 private const val PROJECTION_EVENT_RDATE = 12
 private const val PROJECTION_EVENT_AVAILABILITY = 13
-
 private const val PROJECTION_INSTANCE_ID = 0
 private const val PROJECTION_INSTANCE_EVENT_ID = 1
 private const val PROJECTION_INSTANCE_BEGIN = 2
@@ -192,7 +191,6 @@ class CalendarDaoImpl(private val context: Context) :
                             )
                         )
                     }
-
                     // query all the recurring events
                     cur2 = contentResolver.query(
                         CalendarContract.Instances.CONTENT_URI.buildUpon().let {
@@ -218,7 +216,6 @@ class CalendarDaoImpl(private val context: Context) :
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
 
                             AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate")
-
                             // query the first event time of this recurrence series
                             var firstStartTime = firstStartTimeMap[eventId]
                             if (firstStartTime == null && eventId != null) {
@@ -257,7 +254,13 @@ class CalendarDaoImpl(private val context: Context) :
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
                                         cur2.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
                                         cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
-                                        rrule.toRepeatInfo(eventInstanceId, null, firstStartTime ?: 0L),
+                                        rrule.toRepeatInfo(
+                                            eventInstanceId,
+                                            null,
+                                            firstStartTime ?: 0L,
+                                            cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
+                                            cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1
+                                        ),
                                         false,
                                         false,
                                         arrayListOf(),
@@ -319,20 +322,54 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     override fun updateEvent(event: EventItem, calId: Long?) {
-        val eventId = event.itemId.toLong()
-        val values = ContentValues().apply {
-            put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
-            put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
-            put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
-            put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
-            put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
-            put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
-            put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
-            calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
+        if (event.itemInfo.repeatInfo == null) {
+            val eventId = event.itemId.toLong()
+            val values = ContentValues().apply {
+                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+                put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+                calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
+            }
+            val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+            contentResolver.update(updateUri, values, null, null)
         }
-        val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
-        contentResolver.update(updateUri, values, null, null)
+        else {
+            val eventId = event.itemId.substringBefore(".").toLong()
+
+            // replace all occurrences with this
+//            val values = ContentValues().apply {
+//                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+//                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+//                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+//                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+//                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+//                val duration = event.itemInfo.startTime?.let {
+//                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+//                    endTime - it
+//                } ?: throw Exception("Cannot create a recurring event without start time")
+//                put(CalendarContract.Events.DURATION, duration.toDurationString())
+//                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+//                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+//                put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, event.itemInfo.repeatInfo?.originalStartTime)
+//                put(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CANCELED)
+//            }
+//            val insertUri =
+//                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, eventId)
+//            contentResolver.insert(insertUri, values)
+
+            // update EX-DATE to the original event
+            val values = ContentValues().apply {
+                put(CalendarContract.Events.EXDATE, "")
+            }
+            val updateUri =
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+            contentResolver.update(updateUri, values, null, null)
+        }
     }
 
     override fun deleteEvent(event: EventItem) {

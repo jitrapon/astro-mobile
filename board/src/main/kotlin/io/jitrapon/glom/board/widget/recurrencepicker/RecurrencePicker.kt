@@ -216,6 +216,6 @@ fun Recurrence?.toRepeatInfo(): RepeatInfo? {
     }
     return if (unit == null) null
     else RepeatInfo(
-        rrule, null, null, unit.value, frequency.toLong(), untilTime, meta, startDate
+        rrule, null, null, unit.value, frequency.toLong(), untilTime, meta, startDate, null, null
     )
 }
