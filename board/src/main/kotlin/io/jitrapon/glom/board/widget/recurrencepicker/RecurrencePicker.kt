@@ -10,10 +10,9 @@ import io.jitrapon.glom.base.model.REPEAT_ON_SAME_DAY_OF_WEEK
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.model.UNTIL_FOREVER
 import io.jitrapon.glom.base.util.AppLogger
-import java.text.SimpleDateFormat
+import io.jitrapon.glom.base.util.DateTimeFormat.RRULE_DATE_FORMAT
 import java.util.ArrayList
 import java.util.Calendar
-import java.util.Locale
 
 class RecurrencePicker : RecurrencePickerDialog() {
 
@@ -151,9 +150,8 @@ private fun Recurrence?.toRRule(): String? {
     when (endType) {
         Recurrence.END_NEVER -> Unit
         Recurrence.END_BY_DATE -> {
-            val RRULE_DATE_FORMAT = SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ENGLISH)
             rule.append("UNTIL=")
-            rule.append(RRULE_DATE_FORMAT.format(endDate))
+            rule.append(RRULE_DATE_FORMAT.get()!!.format(endDate))
             rule.append(';')
         }
         Recurrence.END_BY_COUNT -> {

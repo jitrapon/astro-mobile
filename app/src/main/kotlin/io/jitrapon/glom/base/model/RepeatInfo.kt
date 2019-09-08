@@ -3,12 +3,11 @@ package io.jitrapon.glom.base.model
 import android.os.Parcel
 import android.os.Parcelable
 import io.jitrapon.glom.base.util.AppLogger
-import timber.log.Timber
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.ArrayList
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 const val UNTIL_FOREVER = 0L
 const val MAX_ALLOW_OCCURENCE = 999
@@ -39,6 +38,7 @@ data class RepeatInfo(
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
+
     enum class TimeUnit(val value: Int) {
         DAY(1), WEEK(2), MONTH(3), YEAR(4)
     }

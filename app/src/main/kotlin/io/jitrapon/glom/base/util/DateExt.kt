@@ -12,7 +12,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 /**
 * Created by Jitrapon
@@ -44,14 +46,28 @@ object DateTimeFormat {
     }
 
     @JvmField val DATE_FORMAT_DAY_OF_WEEK = object : ThreadLocal<DateFormat>() {
-        override fun initialValue(): DateFormat? {
+        override fun initialValue(): DateFormat {
             return SimpleDateFormat("EEE", Locale.getDefault())
         }
     }
 
     @JvmField val DATE_FORMAT_DAY_OF_MONTH = object : ThreadLocal<DateFormat>() {
-        override fun initialValue(): DateFormat? {
+        override fun initialValue(): DateFormat {
             return SimpleDateFormat("dd", Locale.getDefault())
+        }
+    }
+
+    @JvmField val RRULE_DATE_FORMAT = object : ThreadLocal<DateFormat>() {
+        override fun initialValue(): DateFormat {
+            return SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ENGLISH)
+        }
+    }
+
+    @JvmField val EXDATE_DATE_FORMAT = object : ThreadLocal<DateFormat>() {
+        override fun initialValue(): DateFormat {
+            return SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.ENGLISH).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
         }
     }
 
@@ -177,7 +193,7 @@ fun Date.toDayMonthYear(): Triple<Int, Int, Int> {
 }
 
 fun Date.withinDuration(other: Date, seconds: Int): Boolean {
-    return TimeUnit.SECONDS.convert(Math.abs(time - other.time), TimeUnit.MILLISECONDS) <= seconds
+    return TimeUnit.SECONDS.convert(abs(time - other.time), TimeUnit.MILLISECONDS) <= seconds
 }
 
 fun Date.setTime(year: Int, month: Int, day: Int): Date {

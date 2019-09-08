@@ -18,6 +18,7 @@ import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
 import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.DateTimeFormat.EXDATE_DATE_FORMAT
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.addHour
 import io.jitrapon.glom.base.util.get
@@ -74,6 +75,7 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Instances.CALENDAR_ID,
     CalendarContract.Instances.RRULE,
     CalendarContract.Instances.RDATE,
+    CalendarContract.Instances.EXDATE,
     CalendarContract.Instances.ORGANIZER,
     CalendarContract.Instances.TITLE,
     CalendarContract.Instances.EVENT_LOCATION,
@@ -110,12 +112,13 @@ private const val PROJECTION_INSTANCE_END = 3
 private const val PROJECTION_INSTANCE_CALENDAR = 4
 private const val PROJECTION_INSTANCE_RRULE = 5
 private const val PROJECTION_INSTANCE_RDATE = 6
-private const val PROJECTION_INSTANCE_ORGANIZER = 7
-private const val PROJECTION_INSTANCE_TITLE = 8
-private const val PROJECTION_INSTANCE_LOCATION = 9
-private const val PROJECTION_INSTANCE_DESCRIPTION = 10
-private const val PROJECTION_INSTANCE_TIMEZONE = 11
-private const val PROJECTION_INSTANCE_ALL_DAY = 12
+private const val PROJECTION_INSTANCE_EXDATE = 7
+private const val PROJECTION_INSTANCE_ORGANIZER = 8
+private const val PROJECTION_INSTANCE_TITLE = 9
+private const val PROJECTION_INSTANCE_LOCATION = 10
+private const val PROJECTION_INSTANCE_DESCRIPTION = 11
+private const val PROJECTION_INSTANCE_TIMEZONE = 12
+private const val PROJECTION_INSTANCE_ALL_DAY = 13
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
@@ -212,10 +215,11 @@ class CalendarDaoImpl(private val context: Context) :
                             val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
                             val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
                             val rdate = cur2.getStringOrNull(PROJECTION_INSTANCE_RDATE)
+                            val exdate = cur2.getStringOrNull(PROJECTION_INSTANCE_EXDATE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
 
-                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate")
+                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
                             // query the first event time of this recurrence series
                             var firstStartTime = firstStartTimeMap[eventId]
                             if (firstStartTime == null && eventId != null) {
@@ -342,29 +346,32 @@ class CalendarDaoImpl(private val context: Context) :
             val eventId = event.itemId.substringBefore(".").toLong()
 
             // replace all occurrences with this
-//            val values = ContentValues().apply {
-//                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
-//                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
-//                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
-//                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
-//                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-//                val duration = event.itemInfo.startTime?.let {
-//                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
-//                    endTime - it
-//                } ?: throw Exception("Cannot create a recurring event without start time")
-//                put(CalendarContract.Events.DURATION, duration.toDurationString())
-//                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
-//                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
-//                put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, event.itemInfo.repeatInfo?.originalStartTime)
+            val values = ContentValues().apply {
+                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+                val duration = event.itemInfo.startTime?.let {
+                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                    endTime - it
+                } ?: throw Exception("Cannot create a recurring event without start time")
+                put(CalendarContract.Events.DURATION, duration.toDurationString())
+                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+                put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, event.itemInfo.repeatInfo?.originalStartTime)
 //                put(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CANCELED)
-//            }
-//            val insertUri =
-//                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, eventId)
-//            contentResolver.insert(insertUri, values)
+                put(CalendarContract.Events.EXDATE, EXDATE_DATE_FORMAT.get()!!.format(event.itemInfo.startTime))
+            }
+            val insertUri =
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, eventId)
+            contentResolver.insert(insertUri, values)
+
+            values.clear()
 
             // update EX-DATE to the original event
-            val values = ContentValues().apply {
-                put(CalendarContract.Events.EXDATE, "")
+            values.apply {
+                put(CalendarContract.Events.EXDATE, EXDATE_DATE_FORMAT.get()!!.format(event.itemInfo.startTime))
             }
             val updateUri =
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
