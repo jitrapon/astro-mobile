@@ -124,6 +124,7 @@ private const val PROJECTION_INSTANCE_ALL_DAY = 13
 
 class CalendarDaoImpl(private val context: Context) :
     CalendarDao {
+
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
@@ -220,20 +221,9 @@ class CalendarDaoImpl(private val context: Context) :
                             val exdate = cur2.getStringOrNull(PROJECTION_INSTANCE_EXDATE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
-                            val syncIdCur = contentResolver.query(
-                                    CalendarContract.Events.CONTENT_URI,
-                                    arrayOf(CalendarContract.Events._SYNC_ID),
-                                    "${CalendarContract.Events._ID} = $eventId",
-                                    null,
-                                    null
-                                )
-                            val syncId = syncIdCur?.let {
-                                it.moveToNext()
-                                it.getStringOrNull(0)
-                            } ?: "0"
-                            syncIdCur?.closeQuietly()
 
-                            AppLogger.d("Recurring event $syncId.$eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
+                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
+
                             // query the first event time of this recurrence series
                             var firstStartTime = firstStartTimeMap[eventId]
                             if (firstStartTime == null && eventId != null) {
@@ -255,13 +245,13 @@ class CalendarDaoImpl(private val context: Context) :
                             add(
                                 EventItem(
                                     BoardItem.TYPE_EVENT,
-                                    "$syncId.$eventId.$eventInstanceId",
+                                    "$eventId.$eventInstanceId",
                                     null,
                                     null,
                                     cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                         ?: listOf(),
                                     EventInfo(
-                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)} (#)",
+                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
                                         cur2.getLongOrNull(PROJECTION_INSTANCE_END),
                                         EventLocation(
@@ -339,6 +329,7 @@ class CalendarDaoImpl(private val context: Context) :
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun updateEvent(event: EventItem, calId: Long?) {
         if (event.itemInfo.repeatInfo == null) {
             val eventId = event.itemId.toLong()
@@ -356,39 +347,32 @@ class CalendarDaoImpl(private val context: Context) :
             val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
             contentResolver.update(updateUri, values, null, null)
         }
+
+        // update exiting instance of a recurring event
         else {
-            // insert in CalendarContracts.Events table with ORIGINAL_SYNC_ID as _SYNC_ID
-            // of the repeating event and ORIGINAL_INSTANCE_TIME as the dtstart of particular
-            // instance in the repeating event.
-            val eventId = event.itemId.substringAfter(".").substringBefore(".")
+            val eventId = event.itemId.substringBefore(".")
             val values = ContentValues().apply {
                 put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
                 put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
                 put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
                 put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
                 put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-//                val duration = event.itemInfo.startTime?.let {
-//                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
-//                    endTime - it
-//                } ?: throw Exception("Cannot create a recurring event without start time")
-//                put(CalendarContract.Events.DURATION, duration.toDurationString())
                 put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
                 put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
                 put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
                 put(CalendarContract.Events.ORIGINAL_ID, eventId)
-                put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, event.itemInfo.repeatInfo?.originalStartTime)
+                put(
+                    CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+                    event.itemInfo.repeatInfo?.originalStartTime
+                )
+                put(
+                    CalendarContract.Events.ORIGINAL_ALL_DAY,
+                    if (event.itemInfo.repeatInfo?.originalIsFullDay == true) 1 else 0
+                )
                 put(CalendarContract.Events.CALENDAR_ID, event.itemInfo.source.calendar?.calId)
             }
             contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
         }
-    }
-
-    private fun DeviceCalendar.toSyncAdapterUri(): Uri {
-        var uri = Uri.parse(CalendarContract.Events.CONTENT_URI.toString())
-        uri = uri.buildUpon().appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, accountName)
-            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, accountType).build()
-        return uri
     }
 
     override fun deleteEvent(event: EventItem) {
@@ -519,6 +503,7 @@ data class DeviceCalendar(
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
+
     constructor(parcel: Parcel) : this(
         parcel.readLong(),
         parcel.readString()!!,
