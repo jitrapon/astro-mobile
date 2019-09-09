@@ -283,13 +283,16 @@ class EventItemInteractor(private val userInteractor: UserInteractor,
         val isDateTimeChanged = !(originalStartTime == startDateTemp && event.itemInfo.endTime == endDateTemp)
         eventItemDataSource.setDate(startDateTemp, endDateTemp, isFullDay)
 
-        // if this event has a recurrence schedule,
-        // save the old instance's time
-        setItemRecurrence(event.itemInfo.repeatInfo?.copy(
-            isReschedule = isDateTimeChanged,
-            originalStartTime = originalStartTime,
-            originalIsFullDay = originalIsFullDay
-        ))
+        // save the old instance's time only if the event
+        // has not been rescheduled so that we don't override the original
+        // values again
+        if (event.itemInfo.repeatInfo?.isReschedule == false && isDateTimeChanged) {
+            setItemRecurrence(event.itemInfo.repeatInfo?.copy(
+                isReschedule = isDateTimeChanged,
+                originalStartTime = originalStartTime,
+                originalIsFullDay = originalIsFullDay
+            ))
+        }
     }
 
     fun getItemDate(startDate: Boolean): Date? {

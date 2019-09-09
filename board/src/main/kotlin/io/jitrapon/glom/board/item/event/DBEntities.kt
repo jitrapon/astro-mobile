@@ -1,7 +1,12 @@
 package io.jitrapon.glom.board.item.event
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.ForeignKey.CASCADE
+import androidx.room.PrimaryKey
+import androidx.room.Relation
 
 @Entity(tableName = "events")
 data class EventItemEntity(
@@ -80,6 +85,8 @@ data class CalendarEntity(
         val displayName: String,
         @ColumnInfo(name = "account_name")
         val accountName: String,
+        @ColumnInfo(name = "account_type")
+        val accountType: String,
         @ColumnInfo(name = "owner_name")
         val ownerName: String,
         @ColumnInfo(name = "is_local")

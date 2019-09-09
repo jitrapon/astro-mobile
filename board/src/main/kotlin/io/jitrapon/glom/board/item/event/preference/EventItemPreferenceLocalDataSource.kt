@@ -12,7 +12,9 @@ import io.jitrapon.glom.board.item.event.calendar.DeviceCalendar
 import io.reactivex.Flowable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.ArrayList
+import java.util.Date
+import java.util.HashSet
 
 class EventItemPreferenceLocalDataSource(database: BoardDatabase,
                                          private val calendarDao: CalendarDao,
@@ -73,6 +75,7 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
                                     it.isLocal = true
                                     it.isSyncedToBoard = true
                                     it.accountName = calendar.accountName
+                                    it.accountType = calendar.accountType
                                     it.displayName = calendar.displayName
                                     it.ownerName = calendar.ownerName
                                     it.isVisible = calendar.isVisible
@@ -137,11 +140,11 @@ class EventItemPreferenceLocalDataSource(database: BoardDatabase,
     }
 
     private fun List<CalendarEntity>.toCalendarList(): List<DeviceCalendar> {
-        return map { DeviceCalendar(it.calendarId.toLong(), it.displayName, it.accountName, it.ownerName,
+        return map { DeviceCalendar(it.calendarId.toLong(), it.displayName, it.accountName, it.accountType, it.ownerName,
                 Color.TRANSPARENT, true, true, it.isLocal, false) }
     }
 
     private fun DeviceCalendar.toEntity(): CalendarEntity {
-        return CalendarEntity(calId.toString(), displayName, accountName, ownerName, isLocal, circleInteractor.getActiveCircleId())
+        return CalendarEntity(calId.toString(), displayName, accountName, accountType ?: "", ownerName, isLocal, circleInteractor.getActiveCircleId())
     }
 }

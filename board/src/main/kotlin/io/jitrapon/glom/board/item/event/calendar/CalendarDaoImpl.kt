@@ -18,7 +18,6 @@ import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
 import io.jitrapon.glom.base.util.AppLogger
-import io.jitrapon.glom.base.util.DateTimeFormat.EXDATE_DATE_FORMAT
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.addHour
 import io.jitrapon.glom.base.util.get
@@ -33,6 +32,7 @@ import io.jitrapon.glom.board.item.event.EventLocation
 import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
+import okhttp3.internal.closeQuietly
 import java.util.ArrayList
 import java.util.Date
 
@@ -41,11 +41,12 @@ import java.util.Date
 private val CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars._ID,                     // 0
     CalendarContract.Calendars.ACCOUNT_NAME,            // 1
-    CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 2
-    CalendarContract.Calendars.OWNER_ACCOUNT,           // 3
-    CalendarContract.Calendars.CALENDAR_COLOR,          // 4
-    CalendarContract.Calendars.VISIBLE,                 // 5
-    CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL    // 6
+    CalendarContract.Calendars.ACCOUNT_TYPE,            // 2
+    CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 3
+    CalendarContract.Calendars.OWNER_ACCOUNT,           // 4
+    CalendarContract.Calendars.CALENDAR_COLOR,          // 5
+    CalendarContract.Calendars.VISIBLE,                 // 6
+    CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL    // 7
 )
 private val EVENT_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events._ID,                        // 0    The _ID of this event
@@ -86,11 +87,12 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
 // The indices for the projection array above.
 private const val PROJECTION_ID_INDEX: Int = 0
 private const val PROJECTION_ACCOUNT_NAME_INDEX: Int = 1
-private const val PROJECTION_DISPLAY_NAME_INDEX: Int = 2
-private const val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 3
-private const val PROJECTION_CALENDAR_COLOR_INDEX: Int = 4
-private const val PROJECTION_CALENDAR_VISIBLE_INDEX: Int = 5
-private const val PROJECTION_CALENDAR_ACCESS_LEVEL: Int = 6
+private const val PROJECTION_ACCOUNT_TYPE_INDEX: Int = 2
+private const val PROJECTION_DISPLAY_NAME_INDEX: Int = 3
+private const val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 4
+private const val PROJECTION_CALENDAR_COLOR_INDEX: Int = 5
+private const val PROJECTION_CALENDAR_VISIBLE_INDEX: Int = 6
+private const val PROJECTION_CALENDAR_ACCESS_LEVEL: Int = 7
 private const val PROJECTION_EVENT_ID = 0
 private const val PROJECTION_EVENT_CALENDAR_ID = 1
 private const val PROJECTION_EVENT_ORGANIZER = 2
@@ -218,8 +220,20 @@ class CalendarDaoImpl(private val context: Context) :
                             val exdate = cur2.getStringOrNull(PROJECTION_INSTANCE_EXDATE)
                             val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                             val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
+                            val syncIdCur = contentResolver.query(
+                                    CalendarContract.Events.CONTENT_URI,
+                                    arrayOf(CalendarContract.Events._SYNC_ID),
+                                    "${CalendarContract.Events._ID} = $eventId",
+                                    null,
+                                    null
+                                )
+                            val syncId = syncIdCur?.let {
+                                it.moveToNext()
+                                it.getStringOrNull(0)
+                            } ?: "0"
+                            syncIdCur?.closeQuietly()
 
-                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
+                            AppLogger.d("Recurring event $syncId.$eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
                             // query the first event time of this recurrence series
                             var firstStartTime = firstStartTimeMap[eventId]
                             if (firstStartTime == null && eventId != null) {
@@ -241,7 +255,7 @@ class CalendarDaoImpl(private val context: Context) :
                             add(
                                 EventItem(
                                     BoardItem.TYPE_EVENT,
-                                    "$eventId.$eventInstanceId",
+                                    "$syncId.$eventId.$eventInstanceId",
                                     null,
                                     null,
                                     cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
@@ -343,40 +357,38 @@ class CalendarDaoImpl(private val context: Context) :
             contentResolver.update(updateUri, values, null, null)
         }
         else {
-            val eventId = event.itemId.substringBefore(".").toLong()
-
-            // replace all occurrences with this
+            // insert in CalendarContracts.Events table with ORIGINAL_SYNC_ID as _SYNC_ID
+            // of the repeating event and ORIGINAL_INSTANCE_TIME as the dtstart of particular
+            // instance in the repeating event.
+            val eventId = event.itemId.substringAfter(".").substringBefore(".")
             val values = ContentValues().apply {
                 put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
                 put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
                 put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
                 put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
                 put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-                val duration = event.itemInfo.startTime?.let {
-                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
-                    endTime - it
-                } ?: throw Exception("Cannot create a recurring event without start time")
-                put(CalendarContract.Events.DURATION, duration.toDurationString())
+//                val duration = event.itemInfo.startTime?.let {
+//                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+//                    endTime - it
+//                } ?: throw Exception("Cannot create a recurring event without start time")
+//                put(CalendarContract.Events.DURATION, duration.toDurationString())
+                put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
                 put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
                 put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+                put(CalendarContract.Events.ORIGINAL_ID, eventId)
                 put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, event.itemInfo.repeatInfo?.originalStartTime)
-//                put(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CANCELED)
-                put(CalendarContract.Events.EXDATE, EXDATE_DATE_FORMAT.get()!!.format(event.itemInfo.startTime))
+                put(CalendarContract.Events.CALENDAR_ID, event.itemInfo.source.calendar?.calId)
             }
-            val insertUri =
-                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, eventId)
-            contentResolver.insert(insertUri, values)
-
-            values.clear()
-
-            // update EX-DATE to the original event
-            values.apply {
-                put(CalendarContract.Events.EXDATE, EXDATE_DATE_FORMAT.get()!!.format(event.itemInfo.startTime))
-            }
-            val updateUri =
-                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
-            contentResolver.update(updateUri, values, null, null)
+            contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
         }
+    }
+
+    private fun DeviceCalendar.toSyncAdapterUri(): Uri {
+        var uri = Uri.parse(CalendarContract.Events.CONTENT_URI.toString())
+        uri = uri.buildUpon().appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, accountName)
+            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, accountType).build()
+        return uri
     }
 
     override fun deleteEvent(event: EventItem) {
@@ -413,6 +425,7 @@ class CalendarDaoImpl(private val context: Context) :
                         val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
                         val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
                         val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
+                        val accountType: String = cur.getString(PROJECTION_ACCOUNT_TYPE_INDEX)
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                         val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
@@ -422,6 +435,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 calId,
                                 displayName,
                                 accountName,
+                                accountType,
                                 ownerName,
                                 color,
                                 isVisible,
@@ -464,6 +478,7 @@ class CalendarDaoImpl(private val context: Context) :
                         val calId: Long = cur.getLong(PROJECTION_ID_INDEX)
                         val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
                         val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
+                        val accountType: String = cur.getString(PROJECTION_ACCOUNT_TYPE_INDEX)
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
                         val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
@@ -473,6 +488,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 calId,
                                 displayName,
                                 accountName,
+                                accountType,
                                 ownerName,
                                 color,
                                 isVisible,
@@ -497,7 +513,7 @@ class CalendarDaoImpl(private val context: Context) :
 }
 
 data class DeviceCalendar(
-    val calId: Long, var displayName: String, var accountName: String,
+    val calId: Long, var displayName: String, var accountName: String, var accountType: String?,
     var ownerName: String, @ColorInt var color: Int, var isVisible: Boolean,
     var isSyncedToBoard: Boolean, var isLocal: Boolean, var isWritable: Boolean,
     override var retrievedTime: Date? = null,
@@ -505,6 +521,7 @@ data class DeviceCalendar(
 ) : DataModel {
     constructor(parcel: Parcel) : this(
         parcel.readLong(),
+        parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
@@ -519,6 +536,7 @@ data class DeviceCalendar(
         parcel.writeLong(calId)
         parcel.writeString(displayName)
         parcel.writeString(accountName)
+        parcel.writeString(accountType)
         parcel.writeString(ownerName)
         parcel.writeInt(color)
         parcel.writeByte(if (isVisible) 1 else 0)
