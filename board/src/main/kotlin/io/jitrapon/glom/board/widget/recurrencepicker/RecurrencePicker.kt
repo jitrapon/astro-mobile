@@ -32,7 +32,7 @@ class RecurrencePicker : RecurrencePickerDialog() {
 
     private fun RepeatInfo?.toRecurrence(): Recurrence? {
         this ?: return null
-        return Recurrence(firstStartTime, when (unit) {
+        return Recurrence(firstInstanceStartTime, when (unit) {
             RepeatInfo.TimeUnit.DAY.value -> Recurrence.DAILY
             RepeatInfo.TimeUnit.WEEK.value -> Recurrence.WEEKLY
             RepeatInfo.TimeUnit.MONTH.value -> Recurrence.MONTHLY

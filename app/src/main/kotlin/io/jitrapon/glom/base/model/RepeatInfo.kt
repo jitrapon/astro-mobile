@@ -7,7 +7,6 @@ import java.text.SimpleDateFormat
 import java.util.ArrayList
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 
 const val UNTIL_FOREVER = 0L
 const val MAX_ALLOW_OCCURENCE = 999
@@ -27,14 +26,14 @@ const val REPEAT_ON_LAST_WEEKEND =
 data class RepeatInfo(
     val rrule: String?,
     val occurenceId: Long?,
-    val isReschedule: Boolean?,
+    var isReschedule: Boolean?,
     val unit: Int,
     val interval: Long,
     val until: Long,
     val meta: List<Int>?,
-    val firstStartTime: Long,
-    val originalStartTime: Long?,
-    val originalIsFullDay: Boolean?,
+    val firstInstanceStartTime: Long,
+    val instanceStartTime: Long?,
+    val instanceIsFullDay: Boolean?,
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
@@ -72,19 +71,19 @@ data class RepeatInfo(
         parcel.writeInt(
             if (isReschedule == null) -1
             else {
-                if (isReschedule) 1 else 0
+                if (isReschedule == true) 1 else 0
             }
         )
         parcel.writeInt(unit)
         parcel.writeLong(interval)
         parcel.writeLong(until)
         parcel.writeList(meta)
-        parcel.writeLong(firstStartTime)
-        parcel.writeLong(originalStartTime ?: -1L)
+        parcel.writeLong(firstInstanceStartTime)
+        parcel.writeLong(instanceStartTime ?: -1L)
         parcel.writeInt(
-            if (originalIsFullDay == null) -1
+            if (instanceIsFullDay == null) -1
             else {
-                if (originalIsFullDay) 1 else 0
+                if (instanceIsFullDay) 1 else 0
             }
         )
     }

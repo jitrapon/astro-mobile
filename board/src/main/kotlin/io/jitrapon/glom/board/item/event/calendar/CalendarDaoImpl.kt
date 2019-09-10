@@ -32,7 +32,6 @@ import io.jitrapon.glom.board.item.event.EventLocation
 import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
-import okhttp3.internal.closeQuietly
 import java.util.ArrayList
 import java.util.Date
 
@@ -48,6 +47,7 @@ private val CALENDAR_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Calendars.VISIBLE,                 // 6
     CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL    // 7
 )
+
 private val EVENT_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Events._ID,                        // 0    The _ID of this event
     CalendarContract.Events.CALENDAR_ID,                // 1    The _ID of the calendar the event belongs to.
@@ -68,6 +68,7 @@ private val EVENT_PROJECTION: Array<String> = arrayOf(
     //      to define an aggregate set of repeating occurrences. For more discussion, see the RFC5545 spec.
     CalendarContract.Events.AVAILABILITY                // 13   If this event counts as busy time or is free time that can be scheduled over.
 )
+
 private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Instances._ID,                     // 0 The _ID of this occurrence
     CalendarContract.Instances.EVENT_ID,                // 1 The foreign key to the Events table
@@ -84,7 +85,7 @@ private val EVENT_INSTANCE_PROJECTION: Array<String> = arrayOf(
     CalendarContract.Instances.EVENT_TIMEZONE,
     CalendarContract.Instances.ALL_DAY
 )
-// The indices for the projection array above.
+
 private const val PROJECTION_ID_INDEX: Int = 0
 private const val PROJECTION_ACCOUNT_NAME_INDEX: Int = 1
 private const val PROJECTION_ACCOUNT_TYPE_INDEX: Int = 2
@@ -93,6 +94,7 @@ private const val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 4
 private const val PROJECTION_CALENDAR_COLOR_INDEX: Int = 5
 private const val PROJECTION_CALENDAR_VISIBLE_INDEX: Int = 6
 private const val PROJECTION_CALENDAR_ACCESS_LEVEL: Int = 7
+
 private const val PROJECTION_EVENT_ID = 0
 private const val PROJECTION_EVENT_CALENDAR_ID = 1
 private const val PROJECTION_EVENT_ORGANIZER = 2
@@ -107,6 +109,7 @@ private const val PROJECTION_EVENT_ALL_DAY = 10
 private const val PROJECTION_EVENT_RRULE = 11
 private const val PROJECTION_EVENT_RDATE = 12
 private const val PROJECTION_EVENT_AVAILABILITY = 13
+
 private const val PROJECTION_INSTANCE_ID = 0
 private const val PROJECTION_INSTANCE_EVENT_ID = 1
 private const val PROJECTION_INSTANCE_BEGIN = 2
@@ -141,163 +144,214 @@ class CalendarDaoImpl(private val context: Context) :
         endSearchTime: Long?
     ): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
+            val calendarMap = calendars.associateBy { it.calId }
+            val calendarIds = StringBuffer().apply {
+                for (i in calendars.indices) {
+                    append(calendars[i].calId)
+                    if (i != calendars.size - 1) append(",")
+                }
+            }.toString()
+
             ArrayList<EventItem>().apply {
-                var cur: Cursor? = null
-                var cur2: Cursor? = null
-                var cur3: Cursor? = null
-                try {
-                    // query all the events without recurrence
-                    val endSearchQuery =
-                        endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
-                    val ids = StringBuffer().apply {
-                        for (i in calendars.indices) {
-                            append(calendars[i].calId)
-                            if (i != calendars.size - 1) append(",")
-                        }
-                    }.toString()
-                    cur = contentResolver.query(
-                        CalendarContract.Events.CONTENT_URI,
-                        EVENT_PROJECTION,
-                        "${CalendarContract.Events.CALENDAR_ID} in ($ids) " +
-                                "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
-                                "AND ${CalendarContract.Events.DELETED} = 0 " +
-                                "AND ${CalendarContract.Events.RRULE} IS NULL",
-                        null, null
+                addNonRecurringEvents(
+                    this,
+                    startSearchTime,
+                    endSearchTime,
+                    calendarIds,
+                    calendarMap
+                )
+                addRecurringEvents(this, startSearchTime, endSearchTime, calendarIds, calendarMap)
+            }
+        }
+        else throw NoCalendarPermissionException()
+    }
+
+    private fun addNonRecurringEvents(
+        events: ArrayList<EventItem>,
+        startSearchTime: Long,
+        endSearchTime: Long?,
+        calendarIds: String,
+        calendarMap: Map<Long, DeviceCalendar>
+    ) {
+        var cur: Cursor? = null
+        val endSearchQuery =
+            endSearchTime?.let { "AND ${CalendarContract.Events.DTSTART} <= $endSearchTime" }
+
+        try {
+            cur = contentResolver.query(
+                CalendarContract.Events.CONTENT_URI,
+                EVENT_PROJECTION,
+                "${CalendarContract.Events.CALENDAR_ID} in ($calendarIds) " +
+                        "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
+                        "AND ${CalendarContract.Events.DELETED} = 0 " +
+                        "AND ${CalendarContract.Events.RRULE} IS NULL",
+                null, null
+            )
+            if (cur == null || cur.count == 0) return
+            while (cur.moveToNext()) {
+                val calendar = calendarMap[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
+                events.add(
+                    EventItem(
+                        BoardItem.TYPE_EVENT,
+                        cur.getLong(PROJECTION_EVENT_ID).toString(),
+                        null, null,
+                        cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                            ?: listOf(),
+                        EventInfo(
+                            cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
+                            cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
+                            cur.getLongOrNull(PROJECTION_EVENT_DTEND),
+                            EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
+                            cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
+                            cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
+                            cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
+                            null,
+                            false,
+                            false,
+                            arrayListOf(),
+                            EventSource(
+                                null,
+                                calendarMap[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                null,
+                                null
+                            )
+                        ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
                     )
-                    cur ?: return ArrayList()
-                    val map = calendars.associateBy { it.calId }
-                    while (cur.moveToNext()) {
-                        val calendar = map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)]
-                        add(
+                )
+            }
+        }
+        catch (ex: Exception) {
+            AppLogger.e(ex)
+            throw ex
+        }
+        finally {
+            cur?.close()
+        }
+    }
+
+    private fun addRecurringEvents(
+        events: ArrayList<EventItem>,
+        startSearchTime: Long,
+        endSearchTime: Long?,
+        calendarIds: String,
+        calendarMap: Map<Long, DeviceCalendar>
+    ) {
+        var instanceCur: Cursor? = null
+        var eventCur: Cursor? = null
+
+        try {
+            instanceCur = contentResolver.query(
+                CalendarContract.Instances.CONTENT_URI.buildUpon().let {
+                    it.appendPath("$startSearchTime")
+                    it.appendPath(
+                        "${endSearchTime ?: Date(startSearchTime).addDay(
+                            30
+                        ).time}"
+                    )
+                    it.build()
+                },
+                EVENT_INSTANCE_PROJECTION,
+                "${CalendarContract.Instances.RRULE} IS NOT NULL " +
+                        "AND ${CalendarContract.Instances.CALENDAR_ID} in ($calendarIds)",
+                null, null
+            )
+            if (instanceCur != null && instanceCur.count > 0) {
+                val firstOccurrenceStartTimeMap = HashMap<String, Long>()
+                val deletedMap = HashMap<String, Boolean>()
+                while (instanceCur.moveToNext()) {
+                    val calendar = calendarMap[instanceCur.getLong(PROJECTION_INSTANCE_CALENDAR)]
+                    val rrule = instanceCur.getStringOrNull(PROJECTION_INSTANCE_RRULE)
+                    val rdate = instanceCur.getStringOrNull(PROJECTION_INSTANCE_RDATE)
+                    val exdate = instanceCur.getStringOrNull(PROJECTION_INSTANCE_EXDATE)
+                    val eventId = instanceCur.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
+                    val eventInstanceId = instanceCur.getLongOrNull(PROJECTION_INSTANCE_ID)
+
+                    AppLogger.d(
+                        "Recurring event eventId=$eventId, " +
+                                "instanceId=$eventInstanceId, rrule=$rrule, " +
+                                "rdate=$rdate, exdate=$exdate"
+                    )
+
+                    // query some necessary information from the parent EVENTS table that
+                    // are not in the INSTANCE table
+                    var firstOccurrenceStartTime = firstOccurrenceStartTimeMap[eventId]
+                    var isDeleted = deletedMap[eventId]
+                    if ((firstOccurrenceStartTime == null || isDeleted == null) && eventId != null) {
+                        eventCur = contentResolver.query(
+                            CalendarContract.Events.CONTENT_URI,
+                            arrayOf(
+                                CalendarContract.Events.DTSTART,
+                                CalendarContract.Events.DELETED
+                            ),
+                            "${CalendarContract.Events.DELETED} = 0 " +
+                                    "AND ${CalendarContract.Events._ID} = $eventId",
+                            null, null
+                        )
+                        if (eventCur != null && eventCur.moveToNext()) {
+                            eventCur.getLongOrNull(0)?.let {
+                                firstOccurrenceStartTime = it
+                                firstOccurrenceStartTimeMap[eventId] = it
+                            }
+                            eventCur.getIntOrNull(1)?.let {
+                                isDeleted = it == 1
+                                deletedMap[eventId] = it == 1
+                            }
+                        }
+                    }
+                    if (isDeleted == false) {
+                        events.add(
                             EventItem(
                                 BoardItem.TYPE_EVENT,
-                                cur.getLong(PROJECTION_EVENT_ID).toString(),
-                                null, null,
-                                cur.getStringOrNull(PROJECTION_EVENT_ORGANIZER)?.let(::listOf)
+                                "$eventId.$eventInstanceId",
+                                null,
+                                null,
+                                instanceCur.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
                                     ?: listOf(),
                                 EventInfo(
-                                    cur.getStringOrNull(PROJECTION_EVENT_TITLE) ?: "",
-                                    cur.getLongOrNull(PROJECTION_EVENT_DTSTART),
-                                    cur.getLongOrNull(PROJECTION_EVENT_DTEND),
-                                    EventLocation(cur.getStringOrNull(PROJECTION_EVENT_LOCATION)),
-                                    cur.getStringOrNull(PROJECTION_EVENT_DESCRIPTION),
-                                    cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
-                                    cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
-                                    null,
+                                    "${instanceCur.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
+                                    instanceCur.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
+                                    instanceCur.getLongOrNull(PROJECTION_INSTANCE_END),
+                                    EventLocation(
+                                        instanceCur.getStringOrNull(
+                                            PROJECTION_INSTANCE_LOCATION
+                                        )
+                                    ),
+                                    instanceCur.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
+                                    instanceCur.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
+                                    instanceCur.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
+                                    rrule.toRepeatInfo(
+                                        eventInstanceId,
+                                        false,
+                                        firstOccurrenceStartTime ?: 0L,
+                                        instanceCur.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
+                                        instanceCur.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1
+                                    ),
                                     false,
                                     false,
                                     arrayListOf(),
                                     EventSource(
                                         null,
-                                        map[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
+                                        calendar,
                                         null,
                                         null
                                     )
-                                ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                                ),
+                                calendar?.isWritable ?: true,
+                                SyncStatus.OFFLINE,
+                                Date()
                             )
                         )
                     }
-                    // query all the recurring events
-                    cur2 = contentResolver.query(
-                        CalendarContract.Instances.CONTENT_URI.buildUpon().let {
-                            it.appendPath("$startSearchTime")
-                            it.appendPath(
-                                "${endSearchTime ?: Date(startSearchTime).addDay(
-                                    30
-                                ).time}"
-                            )
-                            it.build()
-                        },
-                        EVENT_INSTANCE_PROJECTION,
-                        "${CalendarContract.Instances.RRULE} IS NOT NULL",
-                        null, null
-                    )
-                    if (cur2 != null) {
-                        val firstStartTimeMap = HashMap<String, Long>()
-                        while (cur2.moveToNext()) {
-                            val calendar = map[cur2.getLong(PROJECTION_INSTANCE_CALENDAR)]
-                            val rrule = cur2.getStringOrNull(PROJECTION_INSTANCE_RRULE)
-                            val rdate = cur2.getStringOrNull(PROJECTION_INSTANCE_RDATE)
-                            val exdate = cur2.getStringOrNull(PROJECTION_INSTANCE_EXDATE)
-                            val eventId = cur2.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
-                            val eventInstanceId = cur2.getLongOrNull(PROJECTION_INSTANCE_ID)
-
-                            AppLogger.d("Recurring event $eventId.$eventInstanceId, rrule=$rrule, rdate=$rdate, exdate=$exdate")
-
-                            // query the first event time of this recurrence series
-                            var firstStartTime = firstStartTimeMap[eventId]
-                            if (firstStartTime == null && eventId != null) {
-                                cur3 = contentResolver.query(
-                                    CalendarContract.Events.CONTENT_URI,
-                                    arrayOf(CalendarContract.Events.DTSTART),
-                                    "${CalendarContract.Events.DELETED} = 0 " +
-                                            "AND ${CalendarContract.Events._ID} = $eventId",
-                                    null, null
-                                )
-                                if (cur3 != null && cur3.moveToNext()) {
-                                    cur3.getLongOrNull(0)?.let {
-                                        firstStartTime = it
-                                        firstStartTimeMap[eventId] = it
-                                    }
-                                }
-                            }
-
-                            add(
-                                EventItem(
-                                    BoardItem.TYPE_EVENT,
-                                    "$eventId.$eventInstanceId",
-                                    null,
-                                    null,
-                                    cur2.getStringOrNull(PROJECTION_INSTANCE_ORGANIZER)?.let(::listOf)
-                                        ?: listOf(),
-                                    EventInfo(
-                                        "${cur2.getStringOrNull(PROJECTION_INSTANCE_TITLE)}",
-                                        cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
-                                        cur2.getLongOrNull(PROJECTION_INSTANCE_END),
-                                        EventLocation(
-                                            cur2.getStringOrNull(
-                                                PROJECTION_INSTANCE_LOCATION
-                                            )
-                                        ),
-                                        cur2.getStringOrNull(PROJECTION_INSTANCE_DESCRIPTION),
-                                        cur2.getStringOrNull(PROJECTION_INSTANCE_TIMEZONE),
-                                        cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
-                                        rrule.toRepeatInfo(
-                                            eventInstanceId,
-                                            null,
-                                            firstStartTime ?: 0L,
-                                            cur2.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
-                                            cur2.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1
-                                        ),
-                                        false,
-                                        false,
-                                        arrayListOf(),
-                                        EventSource(
-                                            null,
-                                            calendar,
-                                            null,
-                                            null
-                                        )
-                                    ),
-                                    calendar?.isWritable ?: true,
-                                    SyncStatus.OFFLINE,
-                                    Date()
-                                )
-                            )
-                        }
-                    }
-                }
-                catch (ex: Exception) {
-                    throw ex
-                }
-                finally {
-                    cur?.close()
-                    cur2?.close()
-                    cur3?.close()
                 }
             }
         }
-        else throw NoCalendarPermissionException()
+        catch (ex: Exception) {
+            throw ex
+        }
+        finally {
+            instanceCur?.close()
+            eventCur?.close()
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -331,53 +385,75 @@ class CalendarDaoImpl(private val context: Context) :
 
     @SuppressLint("MissingPermission")
     override fun updateEvent(event: EventItem, calId: Long?) {
-        if (event.itemInfo.repeatInfo == null) {
-            val eventId = event.itemId.toLong()
-            val values = ContentValues().apply {
-                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
-                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
-                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
-                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
-                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+        ContentValues().apply {
+            put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
+            put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
+            put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
+            put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
+            put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
+            put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
+            put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+            if (event.itemInfo.repeatInfo == null) {
+                val duration: Long? = null
+                val rrule: String? = null
                 put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
-                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
-                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+                put(CalendarContract.Events.DURATION, duration)
+                put(CalendarContract.Events.RRULE, rrule)
                 calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
-            }
-            val updateUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
-            contentResolver.update(updateUri, values, null, null)
-        }
 
-        // update exiting instance of a recurring event
-        else {
-            val eventId = event.itemId.substringBefore(".")
-            val values = ContentValues().apply {
-                put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
-                put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
-                put(CalendarContract.Events.EVENT_LOCATION, event.itemInfo.location?.name)
-                put(CalendarContract.Events.DESCRIPTION, event.itemInfo.note)
-                put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
-                put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
-                put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
-                put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
-                put(CalendarContract.Events.ORIGINAL_ID, eventId)
-                put(
-                    CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
-                    event.itemInfo.repeatInfo?.originalStartTime
+                val updateUri = ContentUris.withAppendedId(
+                    CalendarContract.Events.CONTENT_URI,
+                    event.itemId.toLong()
                 )
-                put(
-                    CalendarContract.Events.ORIGINAL_ALL_DAY,
-                    if (event.itemInfo.repeatInfo?.originalIsFullDay == true) 1 else 0
-                )
-                put(CalendarContract.Events.CALENDAR_ID, event.itemInfo.source.calendar?.calId)
+                contentResolver.update(updateUri, this, null, null)
             }
-            contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
+            else {
+                val calendarId = calId ?: event.itemInfo.source.calendar?.calId
+                put(CalendarContract.Events.CALENDAR_ID, calendarId)
+
+                if (event.itemInfo.repeatInfo?.isReschedule == true) {
+                    //TODO check if sync_id is NULL or not
+                    val eventId = event.itemId.substringBefore(".")
+                    put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+                    put(CalendarContract.Events.ORIGINAL_ID, eventId)
+                    put(
+                        CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+                        event.itemInfo.repeatInfo?.instanceStartTime
+                    )
+                    put(
+                        CalendarContract.Events.ORIGINAL_ALL_DAY,
+                        if (event.itemInfo.repeatInfo?.instanceIsFullDay == true) 1 else 0
+                    )
+
+                    contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
+                }
+                else {
+                    //must include duration if event is recurring
+                    val time: Long? = null
+                    val duration = event.itemInfo.startTime?.let {
+                        val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                        endTime - it
+                    } ?: throw Exception("Cannot create a recurring event without start time")
+                    put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
+                    put(CalendarContract.Events.DTEND, time)
+                    put(CalendarContract.Events.DURATION, duration.toDurationString())
+
+                    val updateUri = ContentUris.withAppendedId(
+                        CalendarContract.Events.CONTENT_URI,
+                        event.itemId.toLong()
+                    )
+                    contentResolver.update(updateUri, this, null, null)
+                }
+            }
         }
     }
 
     override fun deleteEvent(event: EventItem) {
         val deleteUri =
-            ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.itemId.toLong())
+            ContentUris.withAppendedId(
+                CalendarContract.Events.CONTENT_URI,
+                event.itemId.toLong()
+            )
         contentResolver.delete(deleteUri, null, null)
     }
 
@@ -412,7 +488,8 @@ class CalendarDaoImpl(private val context: Context) :
                         val accountType: String = cur.getString(PROJECTION_ACCOUNT_TYPE_INDEX)
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
-                        val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        val isVisible: Boolean =
+                            cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
                         val accessLevel: Int = cur.getInt(PROJECTION_CALENDAR_ACCESS_LEVEL)
                         result.add(
                             DeviceCalendar(
@@ -465,7 +542,8 @@ class CalendarDaoImpl(private val context: Context) :
                         val accountType: String = cur.getString(PROJECTION_ACCOUNT_TYPE_INDEX)
                         val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
                         val color: Int = cur.getInt(PROJECTION_CALENDAR_COLOR_INDEX)
-                        val isVisible: Boolean = cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
+                        val isVisible: Boolean =
+                            cur.getInt(PROJECTION_CALENDAR_VISIBLE_INDEX) == 1
                         val accessLevel: Int = cur.getInt(PROJECTION_CALENDAR_ACCESS_LEVEL)
                         result.add(
                             DeviceCalendar(
@@ -492,7 +570,13 @@ class CalendarDaoImpl(private val context: Context) :
                 CalendarPreference(result, Date(), exception)
             }
         }
-        else Flowable.just(CalendarPreference(listOf(), Date(), NoCalendarPermissionException()))
+        else Flowable.just(
+            CalendarPreference(
+                listOf(),
+                Date(),
+                NoCalendarPermissionException()
+            )
+        )
     }
 }
 
