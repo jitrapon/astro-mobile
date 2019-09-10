@@ -166,6 +166,7 @@ class CalendarDaoImpl(private val context: Context) :
         else throw NoCalendarPermissionException()
     }
 
+    @SuppressLint("MissingPermission")
     private fun addNonRecurringEvents(
         events: ArrayList<EventItem>,
         startSearchTime: Long,
@@ -206,10 +207,10 @@ class CalendarDaoImpl(private val context: Context) :
                             cur.getStringOrNull(PROJECTION_EVENT_TIMEZONE),
                             cur.getIntOrNull(PROJECTION_EVENT_ALL_DAY) == 1,
                             null,
-                            false,
-                            false,
-                            arrayListOf(),
-                            EventSource(
+                            datePollStatus = false,
+                            placePollStatus = false,
+                            attendees = arrayListOf(),
+                            source = EventSource(
                                 null,
                                 calendarMap[cur.getLong(PROJECTION_EVENT_CALENDAR_ID)],
                                 null,
@@ -229,6 +230,7 @@ class CalendarDaoImpl(private val context: Context) :
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun addRecurringEvents(
         events: ArrayList<EventItem>,
         startSearchTime: Long,
@@ -326,10 +328,10 @@ class CalendarDaoImpl(private val context: Context) :
                                         instanceCur.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
                                         instanceCur.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1
                                     ),
-                                    false,
-                                    false,
-                                    arrayListOf(),
-                                    EventSource(
+                                    datePollStatus = false,
+                                    placePollStatus = false,
+                                    attendees = arrayListOf(),
+                                    source = EventSource(
                                         null,
                                         calendar,
                                         null,
@@ -393,6 +395,8 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.DTSTART, event.itemInfo.startTime)
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
+
+            // case 0: event is not repeating, update normally
             if (event.itemInfo.repeatInfo == null) {
                 val duration: Long? = null
                 val rrule: String? = null
@@ -411,6 +415,8 @@ class CalendarDaoImpl(private val context: Context) :
                 val calendarId = calId ?: event.itemInfo.source.calendar?.calId
                 put(CalendarContract.Events.CALENDAR_ID, calendarId)
 
+                // case 1: event is repeating and is rescheduled
+                // create a new event exception
                 if (event.itemInfo.repeatInfo?.isReschedule == true) {
                     //TODO check if sync_id is NULL or not
                     val eventId = event.itemId.substringBefore(".")
@@ -427,6 +433,8 @@ class CalendarDaoImpl(private val context: Context) :
 
                     contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
                 }
+
+                // case 2: event was non-repeating, but is changed repeating
                 else {
                     //must include duration if event is recurring
                     val time: Long? = null
@@ -500,9 +508,9 @@ class CalendarDaoImpl(private val context: Context) :
                                 ownerName,
                                 color,
                                 isVisible,
-                                false,
-                                true,
-                                isCalendarWritable(isVisible, accessLevel)
+                                isSyncedToBoard = false,
+                                isLocal = true,
+                                isWritable = isCalendarWritable(isVisible, accessLevel)
                             )
                         )
                     }
@@ -554,9 +562,9 @@ class CalendarDaoImpl(private val context: Context) :
                                 ownerName,
                                 color,
                                 isVisible,
-                                false,
-                                true,
-                                isCalendarWritable(isVisible, accessLevel)
+                                isSyncedToBoard = false,
+                                isLocal = true,
+                                isWritable = isCalendarWritable(isVisible, accessLevel)
                             )
                         )
                     }
