@@ -31,9 +31,10 @@ data class RepeatInfo(
     val interval: Long,
     val until: Long,
     val meta: List<Int>?,
-    val firstInstanceStartTime: Long,
-    val instanceStartTime: Long?,
-    val instanceIsFullDay: Boolean?,
+    val firstInstanceStartTime: Long = 0L,
+    val instanceStartTime: Long? = null,
+    val instanceIsFullDay: Boolean? = null,
+    val instanceSyncId: String? = null,
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
@@ -63,7 +64,9 @@ data class RepeatInfo(
         },
         parcel.readInt().let {
             if (it == -1) null else it == 1
-        })
+        },
+        parcel.readString()
+    )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(rrule)
@@ -86,6 +89,7 @@ data class RepeatInfo(
                 if (instanceIsFullDay) 1 else 0
             }
         )
+        parcel.writeString(instanceSyncId)
     }
 
     override fun describeContents(): Int = 0
@@ -104,7 +108,8 @@ fun String?.toRepeatInfo(
     isRescheduled: Boolean?,
     firstStartTime: Long,
     originalStartTime: Long?,
-    originalIsFullDay: Boolean?
+    originalIsFullDay: Boolean?,
+    instanceSyncId: String?
 ): RepeatInfo? {
     this ?: return null
     val tokens = split(";")
@@ -170,6 +175,7 @@ fun String?.toRepeatInfo(
         meta,
         firstStartTime,
         originalStartTime,
-        originalIsFullDay
+        originalIsFullDay,
+        instanceSyncId
     )
 }

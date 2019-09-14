@@ -14,6 +14,8 @@ import androidx.annotation.ColorInt
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
+import com.airbnb.lottie.animation.content.Content
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
@@ -258,8 +260,6 @@ class CalendarDaoImpl(private val context: Context) :
                 null, null
             )
             if (instanceCur != null && instanceCur.count > 0) {
-                val firstOccurrenceStartTimeMap = HashMap<String, Long>()
-                val deletedMap = HashMap<String, Boolean>()
                 while (instanceCur.moveToNext()) {
                     val calendar = calendarMap[instanceCur.getLong(PROJECTION_INSTANCE_CALENDAR)]
                     val rrule = instanceCur.getStringOrNull(PROJECTION_INSTANCE_RRULE)
@@ -268,39 +268,35 @@ class CalendarDaoImpl(private val context: Context) :
                     val eventId = instanceCur.getStringOrNull(PROJECTION_INSTANCE_EVENT_ID)
                     val eventInstanceId = instanceCur.getLongOrNull(PROJECTION_INSTANCE_ID)
 
+                    // query some necessary information from the parent EVENTS table that
+                    // are not in the INSTANCE table
+                    var firstOccurrenceStartTime: Long? = null
+                    var isDeleted = false
+                    var syncId: String? = null
+                    eventCur = contentResolver.query(
+                        CalendarContract.Events.CONTENT_URI,
+                        arrayOf(
+                            CalendarContract.Events.DTSTART,
+                            CalendarContract.Events.DELETED,
+                            CalendarContract.Events._SYNC_ID
+                        ),
+                        "${CalendarContract.Events.DELETED} = 0 " +
+                                "AND ${CalendarContract.Events._ID} = $eventId",
+                        null, null
+                    )
+                    if (eventCur != null && eventCur.moveToNext()) {
+                        firstOccurrenceStartTime = eventCur.getLongOrNull(0)
+                        isDeleted = eventCur.getIntOrNull(1) == 1
+                        syncId = eventCur.getStringOrNull(2)
+                    }
+
                     AppLogger.d(
-                        "Recurring event eventId=$eventId, " +
+                        "Recurring event eventId=$eventId, syncId=$syncId, " +
                                 "instanceId=$eventInstanceId, rrule=$rrule, " +
                                 "rdate=$rdate, exdate=$exdate"
                     )
 
-                    // query some necessary information from the parent EVENTS table that
-                    // are not in the INSTANCE table
-                    var firstOccurrenceStartTime = firstOccurrenceStartTimeMap[eventId]
-                    var isDeleted = deletedMap[eventId]
-                    if ((firstOccurrenceStartTime == null || isDeleted == null) && eventId != null) {
-                        eventCur = contentResolver.query(
-                            CalendarContract.Events.CONTENT_URI,
-                            arrayOf(
-                                CalendarContract.Events.DTSTART,
-                                CalendarContract.Events.DELETED
-                            ),
-                            "${CalendarContract.Events.DELETED} = 0 " +
-                                    "AND ${CalendarContract.Events._ID} = $eventId",
-                            null, null
-                        )
-                        if (eventCur != null && eventCur.moveToNext()) {
-                            eventCur.getLongOrNull(0)?.let {
-                                firstOccurrenceStartTime = it
-                                firstOccurrenceStartTimeMap[eventId] = it
-                            }
-                            eventCur.getIntOrNull(1)?.let {
-                                isDeleted = it == 1
-                                deletedMap[eventId] = it == 1
-                            }
-                        }
-                    }
-                    if (isDeleted == false) {
+                    if (!isDeleted) {
                         events.add(
                             EventItem(
                                 BoardItem.TYPE_EVENT,
@@ -326,7 +322,8 @@ class CalendarDaoImpl(private val context: Context) :
                                         false,
                                         firstOccurrenceStartTime ?: 0L,
                                         instanceCur.getLongOrNull(PROJECTION_INSTANCE_BEGIN),
-                                        instanceCur.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1
+                                        instanceCur.getIntOrNull(PROJECTION_INSTANCE_ALL_DAY) == 1,
+                                        syncId
                                     ),
                                     datePollStatus = false,
                                     placePollStatus = false,
@@ -396,64 +393,91 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
 
-            // case 0: event is not repeating, update normally
             if (event.itemInfo.repeatInfo == null) {
-                val duration: Long? = null
-                val rrule: String? = null
-                put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
-                put(CalendarContract.Events.DURATION, duration)
-                put(CalendarContract.Events.RRULE, rrule)
-                calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
-
-                val updateUri = ContentUris.withAppendedId(
-                    CalendarContract.Events.CONTENT_URI,
-                    event.itemId.toLong()
-                )
-                contentResolver.update(updateUri, this, null, null)
+                createNonRecurringUpdateContentUri(event, calId)
             }
             else {
-                val calendarId = calId ?: event.itemInfo.source.calendar?.calId
-                put(CalendarContract.Events.CALENDAR_ID, calendarId)
-
-                // case 1: event is repeating and is rescheduled
-                // create a new event exception
-                if (event.itemInfo.repeatInfo?.isReschedule == true) {
-                    //TODO check if sync_id is NULL or not
-                    val eventId = event.itemId.substringBefore(".")
-                    put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
-                    put(CalendarContract.Events.ORIGINAL_ID, eventId)
-                    put(
-                        CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
-                        event.itemInfo.repeatInfo?.instanceStartTime
-                    )
-                    put(
-                        CalendarContract.Events.ORIGINAL_ALL_DAY,
-                        if (event.itemInfo.repeatInfo?.instanceIsFullDay == true) 1 else 0
-                    )
-
-                    contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
-                }
-
-                // case 2: event was non-repeating, but is changed repeating
-                else {
-                    //must include duration if event is recurring
-                    val time: Long? = null
-                    val duration = event.itemInfo.startTime?.let {
-                        val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
-                        endTime - it
-                    } ?: throw Exception("Cannot create a recurring event without start time")
-                    put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
-                    put(CalendarContract.Events.DTEND, time)
-                    put(CalendarContract.Events.DURATION, duration.toDurationString())
-
-                    val updateUri = ContentUris.withAppendedId(
-                        CalendarContract.Events.CONTENT_URI,
-                        event.itemId.toLong()
-                    )
-                    contentResolver.update(updateUri, this, null, null)
-                }
+                createRecurringUpdateContentUri(event, calId)
             }
         }
+    }
+
+    private fun ContentValues.createNonRecurringUpdateContentUri(event: EventItem, calId: Long?) {
+        val duration: Long? = null
+        val rrule: String? = null
+        put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+        put(CalendarContract.Events.DURATION, duration)
+        put(CalendarContract.Events.RRULE, rrule)
+        calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
+
+        val updateUri = ContentUris.withAppendedId(
+            CalendarContract.Events.CONTENT_URI,
+            event.itemId.toLong()
+        )
+        contentResolver.update(updateUri, this, null, null)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun ContentValues.createRecurringUpdateContentUri(event: EventItem, calId: Long?) {
+        // case 1: event is repeating and is rescheduled
+        // create a new event exception
+        val eventId = event.itemId.substringBefore(".")
+        if (event.itemInfo.repeatInfo?.isReschedule == true) {
+//            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
+//            put(CalendarContract.Events.ORIGINAL_ID, eventId)
+//            put(
+//                CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+//                event.itemInfo.repeatInfo?.instanceStartTime
+//            )
+//            put(
+//                CalendarContract.Events.ORIGINAL_ALL_DAY,
+//                if (event.itemInfo.repeatInfo?.instanceIsFullDay == true) 1 else 0
+//            )
+//
+//            contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
+
+            if (event.itemInfo.repeatInfo?.instanceSyncId == null) {
+                AppLogger.w("Sync ID is NULL")
+            }
+
+            put(
+                CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+                event.itemInfo.repeatInfo?.instanceStartTime
+            )
+            val duration = event.itemInfo.startTime?.let {
+                val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                endTime - it
+            } ?: throw Exception("Cannot update event without start time")
+            put(CalendarContract.Events.DURATION, duration.toDurationString())
+            val exceptionUri = Uri.withAppendedPath(
+                CalendarContract.Events.CONTENT_EXCEPTION_URI,
+                eventId
+            )
+            contentResolver.insert(exceptionUri, this)
+        }
+
+        // case 2: event was non-repeating, but is changed repeating
+        else {
+            //must include duration if event is recurring
+            val time: Long? = null
+            val duration = event.itemInfo.startTime?.let {
+                val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                endTime - it
+            } ?: throw Exception("Cannot create a recurring event without start time")
+            put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
+            put(CalendarContract.Events.DTEND, time)
+            put(CalendarContract.Events.DURATION, duration.toDurationString())
+
+            val updateUri = ContentUris.withAppendedId(
+                CalendarContract.Events.CONTENT_URI,
+                event.itemId.toLong()
+            )
+            contentResolver.update(updateUri, this, null, null)
+        }
+
+        //TODO handle case where calendar Id is different
+//        val calendarId = calId ?: event.itemInfo.source.calendar?.calId
+//        put(CalendarContract.Events.CALENDAR_ID, calendarId)
     }
 
     override fun deleteEvent(event: EventItem) {
