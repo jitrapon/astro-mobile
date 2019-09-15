@@ -6,14 +6,20 @@ import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.setTime
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.EventItemDao
+import io.jitrapon.glom.board.item.event.EventItemFullEntity
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
+import io.jitrapon.glom.board.item.event.toEntity
+import io.jitrapon.glom.board.item.event.toEventItems
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.ArrayList
+import java.util.Date
+import java.util.HashSet
 import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(database: BoardDatabase,
@@ -211,7 +217,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             // case 1: current source is this board, and new source is a device calendar
             if (newSource?.calendar != null) {
                 if (!isNew) eventDao.deleteEventById(item.itemId)
-                calendarDao.createEvent(item, newSource.calendar.calId)
+                calendarDao.createEvent(item, newSource.calendar)
             }
 
             // case 2: both current source and new source are this board
@@ -229,14 +235,14 @@ class BoardLocalDataSource(database: BoardDatabase,
 
             // case 4: current source is a device calendar, and new source is another calendar
             else if (newSource?.calendar != null && oldSource.calendar.calId != newSource.calendar.calId) {
-                if (!isNew) calendarDao.updateEvent(item, newSource.calendar.calId)
-                else calendarDao.createEvent(item, newSource.calendar.calId)
+                if (!isNew) calendarDao.updateEvent(item, newSource.calendar)
+                else calendarDao.createEvent(item, newSource.calendar)
             }
 
             // case 5: current source is a device calendar, and new source is the same calendar
             else {
                 if (!isNew) calendarDao.updateEvent(item)
-                else calendarDao.createEvent(item, oldSource.calendar.calId)
+                else calendarDao.createEvent(item, oldSource.calendar)
             }
         }
         item.apply {

@@ -14,8 +14,6 @@ import androidx.annotation.ColorInt
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
-import com.airbnb.lottie.animation.content.Content
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
@@ -354,7 +352,8 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     @SuppressLint("MissingPermission")
-    override fun createEvent(event: EventItem, calId: Long) {
+    override fun createEvent(event: EventItem, calendar: DeviceCalendar) {
+        val currentTimeInMs = "${System.currentTimeMillis()}"
         val values = ContentValues().apply {
             put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
             put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
@@ -375,15 +374,15 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
             put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
-            put(CalendarContract.Events.CALENDAR_ID, calId)
+            put(CalendarContract.Events.CALENDAR_ID, calendar.calId)
         }
-        contentResolver.insert(CalendarContract.Events.CONTENT_URI, values).let {
-            event.itemId = it!!.lastPathSegment!!
-        }
+        event.itemId =
+            contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)?.lastPathSegment
+                ?: currentTimeInMs
     }
 
     @SuppressLint("MissingPermission")
-    override fun updateEvent(event: EventItem, calId: Long?) {
+    override fun updateEvent(event: EventItem, calendar: DeviceCalendar?) {
         ContentValues().apply {
             put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
             put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
@@ -394,21 +393,24 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
 
             if (event.itemInfo.repeatInfo == null) {
-                createNonRecurringUpdateContentUri(event, calId)
+                createNonRecurringUpdateContentUri(event, calendar)
             }
             else {
-                createRecurringUpdateContentUri(event, calId)
+                createRecurringUpdateContentUri(event, calendar)
             }
         }
     }
 
-    private fun ContentValues.createNonRecurringUpdateContentUri(event: EventItem, calId: Long?) {
+    private fun ContentValues.createNonRecurringUpdateContentUri(
+        event: EventItem,
+        calendar: DeviceCalendar?
+    ) {
         val duration: Long? = null
         val rrule: String? = null
         put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
         put(CalendarContract.Events.DURATION, duration)
         put(CalendarContract.Events.RRULE, rrule)
-        calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
+        calendar?.calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
 
         val updateUri = ContentUris.withAppendedId(
             CalendarContract.Events.CONTENT_URI,
@@ -418,7 +420,10 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     @SuppressLint("MissingPermission")
-    private fun ContentValues.createRecurringUpdateContentUri(event: EventItem, calId: Long?) {
+    private fun ContentValues.createRecurringUpdateContentUri(
+        event: EventItem,
+        calendar: DeviceCalendar?
+    ) {
         // case 1: event is repeating and is rescheduled
         // create a new event exception
         val eventId = event.itemId.substringBefore(".")
@@ -435,10 +440,6 @@ class CalendarDaoImpl(private val context: Context) :
 //            )
 //
 //            contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
-
-            if (event.itemInfo.repeatInfo?.instanceSyncId == null) {
-                AppLogger.w("Sync ID is NULL")
-            }
 
             put(
                 CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
@@ -474,10 +475,6 @@ class CalendarDaoImpl(private val context: Context) :
             )
             contentResolver.update(updateUri, this, null, null)
         }
-
-        //TODO handle case where calendar Id is different
-//        val calendarId = calId ?: event.itemInfo.source.calendar?.calId
-//        put(CalendarContract.Events.CALENDAR_ID, calendarId)
     }
 
     override fun deleteEvent(event: EventItem) {

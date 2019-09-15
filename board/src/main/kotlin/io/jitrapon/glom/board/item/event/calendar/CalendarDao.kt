@@ -25,11 +25,11 @@ interface CalendarDao {
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun updateEvent(event: EventItem, calId: Long? = null)
+    fun updateEvent(event: EventItem, calendar: DeviceCalendar? = null)
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun createEvent(event: EventItem, calId: Long)
+    fun createEvent(event: EventItem, calendar: DeviceCalendar)
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
