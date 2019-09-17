@@ -6,7 +6,6 @@ import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -38,8 +37,10 @@ import java.util.UUID
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardInteractor(private val userInteractor: UserInteractor, private val boardDataSource: BoardDataSource,
-                      private val circleInteractor: CircleInteractor) : BaseInteractor() {
+class BoardInteractor(
+    private val userInteractor: UserInteractor, private val boardDataSource: BoardDataSource,
+    private val circleInteractor: CircleInteractor
+) : BaseInteractor() {
 
     /*
      * The number of items that was loaded
@@ -56,7 +57,6 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
-
     //region public functions
 
     /**
@@ -70,59 +70,66 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      * Loading of items will be executed on the IO thread pool, while processing items will be executed
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
-    fun loadBoard(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, androidx.collection.ArrayMap<*, List<BoardItem>>>>) -> Unit) {
+    fun loadBoard(
+        refresh: Boolean,
+        onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit
+    ) {
         val circleId = circleInteractor.getActiveCircleId()
-        Flowable.zip(boardDataSource.getBoard(circleId, itemType, refresh).subscribeOn(Schedulers.io()),
-                userInteractor.getUsers(circleId, refresh).subscribeOn(Schedulers.io()),
-                circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),                      // must subscribe to achieve true parallelism
-                Function3<Board, List<User>, Circle, Triple<Board, List<User>, Circle>> { board, users, circle ->
-                    Triple(board, users, circle)
-                })
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .flatMap {
-                    processItems(it.first)
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    itemsLoaded = it.first.items.size
-                }
-                .measureExecutionTime("BoardInteractor#loadBoard")
-                .subscribe({
-                    onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }, {
-                    //nothing yet
-                }).autoDispose()
+        Flowable.zip(boardDataSource.getBoard(
+            circleId,
+            itemType,
+            refresh
+        ).subscribeOn(Schedulers.io()),
+            userInteractor.getUsers(circleId, refresh).subscribeOn(Schedulers.io()),
+            circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),                      // must subscribe to achieve true parallelism
+            Function3<Board, List<User>, Circle, Triple<Board, List<User>, Circle>> { board, users, circle ->
+                Triple(board, users, circle)
+            })
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .flatMap {
+                processItems(it.first)
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext {
+                itemsLoaded = it.first.items.size
+            }
+            .measureExecutionTime("BoardInteractor#loadBoard")
+            .subscribe({
+                onComplete(AsyncSuccessResult(it.first.retrievedTime!! to it.second))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }, {
+                //nothing yet
+            }).autoDispose()
     }
 
     /**
      * Adds a new board item to the list, and process it to be grouped appropriately
      */
-    fun addItem(item: BoardItem, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
+    fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
         boardDataSource.createItem(item, false)
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .andThen (
-                        // we need to wait until the Completable completes
-                        Flowable.defer {
-                            processItems(getCurrentBoard())
-                        }
-                )
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    itemsLoaded = it.first.items.size
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .andThen(
+                // we need to wait until the Completable completes
+                Flowable.defer {
+                    processItems(getCurrentBoard())
                 }
-                .subscribe({
-                    onComplete(AsyncSuccessResult(it.second))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }, {
-                    //nothing yet
-                }).autoDispose()
+            )
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext {
+                itemsLoaded = it.first.items.size
+            }
+            .subscribe({
+                onComplete(AsyncSuccessResult(it.second))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }, {
+                //nothing yet
+            }).autoDispose()
     }
 
     /**
@@ -130,79 +137,86 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         boardDataSource.editItem(item, item.syncStatus != SyncStatus.OFFLINE)
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    onComplete(AsyncSuccessResult(item))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }).autoDispose()
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(item))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     /**
      * Deletes the specified board item to the list
      */
-    fun deleteItemLocal(itemId: String, onComplete: (AsyncResult<androidx.collection.ArrayMap<*, List<BoardItem>>>) -> Unit) {
+    fun deleteItemLocal(
+        itemId: String,
+        onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit
+    ) {
         boardDataSource.deleteItem(itemId, false)
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .andThen (
-                    Flowable.defer {
-                        processItems(getCurrentBoard())
-                    }
-                )
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    itemsLoaded = it.first.items.size
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .andThen(
+                Flowable.defer {
+                    processItems(getCurrentBoard())
                 }
-                .subscribe({
-                    onComplete(AsyncSuccessResult(it.second))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }, {
-                    //nothing yet
-                }).autoDispose()
+            )
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext {
+                itemsLoaded = it.first.items.size
+            }
+            .subscribe({
+                onComplete(AsyncSuccessResult(it.second))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }, {
+                //nothing yet
+            }).autoDispose()
     }
 
     fun deleteItemRemote(itemId: String, onComplete: (AsyncResult<Unit>) -> Unit) {
         boardDataSource.deleteItem(itemId, true)
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    onComplete(AsyncSuccessResult(Unit))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }).autoDispose()
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(Unit))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     fun createEmptyItem(): BoardItem {
         val now = Date()
         val owners = ArrayList<String>().apply {
-            userId?.let (::add)
+            userId?.let(::add)
         }
         return when (itemType) {
-            BoardItem.TYPE_EVENT -> EventItem(BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
-                    EventInfo("", null, null, null, null,
-                            "Asia/Bangkok", false, null, false, false, owners,
-                            EventSource(null, null, null, circleInteractor.getActiveCircleId())),
-                            true, SyncStatus.OFFLINE, now)
+            BoardItem.TYPE_EVENT -> EventItem(
+                BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
+                EventInfo(
+                    "", null, null, null, null,
+                    "Asia/Bangkok", false, null, false, false, owners,
+                    EventSource(null, null, null, circleInteractor.getActiveCircleId())
+                ),
+                true, SyncStatus.OFFLINE, now
+            )
             else -> TODO()
         }
     }
 
     fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         boardDataSource.createItem(item, true)
-                .retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    onComplete(AsyncSuccessResult(item))
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }).autoDispose()
+            .retryWhen(::errorIsUnauthorized)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onComplete(AsyncSuccessResult(item))
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     fun hasPlaceInfo(item: BoardItem): Boolean {
@@ -210,7 +224,7 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
                 && TextUtils.isEmpty((item.itemInfo as? EventInfo)?.location?.name)
     }
 
-    fun hasOnlyLocationName(item: BoardItem): Boolean {
+    private fun hasOnlyLocationName(item: BoardItem): Boolean {
         return item.itemInfo is EventInfo &&
                 !(item.itemInfo as? EventInfo)?.location?.name.isNullOrBlank() &&
                 (item.itemInfo as? EventInfo)?.location?.googlePlaceId == null
@@ -223,8 +237,10 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
      *                  if NULL or empty, the algorithm will find items that contain Google Place IDs automatically.
      *                  If specified, it will use that instead.
      */
-    fun loadItemPlaceInfo(placeProvider: PlaceProvider?, itemIdsWithPlace: List<String>?,
-                          onComplete: (AsyncResult<androidx.collection.ArrayMap<String, Place>>) -> Unit) {
+    fun loadItemPlaceInfo(
+        placeProvider: PlaceProvider?, itemIdsWithPlace: List<String>?,
+        onComplete: (AsyncResult<ArrayMap<String, Place>>) -> Unit
+    ) {
         if (placeProvider == null) {
             onComplete(AsyncErrorResult(Exception("Place provider implmentation is NULL")))
             return
@@ -260,31 +276,39 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
         }.flatMap {
             placeProvider.getPlaces(it)
         }.retryWhen(::errorIsUnauthorized)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    if (itemIds.size == it.size) {
-                        onComplete(AsyncSuccessResult(androidx.collection.ArrayMap<String, Place>().apply {
-                            for (i in itemIds.indices) {
-                                put(itemIds[i], it[i])
-                            }
-                        }))
-                    }
-                    else {
-                        onComplete(AsyncErrorResult(Exception("Failed to process result because" +
-                                " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})")))
-                    }
-                }, {
-                    onComplete(AsyncErrorResult(it))
-                }).autoDispose()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                if (itemIds.size == it.size) {
+                    onComplete(AsyncSuccessResult(ArrayMap<String, Place>().apply {
+                        for (i in itemIds.indices) {
+                            put(itemIds[i], it[i])
+                        }
+                    }))
+                }
+                else {
+                    onComplete(
+                        AsyncErrorResult(
+                            Exception(
+                                "Failed to process result because" +
+                                        " returned places array size (${it.size}) does not match requested item array size (${itemIds.size})"
+                            )
+                        )
+                    )
+                }
+            }, {
+                onComplete(AsyncErrorResult(it))
+            }).autoDispose()
     }
 
     /**
      * Loads addresses info for board items that have a location name, but no Google Place IDs or LatLng.
      */
-    fun loadItemAddressInfo(placeProvider: PlaceProvider?,
-                            itemIdsWithPlace: List<String>?,
-                            onComplete: (AsyncResult<Map<String, Pair<String?, Address?>>>) -> Unit) {
+    fun loadItemAddressInfo(
+        placeProvider: PlaceProvider?,
+        itemIdsWithPlace: List<String>?,
+        onComplete: (AsyncResult<Map<String, Pair<String?, Address?>>>) -> Unit
+    ) {
         if (placeProvider == null) {
             onComplete(AsyncErrorResult(Exception("Place provider implmentation is NULL")))
             return
@@ -348,69 +372,71 @@ class BoardInteractor(private val userInteractor: UserInteractor, private val bo
     //endregion
     //region private functions
 
-    private fun getCurrentBoard(): Board = boardDataSource.getBoard(circleInteractor.getActiveCircleId(), itemType).blockingFirst()
+    private fun getCurrentBoard(): Board =
+        boardDataSource.getBoard(circleInteractor.getActiveCircleId(), itemType).blockingFirst()
 
     /**
      * Modified the board items arrangment, returning a Flowable in which items are grouped based on the defined filtering type.
      * This function call should be run in a background thread.
      */
     @WorkerThread
-    private fun processItems(board: Board): Flowable<Pair<Board, androidx.collection.ArrayMap<*, List<BoardItem>>>> {
+    private fun processItems(board: Board): Flowable<Pair<Board, ArrayMap<*, List<BoardItem>>>> {
         return Flowable.fromCallable {
-            val startTime = System.currentTimeMillis()
+            val currentTime = System.currentTimeMillis()
 
             val map = when (itemFilterType) {
                 ItemFilterType.EVENTS_BY_WEEK -> {
-                    androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
+                    ArrayMap<Int?, List<BoardItem>>().apply {
                         if (board.items.isEmpty()) put(null, board.items)
 
                         val now = Calendar.getInstance().apply { time = Date() }
-                        board.items.filter { it is EventItem }                              // make sure that all items are event items
-                                .sortedBy { (it as EventItem).itemInfo.startTime }          // then sort by start time
-                                .groupBy { item ->                                          // group by the week of year
-                                    Calendar.getInstance().let {
-                                        val startTime = (item as EventItem).itemInfo.startTime
-                                        if (startTime == null) null else {
-                                            it.time = Date(startTime)
-                                            when {
-                                                now[Calendar.YEAR] > it[Calendar.YEAR] -> {
+                        board.items.filterIsInstance<EventItem>()                              // make sure that all items are event items
+                            .sortedBy { it.itemInfo.startTime }          // then sort by start time
+                            .groupBy { item ->
+                                // group by the week of year
+                                Calendar.getInstance().let {
+                                    val startTime = item.itemInfo.startTime
+                                    if (startTime == null) null
+                                    else {
+                                        it.time = Date(startTime)
+                                        when {
+                                            now[Calendar.YEAR] > it[Calendar.YEAR] -> {
 
-                                                    // special case where year difference is 1
-                                                    if (now[Calendar.YEAR] - it[Calendar.YEAR] == 1 && it[Calendar.WEEK_OF_YEAR] == 1) {
-                                                        (now[Calendar.WEEK_OF_YEAR] - 1) * -1
-                                                    }
-                                                    else {
-                                                        (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
-                                                                * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
-                                                    }
+                                                // special case where year difference is 1
+                                                if (now[Calendar.YEAR] - it[Calendar.YEAR] == 1 && it[Calendar.WEEK_OF_YEAR] == 1) {
+                                                    (now[Calendar.WEEK_OF_YEAR] - 1) * -1
                                                 }
-                                                now[Calendar.YEAR] < it[Calendar.YEAR] -> {
-                                                    ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
-                                                            + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
+                                                else {
+                                                    (now[Calendar.WEEK_OF_YEAR] + ((BoardViewModel.NUM_WEEK_IN_YEAR
+                                                            * (now[Calendar.YEAR] - it[Calendar.YEAR])) - it[Calendar.WEEK_OF_YEAR])) * -1
                                                 }
-                                                else -> {
+                                            }
+                                            now[Calendar.YEAR] < it[Calendar.YEAR] -> {
+                                                ((BoardViewModel.NUM_WEEK_IN_YEAR * (it[Calendar.YEAR] - now[Calendar.YEAR]))
+                                                        + it[Calendar.WEEK_OF_YEAR]) - now[Calendar.WEEK_OF_YEAR]
+                                            }
+                                            else -> {
 
-                                                    // for special case where the day falls in the first week of next year
-                                                    if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
-                                                        (BoardViewModel.NUM_WEEK_IN_YEAR + 1) - now[Calendar.WEEK_OF_YEAR]
-                                                    }
-
-                                                    else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
+                                                // for special case where the day falls in the first week of next year
+                                                if (it[Calendar.WEEK_OF_YEAR] < now[Calendar.WEEK_OF_YEAR] && it[Calendar.WEEK_OF_YEAR] == 1) {
+                                                    (BoardViewModel.NUM_WEEK_IN_YEAR + 1) - now[Calendar.WEEK_OF_YEAR]
                                                 }
+                                                else it[Calendar.WEEK_OF_YEAR] - now[Calendar.WEEK_OF_YEAR]
                                             }
                                         }
                                     }
                                 }
-                                .forEach { put(it.key, it.value) }
+                            }
+                            .forEach { put(it.key, it.value) }
                     }
                 }
                 else -> {
-                    androidx.collection.ArrayMap<Int?, List<BoardItem>>().apply {
+                    ArrayMap<Int?, List<BoardItem>>().apply {
                         put(null, ArrayList())
                     }
                 }
             }
-            AppLogger.d("BoardInteractor#processItems took ${System.currentTimeMillis() - startTime} ms")
+            AppLogger.d("BoardInteractor#processItems took ${System.currentTimeMillis() - currentTime} ms")
             board to map
         }
     }

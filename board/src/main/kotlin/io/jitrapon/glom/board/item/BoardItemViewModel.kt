@@ -2,6 +2,7 @@ package io.jitrapon.glom.board.item
 
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
+import io.jitrapon.glom.board.BoardInteractor
 
 /**
  * @author Jitrapon Tiachunpun
@@ -22,12 +23,13 @@ abstract class BoardItemViewModel : BaseViewModel() {
     /**
      * Converts editable status of the BoradItem to UiModel status
      */
-    fun getEditableStatus(allow: Boolean): UiModel.Status = if (allow) UiModel.Status.SUCCESS else UiModel.Status.NEGATIVE
+    fun getEditableStatus(allow: Boolean): UiModel.Status =
+        if (allow) UiModel.Status.SUCCESS else UiModel.Status.NEGATIVE
 
     /**
      * Converts the sync status to UiModel status
      */
-    fun getSyncStatus(status: SyncStatus): UiModel.Status {
+    open fun getSyncStatus(status: SyncStatus): UiModel.Status {
         return when (status) {
             SyncStatus.OFFLINE -> UiModel.Status.POSITIVE
             SyncStatus.ACTIVE -> UiModel.Status.LOADING
@@ -35,6 +37,18 @@ abstract class BoardItemViewModel : BaseViewModel() {
             SyncStatus.FAILED -> UiModel.Status.ERROR
         }
     }
+
+    /**
+     * Updates the sync status after a sync operation has completed
+     *
+     * @param isSynced whether or not the sync operation to its respective repository is successful
+     */
+    abstract fun updateSyncStatus(
+        item: BoardItem,
+        itemUiModel: BoardItemUiModel,
+        boardInteractor: BoardInteractor,
+        isSynced: Boolean
+    )
 
     /**
      * Call to clean up any resources

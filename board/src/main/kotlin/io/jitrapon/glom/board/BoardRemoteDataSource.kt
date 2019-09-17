@@ -12,7 +12,8 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.*
 
-class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : RemoteDataSource(), BoardDataSource {
+class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : RemoteDataSource(),
+    BoardDataSource {
 
     private val api = retrofit.create(BoardApi::class.java)
 
@@ -31,7 +32,11 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
     }
 
     override fun editItem(item: BoardItem, remote: Boolean): Completable {
-        return api.editBoardItem(circleInteractor.getActiveCircleId(), item.itemId, item.serializeItemInfo())
+        return api.editBoardItem(
+            circleInteractor.getActiveCircleId(),
+            item.itemId,
+            item.serializeItemInfo()
+        )
     }
 
     override fun deleteItem(itemId: String, remote: Boolean): Completable {

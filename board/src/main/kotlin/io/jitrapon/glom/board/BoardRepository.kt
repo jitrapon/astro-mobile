@@ -3,6 +3,8 @@ package io.jitrapon.glom.board
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.isSyncable
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.Date
@@ -12,14 +14,18 @@ import java.util.Date
  *
  * @author Jitrapon Tiachunpun
  */
-class BoardRepository(private val remoteDataSource: BoardDataSource, private val localDataSource: BoardDataSource) :
-        Repository<Board>(), BoardDataSource {
+class BoardRepository(
+    private val remoteDataSource: BoardDataSource,
+    private val localDataSource: BoardDataSource
+) :
+    Repository<Board>(), BoardDataSource {
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
-        return load(refresh,
-                localDataSource.getBoard(circleId, itemType),
-                remoteDataSource.getBoard(circleId, itemType),
-                localDataSource::saveBoard
+        return load(
+            refresh,
+            localDataSource.getBoard(circleId, itemType),
+            remoteDataSource.getBoard(circleId, itemType),
+            localDataSource::saveBoard
         )
     }
 
@@ -28,12 +34,16 @@ class BoardRepository(private val remoteDataSource: BoardDataSource, private val
     }
 
     override fun createItem(item: BoardItem, remote: Boolean): Completable {
-        return if (remote) remoteDataSource.createItem(item)
+        return if (remote && item.isSyncable) remoteDataSource.createItem(item)
         else localDataSource.createItem(item, remote)
     }
 
     override fun editItem(item: BoardItem, remote: Boolean): Completable {
-        return if (remote) update(localDataSource.editItem(item), remoteDataSource.editItem(item), true)
+        return if (remote && item.isSyncable) update(
+            localDataSource.editItem(item),
+            remoteDataSource.editItem(item),
+            true
+        )
         else localDataSource.editItem(item)
     }
 

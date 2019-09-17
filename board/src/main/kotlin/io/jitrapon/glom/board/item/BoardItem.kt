@@ -60,6 +60,12 @@ interface BoardItem : DataModel {
     fun setInfo(info: BoardItemInfo)
 }
 
+val BoardItem.isSyncable: Boolean
+    get() = when (this) {
+        is EventItem -> itemInfo.source.isBoard()
+        else -> true
+    }
+
 /**
  * Status of whether or not the board item has been synced to the remote source successfully
  */

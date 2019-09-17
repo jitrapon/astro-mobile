@@ -38,6 +38,7 @@ import io.jitrapon.glom.base.util.toRelativeDayString
 import io.jitrapon.glom.base.util.toTimeString
 import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.BoardInjector
+import io.jitrapon.glom.board.BoardInteractor
 import io.jitrapon.glom.board.BoardViewModel
 import io.jitrapon.glom.board.Const
 import io.jitrapon.glom.board.Const.NAVIGATE_TO_EVENT_PLAN
@@ -131,19 +132,40 @@ class EventItemViewModel : BoardItemViewModel() {
     override fun toUiModel(item: BoardItem, syncStatus: SyncStatus): BoardItemUiModel {
         return (item as EventItem).let {
             EventItemUiModel(
-                    itemId = it.itemId,
-                    title = AndroidString(text = it.itemInfo.eventName),
-                    dateTime = getEventDate(it.itemInfo.startTime, it.itemInfo.endTime, it.itemInfo.isFullDay),
-                    location = getEventLocation(it.itemInfo.location),
-                    mapLatLng = getEventLatLng(it.itemInfo.location),
-                    attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
-                    attendStatus = getEventAttendStatus(it.itemInfo.attendees),
-                    status = getSyncStatus(syncStatus),
-                    isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus,
-                    sourceIcon = getEventSourceIcon(it.itemInfo.source),
-                    sourceDescription = getEventSourceDescription(it.itemInfo.source)
+                itemId = it.itemId,
+                title = AndroidString(text = it.itemInfo.eventName),
+                dateTime = getEventDate(
+                    it.itemInfo.startTime,
+                    it.itemInfo.endTime,
+                    it.itemInfo.isFullDay
+                ),
+                location = getEventLocation(it.itemInfo.location),
+                mapLatLng = getEventLatLng(it.itemInfo.location),
+                attendeesAvatars = getEventAttendees(it.itemInfo.attendees),
+                attendStatus = getEventAttendStatus(it.itemInfo.attendees),
+                status = getSyncStatus(syncStatus),
+                isPlanning = it.itemInfo.datePollStatus || it.itemInfo.placePollStatus,
+                sourceIcon = getEventSourceIcon(it.itemInfo.source),
+                sourceDescription = getEventSourceDescription(it.itemInfo.source)
             )
         }
+    }
+
+    override fun updateSyncStatus(
+        item: BoardItem,
+        itemUiModel: BoardItemUiModel,
+        boardInteractor: BoardInteractor,
+        isSynced: Boolean
+    ) {
+        val eventItem = item as? EventItem ?: return
+        val nextStatus = if (isSynced) {
+            if (!eventItem.itemInfo.source.isBoard() || eventItem.syncStatus == SyncStatus.OFFLINE) SyncStatus.OFFLINE
+            else SyncStatus.SUCCESS
+        }
+        else SyncStatus.FAILED
+
+        itemUiModel.status = getSyncStatus(nextStatus)
+        boardInteractor.setItemSyncStatus(item.itemId, nextStatus)
     }
 
     /**
@@ -183,7 +205,8 @@ class EventItemViewModel : BoardItemViewModel() {
         start ?: return null
         val endMs = if (isFullDay && end != null) {
             Date(end).addDay(-1).time
-        } else end
+        }
+        else end
         val startDate = Calendar.getInstance().apply { time = Date(start) }
         val currentDate = Calendar.getInstance()
         var showYear = startDate[Calendar.YEAR] != currentDate[Calendar.YEAR]
@@ -216,7 +239,8 @@ class EventItemViewModel : BoardItemViewModel() {
         }
         else {
             Date(start).let {
-                val time = if (isFullDay) "" else " (${it.toTimeString()} - ${Date(endMs).toTimeString()})"
+                val time =
+                    if (isFullDay) "" else " (${it.toTimeString()} - ${Date(endMs).toTimeString()})"
                 AndroidString(text = "${it.toDateString(showYear)}$time")
             }
         }
@@ -233,8 +257,10 @@ class EventItemViewModel : BoardItemViewModel() {
             AndroidString(text = location.name)
         }
         else if (location.placeId == null && location.googlePlaceId == null && location.latitude != null && location.longitude != null) {
-            AndroidString(resId = R.string.event_card_location_latlng,
-                    formatArgs = arrayOf(location.latitude.toString(), location.longitude.toString()))
+            AndroidString(
+                resId = R.string.event_card_location_latlng,
+                formatArgs = arrayOf(location.latitude.toString(), location.longitude.toString())
+            )
         }
         else if (!TextUtils.isEmpty(location.googlePlaceId)) {
             AndroidString(R.string.event_card_location_placeholder)
@@ -243,7 +269,14 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     fun updateEventLocationFromPlace(itemId: String, place: Place?) {
-        interactor.updateItemPlace(itemId, place?.name, place?.address, place?.latLng, place?.id, false) {
+        interactor.updateItemPlace(
+            itemId,
+            place?.name,
+            place?.address,
+            place?.latLng,
+            place?.id,
+            false
+        ) {
             if (it is AsyncErrorResult) {
                 AppLogger.e(it.error)
             }
@@ -251,7 +284,14 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     fun updateEventLocationFromAddress(itemId: String, name: String?, address: Address?) {
-        interactor.updateItemPlace(itemId, name, address?.fullAddress, address?.latLng, null, false) {
+        interactor.updateItemPlace(
+            itemId,
+            name,
+            address?.fullAddress,
+            address?.latLng,
+            null,
+            false
+        ) {
             if (it is AsyncErrorResult) {
                 AppLogger.e(it.error)
             }
@@ -282,14 +322,23 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns a AttendStatus from the list of attending userIds
      */
     private fun getEventAttendStatus(userIds: List<String>): EventItemUiModel.AttendStatus {
-        return if (userIds.any { it.equals(interactor.getCurrentUserId(), true) })  EventItemUiModel.AttendStatus.GOING
+        return if (userIds.any {
+                it.equals(
+                    interactor.getCurrentUserId(),
+                    true
+                )
+            }) EventItemUiModel.AttendStatus.GOING
         else EventItemUiModel.AttendStatus.MAYBE
     }
 
     /**
      * Change current attend status of the user id on a specified event
      */
-    fun setEventAttendStatus(boardViewModel: BoardViewModel, position: Int, newStatus: EventItemUiModel.AttendStatus) {
+    fun setEventAttendStatus(
+        boardViewModel: BoardViewModel,
+        position: Int,
+        newStatus: EventItemUiModel.AttendStatus
+    ) {
         boardViewModel.boardUiModel.items?.let { items ->
             val item = items.getOrNull(position)
             if (item is EventItemUiModel) {
@@ -304,16 +353,25 @@ class EventItemViewModel : BoardItemViewModel() {
                     EventItemUiModel.AttendStatus.GOING -> {
                         statusCode = 2
                         animationItem = AnimationItem.JOIN_EVENT
-                        message = AndroidString(R.string.event_card_join_success, arrayOf(item.title.text!!))
+                        message = AndroidString(
+                            R.string.event_card_join_success,
+                            arrayOf(item.title.text!!)
+                        )
                         level = MessageLevel.SUCCESS
                     }
                     EventItemUiModel.AttendStatus.MAYBE -> {
                         statusCode = 1
-                        message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title.text!!))
+                        message = AndroidString(
+                            R.string.event_card_maybe_success,
+                            arrayOf(item.title.text!!)
+                        )
                     }
                     EventItemUiModel.AttendStatus.DECLINED -> {
                         statusCode = 0
-                        message = AndroidString(R.string.event_card_maybe_success, arrayOf(item.title.text!!))
+                        message = AndroidString(
+                            R.string.event_card_maybe_success,
+                            arrayOf(item.title.text!!)
+                        )
                     }
                 }
                 item.apply {
@@ -323,7 +381,11 @@ class EventItemViewModel : BoardItemViewModel() {
                     requestPlaceInfoItemIds = null
                     requestAddressItemIds = null
                     diffResult = null
-                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to arrayListOf(ATTENDSTATUS)) }
+                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                        add(
+                            position to arrayListOf(ATTENDSTATUS)
+                        )
+                    }
                 }
 
                 // show the animation
@@ -338,14 +400,20 @@ class EventItemViewModel : BoardItemViewModel() {
                             item.apply {
                                 attendeesAvatars = getEventAttendees(it.result)
                             }
-                            boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
-                                requestPlaceInfoItemIds = null
-                                requestAddressItemIds = null
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
-                                        arrayListOf(ATTENDSTATUS, ATTENDEES)) }
-                            }
-                            boardViewModel.observableViewAction.value = Snackbar(message, level = level)
+                            boardViewModel.observableBoard.value =
+                                boardViewModel.boardUiModel.apply {
+                                    requestPlaceInfoItemIds = null
+                                    requestAddressItemIds = null
+                                    diffResult = null
+                                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                        add(
+                                            position to
+                                                    arrayListOf(ATTENDSTATUS, ATTENDEES)
+                                        )
+                                    }
+                                }
+                            boardViewModel.observableViewAction.value =
+                                Snackbar(message, level = level)
                         }
                         is AsyncErrorResult -> {
                             handleError(it.error, observable = boardViewModel.observableViewAction)
@@ -354,13 +422,18 @@ class EventItemViewModel : BoardItemViewModel() {
                             item.apply {
                                 attendStatus = originalStatus
                             }
-                            boardViewModel.observableBoard.value = boardViewModel.boardUiModel.apply {
-                                requestPlaceInfoItemIds = null
-                                requestAddressItemIds = null
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply { add(position to
-                                        arrayListOf(ATTENDSTATUS, ATTENDEES)) }
-                            }
+                            boardViewModel.observableBoard.value =
+                                boardViewModel.boardUiModel.apply {
+                                    requestPlaceInfoItemIds = null
+                                    requestAddressItemIds = null
+                                    diffResult = null
+                                    itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                                        add(
+                                            position to
+                                                    arrayListOf(ATTENDSTATUS, ATTENDEES)
+                                        )
+                                    }
+                                }
                         }
                     }
                 }
@@ -369,7 +442,8 @@ class EventItemViewModel : BoardItemViewModel() {
     }
 
     fun showEventPlan(boardViewModel: BoardViewModel, position: Int) {
-        boardViewModel.observableNavigation.value = Navigation(NAVIGATE_TO_EVENT_PLAN, boardViewModel.getBoardItem(position) to false)
+        boardViewModel.observableNavigation.value =
+            Navigation(NAVIGATE_TO_EVENT_PLAN, boardViewModel.getBoardItem(position) to false)
     }
 
     //endregion
@@ -395,11 +469,23 @@ class EventItemViewModel : BoardItemViewModel() {
                     attendStatus = getEventAttendStatus(it.attendees)
                     EventItemDetailUiModel(
                         AndroidString(text = it.eventName, status = editableStatus) to false,
-                        getEventDetailDate(it.startTime, true, it.source, it.isFullDay)?.apply { if (!isItemEditable) status = editableStatus },
-                        getEventDetailDate(it.endTime, false, it.source, it.isFullDay)?.apply { if (!isItemEditable) status = editableStatus },
+                        getEventDetailDate(
+                            it.startTime,
+                            true,
+                            it.source,
+                            it.isFullDay
+                        )?.apply { if (!isItemEditable) status = editableStatus },
+                        getEventDetailDate(
+                            it.endTime,
+                            false,
+                            it.source,
+                            it.isFullDay
+                        )?.apply { if (!isItemEditable) status = editableStatus },
                         it.location,
                         getEventDetailLocation(it.location)?.apply { status = editableStatus },
-                        getEventDetailLocationDescription(it.location)?.apply { status = editableStatus },
+                        getEventDetailLocationDescription(it.location)?.apply {
+                            status = editableStatus
+                        },
                         getEventDetailLocationLatLng(it.location),
                         getEventDetailAttendeeTitle(it.attendees),
                         getEventDetailAttendees(it.attendees),
@@ -417,7 +503,14 @@ class EventItemViewModel : BoardItemViewModel() {
             observableEndDate.value = it.endDate
             observableLocation.value = it.locationName
             observableLocationDescription.value = it.locationDescription
-            it.location?.let { loadPlaceAsync(it.name, it.googlePlaceId, it.latitude, it.longitude) }
+            it.location?.let {
+                loadPlaceAsync(
+                    it.name,
+                    it.googlePlaceId,
+                    it.latitude,
+                    it.longitude
+                )
+            }
             observableLocationLatLng.value = it.locationLatLng
             observableAttendeeTitle.value = it.attendeeTitle
             observableAttendees.value = it.attendees
@@ -442,7 +535,13 @@ class EventItemViewModel : BoardItemViewModel() {
     fun saveItem(onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
         interactor.saveItem {
             when (it) {
-                is AsyncSuccessResult -> onSuccess(Triple(it.result.first, it.result.second, isNewItem))
+                is AsyncSuccessResult -> onSuccess(
+                    Triple(
+                        it.result.first,
+                        it.result.second,
+                        isNewItem
+                    )
+                )
                 is AsyncErrorResult -> handleError(it.error)
             }
         }
@@ -451,29 +550,40 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Returns a formatted date in event detail
      */
-    private fun getEventDetailDate(dateAsEpochMs: Long?, isStartDate: Boolean, source: EventSource, isFullDay: Boolean): AndroidString? {
-        dateAsEpochMs ?: return AndroidString(resId = if (isStartDate) R.string.event_item_start_date_placeholder
-                                                        else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY)
-        return AndroidString(text = StringBuilder().apply {
-            val date = Date(dateAsEpochMs).run {
-                if (!isStartDate && isFullDay) {
-                    addDay(-1)
+    private fun getEventDetailDate(
+        dateAsEpochMs: Long?,
+        isStartDate: Boolean,
+        source: EventSource,
+        isFullDay: Boolean
+    ): AndroidString? {
+        dateAsEpochMs ?: return AndroidString(
+            resId = if (isStartDate) R.string.event_item_start_date_placeholder
+            else R.string.event_item_end_date_placeholder, status = UiModel.Status.EMPTY
+        )
+        return AndroidString(
+            text = StringBuilder().apply {
+                val date = Date(dateAsEpochMs).run {
+                    if (!isStartDate && isFullDay) {
+                        addDay(-1)
+                    }
+                    else this
                 }
-                else this
-            }
-            append(date.toDateString(true))
-            if (!isFullDay) {
-                append("   ")
-                append(date.toTimeString())
-            }
-        }.toString(), status = if (isStartDate && source.calendar != null) UiModel.Status.EMPTY else UiModel.Status.SUCCESS)
+                append(date.toDateString(true))
+                if (!isFullDay) {
+                    append("   ")
+                    append(date.toTimeString())
+                }
+            }.toString(),
+            status = if (isStartDate && source.calendar != null) UiModel.Status.EMPTY else UiModel.Status.SUCCESS
+        )
     }
 
     /**
      * Returns an event location in detail
      */
     private fun getEventDetailLocation(location: EventLocation?): AndroidString? {
-        return getEventLocation(location) ?: if (isItemEditable) null else AndroidString(R.string.event_item_no_location_placeholder)
+        return getEventLocation(location)
+            ?: if (isItemEditable) null else AndroidString(R.string.event_item_no_location_placeholder)
     }
 
     /**
@@ -499,7 +609,10 @@ class EventItemViewModel : BoardItemViewModel() {
      * Returns the title in the line separator on top of the event attendees
      */
     private fun getEventDetailAttendeeTitle(attendees: List<String>): AndroidString? {
-        return AndroidString(resId = R.string.event_item_attendee_title, formatArgs = arrayOf(attendees.size.toString()))
+        return AndroidString(
+            resId = R.string.event_item_attendee_title,
+            formatArgs = arrayOf(attendees.size.toString())
+        )
     }
 
     /**
@@ -535,7 +648,8 @@ class EventItemViewModel : BoardItemViewModel() {
                 is AsyncSuccessResult -> {
                     it.result?.let { userIds ->
                         attendStatus = getEventAttendStatus(userIds)
-                        observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
+                        observableAttendeesActions.value =
+                            getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                         observableAttendees.value = getEventDetailAttendees(userIds)
                         observableAttendeeTitle.value = getEventDetailAttendeeTitle(userIds)
                     }
@@ -543,31 +657,37 @@ class EventItemViewModel : BoardItemViewModel() {
                 is AsyncErrorResult -> {
                     handleError(it.error)
 
-                    observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
+                    observableAttendeesActions.value =
+                        getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
                 }
             }
         }
     }
 
-    private fun getEventDetailAttendStatus(joinActionItem: ActionItem,
-                                           leaveActionItem: ActionItem,
-                                           status: UiModel.Status): ButtonUiModel {
+    private fun getEventDetailAttendStatus(
+        joinActionItem: ActionItem,
+        leaveActionItem: ActionItem,
+        status: UiModel.Status
+    ): ButtonUiModel {
         return when (attendStatus) {
             EventItemUiModel.AttendStatus.GOING -> ButtonUiModel(
                 AndroidString(leaveActionItem.title),
                 AndroidImage(leaveActionItem.drawable),
                 leaveActionItem,
-                status)
+                status
+            )
             EventItemUiModel.AttendStatus.MAYBE -> ButtonUiModel(
                 AndroidString(joinActionItem.title),
                 AndroidImage(joinActionItem.drawable),
                 joinActionItem,
-                status)
+                status
+            )
             EventItemUiModel.AttendStatus.DECLINED -> ButtonUiModel(
                 AndroidString(joinActionItem.title),
                 AndroidImage(joinActionItem.drawable),
                 joinActionItem,
-                status)
+                status
+            )
         }
     }
 
@@ -577,10 +697,21 @@ class EventItemViewModel : BoardItemViewModel() {
                 observableAttendeeTitle.value = getEventDetailAttendeeTitle(it.attendees)
                 observableAttendees.value = getEventDetailAttendees(it.attendees)
                 attendStatus = getEventAttendStatus(it.attendees)
-                observableAttendeesActions.value = getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
+                observableAttendeesActions.value =
+                    getEventDetailAttendeesActions(UiModel.Status.SUCCESS)
 
-                observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, it.source, it.isFullDay)
-                observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, it.source, it.isFullDay)
+                observableStartDate.value = getEventDetailDate(
+                    interactor.getItemDate(true)?.time,
+                    true,
+                    it.source,
+                    it.isFullDay
+                )
+                observableEndDate.value = getEventDetailDate(
+                    interactor.getItemDate(false)?.time,
+                    false,
+                    it.source,
+                    it.isFullDay
+                )
                 observableDateTimePicker.value = null
 
                 it.location?.apply {
@@ -611,17 +742,23 @@ class EventItemViewModel : BoardItemViewModel() {
 
     private fun getEventDetailSource(source: EventSource): EventSourceUiModel {
         return EventSourceUiModel(
-                when {
-                    !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
-                    source.calendar?.color != null -> AndroidImage(resId = io.jitrapon.glom.R.drawable.bg_solid_circle_18dp, tint = source.calendar.color)
-                    else -> AndroidImage(resId = io.jitrapon.glom.R.drawable.ic_calendar_multiple, tint = null)
-                },
-                when {
-                    source.calendar != null -> AndroidString(text = source.calendar.displayName)
-                    !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
-                    else -> AndroidString(resId = R.string.event_item_source_none)
-                },
-                if (!isItemEditable) UiModel.Status.NEGATIVE else UiModel.Status.SUCCESS
+            when {
+                !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
+                source.calendar?.color != null -> AndroidImage(
+                    resId = io.jitrapon.glom.R.drawable.bg_solid_circle_18dp,
+                    tint = source.calendar.color
+                )
+                else -> AndroidImage(
+                    resId = io.jitrapon.glom.R.drawable.ic_calendar_multiple,
+                    tint = null
+                )
+            },
+            when {
+                source.calendar != null -> AndroidString(text = source.calendar.displayName)
+                !source.description.isNullOrEmpty() -> AndroidString(text = source.description)
+                else -> AndroidString(resId = R.string.event_item_source_none)
+            },
+            if (!isItemEditable) UiModel.Status.NEGATIVE else UiModel.Status.SUCCESS
         )
     }
 
@@ -633,7 +770,12 @@ class EventItemViewModel : BoardItemViewModel() {
                         // add the first choice, which is no calendars and other external sources
                         // events will be exclusive our app
                         val choices = ArrayList<PreferenceItemUiModel>().apply {
-                            add(PreferenceItemUiModel(null, AndroidString(resId = R.string.event_item_source_none)))
+                            add(
+                                PreferenceItemUiModel(
+                                    null,
+                                    AndroidString(resId = R.string.event_item_source_none)
+                                )
+                            )
                         }
 
                         // after that we add all other writable sources
@@ -641,7 +783,10 @@ class EventItemViewModel : BoardItemViewModel() {
                             PreferenceItemUiModel(
                                 when {
                                     !source.sourceIconUrl.isNullOrEmpty() -> AndroidImage(imageUrl = source.sourceIconUrl)
-                                    source.calendar?.color != null -> AndroidImage(resId = io.jitrapon.glom.R.drawable.ic_checkbox_blank_circle, tint = source.calendar.color)
+                                    source.calendar?.color != null -> AndroidImage(
+                                        resId = io.jitrapon.glom.R.drawable.ic_checkbox_blank_circle,
+                                        tint = source.calendar.color
+                                    )
                                     else -> null
                                 },
                                 when {
@@ -651,11 +796,19 @@ class EventItemViewModel : BoardItemViewModel() {
                                 }
                             )
                         })
-                         choices
+                        choices
                     }, {
-                        observableViewAction.value = PresentChoices(AndroidString(R.string.event_item_select_sources), it) { position ->
+                        observableViewAction.value = PresentChoices(
+                            AndroidString(R.string.event_item_select_sources),
+                            it
+                        ) { position ->
                             observableSource.value = interactor.setItemSource(
-                                if (position == 0) EventSource(null, null, null, interactor.circleId)
+                                if (position == 0) EventSource(
+                                    null,
+                                    null,
+                                    null,
+                                    interactor.circleId
+                                )
                                 else result.result[position - 1]
                             ).let { source ->
                                 getEventDetailSource(source)
@@ -675,21 +828,22 @@ class EventItemViewModel : BoardItemViewModel() {
      * Converts the suggestion as a text to be displayed in the drop-down
      */
     fun getSuggestionText(suggestion: Suggestion): AndroidString {
-        return if (!TextUtils.isEmpty(suggestion.displayText)) AndroidString(text = suggestion.displayText) else 
+        return if (!TextUtils.isEmpty(suggestion.displayText)) AndroidString(text = suggestion.displayText)
+        else
             suggestion.selectData.let {
-            when (it) {
-                is Triple<*,*,*> -> {
-                    if (it.first == Calendar.DAY_OF_MONTH) {
-                        AndroidString(text = (it.third as Date).toRelativeDayString())
+                when (it) {
+                    is Triple<*, *, *> -> {
+                        if (it.first == Calendar.DAY_OF_MONTH) {
+                            AndroidString(text = (it.third as Date).toRelativeDayString())
+                        }
+                        else {
+                            AndroidString(text = (it.third as Date).toTimeString())
+                        }
                     }
-                    else {
-                        AndroidString(text = (it.third as Date).toTimeString())
-                    }
+                    is PlaceInfo -> AndroidString(text = it.name)
+                    else -> AndroidString(text = it.toString())
                 }
-                is PlaceInfo -> AndroidString(text = it.name)
-                else -> AndroidString(text = it.toString())
             }
-        }
     }
 
     /**
@@ -710,7 +864,8 @@ class EventItemViewModel : BoardItemViewModel() {
      * Apply the current suggestion
      */
     fun selectSuggestion(currentText: Editable, suggestion: Suggestion) {
-        val displayText = suggestion.selectData as? String ?: getSuggestionText(suggestion).text.toString()
+        val displayText =
+            suggestion.selectData as? String ?: getSuggestionText(suggestion).text.toString()
         val delimiter = " "
         interactor.applySuggestion(currentText.toString(), suggestion, displayText, delimiter)
 
@@ -724,14 +879,16 @@ class EventItemViewModel : BoardItemViewModel() {
                     append(displayText)
                 }
             }
-            is Triple<*,*,*> -> {
+            is Triple<*, *, *> -> {
                 builder.append(delimiter).append(buildSpannedString {
                     bold { append(displayText) }
                 })
                 if (suggestion.selectData.second == true) {
                     val info = interactor.event.itemInfo
-                    observableStartDate.value = getEventDetailDate(interactor.getSelectedDate()?.time,
-                            suggestion.selectData.second as Boolean, info.source, info.isFullDay)
+                    observableStartDate.value = getEventDetailDate(
+                        interactor.getSelectedDate()?.time,
+                        suggestion.selectData.second as Boolean, info.source, info.isFullDay
+                    )
                 }
             }
             is PlaceInfo -> {
@@ -755,7 +912,15 @@ class EventItemViewModel : BoardItemViewModel() {
     fun selectPlace(suggestion: Suggestion) {
         suggestion.selectData.let {
             if (it is PlaceInfo) {
-                EventLocation(it.latitude, it.longitude, it.googlePlaceId, it.placeId, it.name, it.description, it.address).apply {
+                EventLocation(
+                    it.latitude,
+                    it.longitude,
+                    it.googlePlaceId,
+                    it.placeId,
+                    it.name,
+                    it.description,
+                    it.address
+                ).apply {
                     interactor.setItemLocation(this)
                     observableLocation.value = getEventDetailLocation(this)
                     observableLocationDescription.value = getEventDetailLocationDescription(this)
@@ -768,7 +933,15 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun selectPlace(place: Place?) {
         place?.let {
-            EventLocation(it.latLng?.latitude, it.latLng?.longitude, it.id, null, it.name.toString(), null, it.address.toString()).apply {
+            EventLocation(
+                it.latLng?.latitude,
+                it.latLng?.longitude,
+                it.id,
+                null,
+                it.name.toString(),
+                null,
+                it.address.toString()
+            ).apply {
                 interactor.setItemLocation(this)
                 observableLocation.value = getEventDetailLocation(this)
                 observableLocationDescription.value = getEventDetailLocationDescription(this)
@@ -777,14 +950,20 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
-    private fun loadPlaceAsync(customName: String?, googlePlaceId: String?, latitude: Double?, longitude: Double?) {
+    private fun loadPlaceAsync(
+        customName: String?,
+        googlePlaceId: String?,
+        latitude: Double?,
+        longitude: Double?
+    ) {
         if (!TextUtils.isEmpty(googlePlaceId) && latitude == null && longitude == null) {
             interactor.loadPlaceInfo(customName) { result ->
                 when (result) {
                     is AsyncSuccessResult -> {
                         result.result.let {
                             observableLocation.value = getEventDetailLocation(it)
-                            observableLocationDescription.value = getEventDetailLocationDescription(it)
+                            observableLocationDescription.value =
+                                getEventDetailLocationDescription(it)
                             observableLocationLatLng.value = getEventDetailLocationLatLng(it)
                         }
                     }
@@ -806,7 +985,10 @@ class EventItemViewModel : BoardItemViewModel() {
      */
     fun validateName(input: String) {
         if (!InputValidator.validateNotEmpty(input))
-            observableName.value = AndroidString(resId = R.string.event_item_name_error, status = UiModel.Status.ERROR) to false
+            observableName.value = AndroidString(
+                resId = R.string.event_item_name_error,
+                status = UiModel.Status.ERROR
+            ) to false
         else
             observableName.value = AndroidString(status = UiModel.Status.EMPTY) to false
     }
@@ -821,12 +1003,12 @@ class EventItemViewModel : BoardItemViewModel() {
             val startDate = interactor.getItemDate(true)
             val endDate = interactor.getItemDate(false)
             observableDateTimePicker.value = DateTimePickerUiModel(
-                    startDate,
-                    if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
-                    isStartDate,
-                    if (it is AsyncSuccessResult) it.result else null,
-                    null,
-                    interactor.event.itemInfo.isFullDay
+                startDate,
+                if (!interactor.event.itemInfo.isFullDay) endDate else endDate?.addDay(-1),
+                isStartDate,
+                if (it is AsyncSuccessResult) it.result else null,
+                null,
+                interactor.event.itemInfo.isFullDay
             )
         }
     }
@@ -840,8 +1022,10 @@ class EventItemViewModel : BoardItemViewModel() {
             it.setItemDate(startDate, endDate, fullDay)
 
             val info = it.event.itemInfo
-            observableStartDate.value = getEventDetailDate(it.getItemDate(true)?.time, true, info.source, fullDay)
-            observableEndDate.value = getEventDetailDate(it.getItemDate(false)?.time, false, info.source, fullDay)
+            observableStartDate.value =
+                getEventDetailDate(it.getItemDate(true)?.time, true, info.source, fullDay)
+            observableEndDate.value =
+                getEventDetailDate(it.getItemDate(false)?.time, false, info.source, fullDay)
             observableDateTimePicker.value = null
         }
     }
@@ -849,11 +1033,15 @@ class EventItemViewModel : BoardItemViewModel() {
     fun clearDate(isStartDate: Boolean) {
         val fullDay = interactor.event.itemInfo.isFullDay
         val info = interactor.event.itemInfo
-        interactor.setItemDate(if (isStartDate) null else info.startTime?.let(::Date),
-                if (!isStartDate) null else info.endTime?.let(::Date),
-                fullDay)
-        observableStartDate.value = getEventDetailDate(interactor.getItemDate(true)?.time, true, info.source, fullDay)
-        observableEndDate.value = getEventDetailDate(interactor.getItemDate(false)?.time, false, info.source, fullDay)
+        interactor.setItemDate(
+            if (isStartDate) null else info.startTime?.let(::Date),
+            if (!isStartDate) null else info.endTime?.let(::Date),
+            fullDay
+        )
+        observableStartDate.value =
+            getEventDetailDate(interactor.getItemDate(true)?.time, true, info.source, fullDay)
+        observableEndDate.value =
+            getEventDetailDate(interactor.getItemDate(false)?.time, false, info.source, fullDay)
         observableDateTimePicker.value = null
     }
 
@@ -868,8 +1056,12 @@ class EventItemViewModel : BoardItemViewModel() {
         observableViewAction.value = interactor.getItemLocation()?.let {
             val latLng = if (it.latitude != null && it.longitude != null) {
                 LatLng(it.latitude, it.longitude)
-            } else null
-            Navigation(Const.NAVIGATE_TO_MAP_SEARCH, NavigationArguments(latLng, it.name, it.googlePlaceId, withDirection))
+            }
+            else null
+            Navigation(
+                Const.NAVIGATE_TO_MAP_SEARCH,
+                NavigationArguments(latLng, it.name, it.googlePlaceId, withDirection)
+            )
         }
     }
 
@@ -880,16 +1072,20 @@ class EventItemViewModel : BoardItemViewModel() {
         if (charSequence.isEmpty()) {
             interactor.setItemLocation(null)
 
-            observableLocationActions.value = getEventDetailLocationActions(interactor.event.itemInfo.location,
-                    interactor.event.itemInfo.placePollStatus)
+            observableLocationActions.value = getEventDetailLocationActions(
+                interactor.event.itemInfo.location,
+                interactor.event.itemInfo.placePollStatus
+            )
         }
         else {
             val prevLocation = interactor.event.itemInfo.location
             interactor.setItemLocation(charSequence)
 
             if (prevLocation == null && interactor.event.itemInfo.location != null) {
-                observableLocationActions.value = getEventDetailLocationActions(interactor.event.itemInfo.location,
-                        interactor.event.itemInfo.placePollStatus)
+                observableLocationActions.value = getEventDetailLocationActions(
+                    interactor.event.itemInfo.location,
+                    interactor.event.itemInfo.placePollStatus
+                )
             }
         }
     }
@@ -952,25 +1148,34 @@ class EventItemViewModel : BoardItemViewModel() {
                 ActionItem.SET_RECURRENCE -> {
                     showRecurrencePicker()
                 }
-                else -> {}
+                else -> {
+                }
             }
         }
     }
 
     private fun ActionItem.toUiModel(status: UiModel.Status = UiModel.Status.SUCCESS): ButtonUiModel =
-            ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
+        ButtonUiModel(AndroidString(title), AndroidImage(drawable), this, status)
 
-    private fun getEventDetailDateTimeActions(hasDateTimePlan: Boolean, isRecurring: Boolean): ArrayList<ButtonUiModel> {
+    private fun getEventDetailDateTimeActions(
+        hasDateTimePlan: Boolean,
+        isRecurring: Boolean
+    ): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
             add(ActionItem.PLAN_DATETIME.toUiModel(if (hasDateTimePlan) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
             add(ActionItem.SET_RECURRENCE.toUiModel(if (isRecurring) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
         }
     }
 
-    private fun getEventDetailLocationActions(location: EventLocation?, hasPlacePlan: Boolean): ArrayList<ButtonUiModel> {
+    private fun getEventDetailLocationActions(
+        location: EventLocation?,
+        hasPlacePlan: Boolean
+    ): ArrayList<ButtonUiModel> {
         return ArrayList<ButtonUiModel>().apply {
             val hasLocationStatus = if (!location?.name.isNullOrEmpty() ||
-                    (location?.latitude != null && location.longitude != null)) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS
+                (location?.latitude != null && location.longitude != null)
+            ) UiModel.Status.POSITIVE
+            else UiModel.Status.SUCCESS
             add(ActionItem.PLAN_LOCATION.toUiModel(if (hasPlacePlan) UiModel.Status.POSITIVE else UiModel.Status.SUCCESS))
             add(ActionItem.PICK_PLACE.toUiModel())
             add(ActionItem.MAP.toUiModel(hasLocationStatus))
@@ -1019,13 +1224,17 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableSource(): LiveData<EventSourceUiModel> = observableSource
 
-    fun getObservableDateTimeActions(): LiveData<ArrayList<ButtonUiModel>> = observableDateTimeActions
+    fun getObservableDateTimeActions(): LiveData<ArrayList<ButtonUiModel>> =
+        observableDateTimeActions
 
-    fun getObservableLocationActions(): LiveData<ArrayList<ButtonUiModel>> = observableLocationActions
+    fun getObservableLocationActions(): LiveData<ArrayList<ButtonUiModel>> =
+        observableLocationActions
 
-    fun getObservableAttendeesActions(): LiveData<ArrayList<ButtonUiModel>> = observableAttendeesActions
+    fun getObservableAttendeesActions(): LiveData<ArrayList<ButtonUiModel>> =
+        observableAttendeesActions
 
-    fun getObservableRecurrencePicker(): LiveData<RecurrencePickerUiModel> = observableRecurrencePickerEvent
+    fun getObservableRecurrencePicker(): LiveData<RecurrencePickerUiModel> =
+        observableRecurrencePickerEvent
 
     override fun cleanUp() {
         interactor.cleanup()
