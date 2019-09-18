@@ -22,6 +22,7 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventSource
+import io.jitrapon.glom.board.item.isSyncable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -136,7 +137,7 @@ class BoardInteractor(
      * Edits this board item with a new info
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.editItem(item, item.syncStatus != SyncStatus.OFFLINE)
+        boardDataSource.editItem(item, item.isSyncable)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

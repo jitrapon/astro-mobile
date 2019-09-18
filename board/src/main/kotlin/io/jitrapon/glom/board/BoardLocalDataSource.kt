@@ -155,8 +155,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             synchronized(lock) {
                 inMemoryBoard.items.indexOfFirst { itemId == it.itemId }.let {
                     if (it != -1) {
-                        val item = inMemoryBoard.items[it]
-                        when (item) {
+                        when (val item = inMemoryBoard.items[it]) {
                             is EventItem -> if (item.itemInfo.source.calendar == null) {
                                 eventDao.deleteEventById(itemId)
                             }
@@ -175,8 +174,7 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
         return Completable.fromAction {
             synchronized(lock) {
-                val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }
-                when (item) {
+                when (val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }) {
                     is EventItem -> if (item.itemInfo.source.calendar == null) {
                         eventDao.updateSyncStatusById(itemId, status.intValue)
                     }

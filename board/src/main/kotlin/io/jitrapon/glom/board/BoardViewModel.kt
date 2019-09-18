@@ -329,6 +329,7 @@ class BoardViewModel : BaseViewModel() {
             if (index != -1) {
                 items[index] = boardItem.toUiModel(SyncStatus.ACTIVE)
                 boardInteractor.setItemSyncStatus(items[index].itemId, SyncStatus.ACTIVE)
+                boardItem.syncStatus = SyncStatus.ACTIVE
 
                 observableBoard.value = boardUiModel.apply {
                     items[index].itemId.let {
