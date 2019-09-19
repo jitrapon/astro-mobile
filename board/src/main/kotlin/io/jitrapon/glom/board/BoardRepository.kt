@@ -3,8 +3,6 @@ package io.jitrapon.glom.board
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
-import io.jitrapon.glom.board.item.event.EventItem
-import io.jitrapon.glom.board.item.isSyncable
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import java.util.Date

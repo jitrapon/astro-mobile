@@ -22,7 +22,6 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventSource
-import io.jitrapon.glom.board.item.isSyncable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -137,7 +136,7 @@ class BoardInteractor(
      * Edits this board item with a new info
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.editItem(item, item.isSyncable)
+        boardDataSource.editItem(item, true)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -209,15 +208,20 @@ class BoardInteractor(
     }
 
     fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.createItem(item, true)
-            .retryWhen(::errorIsUnauthorized)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                onComplete(AsyncSuccessResult(item))
-            }, {
-                onComplete(AsyncErrorResult(it))
-            }).autoDispose()
+        if (item.isSyncable) {
+            boardDataSource.createItem(item, true)
+                .retryWhen(::errorIsUnauthorized)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onComplete(AsyncSuccessResult(item))
+                }, {
+                    onComplete(AsyncErrorResult(it))
+                }).autoDispose()
+        }
+        else {
+            onComplete(AsyncSuccessResult(item))
+        }
     }
 
     fun hasPlaceInfo(item: BoardItem): Boolean {

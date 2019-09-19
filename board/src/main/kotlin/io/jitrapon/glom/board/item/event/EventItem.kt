@@ -68,4 +68,7 @@ data class EventItem(override val itemType: Int,
 
         override fun newArray(size: Int): Array<EventItem?> = arrayOfNulls(size)
     }
+
+    override val isSyncable: Boolean
+        get() = itemInfo.source.isBoard()
 }

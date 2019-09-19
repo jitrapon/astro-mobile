@@ -58,13 +58,12 @@ interface BoardItem : DataModel {
      * Updates this item info
      */
     fun setInfo(info: BoardItemInfo)
-}
 
-val BoardItem.isSyncable: Boolean
-    get() = when (this) {
-        is EventItem -> itemInfo.source.isBoard()
-        else -> true
-    }
+    /**
+     * Whether or not this item should be synced to the remote source
+     */
+    val isSyncable: Boolean
+}
 
 /**
  * Status of whether or not the board item has been synced to the remote source successfully
@@ -76,7 +75,7 @@ enum class SyncStatus(val intValue: Int) {
     OFFLINE(2);        // indicates that the item is not meant to by synced with remote source
 
     companion object {
-        internal val map = SyncStatus.values().associateBy(SyncStatus::intValue)
+        internal val map = values().associateBy(SyncStatus::intValue)
     }
 }
 

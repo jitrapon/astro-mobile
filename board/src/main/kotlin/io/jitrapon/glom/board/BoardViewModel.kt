@@ -29,7 +29,6 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemUiModel
 import io.jitrapon.glom.board.item.event.EventItemViewModel
-import io.jitrapon.glom.board.item.isSyncable
 import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -355,17 +354,11 @@ class BoardViewModel : BaseViewModel() {
 
                 // start syncing data to server and local database depending on the item's sync status
                 if (createNew) {
-                    if (boardItem.isSyncable) {
-                        syncItem(
-                            boardInteractor::createItem,
-                            boardItem,
-                            AndroidString(R.string.board_item_created)
-                        )
-                    }
-                    else {
-                        BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java)
-                            ?.updateSyncStatus(boardItem, items[index], boardInteractor, true)
-                    }
+                    syncItem(
+                        boardInteractor::createItem,
+                        boardItem,
+                        AndroidString(R.string.board_item_created)
+                    )
                 }
                 else {
                     syncItem(
