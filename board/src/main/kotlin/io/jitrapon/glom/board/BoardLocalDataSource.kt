@@ -58,6 +58,9 @@ class BoardLocalDataSource(database: BoardDatabase,
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
+        //TODO add second condition where all events should be refreshed due to a sync operation required
+        // and recurring items from calendar needs to be refreshed
+        // Introduce sync from Android local calendars, or request sync
         return if (lastFetchedItemType.get() == itemType) Flowable.just(inMemoryBoard)
 
         // otherwise invoke the corresponding item DAO
