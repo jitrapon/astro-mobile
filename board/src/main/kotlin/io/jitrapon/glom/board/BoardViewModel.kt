@@ -383,77 +383,76 @@ class BoardViewModel : BaseViewModel() {
         boardItem: BoardItem,
         successMessage: AndroidString
     ) {
-        var index: Int
-        operation(boardItem) {
-            boardUiModel.items?.let { items ->
-                index = items.indexOfFirst { boardItem.itemId == it.itemId }
-                if (index != -1) {
-                    when (it) {
-                        is AsyncSuccessResult -> {
-                            BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java)
-                                ?.updateSyncStatus(boardItem, items[index], boardInteractor, true)
+        operation(boardItem) { result ->
+            val index = boardUiModel.items?.indexOfFirst { boardItem.itemId == it.itemId } ?: -1
+            val uiModel = boardUiModel.items?.getOrNull(index)
+            if (uiModel == null) {
+                loadBoard(false)
+                return@operation
+            }
 
-                            observableBoard.value = boardUiModel.apply {
-                                saveItem = null
-                                requestPlaceInfoItemIds = null
-                                requestAddressItemIds = null
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
-                                    add(index to arrayListOf(items[index].getStatusChangePayload()))
-                                }
-                            }
-                            observableViewAction.value =
-                                Snackbar(successMessage, level = MessageLevel.SUCCESS)
+            when (result) {
+                is AsyncSuccessResult -> {
+                    BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java)
+                        ?.updateSyncStatus(boardItem, uiModel, boardInteractor, true)
 
-                            // refresh the board item ordering
-                            loadBoard(false)
-                        }
-                        is AsyncErrorResult -> {
-                            handleError(it.error)
-
-                            BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java)
-                                ?.updateSyncStatus(boardItem, items[index], boardInteractor, false)
-
-                            observableBoard.value = boardUiModel.apply {
-                                saveItem = null
-                                requestPlaceInfoItemIds = null
-                                requestAddressItemIds = null
-                                diffResult = null
-                                itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
-                                    add(index to arrayListOf(items[index].getStatusChangePayload()))
-                                }
-                            }
-
-                            // refresh the board item ordering
-                            loadBoard(false)
+                    observableBoard.value = boardUiModel.apply {
+                        saveItem = null
+                        requestPlaceInfoItemIds = null
+                        requestAddressItemIds = null
+                        diffResult = null
+                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                            add(index to arrayListOf(uiModel.getStatusChangePayload()))
                         }
                     }
+                    observableViewAction.value =
+                        Snackbar(successMessage, level = MessageLevel.SUCCESS)
 
-                    // make sure to dispatch these indices when we set the observableBoard value again
-                    if (!observableBoard.hasActiveObservers()) {
-                        undispatchedItemIndices.add(index to arrayListOf(items[index].getStatusChangePayload()))
-                    }
+                    // refresh the board item ordering
+                    loadBoard(false)
                 }
+                is AsyncErrorResult -> {
+                    handleError(result.error)
+
+                    BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java)
+                        ?.updateSyncStatus(boardItem, uiModel, boardInteractor, false)
+
+                    observableBoard.value = boardUiModel.apply {
+                        saveItem = null
+                        requestPlaceInfoItemIds = null
+                        requestAddressItemIds = null
+                        diffResult = null
+                        itemsChangedIndices = ArrayList<Pair<Int, Any?>>().apply {
+                            add(index to arrayListOf(uiModel.getStatusChangePayload()))
+                        }
+                    }
+
+                    // refresh the board item ordering
+                    loadBoard(false)
+                }
+            }
+
+            // make sure to dispatch these indices when we set the observableBoard value again
+            if (!observableBoard.hasActiveObservers()) {
+                undispatchedItemIndices.add(index to arrayListOf(uiModel.getStatusChangePayload()))
             }
         }
     }
 
     fun deleteItem(position: Int) {
-        boardUiModel.items?.let { items ->
-            items.getOrNull(position)?.let { item ->
-                if (item.itemType != BoardItemUiModel.TYPE_HEADER) {
-                    val boardItem = boardInteractor.getBoardItem(item.itemId)
-                    boardInteractor.deleteItemLocal(item.itemId) {
-                        when (it) {
-                            is AsyncSuccessResult -> {
-                                onBoardItemChanges(it.result, listOf(), listOf(), null)
+        boardUiModel.items?.getOrNull(position)?.let { item ->
+            if (item.itemType != BoardItemUiModel.TYPE_HEADER) {
+                val boardItem = boardInteractor.getBoardItem(item.itemId)
+                boardInteractor.deleteItemLocal(item.itemId) {
+                    when (it) {
+                        is AsyncSuccessResult -> {
+                            onBoardItemChanges(it.result, listOf(), listOf(), null)
 
-                                if (boardItem?.isSyncable == true) {
-                                    syncDeletedItem(item.itemId)
-                                }
+                            if (boardItem?.isSyncable == true) {
+                                syncDeletedItem(item.itemId)
                             }
-                            is AsyncErrorResult -> handleError(it.error)
                         }
+                        is AsyncErrorResult -> handleError(it.error)
                     }
                 }
             }

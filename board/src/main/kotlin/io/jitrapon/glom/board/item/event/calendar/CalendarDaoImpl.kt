@@ -216,7 +216,7 @@ class CalendarDaoImpl(private val context: Context) :
                                 null,
                                 null
                             )
-                        ), calendar?.isWritable ?: true, SyncStatus.OFFLINE, Date()
+                        ), calendar?.isWritable ?: true, SyncStatus.SUCCESS, Date()
                     )
                 )
             }
@@ -334,7 +334,7 @@ class CalendarDaoImpl(private val context: Context) :
                                     )
                                 ),
                                 calendar?.isWritable ?: true,
-                                SyncStatus.OFFLINE,
+                                SyncStatus.SUCCESS,
                                 Date()
                             )
                         )

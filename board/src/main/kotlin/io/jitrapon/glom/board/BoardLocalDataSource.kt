@@ -126,7 +126,6 @@ class BoardLocalDataSource(database: BoardDatabase,
                 is EventItem -> insertOrUpdateEvent(item, true)
                 else -> throw NotImplementedError()
             }
-        }.doOnComplete {
             synchronized(lock) {
                 inMemoryBoard.items.add(item)
             }
@@ -134,14 +133,15 @@ class BoardLocalDataSource(database: BoardDatabase,
     }
 
     override fun editItem(item: BoardItem, remote: Boolean): Completable {
+        // need to save this id so that it can be referenced later in case the item ID has changed
+        val itemId = item.itemId
         return Completable.fromCallable {
             when (item) {
                 is EventItem -> insertOrUpdateEvent(item, false)
                 else -> throw NotImplementedError()
             }
-        }.doOnComplete {
             synchronized(lock) {
-                inMemoryBoard.items.indexOfFirst { it.itemId == item.itemId }.let {
+                inMemoryBoard.items.indexOfFirst { it.itemId == itemId }.let {
                     if (it != -1) {
                         inMemoryBoard.items[it] = item
                     }
@@ -174,18 +174,14 @@ class BoardLocalDataSource(database: BoardDatabase,
     override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {
         return Completable.fromAction {
             synchronized(lock) {
-                when (val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }) {
+                val item = inMemoryBoard.items.firstOrNull { itemId == it.itemId }
+                when (item) {
                     is EventItem -> if (item.itemInfo.source.calendar == null) {
                         eventDao.updateSyncStatusById(itemId, status.intValue)
                     }
                     else -> { /* unsupported */ }
                 }
-            }
-        }.doOnComplete {
-            synchronized(lock) {
-                inMemoryBoard.items.firstOrNull { itemId == it.itemId }?.let {
-                    it.syncStatus = status
-                }
+                item?.syncStatus = status
             }
         }
     }

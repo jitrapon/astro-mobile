@@ -159,7 +159,7 @@ class EventItemViewModel : BoardItemViewModel() {
     ) {
         val eventItem = item as? EventItem ?: return
         val nextStatus = if (isSynced) {
-            if (!eventItem.itemInfo.source.isBoard() || eventItem.syncStatus == SyncStatus.OFFLINE) SyncStatus.OFFLINE
+            if (eventItem.syncStatus == SyncStatus.OFFLINE) SyncStatus.OFFLINE
             else SyncStatus.SUCCESS
         }
         else SyncStatus.FAILED
