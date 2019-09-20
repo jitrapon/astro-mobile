@@ -60,9 +60,19 @@ interface BoardItem : DataModel {
     fun setInfo(info: BoardItemInfo)
 
     /**
-     * Whether or not this item should be synced to the remote source
+     * Whether or not this item should be synced to the data source it came from
      */
     val isSyncable: Boolean
+
+    /**
+     * Indicates that this item is about to be synced to remote source
+     */
+    val isSyncingToRemote: Boolean
+
+    /**
+     * Indicates that this item is about to be synced to local source
+     */
+    val isSyncingToLocal: Boolean
 }
 
 /**

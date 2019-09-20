@@ -386,6 +386,8 @@ class BoardViewModel : BaseViewModel() {
         operation(boardItem) { result ->
             val index = boardUiModel.items?.indexOfFirst { boardItem.itemId == it.itemId } ?: -1
             val uiModel = boardUiModel.items?.getOrNull(index)
+
+            // if we can't refresh a single changed item due to its changed item ID, refresh the whole list!
             if (uiModel == null) {
                 loadBoard(false)
                 return@operation

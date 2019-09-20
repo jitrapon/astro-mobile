@@ -6,6 +6,7 @@ import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -22,6 +23,7 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventSource
+import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -136,7 +138,23 @@ class BoardInteractor(
      * Edits this board item with a new info
      */
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
-        boardDataSource.editItem(item, true)
+        val completable = when {
+            item.isSyncingToRemote -> Completable.mergeArray(
+                boardDataSource.deleteItem(item.itemId, false).subscribeOn(Schedulers.io()),
+                (boardDataSource.createItem(item, false).andThen(
+                    boardDataSource.createItem(
+                        item,
+                        true
+                    )
+                ).subscribeOn(Schedulers.io()))
+            )
+            item.isSyncingToLocal -> Completable.mergeArray(
+                boardDataSource.deleteItem(item.itemId, true).subscribeOn(Schedulers.io()),
+                boardDataSource.editItem(item, true).subscribeOn(Schedulers.io())
+            )
+            else -> boardDataSource.editItem(item, true)
+        }
+        completable
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -198,8 +216,11 @@ class BoardInteractor(
                 BoardItem.TYPE_EVENT, generateItemId(), now.time, now.time, owners,
                 EventInfo(
                     "", null, null, null, null,
-                    "Asia/Bangkok", false, null, false, false, owners,
-                    EventSource(null, null, null, circleInteractor.getActiveCircleId())
+                    "Asia/Bangkok", false, null,
+                    datePollStatus = false,
+                    placePollStatus = false,
+                    attendees = owners,
+                    source = EventSource(null, null, null, circleInteractor.getActiveCircleId())
                 ),
                 true, SyncStatus.OFFLINE, now
             )
@@ -458,6 +479,7 @@ class BoardInteractor(
         return UUID.randomUUID().toString()
     }
 
+    @Suppress("unused")
     private fun testParcelable(board: Board) {
         val parcel = Parcel.obtain()
         board.writeToParcel(parcel, 0)

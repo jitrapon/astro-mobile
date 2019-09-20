@@ -70,5 +70,11 @@ data class EventItem(override val itemType: Int,
     }
 
     override val isSyncable: Boolean
-        get() = itemInfo.source.isBoard()
+        get() = itemInfo.source.isBoard() || itemInfo.newSource?.isBoard() == true
+
+    override val isSyncingToRemote: Boolean
+        get() = !itemInfo.source.isBoard() && itemInfo.newSource?.isBoard() == true
+
+    override val isSyncingToLocal: Boolean
+        get() = itemInfo.source.isBoard() && itemInfo.newSource?.isBoard()?.not() == true
 }
