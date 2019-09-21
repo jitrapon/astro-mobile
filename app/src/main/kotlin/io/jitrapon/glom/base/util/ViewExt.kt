@@ -108,10 +108,10 @@ fun View.hide(animateDuration: Long? = null, invisible: Boolean = false) {
     animateDuration.let {
         if (it == null) {
             if (invisible) {
-                if (visibility != View.INVISIBLE) visibility = View.INVISIBLE else {}
+                if (visibility != View.INVISIBLE) visibility = View.INVISIBLE else Unit
             }
             else {
-                if (visibility != View.GONE) visibility = View.GONE else {}
+                if (visibility != View.GONE) visibility = View.GONE else Unit
             }
         }
         else {

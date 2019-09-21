@@ -20,11 +20,36 @@ import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.ui.widget.recyclerview.HorizontalSpaceItemDecoration
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeaders
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.util.Transformation
+import io.jitrapon.glom.base.util.clearMap
+import io.jitrapon.glom.base.util.dimen
+import io.jitrapon.glom.base.util.getString
+import io.jitrapon.glom.base.util.hide
+import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.util.load
+import io.jitrapon.glom.base.util.loadFromResource
+import io.jitrapon.glom.base.util.loadFromUrl
+import io.jitrapon.glom.base.util.setStyle
+import io.jitrapon.glom.base.util.show
+import io.jitrapon.glom.base.util.showLiteMap
+import io.jitrapon.glom.base.util.tint
+import io.jitrapon.glom.base.util.toUri
 import io.jitrapon.glom.board.BoardViewModel
 import io.jitrapon.glom.board.HeaderItemUiModel
 import io.jitrapon.glom.board.R
-import io.jitrapon.glom.board.item.event.*
+import io.jitrapon.glom.board.item.event.ATTENDEES
+import io.jitrapon.glom.board.item.event.ATTENDSTATUS
+import io.jitrapon.glom.board.item.event.DATETIME
+import io.jitrapon.glom.board.item.event.EventCardAttendeeAdapter
+import io.jitrapon.glom.board.item.event.EventItem
+import io.jitrapon.glom.board.item.event.EventItemUiModel
+import io.jitrapon.glom.board.item.event.EventItemViewModel
+import io.jitrapon.glom.board.item.event.LOCATION
+import io.jitrapon.glom.board.item.event.MAPLATLNG
+import io.jitrapon.glom.board.item.event.PLAN
+import io.jitrapon.glom.board.item.event.SOURCE
+import io.jitrapon.glom.board.item.event.SYNCSTATUS
+import io.jitrapon.glom.board.item.event.TITLE
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_CAMERA_ZOOM_LEVEL
 import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_USE_GOOGLE_MAP
@@ -34,26 +59,38 @@ import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAP_USE_GOOGLE_MA
  *
  * Created by Jitrapon on 11/26/2017.
  */
-class BoardItemAdapter(private val viewModel: BoardViewModel,
-                       private val fragment: Fragment,
-                       private val orientation: Int) :
-        RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-        StickyHeaders,
-        StickyHeaders.ViewSetup,
-        ItemTouchHelperCallback.OnItemChangedListener {
+class BoardItemAdapter(
+    private val viewModel: BoardViewModel,
+    private val fragment: Fragment,
+    private val orientation: Int
+) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+    StickyHeaders,
+    StickyHeaders.ViewSetup,
+    ItemTouchHelperCallback.OnItemChangedListener {
 
     /* https://medium.com/@mgn524/optimizing-nested-recyclerview-a9b7830a4ba7 */
-    private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool = RecyclerView.RecycledViewPool()
+    private val attendeesRecycledViewPool: RecyclerView.RecycledViewPool =
+        RecyclerView.RecycledViewPool()
 
-    private val ANIM_ROTATION = RotateAnimation(0f, 360f,
-            Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
-            0.5f).apply {
+    @Suppress("PrivatePropertyName", "unused")
+    private val ANIM_ROTATION = RotateAnimation(
+        0f, 360f,
+        Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+        0.5f
+    ).apply {
         duration = 1000
         repeatCount = Animation.INFINITE
     }
 
+    private lateinit var recyclerView: RecyclerView
+
     //endregion
     //region adapter callbacks
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+    }
 
     /**
      * Bind view holder without payloads containing individual payloads
@@ -63,7 +100,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
                 is EventItemViewHolder -> bindEventItem(it as EventItemUiModel, holder)
-                else -> {}
+                else -> Unit
             }
         }
     }
@@ -72,12 +109,16 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
      * @param payloads A non-null list of merged payloads. Can be empty list if requires full
      *                 update.
      */
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: List<Any>
+    ) {
         viewModel.getBoardItemUiModel(position)?.let {
             when (holder) {
                 is HeaderItemViewHolder -> bindHeaderItem(it as HeaderItemUiModel, holder)
                 is EventItemViewHolder -> bindEventItem(it as EventItemUiModel, holder, payloads)
-                else -> {}
+                else -> Unit
             }
         }
     }
@@ -91,7 +132,11 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
         }
     }
 
-    private fun bindEventItem(item: EventItemUiModel, holder: EventItemViewHolder, payloads: List<Any>? = null) {
+    private fun bindEventItem(
+        item: EventItemUiModel,
+        holder: EventItemViewHolder,
+        payloads: List<Any>? = null
+    ) {
         holder.apply {
             itemId = item.itemId
             if (payloads.isNullOrEmpty()) {
@@ -101,7 +146,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                 updateMap(item)
                 updateAttendees(item)
                 updateAttendStatus(item)
-                updateStatus(item)
+                updateStatus(item, false)
                 updateIsPlanning(item)
                 updateSource(item)
             }
@@ -109,15 +154,15 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                 val fields = payloads!!.first() as List<*>
                 for (field in fields) {
                     when (field as Int) {
-                        TITLE -> { updateTitle(item) }
-                        DATETIME -> { updateDateTime(item) }
-                        LOCATION -> { updateLocation(item) }
-                        MAPLATLNG -> { updateMap(item) }
-                        ATTENDEES -> { updateAttendees(item) }
-                        ATTENDSTATUS -> { updateAttendStatus(item) }
-                        SYNCSTATUS -> { updateStatus(item) }
-                        PLAN -> { updateIsPlanning(item) }
-                        SOURCE -> { updateSource(item) }
+                        TITLE -> updateTitle(item)
+                        DATETIME -> updateDateTime(item)
+                        LOCATION -> updateLocation(item)
+                        MAPLATLNG -> updateMap(item)
+                        ATTENDEES -> updateAttendees(item)
+                        ATTENDSTATUS -> updateAttendStatus(item)
+                        SYNCSTATUS -> updateStatus(item, false)
+                        PLAN -> updateIsPlanning(item)
+                        SOURCE -> updateSource(item)
                     }
                 }
             }
@@ -128,10 +173,16 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.board_item_event, parent, false), attendeesRecycledViewPool, viewModel::viewItemDetail)
-            else -> HeaderItemViewHolder(LayoutInflater.from(parent.context)
-                    .inflate(R.layout.board_item_header, parent, false))
+            BoardItemUiModel.TYPE_EVENT -> EventItemViewHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.board_item_event, parent, false),
+                attendeesRecycledViewPool,
+                viewModel::viewItemDetail
+            )
+            else -> HeaderItemViewHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.board_item_header, parent, false)
+            )
         }
     }
 
@@ -142,7 +193,8 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
     }
 
     override fun setupStickyHeaderView(stickyHeader: View) {
-        stickyHeader.translationZ = stickyHeader.context.resources.getDimension(R.dimen.card_header_item_stuck_elevation)
+        stickyHeader.translationZ =
+            stickyHeader.context.resources.getDimension(R.dimen.card_header_item_stuck_elevation)
     }
 
     override fun teardownStickyHeaderView(stickyHeader: View) {
@@ -174,33 +226,42 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
      * The map is then initialized with LatLng that is stored as the tag of the MapView.
      * This ensures that the map is initialised with the latest data that it should display.
      */
-    inner class EventItemViewHolder(itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
-                                    onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit) :
-            BoardItemViewHolder(itemView),
-            OnMapReadyCallback {
+    inner class EventItemViewHolder(
+        itemView: View, attendeesPool: RecyclerView.RecycledViewPool,
+        onEventItemClicked: (Int, List<Pair<View, String>>?) -> Unit
+    ) :
+        BoardItemViewHolder(itemView),
+        OnMapReadyCallback {
 
         var itemId: String? = null
         private val title: TextView = itemView.findViewById(R.id.event_card_title)
-        private val cardView: androidx.cardview.widget.CardView = itemView.findViewById(R.id.event_card_root_view)
+        private val cardView: androidx.cardview.widget.CardView =
+            itemView.findViewById(R.id.event_card_root_view)
         private val dateTimeIcon: ImageView = itemView.findViewById(R.id.event_card_clock_icon)
         private val dateTime: TextView = itemView.findViewById(R.id.event_card_date_time)
         private val locationIcon: ImageView = itemView.findViewById(R.id.event_card_location_icon)
         private val location: TextView = itemView.findViewById(R.id.event_card_location)
         private val mapImage: ImageView = itemView.findViewById(R.id.event_card_map_image)
         private val attendees: RecyclerView = itemView.findViewById(R.id.event_card_attendees)
-        private val attendStatus: ImageButton = itemView.findViewById(R.id.event_card_join_status_button)
+        private val attendStatus: ImageButton =
+            itemView.findViewById(R.id.event_card_join_status_button)
         private val syncStatus: ImageView = itemView.findViewById(R.id.event_card_sync_status)
         private val planStatus: ImageButton = itemView.findViewById(R.id.event_card_plan_button)
         private val mapView: MapView = itemView.findViewById(R.id.event_card_map)
         private var map: GoogleMap? = null
         private val sourceIcon: ImageView = itemView.findViewById(R.id.event_card_source_image)
-        private val sourceDescription: TextView = itemView.findViewById(R.id.event_card_source_description)
+        private val sourceDescription: TextView =
+            itemView.findViewById(R.id.event_card_source_description)
 
         init {
             attendees.apply {
                 setRecycledViewPool(attendeesPool)
-                (layoutManager as androidx.recyclerview.widget.LinearLayoutManager).initialPrefetchItemCount = EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT + 1
-                adapter = EventCardAttendeeAdapter(fragment, visibleItemCount = EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT)
+                (layoutManager as androidx.recyclerview.widget.LinearLayoutManager).initialPrefetchItemCount =
+                    EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT + 1
+                adapter = EventCardAttendeeAdapter(
+                    fragment,
+                    visibleItemCount = EVENT_ITEM_ATTENDEE_MAXIMUM_COUNT
+                )
                 fragment.context?.let {
                     addItemDecoration(HorizontalSpaceItemDecoration(it.dimen(io.jitrapon.glom.R.dimen.avatar_spacing)))
                 }
@@ -208,14 +269,20 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
             attendStatus.setOnClickListener {
                 itemId?.let {
                     BoardItemViewModelStore.obtainViewModelForItem(EventItem::class.java)?.let {
-                        val newStatus = getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
-                        (it as? EventItemViewModel)?.setEventAttendStatus(viewModel, adapterPosition, newStatus)
+                        val newStatus =
+                            getNewAttendStatus(attendStatus.tag as EventItemUiModel.AttendStatus)
+                        (it as? EventItemViewModel)?.setEventAttendStatus(
+                            viewModel,
+                            adapterPosition,
+                            newStatus
+                        )
                     }
                 }
             }
             itemView.setOnClickListener {
-                onEventItemClicked(adapterPosition,
-                        listOf(cardView as View to itemView.context.getString(R.string.event_card_background_transition))
+                onEventItemClicked(
+                    adapterPosition,
+                    listOf(cardView as View to itemView.context.getString(R.string.event_card_background_transition))
                 )
             }
             syncStatus.apply {
@@ -289,13 +356,18 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
                     else {
                         mapImage.apply {
                             show()
-                            val width = if (orientation == Configuration.ORIENTATION_PORTRAIT) 481 else 650
-                            loadFromUrl(fragment, latLng.toUri(context, width, 153), transformation = Transformation.FIT_CENTER)
+                            val width =
+                                if (orientation == Configuration.ORIENTATION_PORTRAIT) 481 else 650
+                            loadFromUrl(
+                                fragment,
+                                latLng.toUri(context, width, 153),
+                                transformation = Transformation.FIT_CENTER
+                            )
                         }
                     }
                 }
                 else {
-                    if (EVENT_ITEM_MAP_USE_GOOGLE_MAP)mapView.hide()
+                    if (EVENT_ITEM_MAP_USE_GOOGLE_MAP) mapView.hide()
                     else mapImage.hide()
                 }
             }
@@ -348,43 +420,37 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
             }
         }
 
-        fun updateStatus(item: EventItemUiModel) {
-            item.status.let {
-                when (it) {
-                    UiModel.Status.LOADING -> {
-                        syncStatus.apply {
-                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
-                            show()
-                            isEnabled = true
-//                            startAnimation(ANIM_ROTATION)     // cause no shared element transition
-                        }
+        fun updateStatus(item: EventItemUiModel, shouldAnimateVisibility: Boolean) {
+            val duration = if (shouldAnimateVisibility) 200L else null
+            when (item.status) {
+                UiModel.Status.LOADING -> {
+                    syncStatus.apply {
+                        loadFromResource(io.jitrapon.glom.R.drawable.ic_sync)
+                        show(duration)
+                        isEnabled = false
                     }
-                    UiModel.Status.SUCCESS -> {
-                        syncStatus.apply {
-                            hide(200L)
-                            isEnabled = false
-//                            animation?.let {
-//                                it.reset()
-//                                it.cancel()
-//                            }
-                        }
-                    }
-                    UiModel.Status.ERROR -> {
-                        syncStatus.apply {
-                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_failed)
-                            show()
-                            isEnabled = true
-                        }
-                    }
-                    UiModel.Status.POSITIVE -> {
-                        syncStatus.apply {
-                            loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_offline)
-                            show()
-                            isEnabled = true
-                        }
-                    }
-                    else -> { /* not applicable */ }
                 }
+                UiModel.Status.SUCCESS -> {
+                    syncStatus.apply {
+                        hide(duration)
+                        isEnabled = false
+                    }
+                }
+                UiModel.Status.ERROR -> {
+                    syncStatus.apply {
+                        loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_failed)
+                        show(duration)
+                        isEnabled = true
+                    }
+                }
+                UiModel.Status.POSITIVE -> {
+                    syncStatus.apply {
+                        loadFromResource(io.jitrapon.glom.R.drawable.ic_sync_offline)
+                        show(duration)
+                        isEnabled = true
+                    }
+                }
+                else -> Unit
             }
         }
 
@@ -432,7 +498,7 @@ class BoardItemAdapter(private val viewModel: BoardViewModel,
     //endregion
 }
 
-abstract class BoardItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+abstract class BoardItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     abstract fun recycle()
 }
