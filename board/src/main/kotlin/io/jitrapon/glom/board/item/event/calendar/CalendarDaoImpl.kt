@@ -5,12 +5,16 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
+import android.os.Handler
+import android.os.HandlerThread
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.CalendarContract
 import androidx.annotation.ColorInt
+import androidx.annotation.WorkerThread
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
@@ -32,6 +36,7 @@ import io.jitrapon.glom.board.item.event.EventLocation
 import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
+import io.reactivex.subjects.PublishSubject
 import java.util.ArrayList
 import java.util.Date
 
@@ -131,6 +136,14 @@ class CalendarDaoImpl(private val context: Context) :
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
+    private val handlerThread: HandlerThread by lazy {
+        HandlerThread("CalendarDaoImplHandlerThread").apply {
+            start()
+        }
+    }
+
+    private var contentObserver: ContentObserver? = null
+
     /**
      * Whether or not a calendar is read-only
      */
@@ -141,7 +154,8 @@ class CalendarDaoImpl(private val context: Context) :
     override fun getEventsSync(
         calendars: List<DeviceCalendar>,
         startSearchTime: Long,
-        endSearchTime: Long?
+        endSearchTime: Long?,
+        requestSync: Boolean
     ): List<EventItem> {
         return if (context.hasReadCalendarPermission() && context.hasWriteCalendarPermission()) {
             val calendarMap = calendars.associateBy { it.calId }
@@ -151,6 +165,11 @@ class CalendarDaoImpl(private val context: Context) :
                     if (i != calendars.size - 1) append(",")
                 }
             }.toString()
+
+            //TODO begin register for change using registerContentObserver() and sync
+            if (requestSync) {
+                requestSyncCalendars(calendars)
+            }
 
             ArrayList<EventItem>().apply {
                 addNonRecurringEvents(
@@ -164,6 +183,13 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }
         else throw NoCalendarPermissionException()
+    }
+
+    @WorkerThread
+    private fun requestSyncCalendars(calendars: List<DeviceCalendar>) {
+//        ContentResolver.requestSync(SyncRequest.Builder().)
+        val source: PublishSubject<Boolean> = PublishSubject.create()
+        source.hasObservers()
     }
 
     @SuppressLint("MissingPermission")
@@ -606,6 +632,34 @@ class CalendarDaoImpl(private val context: Context) :
                 NoCalendarPermissionException()
             )
         )
+    }
+
+    override fun registerUpdateObserver(onContentChange: (selfChange: Boolean) -> Unit) {
+        contentObserver = object : ContentObserver(Handler(handlerThread.looper)) {
+
+            override fun onChange(selfChange: Boolean, uri: Uri) {
+                AppLogger.d("content observer onChange $uri")
+                onContentChange(selfChange)
+            }
+
+            override fun onChange(selfChange: Boolean) {
+                onContentChange(selfChange)
+            }
+
+        }.apply {
+            contentResolver.registerContentObserver(
+                CalendarContract.Instances.CONTENT_URI,
+                true,
+                this
+            )
+        }
+    }
+
+    override fun unregisterUpdateObserver() {
+        contentObserver?.let {
+            contentResolver.unregisterContentObserver(it)
+            handlerThread.quitSafely()
+        }
     }
 }
 

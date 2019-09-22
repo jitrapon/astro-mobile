@@ -10,9 +10,14 @@ import io.jitrapon.glom.board.item.event.deserialize
 import io.jitrapon.glom.board.item.event.serializeInfo
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import java.util.*
+import io.reactivex.subjects.PublishSubject
+import java.util.ArrayList
+import java.util.Date
 
-class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : RemoteDataSource(),
+class BoardRemoteDataSource(
+    private val circleInteractor: CircleInteractor,
+    override val contentChangeNotifier: PublishSubject<Boolean>
+) : RemoteDataSource(),
     BoardDataSource {
 
     private val api = retrofit.create(BoardApi::class.java)
@@ -84,4 +89,6 @@ class BoardRemoteDataSource(private val circleInteractor: CircleInteractor) : Re
     }
 
     //endregion
+
+    override fun cleanUpContentChangeNotifier() = Unit
 }

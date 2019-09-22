@@ -10,6 +10,7 @@ import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventItemDao
 import io.jitrapon.glom.board.item.event.EventItemFullEntity
 import io.jitrapon.glom.board.item.event.calendar.CalendarDao
+import io.jitrapon.glom.board.item.event.preference.EVENT_ITEM_MAX_FETCH_NUM_DAYS
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
 import io.jitrapon.glom.board.item.event.toEntity
 import io.jitrapon.glom.board.item.event.toEventItems
@@ -17,15 +18,20 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import java.util.ArrayList
 import java.util.Date
 import java.util.HashSet
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class BoardLocalDataSource(database: BoardDatabase,
-                           private val userInteractor: UserInteractor,
-                           private val eventPrefDataSource: EventItemPreferenceDataSource,
-                           private val calendarDao: CalendarDao) : BoardDataSource {
+class BoardLocalDataSource(
+    database: BoardDatabase,
+    private val userInteractor: UserInteractor,
+    private val eventPrefDataSource: EventItemPreferenceDataSource,
+    private val calendarDao: CalendarDao,
+    override val contentChangeNotifier: PublishSubject<Boolean>
+) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
     private val lock: Any = Any()
@@ -40,40 +46,28 @@ class BoardLocalDataSource(database: BoardDatabase,
     private var timestamp1 = System.currentTimeMillis()
     private var timestamp2 = System.currentTimeMillis()
 
-    private fun getEventBoard(circleId: String): Flowable<Board> {
-        return Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable()
-                .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
-                .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
-                .subscribeOn(Schedulers.io()),
-                getEventsFromDeviceCalendars(Date().setTime(0, 0), Date().addDay(30))
-                        .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
-                        .doOnNext { AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms") }
-                        .subscribeOn(Schedulers.io()),
-                BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
-                    val items = dbEvents.toEventItems(userInteractor.getCurrentUserId(), circleId)
-                    items.addAll(deviceEvents)
-                    Board(circleId, items, getSyncTime())
-                })
-    }
+    /* if set to true, the next time items are fetched, a sync operation with their respective
+    source will trigger
+     */
+    private var requestSyncWithExternalSource: AtomicBoolean = AtomicBoolean(false)
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
-        //TODO add second condition where all events should be refreshed due to a sync operation required
-        // and recurring items from calendar needs to be refreshed
-        // Introduce sync from Android local calendars, or request sync
-        return if (lastFetchedItemType.get() == itemType) Flowable.just(inMemoryBoard)
+        return if (lastFetchedItemType.get() == itemType && !requestSyncWithExternalSource.get()) Flowable.just(inMemoryBoard)
 
         // otherwise invoke the corresponding item DAO
         else {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
-                    getEventBoard(circleId)
-                            .doOnNext {
-                                synchronized(lock) {
-                                    inMemoryBoard = it
-                                }
-                                lastFetchedItemType.set(itemType)
+                    val requestSync = requestSyncWithExternalSource.get()
+                    requestSyncWithExternalSource.set(false)
+                    getEventBoard(circleId, requestSync)
+                        .doOnNext {
+                            synchronized(lock) {
+                                inMemoryBoard = it
                             }
+                            lastFetchedItemType.set(itemType)
+                        }
                 }
                 else -> throw NotImplementedError()
             }
@@ -88,10 +82,17 @@ class BoardLocalDataSource(database: BoardDatabase,
                 when (it) {
                     is EventItem -> {
                         if (it.itemInfo.source.calendar == null) {
-                            eventEntities.add(it.toEntity(board.circleId, userInteractor.getCurrentUserId(), updatedTime))
+                            eventEntities.add(
+                                it.toEntity(
+                                    board.circleId,
+                                    userInteractor.getCurrentUserId(),
+                                    updatedTime
+                                )
+                            )
                         }
                     }
-                    else -> { /* do nothing */ }
+                    else -> { /* do nothing */
+                    }
                 }
             }
             if (eventEntities.isNotEmpty()) eventDao.insertOrReplaceEvents(*eventEntities.toTypedArray())
@@ -101,7 +102,7 @@ class BoardLocalDataSource(database: BoardDatabase,
             deleteItemsNotFoundInNewBoard(eventEntities, itemsInDB.toMutableList())
             board
         }.flatMap {
-            getEventBoard(board.circleId)
+            getEventBoard(board.circleId, false)
         }.doOnNext {
             synchronized(lock) {
                 inMemoryBoard = it
@@ -109,7 +110,38 @@ class BoardLocalDataSource(database: BoardDatabase,
         }
     }
 
-    private fun deleteItemsNotFoundInNewBoard(newItems: List<EventItemFullEntity>, itemsInDB: MutableList<EventItemFullEntity>) {
+    private fun getEventBoard(circleId: String, requestSync: Boolean): Flowable<Board> {
+        return Flowable.zip(eventDao.getEventsInCircle(circleId).toFlowable()
+            .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
+            .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
+            .subscribeOn(Schedulers.io()),
+            getEventsFromDeviceCalendars(Date().setTime(0, 0), Date().addDay(EVENT_ITEM_MAX_FETCH_NUM_DAYS), requestSync)
+                .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
+                .doOnNext {
+                    AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms")
+
+                    subscribeToCalendarUpdate()
+                }
+                .subscribeOn(Schedulers.io()),
+            BiFunction<List<EventItemFullEntity>, List<EventItem>, Board> { dbEvents, deviceEvents ->
+                val items = dbEvents.toEventItems(userInteractor.getCurrentUserId(), circleId)
+                items.addAll(deviceEvents)
+                Board(circleId, items, getSyncTime())
+            })
+    }
+
+    private fun subscribeToCalendarUpdate() {
+        calendarDao.registerUpdateObserver {
+
+            // this will be invoked on a background thread
+            contentChangeNotifier.onNext(it)
+        }
+    }
+
+    private fun deleteItemsNotFoundInNewBoard(
+        newItems: List<EventItemFullEntity>,
+        itemsInDB: MutableList<EventItemFullEntity>
+    ) {
         val newItemsIdSet: HashSet<String> = HashSet<String>().apply {
             newItems.forEach { add(it.entity.id) }
         }
@@ -165,7 +197,8 @@ class BoardLocalDataSource(database: BoardDatabase,
                             else {
                                 calendarDao.deleteEvent(item)
                             }
-                            else -> { /* do nothing */ }
+                            else -> { /* do nothing */
+                            }
                         }
                         inMemoryBoard.items.removeAt(it)
                     }
@@ -182,7 +215,8 @@ class BoardLocalDataSource(database: BoardDatabase,
                     is EventItem -> if (item.itemInfo.source.calendar == null) {
                         eventDao.updateSyncStatusById(itemId, status.intValue)
                     }
-                    else -> { /* unsupported */ }
+                    else -> { /* unsupported */
+                    }
                 }
                 item?.syncStatus = status
             }
@@ -191,12 +225,23 @@ class BoardLocalDataSource(database: BoardDatabase,
 
     override fun getSyncTime(): Date = Date()
 
-    private fun getEventsFromDeviceCalendars(startSearchTime: Date, endSearchTime: Date?): Flowable<List<EventItem>> {
+    private fun getEventsFromDeviceCalendars(
+        startSearchTime: Date,
+        endSearchTime: Date?,
+        requestSync: Boolean
+    ): Flowable<List<EventItem>> {
         return eventPrefDataSource.getSyncedCalendars()
             .map { calendars ->
                 val result = ArrayList<EventItem>()
                 try {
-                    result.addAll(calendarDao.getEventsSync(calendars, startSearchTime.time, endSearchTime?.time))
+                    result.addAll(
+                        calendarDao.getEventsSync(
+                            calendars,
+                            startSearchTime.time,
+                            endSearchTime?.time,
+                            requestSync
+                        )
+                    )
                 }
                 catch (ex: Exception) {
                     AppLogger.e(ex)
@@ -219,14 +264,26 @@ class BoardLocalDataSource(database: BoardDatabase,
 
             // case 2: both current source and new source are this board
             else {
-                eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                eventDao.insertOrReplaceEvents(
+                    item.toEntity(
+                        inMemoryBoard.circleId,
+                        userInteractor.getCurrentUserId(),
+                        Date().time
+                    )
+                )
             }
         }
         else if (oldSource.calendar != null) {
 
             // case 3: current source is a device calendar, and new source is this board
             if (newSource != null && newSource.isBoard()) {
-                eventDao.insertOrReplaceEvents(item.toEntity(inMemoryBoard.circleId, userInteractor.getCurrentUserId(), Date().time))
+                eventDao.insertOrReplaceEvents(
+                    item.toEntity(
+                        inMemoryBoard.circleId,
+                        userInteractor.getCurrentUserId(),
+                        Date().time
+                    )
+                )
                 if (!isNew) calendarDao.deleteEvent(item)
             }
 
@@ -246,5 +303,9 @@ class BoardLocalDataSource(database: BoardDatabase,
             itemInfo.source = itemInfo.newSource ?: itemInfo.source
             itemInfo.newSource = null
         }
+    }
+
+    override fun cleanUpContentChangeNotifier() {
+        calendarDao.unregisterUpdateObserver()
     }
 }

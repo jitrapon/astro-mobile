@@ -14,7 +14,12 @@ interface CalendarDao {
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun getEventsSync(calendars: List<DeviceCalendar>, startSearchTime: Long, endSearchTime: Long? = null): List<EventItem>
+    fun getEventsSync(
+        calendars: List<DeviceCalendar>,
+        startSearchTime: Long,
+        endSearchTime: Long? = null,
+        requestSync: Boolean
+    ): List<EventItem>
 
     @WorkerThread
     fun getCalendars(): Flowable<CalendarPreference>
@@ -34,4 +39,11 @@ interface CalendarDao {
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
     fun deleteEvent(event: EventItem)
+
+    /**
+     * onChange will be invoked on a background thread
+     */
+    fun registerUpdateObserver(onContentChange: (selfChange: Boolean) -> Unit)
+
+    fun unregisterUpdateObserver()
 }

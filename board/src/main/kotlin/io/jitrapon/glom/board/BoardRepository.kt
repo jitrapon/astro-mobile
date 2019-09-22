@@ -5,6 +5,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import io.reactivex.subjects.PublishSubject
 import java.util.Date
 
 /**
@@ -14,7 +15,8 @@ import java.util.Date
  */
 class BoardRepository(
     private val remoteDataSource: BoardDataSource,
-    private val localDataSource: BoardDataSource
+    private val localDataSource: BoardDataSource,
+    override val contentChangeNotifier: PublishSubject<Boolean>
 ) :
     Repository<Board>(), BoardDataSource {
 
@@ -55,4 +57,10 @@ class BoardRepository(
     }
 
     override fun getSyncTime(): Date = Date()
+
+    override fun cleanUpContentChangeNotifier() {
+        contentChangeNotifier.onComplete()
+        remoteDataSource.cleanUpContentChangeNotifier()
+        localDataSource.cleanUpContentChangeNotifier()
+    }
 }

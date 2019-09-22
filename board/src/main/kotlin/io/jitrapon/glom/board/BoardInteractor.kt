@@ -1,12 +1,12 @@
 package io.jitrapon.glom.board
 
+import android.annotation.SuppressLint
 import android.location.Address
 import android.os.Parcel
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -103,7 +103,7 @@ class BoardInteractor(
             }, {
                 onComplete(AsyncErrorResult(it))
             }, {
-                //nothing yet
+                subscribeToContentChange()
             }).autoDispose()
     }
 
@@ -472,6 +472,24 @@ class BoardInteractor(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe()
+    }
+
+    @SuppressLint("CheckResult")
+    private fun subscribeToContentChange() {
+        boardDataSource.contentChangeNotifier.subscribe ({
+            // this is invoked on a background thread
+            AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+        }, {
+            // this is invoked on a background thread
+            AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+        }, {
+            AppLogger.d("Unsubscribe from contentChangeNotifier as it no longer emits any values")
+        })
+    }
+
+    override fun cleanup() {
+        super.cleanup()
+        boardDataSource.cleanUpContentChangeNotifier()
     }
 
     //TODO need to standardize how to generate this ID with the server

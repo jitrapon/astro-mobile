@@ -4,6 +4,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import io.reactivex.subjects.PublishSubject
 import java.util.Date
 
 /**
@@ -12,6 +13,11 @@ import java.util.Date
  * Created by Jitrapon
  */
 interface BoardDataSource {
+
+    /* A subject that emits true if the underlying data retrieved has changed to the observer(s) */
+    val contentChangeNotifier: PublishSubject<Boolean>
+
+    fun cleanUpContentChangeNotifier()
 
     fun getBoard(circleId: String, itemType: Int, refresh: Boolean = false): Flowable<Board>
 
@@ -25,5 +31,5 @@ interface BoardDataSource {
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable
 
-   fun getSyncTime(): Date
+    fun getSyncTime(): Date
 }
