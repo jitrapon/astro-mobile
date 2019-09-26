@@ -7,6 +7,7 @@ import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -33,6 +34,7 @@ import java.util.ArrayList
 import java.util.Calendar
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * Interactor for dealing with Board business logic
@@ -476,7 +478,7 @@ class BoardInteractor(
 
     @SuppressLint("CheckResult")
     private fun subscribeToContentChange() {
-        boardDataSource.contentChangeNotifier.subscribe ({
+        boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.SECONDS).subscribe({
             // this is invoked on a background thread
             AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
         }, {

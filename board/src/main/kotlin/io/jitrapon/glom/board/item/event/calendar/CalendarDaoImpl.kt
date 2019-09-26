@@ -637,11 +637,6 @@ class CalendarDaoImpl(private val context: Context) :
     override fun registerUpdateObserver(onContentChange: (selfChange: Boolean) -> Unit) {
         contentObserver = object : ContentObserver(Handler(handlerThread.looper)) {
 
-            override fun onChange(selfChange: Boolean, uri: Uri) {
-                AppLogger.d("content observer onChange $uri")
-                onContentChange(selfChange)
-            }
-
             override fun onChange(selfChange: Boolean) {
                 onContentChange(selfChange)
             }
@@ -649,7 +644,7 @@ class CalendarDaoImpl(private val context: Context) :
         }.apply {
             contentResolver.registerContentObserver(
                 CalendarContract.Instances.CONTENT_URI,
-                true,
+                false,
                 this
             )
         }
