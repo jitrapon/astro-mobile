@@ -33,23 +33,23 @@ class BoardRepository(
         throw NotImplementedError()
     }
 
-    override fun createItem(item: BoardItem, remote: Boolean): Completable {
-        return if (remote && item.isSyncable) remoteDataSource.createItem(item)
-        else localDataSource.createItem(item, remote)
+    override fun createItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
+        return if (remote && item.isSyncable) remoteDataSource.createItem(circleId, item)
+        else localDataSource.createItem(circleId, item, remote)
     }
 
-    override fun editItem(item: BoardItem, remote: Boolean): Completable {
+    override fun editItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
         return if (remote && item.isSyncable) update(
-            localDataSource.editItem(item),
-            remoteDataSource.editItem(item),
+            localDataSource.editItem(circleId, item),
+            remoteDataSource.editItem(circleId, item),
             true
         )
-        else localDataSource.editItem(item)
+        else localDataSource.editItem(circleId, item)
     }
 
-    override fun deleteItem(itemId: String, remote: Boolean): Completable {
-        return if (remote) remoteDataSource.deleteItem(itemId)
-        else localDataSource.deleteItem(itemId, remote)
+    override fun deleteItem(circleId: String, itemId: String, remote: Boolean): Completable {
+        return if (remote) remoteDataSource.deleteItem(circleId, itemId)
+        else localDataSource.deleteItem(circleId, itemId, remote)
     }
 
     override fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable {

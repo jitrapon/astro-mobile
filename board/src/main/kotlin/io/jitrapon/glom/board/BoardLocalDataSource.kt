@@ -53,7 +53,9 @@ class BoardLocalDataSource(
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
-        return if (lastFetchedItemType.get() == itemType && !requestSyncWithExternalSource.get()) Flowable.just(inMemoryBoard)
+        return if (lastFetchedItemType.get() == itemType && !requestSyncWithExternalSource.get()) Flowable.just(
+            inMemoryBoard
+        )
 
         // otherwise invoke the corresponding item DAO
         else {
@@ -115,7 +117,11 @@ class BoardLocalDataSource(
             .doOnSubscribe { timestamp1 = System.currentTimeMillis() }
             .doOnNext { AppLogger.d("eventDao#getEventsInCircle took ${System.currentTimeMillis() - timestamp1} ms") }
             .subscribeOn(Schedulers.io()),
-            getEventsFromDeviceCalendars(Date().setTime(0, 0), Date().addDay(EVENT_ITEM_MAX_FETCH_NUM_DAYS), requestSync)
+            getEventsFromDeviceCalendars(
+                Date().setTime(0, 0),
+                Date().addDay(EVENT_ITEM_MAX_FETCH_NUM_DAYS),
+                requestSync
+            )
                 .doOnSubscribe { timestamp2 = System.currentTimeMillis() }
                 .doOnNext {
                     AppLogger.d("getEventsFromDeviceCalendars took ${System.currentTimeMillis() - timestamp2} ms")
@@ -155,37 +161,63 @@ class BoardLocalDataSource(
         eventDao.deleteEvents(*itemsInDB.toTypedArray())
     }
 
-    override fun createItem(item: BoardItem, remote: Boolean): Completable {
+    override fun createItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
         return Completable.fromCallable {
-            when (item) {
+            val requireReloadData = when (item) {
                 is EventItem -> insertOrUpdateEvent(item, true)
                 else -> throw NotImplementedError()
             }
-            synchronized(lock) {
-                inMemoryBoard.items.add(item)
+            if (requireReloadData) {
+                val board = when (item.itemType) {
+                    BoardItem.TYPE_EVENT -> getEventBoard(circleId, false).blockingFirst()
+                    else -> throw NotImplementedError()
+                }
+                synchronized(lock) {
+                    inMemoryBoard = board
+                }
+            }
+            else {
+                synchronized(lock) {
+                    inMemoryBoard.items.add(item)
+                }
             }
         }
     }
 
-    override fun editItem(item: BoardItem, remote: Boolean): Completable {
+    override fun editItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
         // need to save this id so that it can be referenced later in case the item ID has changed
         val itemId = item.itemId
         return Completable.fromCallable {
-            when (item) {
-                is EventItem -> insertOrUpdateEvent(item, false)
+            val isItemRescheduled: Boolean
+            val requireReloadData = when (item) {
+                is EventItem -> {
+                    isItemRescheduled = item.itemInfo.repeatInfo?.isReschedule == true
+                    insertOrUpdateEvent(item, false)
+                }
                 else -> throw NotImplementedError()
             }
-            synchronized(lock) {
-                inMemoryBoard.items.indexOfFirst { it.itemId == itemId }.let {
-                    if (it != -1) {
-                        inMemoryBoard.items[it] = item
+            if (requireReloadData) {
+                val board = when (item.itemType) {
+                    BoardItem.TYPE_EVENT -> getEventBoard(circleId, isItemRescheduled).blockingFirst()
+                    else -> throw NotImplementedError()
+                }
+                synchronized(lock) {
+                    inMemoryBoard = board
+                }
+            }
+            else {
+                synchronized(lock) {
+                    inMemoryBoard.items.indexOfFirst { it.itemId == itemId }.let {
+                        if (it != -1) {
+                            inMemoryBoard.items[it] = item
+                        }
                     }
                 }
             }
         }
     }
 
-    override fun deleteItem(itemId: String, remote: Boolean): Completable {
+    override fun deleteItem(circleId: String, itemId: String, remote: Boolean): Completable {
         return Completable.fromCallable {
             synchronized(lock) {
                 inMemoryBoard.items.indexOfFirst { itemId == it.itemId }.let {
@@ -251,15 +283,20 @@ class BoardLocalDataSource(
             }
     }
 
-    private fun insertOrUpdateEvent(item: EventItem, isNew: Boolean) {
+    /**
+     * Insert or update an event, returns true iff the action modifies more than
+     * just the item inserted or updated
+     */
+    private fun insertOrUpdateEvent(item: EventItem, isNew: Boolean): Boolean {
         val oldSource = item.itemInfo.source
         val newSource = item.itemInfo.newSource
+        var areItemsModified = false
         if (oldSource.isBoard()) {
 
             // case 1: current source is this board, and new source is a device calendar
             if (newSource?.calendar != null) {
                 if (!isNew) eventDao.deleteEventById(item.itemId)
-                calendarDao.createEvent(item, newSource.calendar)
+                areItemsModified = calendarDao.createEvent(item, newSource.calendar)
             }
 
             // case 2: both current source and new source are this board
@@ -284,18 +321,20 @@ class BoardLocalDataSource(
                         Date().time
                     )
                 )
-                if (!isNew) calendarDao.deleteEvent(item)
+                if (!isNew) {
+                    areItemsModified = calendarDao.deleteEvent(item)
+                }
             }
 
             // case 4: current source is a device calendar, and new source is another calendar
             else if (newSource?.calendar != null && oldSource.calendar.calId != newSource.calendar.calId) {
-                if (!isNew) calendarDao.updateEvent(item, newSource.calendar)
+                areItemsModified = if (!isNew) calendarDao.updateEvent(item, newSource.calendar)
                 else calendarDao.createEvent(item, newSource.calendar)
             }
 
             // case 5: current source is a device calendar, and new source is the same calendar
             else {
-                if (!isNew) calendarDao.updateEvent(item)
+                areItemsModified = if (!isNew) calendarDao.updateEvent(item)
                 else calendarDao.createEvent(item, oldSource.calendar)
             }
         }
@@ -303,6 +342,7 @@ class BoardLocalDataSource(
             itemInfo.source = itemInfo.newSource ?: itemInfo.source
             itemInfo.newSource = null
         }
+        return areItemsModified
     }
 
     override fun cleanUpContentChangeNotifier() {

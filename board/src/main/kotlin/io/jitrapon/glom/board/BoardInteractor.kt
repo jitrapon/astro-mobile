@@ -61,6 +61,12 @@ class BoardInteractor(
      */
     var itemFilterType: ItemFilterType = ItemFilterType.EVENTS_BY_WEEK
 
+    /*
+     * The currently active circle ID
+     */
+    private val circleId: String
+        get() = circleInteractor.getActiveCircleId()
+
     //region public functions
 
     /**
@@ -78,7 +84,6 @@ class BoardInteractor(
         refresh: Boolean,
         onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit
     ) {
-        val circleId = circleInteractor.getActiveCircleId()
         Flowable.zip(boardDataSource.getBoard(
             circleId,
             itemType,
@@ -113,7 +118,7 @@ class BoardInteractor(
      * Adds a new board item to the list, and process it to be grouped appropriately
      */
     fun addItem(item: BoardItem, onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit) {
-        boardDataSource.createItem(item, false)
+        boardDataSource.createItem(circleId, item, false)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.computation())
@@ -142,19 +147,20 @@ class BoardInteractor(
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         val completable = when {
             item.isSyncingToRemote -> Completable.mergeArray(
-                boardDataSource.deleteItem(item.itemId, false).subscribeOn(Schedulers.io()),
-                (boardDataSource.createItem(item, false).andThen(
+                boardDataSource.deleteItem(circleId, item.itemId, false).subscribeOn(Schedulers.io()),
+                (boardDataSource.createItem(circleId, item, false).andThen(
                     boardDataSource.createItem(
+                        circleId,
                         item,
                         true
                     )
                 ).subscribeOn(Schedulers.io()))
             )
             item.isSyncingToLocal -> Completable.mergeArray(
-                boardDataSource.deleteItem(item.itemId, true).subscribeOn(Schedulers.io()),
-                boardDataSource.editItem(item, true).subscribeOn(Schedulers.io())
+                boardDataSource.deleteItem(circleId, item.itemId, true).subscribeOn(Schedulers.io()),
+                boardDataSource.editItem(circleId, item, true).subscribeOn(Schedulers.io())
             )
-            else -> boardDataSource.editItem(item, true)
+            else -> boardDataSource.editItem(circleId, item, true)
         }
         completable
             .retryWhen(::errorIsUnauthorized)
@@ -174,7 +180,7 @@ class BoardInteractor(
         itemId: String,
         onComplete: (AsyncResult<ArrayMap<*, List<BoardItem>>>) -> Unit
     ) {
-        boardDataSource.deleteItem(itemId, false)
+        boardDataSource.deleteItem(circleId, itemId, false)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.computation())
@@ -197,7 +203,7 @@ class BoardInteractor(
     }
 
     fun deleteItemRemote(itemId: String, onComplete: (AsyncResult<Unit>) -> Unit) {
-        boardDataSource.deleteItem(itemId, true)
+        boardDataSource.deleteItem(circleId, itemId, true)
             .retryWhen(::errorIsUnauthorized)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -232,7 +238,7 @@ class BoardInteractor(
 
     fun createItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         if (item.isSyncable) {
-            boardDataSource.createItem(item, true)
+            boardDataSource.createItem(circleId, item, true)
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

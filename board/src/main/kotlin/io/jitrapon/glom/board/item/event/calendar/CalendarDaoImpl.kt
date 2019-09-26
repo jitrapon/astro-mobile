@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.content.SyncRequest
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
@@ -166,7 +167,6 @@ class CalendarDaoImpl(private val context: Context) :
                 }
             }.toString()
 
-            //TODO begin register for change using registerContentObserver() and sync
             if (requestSync) {
                 requestSyncCalendars(calendars)
             }
@@ -187,9 +187,8 @@ class CalendarDaoImpl(private val context: Context) :
 
     @WorkerThread
     private fun requestSyncCalendars(calendars: List<DeviceCalendar>) {
-//        ContentResolver.requestSync(SyncRequest.Builder().)
-        val source: PublishSubject<Boolean> = PublishSubject.create()
-        source.hasObservers()
+        //TODO
+//        ContentResolver.requestSync()
     }
 
     @SuppressLint("MissingPermission")
@@ -378,7 +377,7 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     @SuppressLint("MissingPermission")
-    override fun createEvent(event: EventItem, calendar: DeviceCalendar) {
+    override fun createEvent(event: EventItem, calendar: DeviceCalendar): Boolean {
         val currentTimeInMs = "${System.currentTimeMillis()}"
         val values = ContentValues().apply {
             put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
@@ -405,10 +404,11 @@ class CalendarDaoImpl(private val context: Context) :
         event.itemId =
             contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)?.lastPathSegment
                 ?: currentTimeInMs
+        return event.itemInfo.repeatInfo != null
     }
 
     @SuppressLint("MissingPermission")
-    override fun updateEvent(event: EventItem, calendar: DeviceCalendar?) {
+    override fun updateEvent(event: EventItem, calendar: DeviceCalendar?): Boolean {
         ContentValues().apply {
             put(CalendarContract.Events.TITLE, event.itemInfo.eventName)
             put(CalendarContract.Events.ORGANIZER, event.owners.get(0, null))
@@ -425,6 +425,7 @@ class CalendarDaoImpl(private val context: Context) :
                 createRecurringUpdateContentUri(event, calendar)
             }
         }
+        return event.itemInfo.repeatInfo != null
     }
 
     private fun ContentValues.createNonRecurringUpdateContentUri(
@@ -503,13 +504,14 @@ class CalendarDaoImpl(private val context: Context) :
         }
     }
 
-    override fun deleteEvent(event: EventItem) {
+    override fun deleteEvent(event: EventItem): Boolean {
         val deleteUri =
             ContentUris.withAppendedId(
                 CalendarContract.Events.CONTENT_URI,
                 event.itemId.toLong()
             )
         contentResolver.delete(deleteUri, null, null)
+        return event.itemInfo.repeatInfo != null
     }
 
     @SuppressLint("MissingPermission")
@@ -638,7 +640,7 @@ class CalendarDaoImpl(private val context: Context) :
         contentObserver = object : ContentObserver(Handler(handlerThread.looper)) {
 
             override fun onChange(selfChange: Boolean) {
-                onContentChange(selfChange)
+                onContentChange(true)
             }
 
         }.apply {

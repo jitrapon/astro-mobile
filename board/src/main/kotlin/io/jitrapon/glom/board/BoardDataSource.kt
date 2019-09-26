@@ -23,11 +23,11 @@ interface BoardDataSource {
 
     fun saveBoard(board: Board): Flowable<Board>
 
-    fun createItem(item: BoardItem, remote: Boolean = false): Completable
+    fun createItem(circleId: String, item: BoardItem, remote: Boolean = false): Completable
 
-    fun editItem(item: BoardItem, remote: Boolean = false): Completable
+    fun editItem(circleId: String, item: BoardItem, remote: Boolean = false): Completable
 
-    fun deleteItem(itemId: String, remote: Boolean = false): Completable
+    fun deleteItem(circleId: String, itemId: String, remote: Boolean = false): Completable
 
     fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable
 

@@ -30,15 +30,15 @@ interface CalendarDao {
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun updateEvent(event: EventItem, calendar: DeviceCalendar? = null)
+    fun updateEvent(event: EventItem, calendar: DeviceCalendar? = null): Boolean
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun createEvent(event: EventItem, calendar: DeviceCalendar)
+    fun createEvent(event: EventItem, calendar: DeviceCalendar): Boolean
 
     @Throws(NoCalendarPermissionException::class)
     @WorkerThread
-    fun deleteEvent(event: EventItem)
+    fun deleteEvent(event: EventItem): Boolean
 
     /**
      * onChange will be invoked on a background thread

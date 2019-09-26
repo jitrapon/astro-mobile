@@ -32,11 +32,11 @@ class BoardRemoteDataSource(
         throw NotImplementedError()
     }
 
-    override fun createItem(item: BoardItem, remote: Boolean): Completable {
+    override fun createItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
         return api.createBoardItem(circleInteractor.getActiveCircleId(), item.serialize())
     }
 
-    override fun editItem(item: BoardItem, remote: Boolean): Completable {
+    override fun editItem(circleId: String, item: BoardItem, remote: Boolean): Completable {
         return api.editBoardItem(
             circleInteractor.getActiveCircleId(),
             item.itemId,
@@ -44,7 +44,7 @@ class BoardRemoteDataSource(
         )
     }
 
-    override fun deleteItem(itemId: String, remote: Boolean): Completable {
+    override fun deleteItem(circleId: String, itemId: String, remote: Boolean): Completable {
         return api.deleteBoardItem(circleInteractor.getActiveCircleId(), itemId)
     }
 
