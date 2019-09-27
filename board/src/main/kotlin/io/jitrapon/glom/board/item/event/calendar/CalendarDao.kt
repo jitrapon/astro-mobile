@@ -40,6 +40,9 @@ interface CalendarDao {
     @WorkerThread
     fun deleteEvent(event: EventItem): Boolean
 
+    @WorkerThread
+    fun syncCalendar(calendar: DeviceCalendar)
+
     /**
      * onChange will be invoked on a background thread
      */

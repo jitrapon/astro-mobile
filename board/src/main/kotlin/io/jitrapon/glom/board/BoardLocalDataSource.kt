@@ -188,17 +188,15 @@ class BoardLocalDataSource(
         // need to save this id so that it can be referenced later in case the item ID has changed
         val itemId = item.itemId
         return Completable.fromCallable {
-            val isItemRescheduled: Boolean
             val requireReloadData = when (item) {
                 is EventItem -> {
-                    isItemRescheduled = item.itemInfo.repeatInfo?.isReschedule == true
                     insertOrUpdateEvent(item, false)
                 }
                 else -> throw NotImplementedError()
             }
             if (requireReloadData) {
                 val board = when (item.itemType) {
-                    BoardItem.TYPE_EVENT -> getEventBoard(circleId, isItemRescheduled).blockingFirst()
+                    BoardItem.TYPE_EVENT -> getEventBoard(circleId, false).blockingFirst()
                     else -> throw NotImplementedError()
                 }
                 synchronized(lock) {

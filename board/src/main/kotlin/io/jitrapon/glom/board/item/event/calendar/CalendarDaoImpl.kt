@@ -168,7 +168,9 @@ class CalendarDaoImpl(private val context: Context) :
             }.toString()
 
             if (requestSync) {
-                requestSyncCalendars(calendars)
+                for (calendar in calendars) {
+                    syncCalendar(calendar)
+                }
             }
 
             ArrayList<EventItem>().apply {
@@ -186,9 +188,20 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     @WorkerThread
-    private fun requestSyncCalendars(calendars: List<DeviceCalendar>) {
-        //TODO
-//        ContentResolver.requestSync()
+    override fun syncCalendar(calendar: DeviceCalendar) {
+        if (calendar.isWritable) {
+            AppLogger.d("Attempting to sync calendar $calendar")
+            val values = ContentValues().apply {
+                put(CalendarContract.Calendars.SYNC_EVENTS, 1)
+                put(CalendarContract.Calendars.VISIBLE, 1)
+            }
+            contentResolver.update(
+                ContentUris.withAppendedId(
+                    CalendarContract.Calendars.CONTENT_URI,
+                    calendar.calId
+                ), values, null, null
+            )
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -477,11 +490,20 @@ class CalendarDaoImpl(private val context: Context) :
                 endTime - it
             } ?: throw Exception("Cannot update event without start time")
             put(CalendarContract.Events.DURATION, duration.toDurationString())
+            calendar?.let {
+                put(CalendarContract.Events.CALENDAR_ID, it.calId)
+            }
             val exceptionUri = Uri.withAppendedPath(
                 CalendarContract.Events.CONTENT_EXCEPTION_URI,
                 eventId
             )
             contentResolver.insert(exceptionUri, this)
+
+            // need to trigger a calendar sync so that recurring instances are re-generated correctly
+            // in time
+            (calendar ?: event.itemInfo.source.calendar)?.let {
+                syncCalendar(it)
+            }
         }
 
         // case 2: event was non-repeating, but is changed repeating
@@ -495,7 +517,9 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
             put(CalendarContract.Events.DTEND, time)
             put(CalendarContract.Events.DURATION, duration.toDurationString())
-
+            calendar?.let {
+                put(CalendarContract.Events.CALENDAR_ID, it.calId)
+            }
             val updateUri = ContentUris.withAppendedId(
                 CalendarContract.Events.CONTENT_URI,
                 event.itemId.toLong()
@@ -642,7 +666,6 @@ class CalendarDaoImpl(private val context: Context) :
             override fun onChange(selfChange: Boolean) {
                 onContentChange(true)
             }
-
         }.apply {
             contentResolver.registerContentObserver(
                 CalendarContract.Instances.CONTENT_URI,

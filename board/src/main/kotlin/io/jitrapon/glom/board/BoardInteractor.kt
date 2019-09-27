@@ -147,7 +147,11 @@ class BoardInteractor(
     fun editItem(item: BoardItem, onComplete: ((AsyncResult<BoardItem>) -> Unit)) {
         val completable = when {
             item.isSyncingToRemote -> Completable.mergeArray(
-                boardDataSource.deleteItem(circleId, item.itemId, false).subscribeOn(Schedulers.io()),
+                boardDataSource.deleteItem(
+                    circleId,
+                    item.itemId,
+                    false
+                ).subscribeOn(Schedulers.io()),
                 (boardDataSource.createItem(circleId, item, false).andThen(
                     boardDataSource.createItem(
                         circleId,
@@ -157,7 +161,11 @@ class BoardInteractor(
                 ).subscribeOn(Schedulers.io()))
             )
             item.isSyncingToLocal -> Completable.mergeArray(
-                boardDataSource.deleteItem(circleId, item.itemId, true).subscribeOn(Schedulers.io()),
+                boardDataSource.deleteItem(
+                    circleId,
+                    item.itemId,
+                    true
+                ).subscribeOn(Schedulers.io()),
                 boardDataSource.editItem(circleId, item, true).subscribeOn(Schedulers.io())
             )
             else -> boardDataSource.editItem(circleId, item, true)
@@ -484,15 +492,19 @@ class BoardInteractor(
 
     @SuppressLint("CheckResult")
     private fun subscribeToContentChange() {
-        boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.SECONDS).subscribe({
-            // this is invoked on a background thread
-            AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
-        }, {
-            // this is invoked on a background thread
-            AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
-        }, {
-            AppLogger.d("Unsubscribe from contentChangeNotifier as it no longer emits any values")
-        })
+        if (!boardDataSource.contentChangeNotifier.hasObservers()) {
+            boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.SECONDS).doOnSubscribe {
+                AppLogger.d("BoardDataSource's contentChangeNotifier is subscribed")
+            }.subscribe({
+                // this is invoked on a background thread
+                AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+            }, {
+                // this is invoked on a background thread
+                AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+            }, {
+                AppLogger.d("Unsubscribe from contentChangeNotifier as it no longer emits any values")
+            })
+        }
     }
 
     override fun cleanup() {
