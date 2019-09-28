@@ -16,6 +16,7 @@ import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.UiModel
+import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.latLng
@@ -91,6 +92,7 @@ class BoardViewModel : BaseViewModel() {
         boardInteractor.apply {
             itemType = BoardItem.TYPE_EVENT
             itemFilterType = ItemFilterType.EVENTS_BY_WEEK
+            onDataChange = this@BoardViewModel.onDataChange
         }
 
         loadBoard(false)
@@ -174,6 +176,19 @@ class BoardViewModel : BaseViewModel() {
                 status = if (items.isNullOrEmpty()) UiModel.Status.ERROR else UiModel.Status.SUCCESS
             }
         })
+    }
+
+    private val onDataChange: ((AsyncResult<Boolean>) -> Unit)? = {
+        when (it) {
+            is AsyncSuccessResult -> {
+                AppLogger.d("ViewModel's onDataChange receives $it on thread ${Thread.currentThread().name}")
+                observableViewAction.postValue(Snackbar(
+                    message = AndroidString(text = "Board content has changed"),
+                    level = MessageLevel.INFO,
+                    shouldDismiss = false
+                ))
+            }
+        }
     }
 
     /**

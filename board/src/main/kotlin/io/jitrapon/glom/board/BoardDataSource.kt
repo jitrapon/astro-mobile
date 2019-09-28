@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.base.model.ContentChangeInfo
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.reactivex.Completable
@@ -14,8 +15,8 @@ import java.util.Date
  */
 interface BoardDataSource {
 
-    /* A subject that emits true if the underlying data retrieved has changed to the observer(s) */
-    val contentChangeNotifier: PublishSubject<Boolean>
+    /* A subject that emits the info if underlying data retrieved has changed to the observer(s) */
+    val contentChangeNotifier: PublishSubject<ContentChangeInfo>
 
     fun cleanUpContentChangeNotifier()
 

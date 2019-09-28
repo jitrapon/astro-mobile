@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.model.ContentChangeInfo
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
 import io.jitrapon.glom.base.util.setTime
@@ -30,7 +31,7 @@ class BoardLocalDataSource(
     private val userInteractor: UserInteractor,
     private val eventPrefDataSource: EventItemPreferenceDataSource,
     private val calendarDao: CalendarDao,
-    override val contentChangeNotifier: PublishSubject<Boolean>
+    override val contentChangeNotifier: PublishSubject<ContentChangeInfo>
 ) : BoardDataSource {
 
     /* synchronized lock for modifying in-memory board */
@@ -140,7 +141,7 @@ class BoardLocalDataSource(
         calendarDao.registerUpdateObserver {
 
             // this will be invoked on a background thread
-            contentChangeNotifier.onNext(it)
+            contentChangeNotifier.onNext(ContentChangeInfo(false))
         }
     }
 

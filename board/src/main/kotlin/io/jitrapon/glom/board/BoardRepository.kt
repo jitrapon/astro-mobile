@@ -1,5 +1,6 @@
 package io.jitrapon.glom.board
 
+import io.jitrapon.glom.base.model.ContentChangeInfo
 import io.jitrapon.glom.base.repository.Repository
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
@@ -16,7 +17,7 @@ import java.util.Date
 class BoardRepository(
     private val remoteDataSource: BoardDataSource,
     private val localDataSource: BoardDataSource,
-    override val contentChangeNotifier: PublishSubject<Boolean>
+    override val contentChangeNotifier: PublishSubject<ContentChangeInfo>
 ) :
     Repository<Board>(), BoardDataSource {
 

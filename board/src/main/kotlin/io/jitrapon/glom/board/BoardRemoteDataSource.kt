@@ -1,6 +1,7 @@
 package io.jitrapon.glom.board
 
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
+import io.jitrapon.glom.base.model.ContentChangeInfo
 import io.jitrapon.glom.base.repository.RemoteDataSource
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemRequest
@@ -16,7 +17,7 @@ import java.util.Date
 
 class BoardRemoteDataSource(
     private val circleInteractor: CircleInteractor,
-    override val contentChangeNotifier: PublishSubject<Boolean>
+    override val contentChangeNotifier: PublishSubject<ContentChangeInfo>
 ) : RemoteDataSource(),
     BoardDataSource {
 

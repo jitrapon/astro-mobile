@@ -5,7 +5,6 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.content.SyncRequest
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
@@ -37,7 +36,6 @@ import io.jitrapon.glom.board.item.event.EventLocation
 import io.jitrapon.glom.board.item.event.EventSource
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
-import io.reactivex.subjects.PublishSubject
 import java.util.ArrayList
 import java.util.Date
 
@@ -668,7 +666,7 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }.apply {
             contentResolver.registerContentObserver(
-                CalendarContract.Instances.CONTENT_URI,
+                CalendarContract.Events.CONTENT_URI,
                 false,
                 this
             )

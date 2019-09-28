@@ -7,7 +7,6 @@ import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import androidx.collection.ArrayMap
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.Circle
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
@@ -66,6 +65,12 @@ class BoardInteractor(
      */
     private val circleId: String
         get() = circleInteractor.getActiveCircleId()
+
+    /*
+     * Callback to notify an observer that the data may require refresh
+     * True iff data should be refreshed
+     */
+    var onDataChange: ((AsyncResult<Boolean>) -> Unit)? = null
 
     //region public functions
 
@@ -498,9 +503,12 @@ class BoardInteractor(
             }.subscribe({
                 // this is invoked on a background thread
                 AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+                val shouldRefreshAutomatically = !it.isRemote
+                onDataChange?.invoke(AsyncSuccessResult(shouldRefreshAutomatically))
             }, {
                 // this is invoked on a background thread
                 AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
+                onDataChange?.invoke(AsyncErrorResult(it))
             }, {
                 AppLogger.d("Unsubscribe from contentChangeNotifier as it no longer emits any values")
             })

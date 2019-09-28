@@ -6,6 +6,7 @@ import dagger.Module
 import dagger.Provides
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
+import io.jitrapon.glom.base.model.ContentChangeInfo
 import io.jitrapon.glom.board.item.event.EventItemDataSource
 import io.jitrapon.glom.board.item.event.EventItemInteractor
 import io.jitrapon.glom.board.item.event.EventItemLocalDataSource
@@ -36,7 +37,7 @@ class BoardModule {
     ).build()
 
     @Provides
-    fun provideContentChangeNotifier(): PublishSubject<Boolean> = PublishSubject.create()
+    fun provideContentChangeNotifier(): PublishSubject<ContentChangeInfo> = PublishSubject.create()
 
     @Provides
     @BoardScope
@@ -46,7 +47,7 @@ class BoardModule {
         userInteractor: UserInteractor,
         eventPref: EventItemPreferenceDataSource,
         calendarDao: CalendarDao,
-        contentChangeNotifier: PublishSubject<Boolean>
+        contentChangeNotifier: PublishSubject<ContentChangeInfo>
     ): BoardDataSource =
         BoardRepository(
             BoardRemoteDataSource(circleInteractor, contentChangeNotifier),
