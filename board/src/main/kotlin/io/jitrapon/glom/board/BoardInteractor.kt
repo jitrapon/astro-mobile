@@ -71,6 +71,12 @@ class BoardInteractor(
      * True iff data should be refreshed
      */
     var onDataChange: ((AsyncResult<Boolean>) -> Unit)? = null
+        set(value) {
+            field = value
+            field?.let {
+                subscribeToContentChange(it)
+            }
+        }
 
     //region public functions
 
@@ -115,7 +121,7 @@ class BoardInteractor(
             }, {
                 onComplete(AsyncErrorResult(it))
             }, {
-                subscribeToContentChange()
+                //not applicable
             }).autoDispose()
     }
 
@@ -496,7 +502,7 @@ class BoardInteractor(
     }
 
     @SuppressLint("CheckResult")
-    private fun subscribeToContentChange() {
+    private fun subscribeToContentChange(onChange: (AsyncResult<Boolean>) -> Unit) {
         if (!boardDataSource.contentChangeNotifier.hasObservers()) {
             boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.SECONDS).doOnSubscribe {
                 AppLogger.d("BoardDataSource's contentChangeNotifier is subscribed")
@@ -504,11 +510,11 @@ class BoardInteractor(
                 // this is invoked on a background thread
                 AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
                 val shouldRefreshAutomatically = !it.isRemote
-                onDataChange?.invoke(AsyncSuccessResult(shouldRefreshAutomatically))
+                onChange.invoke(AsyncSuccessResult(shouldRefreshAutomatically))
             }, {
                 // this is invoked on a background thread
                 AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
-                onDataChange?.invoke(AsyncErrorResult(it))
+                onChange.invoke(AsyncErrorResult(it))
             }, {
                 AppLogger.d("Unsubscribe from contentChangeNotifier as it no longer emits any values")
             })

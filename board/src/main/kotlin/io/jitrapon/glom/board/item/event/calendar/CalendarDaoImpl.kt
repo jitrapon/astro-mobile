@@ -666,7 +666,7 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }.apply {
             contentResolver.registerContentObserver(
-                CalendarContract.Events.CONTENT_URI,
+                CalendarContract.Instances.CONTENT_URI,
                 false,
                 this
             )

@@ -92,7 +92,6 @@ class BoardViewModel : BaseViewModel() {
         boardInteractor.apply {
             itemType = BoardItem.TYPE_EVENT
             itemFilterType = ItemFilterType.EVENTS_BY_WEEK
-            onDataChange = this@BoardViewModel.onDataChange
         }
 
         loadBoard(false)
@@ -121,6 +120,8 @@ class BoardViewModel : BaseViewModel() {
                     onBoardItemChanges(it.result.second, listOf(), listOf())
 
                     setUserProfileIcon(userInteractor.getCurrentUserAvatar())
+
+                    boardInteractor.onDataChange = this@BoardViewModel.onDataChange
                 }
                 is AsyncErrorResult -> {
                     handleError(it.error)
@@ -178,10 +179,9 @@ class BoardViewModel : BaseViewModel() {
         })
     }
 
-    private val onDataChange: ((AsyncResult<Boolean>) -> Unit)? = {
+    private val onDataChange: ((AsyncResult<Boolean>) -> Unit) = {
         when (it) {
             is AsyncSuccessResult -> {
-                AppLogger.d("ViewModel's onDataChange receives $it on thread ${Thread.currentThread().name}")
                 observableViewAction.postValue(Snackbar(
                     message = AndroidString(text = "Board content has changed"),
                     level = MessageLevel.INFO,
