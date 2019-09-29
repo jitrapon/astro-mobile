@@ -52,6 +52,7 @@ class BoardLocalDataSource(
      */
     private var requestSyncWithExternalSource: AtomicBoolean = AtomicBoolean(false)
 
+    //TODO replace requestSyncWithExternalSource with refresh
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
         return if (lastFetchedItemType.get() == itemType && !requestSyncWithExternalSource.get()) Flowable.just(
