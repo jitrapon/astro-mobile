@@ -38,6 +38,7 @@ buildscript {
         timberVersion = '4.7.1'
         lottieVersion = '3.0.7'
         lineSdkVersion = '5.0.1'
+        workManagerVersion = '2.2.0'
 
         junitVersion = '4.12'
         espressoVersion = '3.0.1'

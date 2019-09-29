@@ -1,11 +1,13 @@
 package io.jitrapon.glom.board.item.event.calendar
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.database.ContentObserver
+import android.content.Intent
+import android.content.IntentFilter
 import android.database.Cursor
 import android.net.Uri
 import android.os.Handler
@@ -18,6 +20,7 @@ import androidx.annotation.WorkerThread
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.toRepeatInfo
@@ -34,10 +37,12 @@ import io.jitrapon.glom.board.item.event.EventInfo
 import io.jitrapon.glom.board.item.event.EventItem
 import io.jitrapon.glom.board.item.event.EventLocation
 import io.jitrapon.glom.board.item.event.EventSource
+import io.jitrapon.glom.board.item.event.preference.CALENDAR_OBSERVER_USE_WORKER
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
 import java.util.ArrayList
 import java.util.Date
+import java.util.concurrent.atomic.AtomicBoolean
 
 // Projection array. Creating indices for this array instead of doing
 // dynamic lookups improves performance.
@@ -141,7 +146,11 @@ class CalendarDaoImpl(private val context: Context) :
         }
     }
 
-    private var contentObserver: ContentObserver? = null
+    private val handler: Handler = Handler(handlerThread.looper)
+
+    private var contentChangeListener: ((Boolean) -> Unit)? = null
+
+    private var isSelfModified = AtomicBoolean(false)
 
     /**
      * Whether or not a calendar is read-only
@@ -193,6 +202,7 @@ class CalendarDaoImpl(private val context: Context) :
                 put(CalendarContract.Calendars.SYNC_EVENTS, 1)
                 put(CalendarContract.Calendars.VISIBLE, 1)
             }
+            isSelfModified.set(true)
             contentResolver.update(
                 ContentUris.withAppendedId(
                     CalendarContract.Calendars.CONTENT_URI,
@@ -412,6 +422,7 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
             put(CalendarContract.Events.CALENDAR_ID, calendar.calId)
         }
+        isSelfModified.set(true)
         event.itemId =
             contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)?.lastPathSegment
                 ?: currentTimeInMs
@@ -429,6 +440,7 @@ class CalendarDaoImpl(private val context: Context) :
             put(CalendarContract.Events.EVENT_TIMEZONE, event.itemInfo.timeZone)
             put(CalendarContract.Events.ALL_DAY, if (event.itemInfo.isFullDay) 1 else 0)
 
+            isSelfModified.set(true)
             if (event.itemInfo.repeatInfo == null) {
                 createNonRecurringUpdateContentUri(event, calendar)
             }
@@ -532,6 +544,7 @@ class CalendarDaoImpl(private val context: Context) :
                 CalendarContract.Events.CONTENT_URI,
                 event.itemId.toLong()
             )
+        isSelfModified.set(true)
         contentResolver.delete(deleteUri, null, null)
         return event.itemInfo.repeatInfo != null
     }
@@ -658,26 +671,53 @@ class CalendarDaoImpl(private val context: Context) :
         )
     }
 
-    override fun registerUpdateObserver(onContentChange: (selfChange: Boolean) -> Unit) {
-        contentObserver = object : ContentObserver(Handler(handlerThread.looper)) {
+    private val calendarReceiver = object : BroadcastReceiver() {
 
-            override fun onChange(selfChange: Boolean) {
-                onContentChange(true)
+        override fun onReceive(context: Context, intent: Intent) {
+            AppLogger.d("CalendarReceiver receives calendar update event")
+            if (!isSelfModified.getAndSet(false)) {
+                contentChangeListener?.invoke(true)
             }
-        }.apply {
-            contentResolver.registerContentObserver(
-                CalendarContract.Instances.CONTENT_URI,
-                false,
-                this
-            )
         }
     }
 
-    override fun unregisterUpdateObserver() {
-        contentObserver?.let {
-            contentResolver.unregisterContentObserver(it)
-            handlerThread.quitSafely()
+    private fun startObservingCalendarChange() {
+        if (CALENDAR_OBSERVER_USE_WORKER) {
+            SyncWorker.schedule(context)
+            IntentFilter().apply {
+                addAction(ACTION_CALENDAR_MODIFIED)
+                LocalBroadcastManager.getInstance(context).registerReceiver(calendarReceiver, this)
+            }
         }
+        else {
+            IntentFilter().apply {
+                addAction(Intent.ACTION_PROVIDER_CHANGED)
+                addDataScheme("content")
+                addDataAuthority("com.android.calendar", null)
+                context.registerReceiver(calendarReceiver, this, null, handler)
+            }
+        }
+    }
+
+    private fun stopObservingCalendarChange() {
+        if (CALENDAR_OBSERVER_USE_WORKER) {
+            SyncWorker.unschedule(context)
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(calendarReceiver)
+        }
+        else {
+            context.unregisterReceiver(calendarReceiver)
+        }
+    }
+
+    override fun registerUpdateObserver(onContentChange: (selfChange: Boolean) -> Unit) {
+        if (contentChangeListener != null) return
+
+        contentChangeListener = onContentChange
+        startObservingCalendarChange()
+    }
+
+    override fun unregisterUpdateObserver() {
+        stopObservingCalendarChange()
     }
 }
 

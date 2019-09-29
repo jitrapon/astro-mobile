@@ -16,7 +16,6 @@ import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.UiModel
-import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.util.isNullOrEmpty
 import io.jitrapon.glom.base.util.latLng
@@ -182,6 +181,7 @@ class BoardViewModel : BaseViewModel() {
     private val onDataChange: ((AsyncResult<Boolean>) -> Unit) = {
         when (it) {
             is AsyncSuccessResult -> {
+                // runs in background thread
                 observableViewAction.postValue(Snackbar(
                     message = AndroidString(text = "Board content has changed"),
                     level = MessageLevel.INFO,

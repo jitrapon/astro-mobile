@@ -504,7 +504,7 @@ class BoardInteractor(
     @SuppressLint("CheckResult")
     private fun subscribeToContentChange(onChange: (AsyncResult<Boolean>) -> Unit) {
         if (!boardDataSource.contentChangeNotifier.hasObservers()) {
-            boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.SECONDS).doOnSubscribe {
+            boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.MILLISECONDS).doOnSubscribe {
                 AppLogger.d("BoardDataSource's contentChangeNotifier is subscribed")
             }.subscribe({
                 // this is invoked on a background thread
