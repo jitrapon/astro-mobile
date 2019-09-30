@@ -52,7 +52,7 @@ class BoardActivity : BaseMainActivity() {
         if (requestCode == AUTH_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
                 (findFragment(boardFragmentTag) as? BoardFragment)?.let {
-                    if (it.isVisible) it.onRefresh(100L)
+                    if (it.isVisible) it.onRefresh(100L, true)
                 }
             }
         }

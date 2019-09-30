@@ -60,7 +60,6 @@ abstract class BaseFragment : Fragment() {
      */
     private val profileMenuBottomSheet: ProfileMenuBottomSheet by lazy { ProfileMenuBottomSheet() }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -75,8 +74,12 @@ abstract class BaseFragment : Fragment() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) onDispatchPendingLiveData()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-            inflater.inflate(getLayoutId(), container, false)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? =
+        inflater.inflate(getLayoutId(), container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         showEmptyLoading(false)
@@ -119,16 +122,29 @@ abstract class BaseFragment : Fragment() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss() else showSnackbar(it.level, it.message, it.actionMessage, it.duration, it.actionCallback).apply {
+                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss()
+                else showSnackbar(
+                    it.level,
+                    it.message,
+                    it.actionMessage,
+                    it.duration,
+                    it.actionCallback
+                ).apply {
                     snackBar = this
                 }
-                is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
-                        it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                is Alert -> showAlertDialog(
+                    it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
+                    it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel
+                )
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
-                is ReloadData -> onRefresh(it.delay)
-                is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
+                is ReloadData -> onRefresh(it.delay, it.refresh)
+                is RequestPermission -> showRequestPermissionsDialog(
+                    it.rationaleMessage,
+                    it.permissions,
+                    it.onRequestPermission
+                )
                 is PresentChoices -> showChoiceDialog(it.title, it.items, it.onItemClick).apply {
                     dialog = this
                 }
@@ -147,12 +163,13 @@ abstract class BaseFragment : Fragment() {
             if (context != null) {
                 val placeHolderDrawable = context!!.drawable(it.placeHolder)!!
                 profileMenuIcon?.loadFromUrl(
-                        this@BaseFragment,
-                        it.imageUrl,
-                        it.placeHolder,
-                        it.placeHolder,
-                        placeHolderDrawable,
-                        Transformation.CIRCLE_CROP)
+                    this@BaseFragment,
+                    it.imageUrl,
+                    it.placeHolder,
+                    it.placeHolder,
+                    placeHolderDrawable,
+                    Transformation.CIRCLE_CROP
+                )
             }
         }
     }
@@ -161,8 +178,8 @@ abstract class BaseFragment : Fragment() {
      * Swipe refresh listener that is tied to the ViewActionHandler
      */
     private val onRefreshListener by lazy {
-        androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener {
-            onRefresh(0L)
+        SwipeRefreshLayout.OnRefreshListener {
+            onRefresh(0L, true)
         }
     }
 
@@ -201,13 +218,13 @@ abstract class BaseFragment : Fragment() {
      * Child fragment class should override this to indicate that this fragment is swipe-refreshable and
      * contains a SwipeRefreshLayout in its layout xml file. Default to NULL
      */
-    open fun getSwipeRefreshLayout(): androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
+    open fun getSwipeRefreshLayout(): SwipeRefreshLayout? = null
 
     /**
      * Called when a RefreshLayout has been triggered manually by the user. This is a good time
      * to call any necessary ViewModel's function to (re)-load the data
      */
-    open fun onRefresh(delayBeforeRefresh: Long) {}
+    open fun onRefresh(delayBeforeRefresh: Long, refresh: Boolean) {}
 
     /**
      * Called when a ViewModel needs to be initialized for use later
@@ -310,9 +327,11 @@ abstract class BaseFragment : Fragment() {
     /**
      * Overrides this function to change the behavior to show the permission dialog
      */
-    open fun showRequestPermissionsDialog(rationaleMessage: AndroidString,
-                                          permissions: Array<out String>,
-                                          onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
+    open fun showRequestPermissionsDialog(
+        rationaleMessage: AndroidString,
+        permissions: Array<out String>,
+        onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit
+    ) {
         context ?: return
         // check to make sure that the permissions are actually not granted
         val ungrantedPermissions = context!!.getUngrantedPermissions(permissions)
@@ -320,7 +339,10 @@ abstract class BaseFragment : Fragment() {
         if (ungrantedPermissions.isNotEmpty()) {
             // not all permissions are granted
             // should we show an explanation?
-            if ((activity as AppCompatActivity).shouldShowRequestPermissionRationale(ungrantedPermissions)) {
+            if ((activity as AppCompatActivity).shouldShowRequestPermissionRationale(
+                    ungrantedPermissions
+                )
+            ) {
                 showAlertDialog(null, rationaleMessage, AndroidString(android.R.string.yes), {
                     requestPermissions(ungrantedPermissions, REQUEST_PERMISSION_RESULT_CODE)
                 }, AndroidString(android.R.string.no), {
@@ -366,7 +388,11 @@ abstract class BaseFragment : Fragment() {
     /**
      * Overrides this function to change the behavior of showing choice dialog
      */
-    open fun showChoiceDialog(title: AndroidString?, items: ArrayList<PreferenceItemUiModel>, onItemClick: (Int) -> Unit): AlertDialog? {
+    open fun showChoiceDialog(
+        title: AndroidString?,
+        items: ArrayList<PreferenceItemUiModel>,
+        onItemClick: (Int) -> Unit
+    ): AlertDialog? {
         return context?.showChoiceDialog(title, items, onItemClick)
     }
 }

@@ -4,6 +4,7 @@ import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.model.*
 import io.jitrapon.glom.base.util.get
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
@@ -43,8 +44,8 @@ class EventItemPreferenceViewModel : BaseViewModel() {
         observablePreferenceUiModel.value = preferenceUiModel.apply {
             status = UiModel.Status.LOADING
         }
-
-        loadData(refresh, interactor::loadPreference, if (!firstLoadCalled) BoardViewModel.FIRST_LOAD_ANIM_DELAY
+        val loadType = if (refresh) LoadType.REMOTE else LoadType.LOCAL
+        loadData(loadType, interactor::loadPreference, if (!firstLoadCalled) BoardViewModel.FIRST_LOAD_ANIM_DELAY
         else BoardViewModel.SUBSEQUENT_LOAD_ANIM_DELAY) {
             when (it) {
                 is AsyncSuccessResult -> updatePreferenceAsync(false, it.result.second)

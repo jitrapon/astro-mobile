@@ -33,4 +33,6 @@ interface BoardDataSource {
     fun setItemSyncStatus(itemId: String, status: SyncStatus): Completable
 
     fun getSyncTime(): Date
+
+    fun invalidateCache()
 }

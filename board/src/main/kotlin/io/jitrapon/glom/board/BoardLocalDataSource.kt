@@ -49,7 +49,7 @@ class BoardLocalDataSource(
 
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
-        return if (lastFetchedItemType.get() == itemType && !refresh) Flowable.just(
+        return if (lastFetchedItemType.get() == itemType) Flowable.just(
             inMemoryBoard
         )
 
@@ -339,5 +339,9 @@ class BoardLocalDataSource(
 
     override fun cleanUpContentChangeNotifier() {
         calendarDao.unregisterUpdateObserver()
+    }
+
+    override fun invalidateCache() {
+        lastFetchedItemType.set(Integer.MAX_VALUE)
     }
 }

@@ -101,16 +101,29 @@ abstract class BaseActivity : AppCompatActivity() {
         it?.let {
             when (it) {
                 is Toast -> showToast(it.message)
-                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss() else showSnackbar(it.level, it.message, it.actionMessage, it.duration, it.actionCallback).apply {
+                is Snackbar -> if (it.shouldDismiss) snackBar?.dismiss()
+                else showSnackbar(
+                    it.level,
+                    it.message,
+                    it.actionMessage,
+                    it.duration,
+                    it.actionCallback
+                ).apply {
                     snackBar = this
                 }
-                is Alert -> showAlertDialog(it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
-                        it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel)
+                is Alert -> showAlertDialog(
+                    it.title, it.message, it.positiveOptionText, it.onPositiveOptionClicked,
+                    it.negativeOptionText, it.onNegativeOptionClicked, it.isCancelable, it.onCancel
+                )
                 is Loading -> showLoading(it.show)
                 is EmptyLoading -> showEmptyLoading(it.show)
                 is Navigation -> navigate(it.action, it.payload)
-                is ReloadData -> onRefresh(it.delay)
-                is RequestPermission -> showRequestPermissionsDialog(it.rationaleMessage, it.permissions, it.onRequestPermission)
+                is ReloadData -> onRefresh(it.delay, it.refresh)
+                is RequestPermission -> showRequestPermissionsDialog(
+                    it.rationaleMessage,
+                    it.permissions,
+                    it.onRequestPermission
+                )
                 is PresentChoices -> showChoiceDialog(it.title, it.items, it.onItemClick).apply {
                     dialog = this
                 }
@@ -148,7 +161,7 @@ abstract class BaseActivity : AppCompatActivity() {
      * Called when a RefreshLayout has been triggered manually by the user. This is a good time
      * to call any necessary ViewModel's function to (re)-load the data
      */
-    open fun onRefresh(delayBeforeRefresh: Long) {}
+    open fun onRefresh(delayBeforeRefresh: Long, shouldRefresh: Boolean) {}
 
     /**
      * Indicates that the view has no data and should be showing the main loading progress bar.
@@ -196,7 +209,8 @@ abstract class BaseActivity : AppCompatActivity() {
     open fun showRequestPermissionsDialog(
         rationaleMessage: AndroidString,
         permissions: Array<out String>,
-        onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit) {
+        onPermissionsGranted: (ungrantedPermissions: Array<out String>) -> Unit
+    ) {
         // check to make sure that the permissions are actually not granted
         val ungrantedPermissions = getUngrantedPermissions(permissions)
         permissionsGrantCallback = onPermissionsGranted
@@ -205,7 +219,11 @@ abstract class BaseActivity : AppCompatActivity() {
             // should we show an explanation?
             if (shouldShowRequestPermissionRationale(ungrantedPermissions)) {
                 showAlertDialog(null, rationaleMessage, AndroidString(android.R.string.yes), {
-                    showRequestPermissionsDialog(rationaleMessage, permissions, onPermissionsGranted)
+                    showRequestPermissionsDialog(
+                        rationaleMessage,
+                        permissions,
+                        onPermissionsGranted
+                    )
                 }, AndroidString(android.R.string.no), {
                     onPermissionsGranted(ungrantedPermissions)
                 }, true, {
@@ -214,7 +232,11 @@ abstract class BaseActivity : AppCompatActivity() {
             }
             // no explanation needed
             else {
-                ActivityCompat.requestPermissions(this, ungrantedPermissions, REQUEST_PERMISSION_RESULT_CODE)
+                ActivityCompat.requestPermissions(
+                    this,
+                    ungrantedPermissions,
+                    REQUEST_PERMISSION_RESULT_CODE
+                )
             }
         }
 

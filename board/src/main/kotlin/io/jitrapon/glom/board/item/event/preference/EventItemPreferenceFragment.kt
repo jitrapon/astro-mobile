@@ -89,7 +89,7 @@ class EventItemPreferenceFragment : BaseFragment(), PreferenceFragmentListener {
     /**
      * Callback for when the board has been manually refreshed
      */
-    override fun onRefresh(delayBeforeRefresh: Long) {
+    override fun onRefresh(delayBeforeRefresh: Long, refresh: Boolean) {
         if (delayBeforeRefresh > 0L) {
             delayRun(delayBeforeRefresh) {
                 viewModel.loadPreference(true)

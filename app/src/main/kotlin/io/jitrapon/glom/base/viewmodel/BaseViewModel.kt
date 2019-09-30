@@ -25,6 +25,10 @@ const val REFRESH_INTERVAL = 300
  */
 abstract class BaseViewModel : ViewModel() {
 
+    enum class LoadType {
+        REMOTE, LOCAL, LOCAL_AND_INVALIDATE
+    }
+
     /* Subclass of this class should set appropriate UiActionModel to this variable to emit action to the view
         this can be done by setting its value directly, or calling the run() function to run
         a series of actions */
@@ -64,11 +68,11 @@ abstract class BaseViewModel : ViewModel() {
      * Generic load function to execute long running blocking operation.
      * Supports automatically showing loading progressbar for convenience
      */
-    inline fun <reified T> loadData(refresh: Boolean, function: (Boolean, (AsyncResult<Pair<Date, T>>) -> Unit) -> Unit,
+    inline fun <reified T> loadData(loadType: LoadType, function: (LoadType, (AsyncResult<Pair<Date, T>>) -> Unit) -> Unit,
                                     callbackDelay: Long = 150L, crossinline onComplete: (AsyncResult<Pair<Date, T>>) -> Unit) {
         if (isViewEmpty()) observableViewAction.value = EmptyLoading(true)
         else observableViewAction.value = Loading(true)
-        function(refresh) {
+        function(loadType) {
             arrayOf({
                 if (isViewEmpty()) observableViewAction.value = EmptyLoading(false)
                 else observableViewAction.value = Loading(false)
@@ -78,7 +82,7 @@ abstract class BaseViewModel : ViewModel() {
                 // if loading is successful, check if data is stale
                 // if it is, force refresh
                 if (it is AsyncSuccessResult && !it.result.first.withinDuration(Date(), REFRESH_INTERVAL)) {
-                    observableViewAction.value = ReloadData(100L)
+                    observableViewAction.value = ReloadData(100L, true)
                 }
             }).run(callbackDelay)
         }

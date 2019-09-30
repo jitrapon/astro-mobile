@@ -27,7 +27,7 @@ class EmptyLoading(val show: Boolean): UiActionModel
 
 class Navigation(val action: String, val payload: Any? = null) : UiActionModel
 
-class ReloadData(val delay: Long) : UiActionModel
+class ReloadData(val delay: Long, val refresh: Boolean) : UiActionModel
 
 class RequestPermission(val rationaleMessage: AndroidString, val onRequestPermission: (Array<out String>) -> Unit, vararg val permissions: String) : UiActionModel
 

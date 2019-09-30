@@ -18,6 +18,7 @@ import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.isNullOrEmpty
+import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.EventInfo
@@ -70,7 +71,7 @@ class BoardInteractor(
      * Callback to notify an observer that the data may require refresh
      * True iff data should be refreshed
      */
-    var onDataChange: ((AsyncResult<Boolean>) -> Unit)? = null
+    var onDataChange: ((AsyncResult<Pair<Boolean, Boolean>>) -> Unit)? = null
         set(value) {
             field = value
             field?.let {
@@ -92,16 +93,21 @@ class BoardInteractor(
      * on the computation thread pool, after which the result is observed on the Android main thread.
      */
     fun loadBoard(
-        refresh: Boolean,
+        loadType: BaseViewModel.LoadType,
         onComplete: (AsyncResult<Pair<Date, ArrayMap<*, List<BoardItem>>>>) -> Unit
     ) {
+        if (loadType == BaseViewModel.LoadType.LOCAL_AND_INVALIDATE) {
+            boardDataSource.invalidateCache()
+        }
+        val remote = loadType == BaseViewModel.LoadType.REMOTE
+
         Flowable.zip(boardDataSource.getBoard(
             circleId,
             itemType,
-            refresh
+            remote
         ).subscribeOn(Schedulers.io()),
-            userInteractor.getUsers(circleId, refresh).subscribeOn(Schedulers.io()),
-            circleInteractor.loadCircle(refresh).subscribeOn(Schedulers.io()),                      // must subscribe to achieve true parallelism
+            userInteractor.getUsers(circleId, remote).subscribeOn(Schedulers.io()),
+            circleInteractor.loadCircle(remote).subscribeOn(Schedulers.io()),                      // must subscribe to achieve true parallelism
             Function3<Board, List<User>, Circle, Triple<Board, List<User>, Circle>> { board, users, circle ->
                 Triple(board, users, circle)
             })
@@ -502,15 +508,14 @@ class BoardInteractor(
     }
 
     @SuppressLint("CheckResult")
-    private fun subscribeToContentChange(onChange: (AsyncResult<Boolean>) -> Unit) {
+    private fun subscribeToContentChange(onChange: (AsyncResult<Pair<Boolean, Boolean>>) -> Unit) {
         if (!boardDataSource.contentChangeNotifier.hasObservers()) {
             boardDataSource.contentChangeNotifier.throttleFirst(1000L, TimeUnit.MILLISECONDS).doOnSubscribe {
                 AppLogger.d("BoardDataSource's contentChangeNotifier is subscribed")
             }.subscribe({
                 // this is invoked on a background thread
                 AppLogger.d("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")
-                val shouldRefreshAutomatically = !it.isRemote
-                onChange.invoke(AsyncSuccessResult(shouldRefreshAutomatically))
+                onChange.invoke(AsyncSuccessResult(it.isRemote to !it.isRemote))
             }, {
                 // this is invoked on a background thread
                 AppLogger.e("BoardDataSource's contentChangeNotifier emits $it on thread ${Thread.currentThread().name}")

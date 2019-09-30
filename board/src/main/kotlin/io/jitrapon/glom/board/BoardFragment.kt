@@ -21,6 +21,7 @@ import io.jitrapon.glom.base.ui.BaseFragment
 import io.jitrapon.glom.base.ui.widget.recyclerview.ItemTouchHelperCallback
 import io.jitrapon.glom.base.ui.widget.stickyheader.StickyHeadersLinearLayoutManager
 import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemAdapter
 import io.jitrapon.glom.board.item.BoardItemPreferenceActivity
@@ -281,14 +282,15 @@ class BoardFragment : BaseFragment() {
     /**
      * Callback for when the board has been manually refreshed
      */
-    override fun onRefresh(delayBeforeRefresh: Long) {
+    override fun onRefresh(delayBeforeRefresh: Long, refresh: Boolean) {
+        val loadType = if (refresh) BaseViewModel.LoadType.REMOTE else BaseViewModel.LoadType.LOCAL_AND_INVALIDATE
         if (delayBeforeRefresh > 0L) {
             delayRun(delayBeforeRefresh) {
-                viewModel.loadBoard(true)
+                viewModel.loadBoard(loadType)
             }
         }
         else {
-            viewModel.loadBoard(true)
+            viewModel.loadBoard(loadType)
         }
     }
 
@@ -375,6 +377,6 @@ class BoardFragment : BaseFragment() {
      * Sign in state has changed from other view
      */
     override fun onSignOut() {
-        onRefresh(100L)
+        onRefresh(100L, true)
     }
 }

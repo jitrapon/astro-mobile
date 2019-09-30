@@ -64,4 +64,8 @@ class BoardRepository(
         remoteDataSource.cleanUpContentChangeNotifier()
         localDataSource.cleanUpContentChangeNotifier()
     }
+
+    override fun invalidateCache() {
+        localDataSource.invalidateCache()
+    }
 }

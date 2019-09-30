@@ -71,6 +71,10 @@ class BoardRemoteDataSource(
 
     override fun getSyncTime(): Date = Date()
 
+    override fun invalidateCache() {
+        throw NotImplementedError()
+    }
+
     //region serializers
     //endregion
 

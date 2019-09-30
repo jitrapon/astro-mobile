@@ -4,6 +4,7 @@ import io.jitrapon.glom.base.interactor.BaseInteractor
 import io.jitrapon.glom.base.model.AsyncErrorResult
 import io.jitrapon.glom.base.model.AsyncResult
 import io.jitrapon.glom.base.model.AsyncSuccessResult
+import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -18,7 +19,8 @@ class EventItemPreferenceInteractor(private val repository: EventItemPreferenceD
     val preference: EventItemPreference
             get() = repository.getPreference(false).blockingFirst()
 
-    fun loadPreference(refresh: Boolean, onComplete: (AsyncResult<Pair<Date, EventItemPreference>>) -> Unit) {
+    fun loadPreference(loadType: BaseViewModel.LoadType, onComplete: (AsyncResult<Pair<Date, EventItemPreference>>) -> Unit) {
+        val refresh = loadType == BaseViewModel.LoadType.REMOTE
         repository.getPreference(refresh)
                 .retryWhen(::errorIsUnauthorized)
                 .subscribeOn(Schedulers.io())

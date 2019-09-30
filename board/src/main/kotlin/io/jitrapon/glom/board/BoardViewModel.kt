@@ -3,6 +3,7 @@ package io.jitrapon.glom.board
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
@@ -94,7 +95,7 @@ class BoardViewModel : BaseViewModel() {
             itemFilterType = ItemFilterType.EVENTS_BY_WEEK
         }
 
-        loadBoard(false)
+        loadBoard(LoadType.LOCAL)
     }
 
     //region board actions
@@ -102,16 +103,16 @@ class BoardViewModel : BaseViewModel() {
     /**
      * Loads board data and items asynchronously, default to loading event items
      *
-     * @param refresh If true, old data will be discarded and will be refreshed from the server again
+     * @param loadType Load type for this board
      */
-    fun loadBoard(refresh: Boolean) {
+    fun loadBoard(loadType: LoadType) {
         observableBoard.value = boardUiModel.apply {
             status = UiModel.Status.LOADING
             saveItem = null
         }
 
         loadData(
-            refresh,
+            loadType,
             boardInteractor::loadBoard,
             if (!firstLoadCalled) FIRST_LOAD_ANIM_DELAY else SUBSEQUENT_LOAD_ANIM_DELAY
         ) {
@@ -183,12 +184,13 @@ class BoardViewModel : BaseViewModel() {
      * Callback called when data has changed and may need to be refreshed
      * True iff data needs to be refreshed
      */
-    private val onDataChange: ((AsyncResult<Boolean>) -> Unit) = {
+    private val onDataChange: ((AsyncResult<Pair<Boolean, Boolean>>) -> Unit) = {
         when (it) {
             is AsyncSuccessResult -> {
                 // runs in background thread
-                if (it.result) {
-                    observableViewAction.postValue(ReloadData(0L))
+                val (isRemoteChange, shouldRefreshAutomatically) = it.result
+                if (shouldRefreshAutomatically) {
+                    observableViewAction.postValue(ReloadData(0L, isRemoteChange))
                 }
                 else {
                     observableViewAction.postValue(Snackbar(
@@ -414,7 +416,7 @@ class BoardViewModel : BaseViewModel() {
 
             // if we can't refresh a single changed item due to its changed item ID, refresh the whole list!
             if (uiModel == null) {
-                loadBoard(false)
+                loadBoard(LoadType.LOCAL)
                 return@operation
             }
 
@@ -436,7 +438,7 @@ class BoardViewModel : BaseViewModel() {
                         Snackbar(successMessage, level = MessageLevel.SUCCESS)
 
                     // refresh the board item ordering
-                    loadBoard(false)
+                    loadBoard(LoadType.LOCAL)
                 }
                 is AsyncErrorResult -> {
                     handleError(result.error)
@@ -455,7 +457,7 @@ class BoardViewModel : BaseViewModel() {
                     }
 
                     // refresh the board item ordering
-                    loadBoard(false)
+                    loadBoard(LoadType.LOCAL)
                 }
             }
 
