@@ -47,15 +47,9 @@ class BoardLocalDataSource(
     private var timestamp1 = System.currentTimeMillis()
     private var timestamp2 = System.currentTimeMillis()
 
-    /* if set to true, the next time items are fetched, a sync operation with their respective
-    source will trigger
-     */
-    private var requestSyncWithExternalSource: AtomicBoolean = AtomicBoolean(false)
-
-    //TODO replace requestSyncWithExternalSource with refresh
     override fun getBoard(circleId: String, itemType: Int, refresh: Boolean): Flowable<Board> {
         // if this item type request has been requested before, just return the cached board version
-        return if (lastFetchedItemType.get() == itemType && !requestSyncWithExternalSource.get()) Flowable.just(
+        return if (lastFetchedItemType.get() == itemType && !refresh) Flowable.just(
             inMemoryBoard
         )
 
@@ -63,9 +57,7 @@ class BoardLocalDataSource(
         else {
             when (itemType) {
                 BoardItem.TYPE_EVENT -> {
-                    val requestSync = requestSyncWithExternalSource.get()
-                    requestSyncWithExternalSource.set(false)
-                    getEventBoard(circleId, requestSync)
+                    getEventBoard(circleId, false)
                         .doOnNext {
                             synchronized(lock) {
                                 inMemoryBoard = it

@@ -14,6 +14,7 @@ import io.jitrapon.glom.base.model.AsyncSuccessResult
 import io.jitrapon.glom.base.model.LiveEvent
 import io.jitrapon.glom.base.model.MessageLevel
 import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.ReloadData
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.get
@@ -178,15 +179,24 @@ class BoardViewModel : BaseViewModel() {
         })
     }
 
+    /**
+     * Callback called when data has changed and may need to be refreshed
+     * True iff data needs to be refreshed
+     */
     private val onDataChange: ((AsyncResult<Boolean>) -> Unit) = {
         when (it) {
             is AsyncSuccessResult -> {
                 // runs in background thread
-                observableViewAction.postValue(Snackbar(
-                    message = AndroidString(text = "Board content has changed"),
-                    level = MessageLevel.INFO,
-                    shouldDismiss = false
-                ))
+                if (it.result) {
+                    observableViewAction.postValue(ReloadData(0L))
+                }
+                else {
+                    observableViewAction.postValue(Snackbar(
+                        message = AndroidString(text = "Board content has changed"),
+                        level = MessageLevel.INFO,
+                        shouldDismiss = false
+                    ))
+                }
             }
         }
     }
