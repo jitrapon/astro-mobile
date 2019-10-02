@@ -545,7 +545,7 @@ class EventItemActivity : BoardItemActivity(),
     }
 
     override fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
-        viewModel.saveItem {
+        viewModel.saveItem(null) {
             callback(it)
         }
     }

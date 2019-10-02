@@ -27,6 +27,7 @@ import io.jitrapon.glom.base.viewmodel.runAsync
 import io.jitrapon.glom.board.Board
 import io.jitrapon.glom.board.BoardDataSource
 import io.jitrapon.glom.board.item.BoardItem
+import io.jitrapon.glom.board.item.event.exceptions.SaveOptionRequiredException
 import io.jitrapon.glom.board.item.event.plan.EventDatePoll
 import io.jitrapon.glom.board.item.event.plan.EventPlacePoll
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSource
@@ -52,6 +53,10 @@ class EventItemInteractor(
     private val eventItemDataSource: EventItemDataSource,
     private val eventItemPreferenceDataSource: EventItemPreferenceDataSource
 ) : BaseInteractor() {
+
+    enum class SaveOption {
+        THIS_OCCURRENCE, ALL_OCCURRENCE, ALL_OCCURRENCE_AFTER
+    }
 
     /* place provider use for providing place info */
     private var placeProvider: PlaceProvider? = null
@@ -180,7 +185,7 @@ class EventItemInteractor(
      * Saves the current state of the item and returns
      * the new item, along with a flag indicating if the item has been modified
      */
-    fun saveItem(onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
+    fun saveItem(option: SaveOption?, onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         // if this item is a calendar item, and the end date is not set by the user
         // set it to be equal to the start date so that the calendar provider allows
         // us to save
@@ -200,8 +205,13 @@ class EventItemInteractor(
             }
         }
 
-        onComplete(AsyncSuccessResult(event to isItemModified))
-        isItemModified = false
+        if (event.itemInfo.repeatInfo != null && option == null) {
+            onComplete(AsyncErrorResult(SaveOptionRequiredException()))
+        }
+        else {
+            onComplete(AsyncSuccessResult(event to isItemModified))
+            isItemModified = false
+        }
     }
 
     //endregion

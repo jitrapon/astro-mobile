@@ -50,6 +50,7 @@ import io.jitrapon.glom.board.item.BoardItem
 import io.jitrapon.glom.board.item.BoardItemUiModel
 import io.jitrapon.glom.board.item.BoardItemViewModel
 import io.jitrapon.glom.board.item.SyncStatus
+import io.jitrapon.glom.board.item.event.exceptions.SaveOptionRequiredException
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_DATE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_PLACE_PAGE
 import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePickerUiModel
@@ -532,8 +533,8 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveItem(onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
-        interactor.saveItem {
+    fun saveItem(option: EventItemInteractor.SaveOption?, onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
+        interactor.saveItem(option) {
             when (it) {
                 is AsyncSuccessResult -> onSuccess(
                     Triple(
@@ -542,7 +543,14 @@ class EventItemViewModel : BoardItemViewModel() {
                         isNewItem
                     )
                 )
-                is AsyncErrorResult -> handleError(it.error)
+                is AsyncErrorResult -> {
+                    when (it.error) {
+                        is SaveOptionRequiredException -> {
+
+                        }
+                        else -> handleError(it.error)
+                    }
+                }
             }
         }
     }
