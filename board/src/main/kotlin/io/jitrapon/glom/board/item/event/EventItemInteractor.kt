@@ -185,7 +185,7 @@ class EventItemInteractor(
      * Saves the current state of the item and returns
      * the new item, along with a flag indicating if the item has been modified
      */
-    fun saveItem(option: SaveOption?, onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
+    fun saveItem(option: SaveOption?, isNewItem: Boolean, onComplete: (AsyncResult<Pair<BoardItem, Boolean>>) -> Unit) {
         // if this item is a calendar item, and the end date is not set by the user
         // set it to be equal to the start date so that the calendar provider allows
         // us to save
@@ -205,7 +205,7 @@ class EventItemInteractor(
             }
         }
 
-        if (event.itemInfo.repeatInfo != null && option == null) {
+        if (event.itemInfo.repeatInfo != null && option == null && !isNewItem) {
             onComplete(AsyncErrorResult(SaveOptionRequiredException()))
         }
         else {

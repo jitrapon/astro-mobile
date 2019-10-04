@@ -11,7 +11,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
+import io.jitrapon.glom.base.model.Alert
 import io.jitrapon.glom.base.model.AndroidImage
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.AnimationItem
@@ -533,8 +535,11 @@ class EventItemViewModel : BoardItemViewModel() {
     /**
      * Saves the current state and returns a model object with the state
      */
-    fun saveItem(option: EventItemInteractor.SaveOption?, onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
-        interactor.saveItem(option) {
+    fun saveItem(
+        option: EventItemInteractor.SaveOption?,
+        onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit
+    ) {
+        interactor.saveItem(option, isNewItem) {
             when (it) {
                 is AsyncSuccessResult -> onSuccess(
                     Triple(
@@ -545,9 +550,15 @@ class EventItemViewModel : BoardItemViewModel() {
                 )
                 is AsyncErrorResult -> {
                     when (it.error) {
-                        is SaveOptionRequiredException -> {
+                        is SaveOptionRequiredException -> observableViewAction.value =
+                            PresentChoices(
+                                AndroidString(text = "What would you like to modify?"),
+                                arrayListOf(
+                                    PreferenceItemUiModel(null, AndroidString(text = "This occurrence only")),
+                                    PreferenceItemUiModel(null, AndroidString(text = "All occurrences"))
+                            )) {
 
-                        }
+                            }
                         else -> handleError(it.error)
                     }
                 }
