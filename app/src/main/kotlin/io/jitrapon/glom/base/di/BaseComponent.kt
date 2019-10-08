@@ -3,6 +3,7 @@ package io.jitrapon.glom.base.di
 import android.app.Application
 import dagger.Component
 import io.jitrapon.glom.base.component.GlomGlideModule
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleDataSource
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserDataSource
@@ -33,6 +34,7 @@ interface BaseComponent {
     fun circleInteractor(): CircleInteractor
     @Named("accountRepository")
     fun accountDataSource(): AccountDataSource
+    fun placeProvider(): PlaceProvider
 
     fun inject(dataSource: RemoteDataSource)
     fun inject(activity: BaseActivity)

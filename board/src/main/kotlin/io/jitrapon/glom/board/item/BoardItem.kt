@@ -73,6 +73,15 @@ interface BoardItem : DataModel {
      * Indicates that this item is about to be synced to local source
      */
     val isSyncingToLocal: Boolean
+
+    /**
+     * Data that is to be saved when creating or editing a board item
+     */
+    data class SavedState(
+        val item: BoardItem,
+        val isItemModified: Boolean,
+        val isItemNew: Boolean
+    )
 }
 
 /**

@@ -456,6 +456,15 @@ class EventItemActivity : BoardItemActivity(),
                     }
                 }
             })
+
+            // observe on dismiss action
+            getObservableDismissAction().observe(this@EventItemActivity, Observer {
+                it?.let {
+                    if (it.action == Const.DISMISS_BOARD_ITEM && it.payload is BoardItem.SavedState) {
+                        dismissView(it.payload as BoardItem.SavedState)
+                    }
+                }
+            })
         }
     }
 
@@ -544,10 +553,8 @@ class EventItemActivity : BoardItemActivity(),
         }
     }
 
-    override fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit) {
-        viewModel.saveItem(null) {
-            callback(it)
-        }
+    override fun onDismiss() {
+        viewModel.prepareItemToSave(null)
     }
 
     override fun navigate(action: String, payload: Any?) {

@@ -23,6 +23,7 @@ import androidx.core.database.getStringOrNull
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
+import io.jitrapon.glom.base.model.RecurringSaveOption
 import io.jitrapon.glom.base.model.toRepeatInfo
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.addDay
@@ -491,23 +492,30 @@ class CalendarDaoImpl(private val context: Context) :
 //
 //            contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
 
-            put(
-                CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
-                event.itemInfo.repeatInfo?.instanceStartTime
-            )
-            val duration = event.itemInfo.startTime?.let {
-                val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
-                endTime - it
-            } ?: throw Exception("Cannot update event without start time")
-            put(CalendarContract.Events.DURATION, duration.toDurationString())
-            calendar?.let {
-                put(CalendarContract.Events.CALENDAR_ID, it.calId)
+            val editMode = event.itemInfo.repeatInfo?.editMode
+            if (editMode == RecurringSaveOption.ALL) {
+                //TODO delete from events table, then recreate
             }
-            val exceptionUri = Uri.withAppendedPath(
-                CalendarContract.Events.CONTENT_EXCEPTION_URI,
-                eventId
-            )
-            contentResolver.insert(exceptionUri, this)
+            else if (editMode == RecurringSaveOption.SINGLE) {
+                put(
+                    CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+                    event.itemInfo.repeatInfo?.instanceStartTime
+                )
+                val duration = event.itemInfo.startTime?.let {
+                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                    endTime - it
+                } ?: throw Exception("Cannot update event without start time")
+                put(CalendarContract.Events.DURATION, duration.toDurationString())
+                calendar?.let {
+                    put(CalendarContract.Events.CALENDAR_ID, it.calId)
+                }
+                val exceptionUri = Uri.withAppendedPath(
+                    CalendarContract.Events.CONTENT_EXCEPTION_URI,
+                    eventId
+                )
+                contentResolver.insert(exceptionUri, this)
+            }
+            event.itemInfo.repeatInfo?.editMode = null
 
             // need to trigger a calendar sync so that recurring instances are re-generated correctly
             // in time

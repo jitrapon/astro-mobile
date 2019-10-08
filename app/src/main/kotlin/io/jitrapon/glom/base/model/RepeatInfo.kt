@@ -35,6 +35,7 @@ data class RepeatInfo(
     val instanceStartTime: Long? = null,
     val instanceIsFullDay: Boolean? = null,
     val instanceSyncId: String? = null,
+    var editMode: RecurringSaveOption? = null,
     override var retrievedTime: Date? = null,
     override val error: Throwable? = null
 ) : DataModel {
@@ -65,7 +66,10 @@ data class RepeatInfo(
         parcel.readInt().let {
             if (it == -1) null else it == 1
         },
-        parcel.readString()
+        parcel.readString(),
+        parcel.readInt().let {
+            RecurringSaveOption.values().associateBy(RecurringSaveOption::index).getOrDefault(it, null)
+        }
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -90,6 +94,7 @@ data class RepeatInfo(
             }
         )
         parcel.writeString(instanceSyncId)
+        parcel.writeInt(editMode?.index ?: -1)
     }
 
     override fun describeContents(): Int = 0
@@ -98,6 +103,10 @@ data class RepeatInfo(
         override fun createFromParcel(parcel: Parcel): RepeatInfo = RepeatInfo(parcel)
         override fun newArray(size: Int): Array<RepeatInfo?> = arrayOfNulls(size)
     }
+}
+
+enum class RecurringSaveOption(val index: Int) {
+    SINGLE(0), ALL(1)
 }
 
 /**

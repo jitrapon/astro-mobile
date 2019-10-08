@@ -80,14 +80,7 @@ abstract class BoardItemActivity : BaseActivity() {
      * We want to make sure to save user's changes before finishing this activity
      */
     override fun onBackPressed() {
-        onSaveItem { item ->
-            setResult(RESULT_OK, Intent().apply {
-                putExtra(Const.EXTRA_BOARD_ITEM, item.first)
-                putExtra(Const.EXTRA_IS_BOARD_ITEM_MODIFIED, item.second)
-                putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, item.third)
-            })
-            supportFinishAfterTransition()
-        }
+        onDismiss()
     }
 
     //endregion
@@ -104,10 +97,22 @@ abstract class BoardItemActivity : BaseActivity() {
     protected fun isNewItem(): Boolean = intent?.getBooleanExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, false) ?: false
 
     /**
-     * Returns the current board item after user has edited or filled
-     * This will be executed in a background thread
+     * Invoked when the Activity is about to be dismissed and any checks to make sure
+     * user's data is saved should be performed at this stage
      */
-    abstract fun onSaveItem(callback: (Triple<BoardItem?, Boolean, Boolean>) -> Unit)
+    abstract fun onDismiss()
+
+    /**
+     * Perform saving the state to Bundle and dismiss this Activity
+     */
+    internal fun dismissView(savedState: BoardItem.SavedState) {
+        setResult(RESULT_OK, Intent().apply {
+            putExtra(Const.EXTRA_BOARD_ITEM, savedState.item)
+            putExtra(Const.EXTRA_IS_BOARD_ITEM_MODIFIED, savedState.isItemModified)
+            putExtra(Const.EXTRA_IS_BOARD_ITEM_NEW, savedState.isItemNew)
+        })
+        supportFinishAfterTransition()
+    }
 
     /**
      * Returns the layout ID of this activity to be inflated

@@ -1,7 +1,7 @@
 package io.jitrapon.glom.board.item.event
 
 /**
- * Autocomplete suggestions to be used in conjunction with autocomplete
+ * EventNameAutocompleteInteractor suggestions to be used in conjunction with autocomplete
  *
  * @author Jitrapon Tiachunpun
  */

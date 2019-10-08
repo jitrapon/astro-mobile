@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.jitrapon.glom.R
 import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.ui.BaseActivity
 import io.jitrapon.glom.base.util.getString
 import io.jitrapon.glom.base.util.hide
 import io.jitrapon.glom.base.util.load
@@ -43,6 +44,8 @@ class DialogRecyclerViewAdapter(private val context: Context,
 
         init {
             itemView.setOnClickListener {
+                (context as? BaseActivity)?.dialog?.dismiss()
+
                 onItemClick(adapterPosition)
             }
         }

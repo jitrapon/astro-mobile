@@ -22,6 +22,7 @@ object Const {
     const val PLACE_PICKER_RESULT_CODE = 1003
     const val NAVIGATE_TO_BOARD_PREFERENCE = "action.navigate.board.preference"
     const val EXTRA_BOARD_ITEM_TYPE = "android.intent.EXTRA_BOARD_ITEM_TYPE"
+    const val DISMISS_BOARD_ITEM = "action.dismiss.board.item"
     const val BOARD_ITEM_PREFERENCE_REQUEST_CODE = 1004
 }
 

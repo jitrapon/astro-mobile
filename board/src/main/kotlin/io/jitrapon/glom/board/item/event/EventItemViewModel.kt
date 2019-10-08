@@ -11,9 +11,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
-import io.jitrapon.glom.base.model.Alert
 import io.jitrapon.glom.base.model.AndroidImage
 import io.jitrapon.glom.base.model.AndroidString
 import io.jitrapon.glom.base.model.AnimationItem
@@ -26,6 +24,7 @@ import io.jitrapon.glom.base.model.Navigation
 import io.jitrapon.glom.base.model.PlaceInfo
 import io.jitrapon.glom.base.model.PreferenceItemUiModel
 import io.jitrapon.glom.base.model.PresentChoices
+import io.jitrapon.glom.base.model.RecurringSaveOption
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.model.Snackbar
 import io.jitrapon.glom.base.model.UiModel
@@ -55,6 +54,7 @@ import io.jitrapon.glom.board.item.SyncStatus
 import io.jitrapon.glom.board.item.event.exceptions.SaveOptionRequiredException
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_DATE_PAGE
 import io.jitrapon.glom.board.item.event.plan.PLAN_EVENT_PLACE_PAGE
+import io.jitrapon.glom.board.item.event.widget.EventNameAutocompleteInteractor
 import io.jitrapon.glom.board.widget.recurrencepicker.RecurrencePickerUiModel
 import java.util.ArrayList
 import java.util.Calendar
@@ -70,6 +70,9 @@ class EventItemViewModel : BoardItemViewModel() {
 
     @Inject
     lateinit var interactor: EventItemInteractor
+
+    @Inject
+    lateinit var autocompleter: EventNameAutocompleteInteractor
 
     /* cache copy of the unmodified event name, used for displaying during the transition end animation */
     private var prevName: String? = null
@@ -125,6 +128,9 @@ class EventItemViewModel : BoardItemViewModel() {
 
     /* observable event to show recurrence picker */
     private val observableRecurrencePickerEvent = LiveEvent<RecurrencePickerUiModel>()
+
+    /* observable event when view is dismissed */
+    private val observableDismissAction = LiveEvent<Navigation>()
 
     init {
         BoardInjector.getComponent().inject(this)
@@ -533,36 +539,44 @@ class EventItemViewModel : BoardItemViewModel() {
     fun shouldShowNameAutocomplete(): Boolean = shouldShowNameAutocomplete
 
     /**
-     * Saves the current state and returns a model object with the state
+     * Invoked when the View is about to be dismissed and notifies the item to prepare to save
      */
-    fun saveItem(
-        option: EventItemInteractor.SaveOption?,
-        onSuccess: (Triple<BoardItem?, Boolean, Boolean>) -> Unit
-    ) {
-        interactor.saveItem(option, isNewItem) {
-            when (it) {
-                is AsyncSuccessResult -> onSuccess(
-                    Triple(
-                        it.result.first,
-                        it.result.second,
-                        isNewItem
-                    )
-                )
-                is AsyncErrorResult -> {
-                    when (it.error) {
-                        is SaveOptionRequiredException -> observableViewAction.value =
-                            PresentChoices(
-                                AndroidString(text = "What would you like to modify?"),
-                                arrayListOf(
-                                    PreferenceItemUiModel(null, AndroidString(text = "This occurrence only")),
-                                    PreferenceItemUiModel(null, AndroidString(text = "All occurrences"))
-                            )) {
+    fun prepareItemToSave(option: RecurringSaveOption?) {
+        observableDismissAction.value = try {
+            Navigation(Const.DISMISS_BOARD_ITEM, interactor.createSavedState(option, isNewItem))
+        }
+        catch (ex: SaveOptionRequiredException) {
+            showSaveOptionPrompt()
+            null
+        }
+        catch (ex: Exception) {
+            handleError(ex)
+            null
+        }
+    }
 
-                            }
-                        else -> handleError(it.error)
-                    }
-                }
+    private fun showSaveOptionPrompt() {
+        observableViewAction.value = PresentChoices(
+            AndroidString(R.string.event_item_recurring_save_option_title),
+            arrayListOf(
+                PreferenceItemUiModel(
+                    null,
+                    AndroidString(R.string.event_item_recurring_save_option_all),
+                    RecurringSaveOption.ALL.name
+                ),
+                PreferenceItemUiModel(
+                    null,
+                    AndroidString(R.string.event_item_recurring_save_option_single),
+                    RecurringSaveOption.SINGLE.name
+                )
+            )
+        ) {
+            val option = when (it) {
+                0 -> RecurringSaveOption.ALL
+                1 -> RecurringSaveOption.SINGLE
+                else -> null
             }
+            prepareItemToSave(option)
         }
     }
 
@@ -869,7 +883,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Synchronously filter place suggestions to display based on the specified query
      */
     fun filterLocationSuggestions(text: CharSequence): List<Suggestion> {
-        return interactor.filterLocationSuggestions(text.toString())
+        return autocompleter.filterLocationSuggestions(text.toString())
     }
 
     /**
@@ -886,7 +900,7 @@ class EventItemViewModel : BoardItemViewModel() {
         val displayText =
             suggestion.selectData as? String ?: getSuggestionText(suggestion).text.toString()
         val delimiter = " "
-        interactor.applySuggestion(currentText.toString(), suggestion, displayText, delimiter)
+        autocompleter.applySuggestion(currentText.toString(), suggestion, displayText, delimiter)
 
         val text = currentText.trim()
         val builder = SpannableStringBuilder(text)
@@ -905,13 +919,13 @@ class EventItemViewModel : BoardItemViewModel() {
                 if (suggestion.selectData.second == true) {
                     val info = interactor.event.itemInfo
                     observableStartDate.value = getEventDetailDate(
-                        interactor.getSelectedDate()?.time,
+                        autocompleter.getSelectedDate()?.time,
                         suggestion.selectData.second as Boolean, info.source, info.isFullDay
                     )
                 }
             }
             is PlaceInfo -> {
-                val index = interactor.getSubQueryStartIndex()
+                val index = autocompleter.getSubQueryStartIndex()
                 if (index >= 0 && index < currentText.trim().length) {
                     builder.replace(index, text.length, "")
                 }
@@ -996,7 +1010,7 @@ class EventItemViewModel : BoardItemViewModel() {
      * Remove the suggestion
      */
     fun removeSuggestion(suggestion: Suggestion) {
-        interactor.removeSuggestion(suggestion)
+        autocompleter.removeSuggestion(suggestion)
     }
 
     /**
@@ -1254,6 +1268,9 @@ class EventItemViewModel : BoardItemViewModel() {
 
     fun getObservableRecurrencePicker(): LiveData<RecurrencePickerUiModel> =
         observableRecurrencePickerEvent
+
+    fun getObservableDismissAction(): LiveData<Navigation> =
+        observableDismissAction
 
     override fun cleanUp() {
         interactor.cleanup()

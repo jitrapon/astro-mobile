@@ -20,6 +20,11 @@ data class PreferenceItemUiModel(override var status: UiModel.Status = UiModel.S
             this(UiModel.Status.SUCCESS, null, title,
                 false, null, null,
                 null, null, image, null)
+
+    constructor(image: AndroidImage?, title: AndroidString, tag: String?):
+            this(UiModel.Status.SUCCESS, null, title,
+                false, null, null,
+                null, tag, image, null)
 }
 
 fun PreferenceItemUiModel.isHeaderItem(): Boolean = headerTag != null && isExpanded != null

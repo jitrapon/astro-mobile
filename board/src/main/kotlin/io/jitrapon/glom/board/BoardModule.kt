@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
+import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
 import io.jitrapon.glom.base.model.ContentChangeInfo
@@ -18,6 +19,7 @@ import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceDataSourc
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceInteractor
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceLocalDataSource
 import io.jitrapon.glom.board.item.event.preference.EventItemPreferenceRepository
+import io.jitrapon.glom.board.item.event.widget.EventNameAutocompleteInteractor
 import io.reactivex.subjects.PublishSubject
 
 @Module
@@ -111,4 +113,13 @@ class BoardModule {
     @BoardScope
     fun provideEventItemPreferenceInteractor(repository: EventItemPreferenceDataSource): EventItemPreferenceInteractor =
         EventItemPreferenceInteractor(repository)
+
+    @Provides
+    @BoardScope
+    fun provideAutocompleter(
+        circleInteractor: CircleInteractor,
+        placeProvider: PlaceProvider,
+        eventItemDataSource: EventItemDataSource
+    ): EventNameAutocompleteInteractor =
+        EventNameAutocompleteInteractor(circleInteractor, placeProvider, eventItemDataSource)
 }
