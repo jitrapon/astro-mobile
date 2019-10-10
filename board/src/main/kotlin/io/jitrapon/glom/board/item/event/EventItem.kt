@@ -77,4 +77,7 @@ data class EventItem(override val itemType: Int,
 
     override val isSyncingToLocal: Boolean
         get() = itemInfo.source.isBoard() && itemInfo.newSource?.isBoard()?.not() == true
+
+    val instanceEventId: String
+        get() = itemId.substringBefore(".")
 }

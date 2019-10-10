@@ -21,6 +21,7 @@ import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.RecurringSaveOption
@@ -42,6 +43,7 @@ import io.jitrapon.glom.board.item.event.preference.CALENDAR_OBSERVER_USE_WORKER
 import io.jitrapon.glom.board.item.event.preference.CalendarPreference
 import io.reactivex.Flowable
 import java.util.ArrayList
+import java.util.Calendar
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -477,8 +479,48 @@ class CalendarDaoImpl(private val context: Context) :
     ) {
         // case 1: event is repeating and is rescheduled
         // create a new event exception
-        val eventId = event.itemId.substringBefore(".")
+        val eventId = event.instanceEventId
         if (event.itemInfo.repeatInfo?.isReschedule == true) {
+
+            // check the editMode whether we should update only an instance of this recurring event,
+            // or update all instances
+            val editMode = event.itemInfo.repeatInfo?.editMode
+            event.itemInfo.repeatInfo?.editMode = null
+            if (editMode == RecurringSaveOption.ALL) {
+                // must find the original event in the Events table
+                // then modify its recurrence info and start and end dates
+                //FIXME firstInstanceStartTime is still not correct
+                val originalStartDateTimeCalendar = event.itemInfo.repeatInfo?.firstInstanceStartTime!!.let {
+                    Calendar.getInstance().apply {
+                        timeInMillis = it
+                    }
+                }
+                val dtend: Long? = null
+                val newStartTime = event.itemInfo.startTime?.let {
+                    Calendar.getInstance().apply {
+                        time = Date(it)
+                        set(Calendar.WEEK_OF_YEAR, originalStartDateTimeCalendar[Calendar.WEEK_OF_YEAR])
+                        set(Calendar.YEAR, originalStartDateTimeCalendar[Calendar.YEAR])
+                        time
+                    }.timeInMillis
+                } ?: throw Exception("Cannot update event without start time")
+                put(CalendarContract.Events.DTSTART, newStartTime)
+                put(CalendarContract.Events.DTEND, dtend)
+                val duration = event.itemInfo.startTime?.let {
+                    val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                    endTime - it
+                } ?: throw Exception("Cannot update event without start time")
+                put(CalendarContract.Events.DURATION, duration.toDurationString())
+                put(CalendarContract.Events.RRULE, event.itemInfo.repeatInfo?.rrule)
+                calendar?.calId?.let { put(CalendarContract.Events.CALENDAR_ID, it) }
+
+                val updateUri = ContentUris.withAppendedId(
+                    CalendarContract.Events.CONTENT_URI,
+                    eventId.toLong()
+                )
+                contentResolver.update(updateUri, this, null, null)
+            }
+            else if (editMode == RecurringSaveOption.SINGLE) {
 //            put(CalendarContract.Events.DTEND, event.itemInfo.endTime)
 //            put(CalendarContract.Events.ORIGINAL_ID, eventId)
 //            put(
@@ -491,12 +533,6 @@ class CalendarDaoImpl(private val context: Context) :
 //            )
 //
 //            contentResolver.insert(CalendarContract.Events.CONTENT_URI, this)
-
-            val editMode = event.itemInfo.repeatInfo?.editMode
-            if (editMode == RecurringSaveOption.ALL) {
-                //TODO delete from events table, then recreate
-            }
-            else if (editMode == RecurringSaveOption.SINGLE) {
                 put(
                     CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
                     event.itemInfo.repeatInfo?.instanceStartTime
@@ -515,7 +551,6 @@ class CalendarDaoImpl(private val context: Context) :
                 )
                 contentResolver.insert(exceptionUri, this)
             }
-            event.itemInfo.repeatInfo?.editMode = null
 
             // need to trigger a calendar sync so that recurring instances are re-generated correctly
             // in time

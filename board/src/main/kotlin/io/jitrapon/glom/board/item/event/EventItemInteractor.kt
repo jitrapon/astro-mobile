@@ -700,8 +700,11 @@ class EventItemInteractor(
 
     fun setItemRecurrence(repeatInfo: RepeatInfo?) {
         isItemModified = true
-
+        val isRepeating = event.itemInfo.repeatInfo != null
         eventItemDataSource.setRepeatInfo(repeatInfo)
+        if (isRepeating) {
+            event.itemInfo.repeatInfo?.isReschedule = true
+        }
     }
 
     //endregion
