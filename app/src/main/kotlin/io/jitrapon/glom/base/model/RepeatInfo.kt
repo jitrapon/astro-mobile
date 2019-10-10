@@ -31,7 +31,7 @@ data class RepeatInfo(
     val interval: Long,
     val until: Long,
     val meta: List<Int>?,
-    val firstInstanceStartTime: Long = 0L,
+    var firstInstanceStartTime: Long = 0L,
     val instanceStartTime: Long? = null,
     val instanceIsFullDay: Boolean? = null,
     val instanceSyncId: String? = null,

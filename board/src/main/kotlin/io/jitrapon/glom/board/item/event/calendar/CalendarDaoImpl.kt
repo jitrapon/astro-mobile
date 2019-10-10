@@ -21,7 +21,6 @@ import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
 import androidx.core.database.getStringOrNull
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.model.DataModel
 import io.jitrapon.glom.base.model.NoCalendarPermissionException
 import io.jitrapon.glom.base.model.RecurringSaveOption
@@ -340,7 +339,7 @@ class CalendarDaoImpl(private val context: Context) :
                     AppLogger.d(
                         "Recurring event eventId=$eventId, syncId=$syncId, " +
                                 "instanceId=$eventInstanceId, rrule=$rrule, " +
-                                "rdate=$rdate, exdate=$exdate"
+                                "rdate=$rdate, exdate=$exdate, firstOccurrence=${Date(firstOccurrenceStartTime!!)}"
                     )
 
                     if (!isDeleted) {
@@ -489,7 +488,6 @@ class CalendarDaoImpl(private val context: Context) :
             if (editMode == RecurringSaveOption.ALL) {
                 // must find the original event in the Events table
                 // then modify its recurrence info and start and end dates
-                //FIXME firstInstanceStartTime is still not correct
                 val originalStartDateTimeCalendar = event.itemInfo.repeatInfo?.firstInstanceStartTime!!.let {
                     Calendar.getInstance().apply {
                         timeInMillis = it
@@ -500,10 +498,12 @@ class CalendarDaoImpl(private val context: Context) :
                     Calendar.getInstance().apply {
                         time = Date(it)
                         set(Calendar.WEEK_OF_YEAR, originalStartDateTimeCalendar[Calendar.WEEK_OF_YEAR])
+                        set(Calendar.MONTH, originalStartDateTimeCalendar[Calendar.MONTH])
                         set(Calendar.YEAR, originalStartDateTimeCalendar[Calendar.YEAR])
                         time
                     }.timeInMillis
                 } ?: throw Exception("Cannot update event without start time")
+
                 put(CalendarContract.Events.DTSTART, newStartTime)
                 put(CalendarContract.Events.DTEND, dtend)
                 val duration = event.itemInfo.startTime?.let {

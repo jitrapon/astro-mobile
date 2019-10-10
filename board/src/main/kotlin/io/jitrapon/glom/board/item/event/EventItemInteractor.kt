@@ -700,10 +700,13 @@ class EventItemInteractor(
 
     fun setItemRecurrence(repeatInfo: RepeatInfo?) {
         isItemModified = true
-        val isRepeating = event.itemInfo.repeatInfo != null
+        val previousRepeatInfo = event.itemInfo.repeatInfo
         eventItemDataSource.setRepeatInfo(repeatInfo)
-        if (isRepeating) {
-            event.itemInfo.repeatInfo?.isReschedule = true
+        if (previousRepeatInfo != null) {
+            event.itemInfo.repeatInfo?.apply {
+                firstInstanceStartTime = previousRepeatInfo.firstInstanceStartTime
+                isReschedule = true
+            }
         }
     }
 
