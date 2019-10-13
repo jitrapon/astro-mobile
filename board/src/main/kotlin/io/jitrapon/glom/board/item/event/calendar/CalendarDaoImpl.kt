@@ -233,7 +233,8 @@ class CalendarDaoImpl(private val context: Context) :
                 "${CalendarContract.Events.CALENDAR_ID} in ($calendarIds) " +
                         "AND ${CalendarContract.Events.DTSTART} >= $startSearchTime $endSearchQuery " +
                         "AND ${CalendarContract.Events.DELETED} = 0 " +
-                        "AND ${CalendarContract.Events.RRULE} IS NULL",
+                        "AND ${CalendarContract.Events.RRULE} IS NULL " +
+                        "AND ${CalendarContract.Events.STATUS} < ${CalendarContract.Events.STATUS_CANCELED}",
                 null, null
             )
             if (cur == null || cur.count == 0) return
@@ -582,13 +583,39 @@ class CalendarDaoImpl(private val context: Context) :
     }
 
     override fun deleteEvent(event: EventItem): Boolean {
-        val deleteUri =
-            ContentUris.withAppendedId(
-                CalendarContract.Events.CONTENT_URI,
-                event.itemId.toLong()
-            )
+        val editMode = event.itemInfo.repeatInfo?.editMode
+        event.itemInfo.repeatInfo?.editMode = null
+        when (editMode) {
+            RecurringSaveOption.SINGLE -> {
+                val values = ContentValues().apply {
+                    put(
+                        CalendarContract.Events.ORIGINAL_INSTANCE_TIME,
+                        event.itemInfo.repeatInfo?.instanceStartTime
+                    )
+                    val duration = event.itemInfo.startTime?.let {
+                        val endTime = event.itemInfo.endTime ?: Date(it).addHour(1).time
+                        endTime - it
+                    } ?: throw Exception("Cannot update event without start time")
+                    put(CalendarContract.Events.DURATION, duration.toDurationString())
+                    put(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CANCELED)
+                }
+                val exceptionUri = Uri.withAppendedPath(
+                    CalendarContract.Events.CONTENT_EXCEPTION_URI,
+                    event.instanceEventId
+                )
+                contentResolver.insert(exceptionUri, values)
+            }
+            else -> {
+                val eventId = if (event.itemInfo.repeatInfo != null) event.instanceEventId.toLong() else event.itemId.toLong()
+                val deleteUri =
+                    ContentUris.withAppendedId(
+                        CalendarContract.Events.CONTENT_URI,
+                        eventId
+                    )
+                contentResolver.delete(deleteUri, null, null)
+            }
+        }
         isSelfModified.set(true)
-        contentResolver.delete(deleteUri, null, null)
         return event.itemInfo.repeatInfo != null
     }
 

@@ -23,7 +23,6 @@ import io.reactivex.subjects.PublishSubject
 import java.util.ArrayList
 import java.util.Date
 import java.util.HashSet
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class BoardLocalDataSource(
@@ -214,17 +213,29 @@ class BoardLocalDataSource(
             synchronized(lock) {
                 inMemoryBoard.items.indexOfFirst { itemId == it.itemId }.let {
                     if (it != -1) {
-                        when (val item = inMemoryBoard.items[it]) {
-                            is EventItem -> if (item.itemInfo.source.calendar == null) {
-                                eventDao.deleteEventById(itemId)
+                        var requireReloadData = false
+                        val item = inMemoryBoard.items[it]
+                        when (item) {
+                            is EventItem -> {
+                                if (item.itemInfo.source.calendar == null) {
+                                    eventDao.deleteEventById(itemId)
+                                }
+                                else {
+                                    requireReloadData = calendarDao.deleteEvent(item)
+                                }
                             }
-                            else {
-                                calendarDao.deleteEvent(item)
-                            }
-                            else -> { /* do nothing */
-                            }
+                            else -> Unit
                         }
-                        inMemoryBoard.items.removeAt(it)
+                        if (requireReloadData) {
+                            val board = when (item.itemType) {
+                                BoardItem.TYPE_EVENT -> getEventBoard(circleId, false).blockingFirst()
+                                else -> throw NotImplementedError()
+                            }
+                            inMemoryBoard = board
+                        }
+                        else {
+                            inMemoryBoard.items.removeAt(it)
+                        }
                     }
                 }
             }

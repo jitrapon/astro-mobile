@@ -4,7 +4,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
@@ -17,8 +21,31 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.di.ObjectGraph
 import io.jitrapon.glom.base.domain.user.settings.ProfileMenuBottomSheet
-import io.jitrapon.glom.base.model.*
-import io.jitrapon.glom.base.util.*
+import io.jitrapon.glom.base.model.Alert
+import io.jitrapon.glom.base.model.AndroidString
+import io.jitrapon.glom.base.model.EmptyLoading
+import io.jitrapon.glom.base.model.ImageButtonUiModel
+import io.jitrapon.glom.base.model.Loading
+import io.jitrapon.glom.base.model.Navigation
+import io.jitrapon.glom.base.model.PreferenceItemUiModel
+import io.jitrapon.glom.base.model.PresentChoices
+import io.jitrapon.glom.base.model.ReloadData
+import io.jitrapon.glom.base.model.RequestPermission
+import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.Toast
+import io.jitrapon.glom.base.model.UiActionModel
+import io.jitrapon.glom.base.util.AppLogger
+import io.jitrapon.glom.base.util.Transformation
+import io.jitrapon.glom.base.util.colorPrimary
+import io.jitrapon.glom.base.util.drawable
+import io.jitrapon.glom.base.util.getUngrantedPermissions
+import io.jitrapon.glom.base.util.loadFromUrl
+import io.jitrapon.glom.base.util.setupActionBar
+import io.jitrapon.glom.base.util.shouldShowRequestPermissionRationale
+import io.jitrapon.glom.base.util.showAlertDialog
+import io.jitrapon.glom.base.util.showChoiceDialog
+import io.jitrapon.glom.base.util.showSnackbar
+import io.jitrapon.glom.base.util.showToast
 import javax.inject.Inject
 
 /**
@@ -49,8 +76,6 @@ abstract class BaseFragment : Fragment() {
     lateinit var placeProvider: PlaceProvider
 
     var snackBar: com.google.android.material.snackbar.Snackbar? = null
-
-    var dialog: AlertDialog? = null
 
     /* callback for when permission request is granted */
     private var permissionsGrantCallback: ((Array<out String>) -> Unit)? = null
@@ -146,7 +171,7 @@ abstract class BaseFragment : Fragment() {
                     it.onRequestPermission
                 )
                 is PresentChoices -> showChoiceDialog(it.title, it.items, it.onItemClick).apply {
-                    dialog = this
+                    (activity as? BaseActivity)?.dialog = this
                 }
                 else -> {
                     AppLogger.w("This ViewAction is is not yet supported by this handler")
@@ -393,6 +418,6 @@ abstract class BaseFragment : Fragment() {
         items: ArrayList<PreferenceItemUiModel>,
         onItemClick: (Int) -> Unit
     ): AlertDialog? {
-        return context?.showChoiceDialog(title, items, onItemClick)
+        return activity?.showChoiceDialog(title, items, onItemClick)
     }
 }

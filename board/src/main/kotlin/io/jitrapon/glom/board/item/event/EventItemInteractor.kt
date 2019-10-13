@@ -192,7 +192,7 @@ class EventItemInteractor(
                 it.editMode = recurringSaveOption
             }
         }
-        if (event.itemInfo.repeatInfo != null && recurringSaveOption == null && !isNewItem && isItemModified) {
+        if (event.itemInfo.repeatInfo?.isReschedule == true && recurringSaveOption == null && !isNewItem && isItemModified) {
             throw SaveOptionRequiredException()
         }
         else {
@@ -201,6 +201,19 @@ class EventItemInteractor(
             )
             isItemModified = false
             return savedState
+        }
+    }
+
+    @Throws(SaveOptionRequiredException::class)
+    fun setItemDeleteMode(itemId: String, recurringSaveOption: RecurringSaveOption?) {
+        val item = (board.items.find { it.itemId == itemId } as? EventItem) ?: return
+        if (item.itemInfo.repeatInfo != null && recurringSaveOption == null) {
+            throw SaveOptionRequiredException()
+        }
+        else {
+            item.itemInfo.repeatInfo?.apply {
+                editMode = recurringSaveOption
+            }
         }
     }
 
@@ -438,6 +451,10 @@ class EventItemInteractor(
         if (!isItemEditable) return
 
         isItemModified = true
+
+        event.itemInfo.repeatInfo?.let {
+            it.isReschedule = isItemModified
+        }
 
         eventItemDataSource.setNote(note.toString())
     }

@@ -27,6 +27,7 @@ import io.jitrapon.glom.base.model.PresentChoices
 import io.jitrapon.glom.base.model.RecurringSaveOption
 import io.jitrapon.glom.base.model.RepeatInfo
 import io.jitrapon.glom.base.model.Snackbar
+import io.jitrapon.glom.base.model.UiActionModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.util.AppLogger
 import io.jitrapon.glom.base.util.InputValidator
@@ -555,6 +556,20 @@ class EventItemViewModel : BoardItemViewModel() {
         }
     }
 
+    override fun prepareItemToDelete(
+        observable: LiveEvent<UiActionModel>,
+        itemId: String,
+        onReady: () -> Unit
+    ) {
+        try {
+            interactor.setItemDeleteMode(itemId, null)
+            onReady()
+        }
+        catch (ex: SaveOptionRequiredException) {
+            showDeleteOptionPrompt(observable, itemId, onReady)
+        }
+    }
+
     private fun showSaveOptionPrompt() {
         observableViewAction.value = PresentChoices(
             AndroidString(R.string.event_item_recurring_save_option_title),
@@ -577,6 +592,41 @@ class EventItemViewModel : BoardItemViewModel() {
                 else -> null
             }
             prepareItemToSave(option)
+        }
+    }
+
+    private fun showDeleteOptionPrompt(
+        observable: LiveEvent<UiActionModel>,
+        itemId: String,
+        onReady: () -> Unit
+    ) {
+        observable.value = PresentChoices(
+            AndroidString(R.string.event_item_recurring_delete_option_title),
+            arrayListOf(
+                PreferenceItemUiModel(
+                    null,
+                    AndroidString(R.string.event_item_recurring_save_option_all),
+                    RecurringSaveOption.ALL.name
+                ),
+                PreferenceItemUiModel(
+                    null,
+                    AndroidString(R.string.event_item_recurring_save_option_single),
+                    RecurringSaveOption.SINGLE.name
+                )
+            )
+        ) {
+            val option = when (it) {
+                0 -> RecurringSaveOption.ALL
+                1 -> RecurringSaveOption.SINGLE
+                else -> null
+            }
+            try {
+                interactor.setItemDeleteMode(itemId, option)
+                onReady()
+            }
+            catch (ex: SaveOptionRequiredException) {
+                showDeleteOptionPrompt(observable, itemId, onReady)
+            }
         }
     }
 

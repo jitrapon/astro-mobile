@@ -3,7 +3,6 @@ package io.jitrapon.glom.board
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
-import com.google.android.libraries.places.internal.it
 import io.jitrapon.glom.base.component.PlaceProvider
 import io.jitrapon.glom.base.domain.circle.CircleInteractor
 import io.jitrapon.glom.base.domain.user.UserInteractor
@@ -469,21 +468,27 @@ class BoardViewModel : BaseViewModel() {
     }
 
     fun deleteItem(position: Int) {
-        boardUiModel.items?.getOrNull(position)?.let { item ->
-            if (item.itemType != BoardItemUiModel.TYPE_HEADER) {
-                val boardItem = boardInteractor.getBoardItem(item.itemId)
-                boardInteractor.deleteItemLocal(item.itemId) {
-                    when (it) {
-                        is AsyncSuccessResult -> {
-                            onBoardItemChanges(it.result, listOf(), listOf(), null)
+        val uiModel = boardUiModel.items?.getOrNull(position) ?: return
+        if (uiModel.itemType != BoardItemUiModel.TYPE_HEADER) {
+            val boardItem = boardInteractor.getBoardItem(uiModel.itemId) ?: return
+            val viewModel = BoardItemViewModelStore.obtainViewModelForItem(boardItem::class.java) ?: return
+            viewModel.prepareItemToDelete(observableViewAction, uiModel.itemId) {
+                deleteItemInternal(uiModel.itemId, boardItem.isSyncable)
+            }
+        }
+    }
 
-                            if (boardItem?.isSyncable == true) {
-                                syncDeletedItem(item.itemId)
-                            }
-                        }
-                        is AsyncErrorResult -> handleError(it.error)
+    private fun deleteItemInternal(itemId: String, isSyncable: Boolean) {
+        boardInteractor.deleteItemLocal(itemId) {
+            when (it) {
+                is AsyncSuccessResult -> {
+                    onBoardItemChanges(it.result, listOf(), listOf(), null)
+
+                    if (isSyncable) {
+                        syncDeletedItem(itemId)
                     }
                 }
+                is AsyncErrorResult -> handleError(it.error)
             }
         }
     }

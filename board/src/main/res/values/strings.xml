@@ -90,7 +90,8 @@
         <item quantity="other">%s events on this date</item>
     </plurals>
     <string name="event_picker_no_date_selected">Select a date to see more details</string>
-    <string name="event_item_recurring_save_option_title">This event is recurring, please specify the instances you want to edit</string>
+    <string name="event_item_recurring_save_option_title">Save changes to…</string>
     <string name="event_item_recurring_save_option_all">All of the events</string>
     <string name="event_item_recurring_save_option_single">Only this event</string>
+    <string name="event_item_recurring_delete_option_title">Delete which event?</string>
 </resources>

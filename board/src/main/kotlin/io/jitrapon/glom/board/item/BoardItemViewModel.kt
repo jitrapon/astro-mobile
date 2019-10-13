@@ -1,5 +1,7 @@
 package io.jitrapon.glom.board.item
 
+import io.jitrapon.glom.base.model.LiveEvent
+import io.jitrapon.glom.base.model.UiActionModel
 import io.jitrapon.glom.base.model.UiModel
 import io.jitrapon.glom.base.viewmodel.BaseViewModel
 import io.jitrapon.glom.board.BoardInteractor
@@ -49,6 +51,12 @@ abstract class BoardItemViewModel : BaseViewModel() {
         boardInteractor: BoardInteractor,
         isSynced: Boolean
     )
+
+    /**
+     * Call before deleting to show any View to let the users know about the delete operation
+     * or choose a delete operation type
+     */
+    abstract fun prepareItemToDelete(observable: LiveEvent<UiActionModel>, itemId: String, onReady: () -> Unit)
 
     /**
      * Call to clean up any resources
