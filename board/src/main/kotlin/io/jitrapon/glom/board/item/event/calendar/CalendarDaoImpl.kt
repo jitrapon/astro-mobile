@@ -616,7 +616,7 @@ class CalendarDaoImpl(private val context: Context) :
             }
         }
         isSelfModified.set(true)
-        return event.itemInfo.repeatInfo != null
+        return event.itemInfo.repeatInfo != null && editMode != RecurringSaveOption.SINGLE
     }
 
     @SuppressLint("MissingPermission")
