@@ -340,7 +340,9 @@ class CalendarDaoImpl(private val context: Context) :
                     AppLogger.d(
                         "Recurring event eventId=$eventId, syncId=$syncId, " +
                                 "instanceId=$eventInstanceId, rrule=$rrule, " +
-                                "rdate=$rdate, exdate=$exdate, firstOccurrence=${Date(firstOccurrenceStartTime!!)}"
+                                "rdate=$rdate, exdate=$exdate, firstOccurrence=${Date(
+                                    firstOccurrenceStartTime!!
+                                )}"
                     )
 
                     if (!isDeleted) {
@@ -489,16 +491,20 @@ class CalendarDaoImpl(private val context: Context) :
             if (editMode == RecurringSaveOption.ALL) {
                 // must find the original event in the Events table
                 // then modify its recurrence info and start and end dates
-                val originalStartDateTimeCalendar = event.itemInfo.repeatInfo?.firstInstanceStartTime!!.let {
-                    Calendar.getInstance().apply {
-                        timeInMillis = it
+                val originalStartDateTimeCalendar =
+                    event.itemInfo.repeatInfo?.firstInstanceStartTime!!.let {
+                        Calendar.getInstance().apply {
+                            timeInMillis = it
+                        }
                     }
-                }
                 val dtend: Long? = null
                 val newStartTime = event.itemInfo.startTime?.let {
                     Calendar.getInstance().apply {
                         time = Date(it)
-                        set(Calendar.WEEK_OF_YEAR, originalStartDateTimeCalendar[Calendar.WEEK_OF_YEAR])
+                        set(
+                            Calendar.WEEK_OF_YEAR,
+                            originalStartDateTimeCalendar[Calendar.WEEK_OF_YEAR]
+                        )
                         set(Calendar.MONTH, originalStartDateTimeCalendar[Calendar.MONTH])
                         set(Calendar.YEAR, originalStartDateTimeCalendar[Calendar.YEAR])
                         time
@@ -606,7 +612,8 @@ class CalendarDaoImpl(private val context: Context) :
                 contentResolver.insert(exceptionUri, values)
             }
             else -> {
-                val eventId = if (event.itemInfo.repeatInfo != null) event.instanceEventId.toLong() else event.itemId.toLong()
+                val eventId =
+                    if (event.itemInfo.repeatInfo != null) event.instanceEventId.toLong() else event.itemId.toLong()
                 val deleteUri =
                     ContentUris.withAppendedId(
                         CalendarContract.Events.CONTENT_URI,
