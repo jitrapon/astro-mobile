@@ -24,7 +24,7 @@ buildscript {
         pagingVersion = '2.1.0'
         browserVersion = '1.0.0'
 
-        placeVersion = '1.1.0'
+        placeVersion = '2.4.0'
         playServicesAuthVersion = '15.0.1'
 
         daggerVersion = '2.23.1'
