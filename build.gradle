@@ -25,7 +25,7 @@ buildscript {
         browserVersion = '1.0.0'
 
         placeVersion = '1.1.0'
-        playServicesAuthVersion = '15.0.1'
+        playServicesAuthVersion = '19.0.0'
 
         daggerVersion = '2.23.1'
         facebookSdkVersion = '[4,5)'
