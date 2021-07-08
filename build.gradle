@@ -17,7 +17,7 @@ buildscript {
         minSdkInstantVersion = 21
 
         ktxVersion = '1.2.0-alpha01'
-        materialVersion = '1.1.0-alpha07'
+        materialVersion = '1.5.0-alpha01'
         constraintLayoutVersion = '2.0.0-beta1'
         lifecycleVersion = '2.2.0-alpha02'
         roomVersion = '2.1.0-rc01'
