@@ -11,11 +11,12 @@
 # Generated files
 /bin
 /gen
-/out
+/outg
 
 # Gradle files
 .gradle
-/build
+build/
+**/build/
 
 # Local configuration file (sdk path, etc)
 /local.properties
@@ -110,6 +111,3 @@ fastlane/test_output
 # After new code Injection tools there's a generated folder /iOSInjectionProject
 # https://github.com/johnno1962/injectionforxcode
 iOSInjectionProject/
-
-# shared build module
-*/build/
