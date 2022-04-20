@@ -32,7 +32,7 @@ buildscript {
         glideVersion = '4.9.0'
         retrofitVersion = '2.6.1'
         instantAppVersion = '1.1.0'
-        rxJavaVersion = '2.2.9'
+        rxJavaVersion = '2.2.21'
         rxAndroidVersion = '2.1.1'
         okhttp3Version = '4.0.1'
         timberVersion = '4.7.1'
