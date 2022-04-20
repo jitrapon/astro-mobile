@@ -58,14 +58,6 @@ android {
 
             ext.enableCrashlytics = false
             ext.alwaysUpdateBuildId = false
-
-            resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
-            resValue "string", "server_url", "http://192.168.1.35:8080/"
-            resValue "string", "account_manager_account_type", "io.jitrapon.glom"
-            resValue "string", "facebook_app_id", "440894693112447"
-            resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
-            resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
-            resValue "string", "line_channel_id", "1634381849"
         }
         release {
             minifyEnabled true
@@ -74,14 +66,6 @@ android {
             crunchPngs true
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
-
-            resValue "string", "google_geo_api_key", "AIzaSyDQB1ijIPQpjpWNRbGRXqpxiXtDoX5G6uc"
-            resValue "string", "server_url", "http://163.47.10.120:8080/"
-            resValue "string", "account_manager_account_type", "io.jitrapon.glom"
-            resValue "string", "facebook_app_id", "440894693112447"
-            resValue "string", "fb_login_protocol_scheme", "fb440894693112447"
-            resValue "string", "google_oauth_server_key", "799298629384-3tujqc8omttijg1cn7ts5t3t5n1sbebu.apps.googleusercontent.com"
-            resValue "string", "line_channel_id", "1634381849"
         }
     }
 
