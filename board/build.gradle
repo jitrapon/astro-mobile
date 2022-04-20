@@ -34,5 +34,5 @@ dependencies {
 
     // views
     implementation "com.romandanylyk:pageindicatorview:1.0.1@aar"
-    implementation "com.maltaisn:recurpicker:1.6.0"
+    implementation "com.maltaisn:recurpicker:2.1.7"
 }
