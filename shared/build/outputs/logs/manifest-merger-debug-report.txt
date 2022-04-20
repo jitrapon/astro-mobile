@@ -1,0 +1,25 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml:2:1-41
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml:2:1-41
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml:2:1-41
+	package
+		ADDED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml:2:11-38
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml:2:1-41
+uses-sdk
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+		ADDED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+		ADDED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
+		INJECTED from /Users/jitrapon/Developer/git/astro-mobile/shared/src/androidMain/AndroidManifest.xml
