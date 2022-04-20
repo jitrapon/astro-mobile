@@ -139,7 +139,7 @@ dependencies {
     api "androidx.lifecycle:lifecycle-extensions:$rootProject.lifecycleVersion"
     kapt "androidx.lifecycle:lifecycle-compiler:$rootProject.lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$rootProject.lifecycleVersion"
-    testImplementation "androidx.arch.core:core-testing:2.1.0-beta01"
+    testImplementation "androidx.arch.core:core-testing:2.1.0"
 
     // room
     api "androidx.room:room-runtime:$rootProject.roomVersion"
