@@ -29,6 +29,7 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    namespace = "io.jitrapon.astro"
 }
 
 dependencies {

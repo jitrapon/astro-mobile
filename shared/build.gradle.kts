@@ -53,4 +53,5 @@ android {
         minSdk = 23
         targetSdk = 31
     }
+    namespace = "io.jitrapon.astro"
 }
