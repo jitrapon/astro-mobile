@@ -12,6 +12,10 @@
 /bin
 /gen
 /outg
+.kotlin/
+
+# Release artifacts
+androidApp/release/
 
 # Gradle files
 .gradle

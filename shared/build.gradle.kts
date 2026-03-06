@@ -1,11 +1,14 @@
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
-    android()
-    
+    android {
+        compileSdk { version = release(36) }
+        namespace = "io.jitrapon.astro.shared"
+    }
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -24,7 +27,6 @@ kotlin {
             }
         }
         val androidMain by getting
-        val androidTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
@@ -44,14 +46,4 @@ kotlin {
             iosSimulatorArm64Test.dependsOn(this)
         }
     }
-}
-
-android {
-    compileSdk = 31
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    defaultConfig {
-        minSdk = 23
-        targetSdk = 31
-    }
-    namespace = "io.jitrapon.astro"
 }
