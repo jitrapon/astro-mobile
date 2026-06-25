@@ -1,0 +1,111 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. It is the canonical project doc; the root `CLAUDE.md` is a pointer to this file.
+
+## Project Overview
+
+Astro is a Kotlin Multiplatform Mobile (KMP) smart planner app targeting Android and iOS — a calendar/events/reminders/tasks/budgeting app with AI assistance. Business logic lives in a shared Kotlin module; the UI is platform-specific (Jetpack Compose on Android, SwiftUI on iOS).
+
+> **Status:** repository scaffolding in progress. The KMP module structure, build, and `.claude` development harness are being established; CI gates, the Kotlin lint/format toolchain (ktfmt + Detekt), and the iOS lint toolchain are planned but not all wired up yet. Commands below that reference unconfigured tooling note that explicitly.
+
+## Build & Run Commands
+
+```bash
+./gradlew build                          # Build all modules
+./gradlew :androidApp:assembleDebug      # Build Android debug APK
+./gradlew :androidApp:installDebug       # Install the Android app on a connected device/emulator
+./gradlew :shared:build                  # Build shared module only
+
+./gradlew test                           # Run JVM/Android unit tests across modules
+./gradlew :shared:testDebugUnitTest      # Shared module Android unit tests
+./gradlew :shared:iosSimulatorArm64Test  # Shared module iOS tests (simulator)
+
+./gradlew check                          # Aggregate gate: compile + tests + (once added) Detekt/ktfmt verify
+```
+
+The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consumes the `shared` framework produced by the shared module).
+
+| Task                         | Command                                      |
+| ---------------------------- | -------------------------------------------- |
+| Build everything             | `./gradlew build`                            |
+| Android debug APK            | `./gradlew :androidApp:assembleDebug`        |
+| Unit tests (JVM/Android)     | `./gradlew test`                             |
+| iOS shared tests             | `./gradlew :shared:iosSimulatorArm64Test`    |
+| Format (Kotlin) — *planned*  | `./gradlew ktfmtFormat`                      |
+| Lint (Kotlin) — *planned*    | `./gradlew detekt`                           |
+| Full CI gate                 | `./gradlew check`                            |
+
+## Architecture
+
+### Module structure
+
+- **`:shared`** — KMP module with business logic, data layer, and platform abstractions. Produces a `shared` framework for iOS.
+- **`:androidApp`** — Android app using Jetpack Compose. Depends on `:shared`.
+- **`iosApp/`** — SwiftUI iOS app (Xcode project). Consumes the `shared` framework.
+
+### Shared module source sets
+
+- `commonMain` — platform-agnostic code (data layer, models, validation).
+- `androidMain` / `iosMain` — platform-specific implementations via `expect`/`actual`.
+- `commonTest` / `androidTest` / `iosTest` — corresponding test source sets.
+
+### Key patterns (architectural seams)
+
+- **expect/actual** for platform abstractions (e.g. `Platform.kt`, `Utils.kt`) — never `if (isAndroid)` branching in shared code.
+- **Sealed `Result<T>`** (`Success<T>`, `Error`) for type-safe error handling — `shared/src/commonMain/kotlin/io/jitrapon/astro/data/Result.kt`.
+- **Repository pattern** — a repository (e.g. `LoginRepository`) wraps a data source (`LoginDataSource`) and manages cached state.
+- **Package layout** — base package `io.jitrapon.astro`, organized by layer (`data/`, `ui/`).
+- **UI stays out of `:shared`** — Compose code lives in `androidApp`, SwiftUI code lives in `iosApp`. The shared module exposes platform-agnostic models and logic only.
+
+## Conventions
+
+Naming, comments, and file conventions the `refactor` and `spec-development` skills treat as the canonical rule set.
+
+### Naming — communicate role + intent (the "cold reader" test)
+
+A teammate opening the file on `main` with no branch/SPEC context should guess what a symbol does from its name alone.
+
+- **Functions/methods** lead with an action verb naming *what* they do, not *how* they mutate a parameter. Surface multi-step work in the name (`dedupAndPersistEvents`, not `appendEvents`).
+- **Types** name the specific artifact, not a generic noun — prefer `SyncOutcome` / `EventClassification` over `Result2` / `State` / `Mode` (the project already reserves `Result<T>` for error handling).
+- **Class/module scope**: the name must cover the broadest case it handles; if it does two things, the name shouldn't reference only one.
+- **Constants / enum members**: `SCREAMING_SNAKE_CASE` for Kotlin enum-like constants; idiomatic Swift casing on the iOS side. No mixed conventions within a language.
+- Kotlin code style is `official` (set in `gradle.properties`); Swift follows standard Swift API Design Guidelines.
+
+### Comments
+
+- Self-contained: name the invariant, the failure mode, or the contract — never a `SPEC §`, `round N`, or `adversarial review` reference (those rot the moment the branch merges).
+- Cross-references between durable production identifiers (function/class/file names that survive on `main`) are fine.
+
+### File naming
+
+- Kotlin files are `PascalCase.kt` matching the primary declaration; platform `actual`s conventionally suffix or live in the platform source set (`androidMain`/`iosMain`). Rename files via `git mv` to preserve history.
+
+## Linting
+
+- **Kotlin formatting:** ktfmt (`./gradlew ktfmtFormat` to apply, verified by `./gradlew check`) — *to be wired up by the scaffolding*. Until then, `kotlin.code.style=official` governs IDE formatting.
+- **Kotlin static analysis:** Detekt (`./gradlew detekt`) — *to be wired up by the scaffolding*. No custom complexity thresholds are configured yet; honor Detekt's defaults. Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead.
+- **iOS:** SwiftLint / swift-format for the SwiftUI app — *planned*.
+- There is **no pre-commit hook**. Run the formatter/linter manually before committing; the CI gate (`./gradlew check`) is the enforcement point.
+
+## Tech stack & versions
+
+- Kotlin 2.3.10, Gradle 9.x, Android Gradle Plugin 9.x.
+- Android: compileSdk 36, minSdk 23, targetSdk 36, Java 17.
+- Jetpack Compose for Android UI; SwiftUI for iOS UI.
+- iOS targets: `iosX64`, `iosArm64`, `iosSimulatorArm64`.
+- No Gradle version catalog (`gradle/libs.versions.toml`) yet — dependency versions are declared inline in the `build.gradle.kts` files.
+
+## Documented config files
+
+Files with load-bearing detail a reviewer/agent should re-read when they change: `build.gradle.kts`, `shared/build.gradle.kts`, `androidApp/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, and (once added) the Detekt config and `.github/workflows/ci.yml`.
+
+## Development workflow
+
+This repo uses a spec-driven, skill-based workflow (see `.claude/skills/`). Per branch:
+
+1. `scaffold-issue` (or hand-authored) populates `.claude/SPEC.md` sections 1–3.
+2. `spec-development` (`review the spec`) writes the implementation/testing checklists (§§4–5) and drives them one item per `resume the plan`.
+3. `codex-review` / `address-review` run the adversarial review loop.
+4. `finish-branch` resets agent working files to the `main` skeleton, pushes, and opens the PR.
+
+`.claude/SPEC.md`, `.claude/REVIEW_PLAN.md`, and `.claude/REVIEW_ADVERSARIAL.md` are per-branch working files that reset to skeletons on `main`.
