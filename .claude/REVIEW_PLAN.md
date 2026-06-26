@@ -24,3 +24,12 @@ Codex raised three findings. Dispositions:
   Action: Strengthened **items 6/7** to record the upstream source + commit SHA and an explicit "dropped conflicts" note inside the landed skill, and added a mechanical forbidden-terms grep (`Compose Multiplatform`, shared-UI, competing result types) to the paired §5 checks.
 
 All fixes landed inside agent-owned §§4–5; no §§1–3/§7 user prose touched. Re-reviewed in round 2.
+
+## Round 2 — 2026-06-26 (Codex verdict: needs-attention → addressed)
+
+One finding remained; the other two from round 1 were confirmed closed.
+
+- **[medium] Skill-vetting §5 check still too narrow — could pass while importing convention-breaking guidance (ktlint/Spotless, baselines/`@Suppress`, package/Result drift).** — **AGREE.**
+  Rationale: My round-1 fix added a "dropped conflicts" note and a small forbidden-terms grep, but the grep didn't cover the formatter/baseline/error-handling conflicts, and "dropped conflicts" wasn't enumerated.
+  Action: Items 6/7 now require the VETTING note to **enumerate each of the five locked conventions** with a checked/removed status, and §5 items 6/7 broaden the conflict-term grep to include `ktlint|spotless|detekt.?baseline|@Suppress` and verify the enumerated note exists. Re-reviewed in round 3.
+
