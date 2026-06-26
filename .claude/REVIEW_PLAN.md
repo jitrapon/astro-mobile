@@ -33,3 +33,7 @@ One finding remained; the other two from round 1 were confirmed closed.
   Rationale: My round-1 fix added a "dropped conflicts" note and a small forbidden-terms grep, but the grep didn't cover the formatter/baseline/error-handling conflicts, and "dropped conflicts" wasn't enumerated.
   Action: Items 6/7 now require the VETTING note to **enumerate each of the five locked conventions** with a checked/removed status, and §5 items 6/7 broaden the conflict-term grep to include `ktlint|spotless|detekt.?baseline|@Suppress` and verify the enumerated note exists. Re-reviewed in round 3.
 
+## Round 3 — 2026-06-26 (Codex verdict: approve → cleared)
+
+Codex confirmed the iteration-2 gap is closed (five-convention VETTING note + broadened grep) and found no new high/critical blocker in the doc-only SPEC diff. No material findings. Plan is unblocked.
+
