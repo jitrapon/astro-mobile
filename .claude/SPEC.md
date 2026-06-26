@@ -50,7 +50,7 @@ Ordered so each later item can rely on `./gradlew check` being a real, green gat
 
 **A. Lint/format toolchain & build gate (foundation)**
 
-- [ ] 1. Commit the reserved calendar layout-engine seam — track the already-authored `shared/src/commonMain/kotlin/io/jitrapon/astro/calendar/layout/README.md` and `shared/src/commonTest/resources/calendar-layout-golden/README.md`, confirming the `commonMain` package path and golden-vector resources path match `.claude/CLAUDE.md`'s architectural-seams description. No engine code.
+- [x] 1. Commit the reserved calendar layout-engine seam — track the already-authored `shared/src/commonMain/kotlin/io/jitrapon/astro/calendar/layout/README.md` and `shared/src/commonTest/resources/calendar-layout-golden/README.md`, confirming the `commonMain` package path and golden-vector resources path match `.claude/CLAUDE.md`'s architectural-seams description. No engine code.
 - [ ] 2. Wire ktfmt into Gradle — apply the ktfmt Gradle plugin (kotlin `official` style) to `:shared` and `:androidApp`, exposing `ktfmtFormat` (apply) and `ktfmtCheck` (verify); run `ktfmtFormat` once to normalize existing sources.
 - [ ] 3. Wire Detekt into Gradle — apply the Detekt plugin across modules with Detekt defaults (no baseline file, no custom complexity thresholds), exposing `./gradlew detekt`; resolve any findings by refactoring, never `@Suppress` or a baseline.
 - [ ] 4. Aggregate the gate — make `./gradlew check` depend on compile + unit tests + `detekt` + `ktfmtCheck` so the one command runs them all; drop the "planned"/"to be wired up" qualifiers from `.claude/CLAUDE.md`'s Linting and Commands sections for the now-wired **Kotlin** ktfmt/Detekt tasks only (leave the iOS SwiftLint/swift-format line to item 5b).
@@ -85,7 +85,7 @@ Ordered so each later item can rely on `./gradlew check` being a real, green gat
 
 Each item verifies the same-numbered §4 item.
 
-- [ ] 1. `git ls-files` shows both seam READMEs tracked; `./gradlew :shared:build` stays green (the new `commonTest` resources dir doesn't break the build).
+- [x] 1. `git ls-files` shows both seam READMEs tracked; `./gradlew :shared:build` stays green (the new `commonTest` resources dir doesn't break the build). Verified via `:shared:assemble` + `linkDebugTestIosSimulatorArm64` + `iosSimulatorArm64Test` (all green; arm64 test SKIPPED on the empty test set). Note: full `:shared:build` fails at `:shared:iosX64Test` with "Bad CPU type in executable" — an Apple-Silicon limitation (x86_64 sim binary can't exec on arm64), independent of this change; to be resolved when the build gate / CI items land (`failOnNoDiscoveredTests=false` or iosX64 target handling).
 - [ ] 2. `./gradlew ktfmtFormat` applies without error and `./gradlew ktfmtCheck` passes on the formatted tree (re-run is a no-op).
 - [ ] 3. `./gradlew detekt` completes with zero findings (or findings refactored away, not suppressed); confirm no `detekt-baseline.xml` exists.
 - [ ] 4. `./gradlew check` runs compile + tests + `detekt` + `ktfmtCheck` in one invocation and passes; `grep -n 'planned\|to be wired' .claude/CLAUDE.md` shows the now-wired tasks no longer carry the qualifier.
