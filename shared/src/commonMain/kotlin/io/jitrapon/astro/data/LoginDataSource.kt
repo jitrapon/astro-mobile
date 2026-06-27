@@ -3,9 +3,7 @@ package io.jitrapon.astro.data
 import io.jitrapon.astro.data.model.LoggedInUser
 import io.jitrapon.astro.randomUUID
 
-/**
- * Class that handles authentication w/ login credentials and retrieves user information.
- */
+/** Class that handles authentication w/ login credentials and retrieves user information. */
 class LoginDataSource {
 
     fun login(username: String, password: String): Result<LoggedInUser> {

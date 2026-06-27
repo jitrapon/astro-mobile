@@ -3,8 +3,8 @@ package io.jitrapon.astro.data
 import io.jitrapon.astro.data.model.LoggedInUser
 
 /**
- * Class that requests authentication and user information from the remote data source and
- * maintains an in-memory cache of login status and user credentials information.
+ * Class that requests authentication and user information from the remote data source and maintains
+ * an in-memory cache of login status and user credentials information.
  */
 class LoginRepository(private val dataSource: LoginDataSource) {
 

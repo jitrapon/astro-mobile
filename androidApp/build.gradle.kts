@@ -3,7 +3,13 @@ import com.android.build.api.dsl.Packaging
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.ncorti.ktfmt.gradle") version "0.26.0"
 }
+
+// ktfmt — Kotlin source formatter. Registers `ktfmtCheck` (verify) and `ktfmtFormat` (rewrite)
+// lifecycle tasks. `kotlinLangStyle()` selects ktfmt's Kotlin-official-style-guide preset,
+// matching `kotlin.code.style=official` — not the default Meta style or `googleStyle()`.
+ktfmt { kotlinLangStyle() }
 
 android {
     compileSdk = 36
@@ -14,29 +20,19 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "0.1.1"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        vectorDrawables { useSupportLibrary = true }
     }
 
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = true
-        }
-    }
+    buildTypes { getByName("release") { isMinifyEnabled = true } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
     namespace = "io.jitrapon.astro"
 
     fun Packaging.() {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     }
 }
 

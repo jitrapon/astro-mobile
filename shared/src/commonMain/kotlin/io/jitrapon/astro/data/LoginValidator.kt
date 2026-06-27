@@ -4,6 +4,7 @@ class LoginDataValidator {
 
     sealed class Result {
         object Success : Result()
+
         class Error(val message: String) : Result()
     }
 
@@ -34,6 +35,7 @@ class LoginDataValidator {
                     "(" +
                     "\\." +
                     "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25}" +
-                    ")+").toRegex()
+                    ")+")
+                .toRegex()
     }
 }
