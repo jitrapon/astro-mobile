@@ -4,12 +4,25 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.ncorti.ktfmt.gradle") version "0.26.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
 
 // ktfmt — Kotlin source formatter. Registers `ktfmtCheck` (verify) and `ktfmtFormat` (rewrite)
 // lifecycle tasks. `kotlinLangStyle()` selects ktfmt's Kotlin-official-style-guide preset,
 // matching `kotlin.code.style=official` — not the default Meta style or `googleStyle()`.
 ktfmt { kotlinLangStyle() }
+
+// Detekt — static analysis for Kotlin code smells. Runs Detekt's bundled defaults plus the narrow
+// Compose-aware overrides in config/detekt/detekt.yml (buildUponDefaultConfig layers them on top).
+// No baseline file and no custom complexity thresholds — findings are fixed by refactoring, never
+// suppressed. Formatting is owned by ktfmt, so the `formatting` ruleset stays off. This module
+// keeps its Kotlin sources under src/main/java, so point `source` there explicitly.
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    parallel = true
+    source.setFrom(files("src/main/java"))
+}
 
 android {
     compileSdk = 36

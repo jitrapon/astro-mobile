@@ -18,7 +18,8 @@ class LoginDataValidator {
 
     fun checkPassword(password: String): Result {
         return when {
-            password.length < 5 -> Result.Error("Password must be >5 characters")
+            password.length < MINIMUM_PASSWORD_LENGTH ->
+                Result.Error("Password must be at least $MINIMUM_PASSWORD_LENGTH characters")
             password.lowercase() == "password" -> Result.Error("Password shouldn't be \"password\"")
             else -> Result.Success
         }
@@ -27,6 +28,8 @@ class LoginDataValidator {
     private fun isEmailValid(email: String) = emailRegex.matches(email)
 
     companion object {
+
+        private const val MINIMUM_PASSWORD_LENGTH = 5
 
         private val emailRegex =
             ("[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +

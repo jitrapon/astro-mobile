@@ -1,0 +1,19 @@
+# Narrow Detekt overrides layered on top of the bundled defaults (each module sets
+# buildUponDefaultConfig = true). Scope is deliberately minimal: only the two rules that conflict
+# with idiomatic Jetpack Compose, which mandates PascalCase @Composable functions and inline color
+# literals in theme code. Everything else honors Detekt's defaults.
+#
+# This is NOT a mechanism to silence findings: no baseline file is used and @Suppress remains
+# forbidden (enforced separately by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule). It
+# corrects two rules that are simply wrong for Compose UI, not findings we are dodging.
+
+naming:
+  FunctionNaming:
+    # Composable functions are PascalCase by Compose convention; exempt them from the camelCase rule.
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    # Compose theme color definitions (e.g. Color(0xFFBB86FC)) are inherently inline hex literals;
+    # the named `val` already documents intent. Exempt the theme package only.
+    excludes: ['**/theme/**']
