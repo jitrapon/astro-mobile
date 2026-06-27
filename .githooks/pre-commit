@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook — runs ktfmt-cli and detekt-cli on staged Kotlin files via the fast CLI path
+# (standalone fat jars, not the Gradle daemon), then enforces the no-baseline convention when a
+# Detekt baseline is staged. Installed via `./gradlew installGitHooks`. Skip with
+# `git commit --no-verify`. The CI gate (`./gradlew check`) stays the authoritative enforcement
+# point — this hook is a fast local pre-flight, not a replacement.
+#
+set -euo pipefail
+
+# ktfmt scans .kt and .kts; detekt only scans .kt (matches the Gradle task's scope — build scripts
+# aren't analyzed by detekt here). BASELINE_FILES tracks any staged detekt-baseline.xml so a commit
+# that tries to introduce one is rejected by checkNoDetektBaseline locally, not only by CI.
+# macOS default Bash is 3.2 (predates `mapfile`); fall back to a read loop there.
+BASELINE_FILE_PATTERN='(^|/)detekt-baseline\.xml$'
+if [[ "${OSTYPE:-}" == "darwin"* ]]; then
+  KT_FILES=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && KT_FILES+=("$line")
+  done < <(git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kts?$' || true; })
+
+  DETEKT_FILES=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && DETEKT_FILES+=("$line")
+  done < <(git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kt$' || true; })
+
+  BASELINE_FILES=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && BASELINE_FILES+=("$line")
+  done < <(git diff --cached --name-only --diff-filter=ACMR | { grep -E "$BASELINE_FILE_PATTERN" || true; })
+else
+  mapfile -t KT_FILES < <(
+    git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kts?$' || true; }
+  )
+  mapfile -t DETEKT_FILES < <(
+    git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kt$' || true; }
+  )
+  mapfile -t BASELINE_FILES < <(
+    git diff --cached --name-only --diff-filter=ACMR | { grep -E "$BASELINE_FILE_PATTERN" || true; }
+  )
+fi
+
+if [ ${#KT_FILES[@]} -eq 0 ] && [ ${#BASELINE_FILES[@]} -eq 0 ]; then
+  exit 0
+fi
+
+# Kotlin lint chunk — only when .kt/.kts files are staged. The ktfmt/detekt CLI invocations need
+# the resolved jar paths in TOOLS_FILE; baseline-only commits skip this entire block.
+if [ ${#KT_FILES[@]} -gt 0 ]; then
+  # Abort on partial staging: ktfmt/detekt read from disk, so unstaged edits on a staged file
+  # would make the hook lint content that isn't part of the commit.
+  PARTIAL=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && PARTIAL+=("$line")
+  done < <(
+    comm -12 \
+      <(printf '%s\n' "${KT_FILES[@]}" | sort -u) \
+      <(git diff --name-only --diff-filter=ACMR | { grep -E '\.kts?$' || true; } | sort -u)
+  )
+  if [ ${#PARTIAL[@]} -gt 0 ]; then
+    {
+      echo "error: partially staged Kotlin file(s) detected — pre-commit lints disk content, not the staged snapshot:"
+      printf '  %s\n' "${PARTIAL[@]}"
+      echo "Fix: run 'git add' on the remaining hunks (or 'git restore' to drop them), then commit again."
+      echo "Override: git commit --no-verify"
+    } >&2
+    exit 1
+  fi
+
+  TOOLS_FILE=".gradle/lint-tools.properties"
+  if [ ! -f "$TOOLS_FILE" ]; then
+    echo "error: lint tools not resolved. Run: ./gradlew resolveLintTools" >&2
+    exit 1
+  fi
+
+  KTFMT_JAR=$(grep '^ktfmt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
+  DETEKT_JAR=$(grep '^detekt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
+  KTFMT_RESOLVED=$(grep '^ktfmt.version=' "$TOOLS_FILE" | cut -d= -f2-)
+  DETEKT_RESOLVED=$(grep '^detekt.version=' "$TOOLS_FILE" | cut -d= -f2-)
+
+  # Guard against stale resolution: if libs.versions.toml has bumped ktfmt-cli/detekt since the
+  # last `resolveLintTools` run, the hook would silently lint with an outdated jar — diverging
+  # from the Gradle plugin and CI. verifyKtfmtAlignment guards plugin-vs-cli drift; this guards
+  # cli-jar-vs-catalog drift.
+  LIBS_FILE="gradle/libs.versions.toml"
+  read_version() {
+    # Matches lines like `key = "1.2.3"` (tolerates optional indentation).
+    grep -E "^[[:space:]]*$1[[:space:]]*=" "$LIBS_FILE" | head -n1 | sed -E 's/.*"([^"]+)".*/\1/'
+  }
+  KTFMT_EXPECTED=$(read_version "ktfmt-cli")
+  DETEKT_EXPECTED=$(read_version "detekt")
+
+  if [ -z "$KTFMT_EXPECTED" ] || [ -z "$DETEKT_EXPECTED" ]; then
+    echo "error: could not read ktfmt-cli/detekt versions from $LIBS_FILE" >&2
+    exit 1
+  fi
+  if [ "$KTFMT_RESOLVED" != "$KTFMT_EXPECTED" ] || [ "$DETEKT_RESOLVED" != "$DETEKT_EXPECTED" ]; then
+    {
+      echo "error: lint tool versions are stale — rerun ./gradlew resolveLintTools"
+      echo "  expected (from $LIBS_FILE): ktfmt=$KTFMT_EXPECTED, detekt=$DETEKT_EXPECTED"
+      echo "  resolved (from $TOOLS_FILE): ktfmt=${KTFMT_RESOLVED:-<missing>}, detekt=${DETEKT_RESOLVED:-<missing>}"
+    } >&2
+    exit 1
+  fi
+
+  # --kotlinlang-style matches the plugin's kotlinLangStyle() preset (kotlin.code.style=official);
+  # --set-exit-if-changed --dry-run reports without rewriting and fails the commit if any file
+  # would change.
+  echo "[pre-commit] ktfmt on ${#KT_FILES[@]} staged Kotlin file(s)"
+  java -jar "$KTFMT_JAR" --set-exit-if-changed --dry-run --kotlinlang-style "${KT_FILES[@]}"
+
+  if [ ${#DETEKT_FILES[@]} -gt 0 ]; then
+    # No --baseline: astro-mobile forbids a Detekt baseline (checkNoDetektBaseline + ForbiddenSuppress).
+    # --build-upon-default-config mirrors the Gradle task's buildUponDefaultConfig = true so the
+    # config/detekt/detekt.yml Compose exemptions layer on top of the defaults identically.
+    echo "[pre-commit] detekt on ${#DETEKT_FILES[@]} staged .kt file(s)"
+    joined=$(IFS=,; echo "${DETEKT_FILES[*]}")
+    java -jar "$DETEKT_JAR" \
+      --input "$joined" \
+      --config config/detekt/detekt.yml \
+      --base-path . \
+      --build-upon-default-config
+  fi
+fi
+
+# No-baseline gate — runs whenever a detekt-baseline.xml is staged, even on a baseline-only commit
+# with no other Kotlin files. checkNoDetektBaseline walks the working tree, so a staged baseline is
+# already on disk and the task rejects it; this closes the bypass where adding a baseline alone
+# would skip the local gate and only be caught after push by CI's `check`. Uses Gradle (not a
+# shell-side duplicate) so the rule tracks the canonical task.
+if [ ${#BASELINE_FILES[@]} -gt 0 ]; then
+  echo "[pre-commit] checkNoDetektBaseline on ${#BASELINE_FILES[@]} staged baseline file(s)"
+  if [ -x "./gradlew" ]; then
+    ./gradlew --quiet checkNoDetektBaseline
+  else
+    sh ./gradlew --quiet checkNoDetektBaseline
+  fi
+fi
