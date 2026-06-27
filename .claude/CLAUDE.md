@@ -33,6 +33,8 @@ The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consum
 | iOS shared tests             | `./gradlew :shared:iosSimulatorArm64Test`    |
 | Format (Kotlin)              | `./gradlew ktfmtFormat`                      |
 | Lint (Kotlin)                | `./gradlew detekt`                           |
+| Format (Swift, advisory)     | `./gradlew swiftFormatApply`                 |
+| Lint (Swift, advisory)       | `./gradlew swiftFormatCheck`                 |
 | Full CI gate                 | `./gradlew check`                            |
 
 ## Architecture
@@ -85,7 +87,7 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 
 - **Kotlin formatting:** ktfmt (`./gradlew ktfmtFormat` to apply, verified by `./gradlew check`), using ktfmt's `kotlinLangStyle()` preset to match `kotlin.code.style=official`. `./gradlew check` runs `ktfmtCheck` across both modules (including the Android app's `src/main/java`) and fails on unformatted Kotlin.
 - **Kotlin static analysis:** Detekt (`./gradlew detekt`), wired into `./gradlew check`. No custom complexity thresholds are configured; honor Detekt's defaults (the only override is the narrow Compose-rule exemption in `config/detekt/detekt.yml`). Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead. This convention will be enforced mechanically once the scaffolding lands: a `checkNoDetektBaseline` task (fails if any `detekt-baseline.xml` exists) plus Detekt's `ForbiddenSuppress` rule.
-- **iOS:** swift-format for the SwiftUI app — configured (advisory until M-2). Config lives at `iosApp/.swift-format` (Apple's toolchain-bundled `swift format`, 4-space indent, 100-col). Run `swift format lint --recursive iosApp/iosApp` to check or `swift format --in-place --recursive iosApp/iosApp` to apply. Deliberately **not** wired into `./gradlew check` or CI — like the inert Compose Stability Analyzer, it stays advisory until iOS product UI lands so it never blocks the gate on the wizard-scaffold sources.
+- **iOS:** swift-format for the SwiftUI app — configured (advisory until M-2). Config lives at `iosApp/.swift-format` (Apple's toolchain-bundled `swift format`, 4-space indent, 100-col). Run `./gradlew swiftFormatCheck` to lint (strict — fails on any finding) or `./gradlew swiftFormatApply` to format in place; both are macOS-only and no-op with a message off Mac (e.g. Linux CI). Deliberately **not** wired into `./gradlew check` or CI — like the inert Compose Stability Analyzer, it stays advisory until iOS product UI lands so it never blocks the Kotlin gate on the iOS sources. The underlying CLI is `swift format lint --recursive iosApp/iosApp` if you prefer to invoke it directly.
 - **Git hooks:** install with `./gradlew installGitHooks` (sets `core.hooksPath=.githooks`). The `pre-commit` hook runs ktfmt + Detekt on staged Kotlin via the fast CLI path (standalone fat jars resolved by `resolveLintTools`, not the Gradle daemon) — it aborts on partially-staged Kotlin, fails with a "rerun `resolveLintTools`" message when the resolved jar versions drift from `gradle/libs.versions.toml`, and runs `checkNoDetektBaseline` when a `detekt-baseline.xml` is staged. The `pre-push` hook (security scanners on pushed commits) is *planned*. Both honor `--no-verify`. The CI gate (`./gradlew check`) is the authoritative enforcement point whether or not the hooks are installed — they are a fast local pre-flight, not a replacement.
 
 ## Tech stack & versions
