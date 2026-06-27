@@ -13,6 +13,47 @@ plugins {
 // not the default Meta style or `googleStyle()`.
 ktfmt { kotlinLangStyle() }
 
+// Verify the standalone `ktfmt-cli` jar the pre-commit hook invokes matches the formatter the
+// ncorti Gradle plugin bundles, so local Gradle, the hook, and CI can never format differently. The
+// plugin registers a `ktfmt` configuration whose resolved `com.facebook:ktfmt` artifact is the real
+// formatter; compare its version against `ktfmt-cli` from the version catalog. Wired into this
+// module's `check` below so the gate fails fast on drift.
+val verifyKtfmtAlignment =
+    tasks.register("verifyKtfmtAlignment") {
+        group = "verification"
+        description = "Fail if ktfmt-cli drifts from the ktfmt version the Gradle plugin bundles."
+        // Capture the comparison as configuration-cache-safe locals: a plain String for the catalog
+        // version, and a `Provider<String>` for the plugin's bundled version resolved lazily at
+        // execution. Capturing the `ktfmt` configuration object directly in `doLast` instead breaks
+        // under the configuration cache (the serialized task gets a null receiver).
+        val expectedKtfmtCli = libs.versions.ktfmt.cli.get()
+        val pluginKtfmtVersion =
+            configurations.named("ktfmt").map { ktfmtConfiguration ->
+                ktfmtConfiguration.incoming.resolutionResult.allComponents
+                    .mapNotNull { it.moduleVersion }
+                    .firstOrNull { it.group == "com.facebook" && it.name == "ktfmt" }
+                    ?.version
+                    ?: error(
+                        "com.facebook:ktfmt not found in the plugin's `ktfmt` configuration — " +
+                            "cannot verify alignment."
+                    )
+            }
+        doLast {
+            val bundledVersion = pluginKtfmtVersion.get()
+            check(bundledVersion == expectedKtfmtCli) {
+                "ktfmt version drift: the ncorti plugin bundles com.facebook:ktfmt:" +
+                    "$bundledVersion but gradle/libs.versions.toml pins ktfmt-cli=" +
+                    "$expectedKtfmtCli. Upgrade both in lockstep so the hook and the Gradle " +
+                    "plugin format identically."
+            }
+            logger.lifecycle(
+                "ktfmt alignment OK: plugin bundles $bundledVersion == ktfmt-cli $expectedKtfmtCli"
+            )
+        }
+    }
+
+tasks.named("check") { dependsOn(verifyKtfmtAlignment) }
+
 // Detekt — static analysis for Kotlin code smells. Runs Detekt's bundled defaults plus the narrow
 // Compose-aware overrides in config/detekt/detekt.yml (buildUponDefaultConfig layers them on top).
 // No baseline file and no custom complexity thresholds — findings are fixed by refactoring, never

@@ -59,12 +59,53 @@ run {
     tasks.named("ktfmtFormat") { dependsOn(androidKtfmtFormat) }
 }
 
+// Verify the standalone `ktfmt-cli` jar the pre-commit hook invokes matches the formatter the
+// ncorti Gradle plugin bundles, so local Gradle, the hook, and CI can never format differently. The
+// plugin registers a `ktfmt` configuration whose resolved `com.facebook:ktfmt` artifact is the real
+// formatter; compare its version against `ktfmt-cli` from the version catalog.
+val verifyKtfmtAlignment =
+    tasks.register("verifyKtfmtAlignment") {
+        group = "verification"
+        description = "Fail if ktfmt-cli drifts from the ktfmt version the Gradle plugin bundles."
+        // Capture the comparison as configuration-cache-safe locals: a plain String for the catalog
+        // version, and a `Provider<String>` for the plugin's bundled version resolved lazily at
+        // execution. Capturing the `ktfmt` configuration object directly in `doLast` instead breaks
+        // under the configuration cache (the serialized task gets a null receiver).
+        val expectedKtfmtCli = libs.versions.ktfmt.cli.get()
+        val pluginKtfmtVersion =
+            configurations.named("ktfmt").map { ktfmtConfiguration ->
+                ktfmtConfiguration.incoming.resolutionResult.allComponents
+                    .mapNotNull { it.moduleVersion }
+                    .firstOrNull { it.group == "com.facebook" && it.name == "ktfmt" }
+                    ?.version
+                    ?: error(
+                        "com.facebook:ktfmt not found in the plugin's `ktfmt` configuration — " +
+                            "cannot verify alignment."
+                    )
+            }
+        doLast {
+            val bundledVersion = pluginKtfmtVersion.get()
+            check(bundledVersion == expectedKtfmtCli) {
+                "ktfmt version drift: the ncorti plugin bundles com.facebook:ktfmt:" +
+                    "$bundledVersion but gradle/libs.versions.toml pins ktfmt-cli=" +
+                    "$expectedKtfmtCli. Upgrade both in lockstep so the hook and the Gradle " +
+                    "plugin format identically."
+            }
+            logger.lifecycle(
+                "ktfmt alignment OK: plugin bundles $bundledVersion == ktfmt-cli $expectedKtfmtCli"
+            )
+        }
+    }
+
 // Make `./gradlew check` a real format + static-analysis gate for this module. The ncorti plugin
 // only auto-wires `ktfmtCheckScripts` into `check` on AGP 9 (its broken Android source-set path —
 // see above), so the aggregate `ktfmtCheck` that now covers src/main/java is not reached by `check`
 // unless wired explicitly. Detekt's plugin already wires `detekt` into `check`; it is named here
 // too so the gate's composition is self-documenting and survives a change in that default.
-tasks.named("check") { dependsOn(tasks.named("ktfmtCheck"), tasks.named("detekt")) }
+// `verifyKtfmtAlignment` joins the gate so toolchain drift fails the build alongside formatting.
+tasks.named("check") {
+    dependsOn(tasks.named("ktfmtCheck"), tasks.named("detekt"), verifyKtfmtAlignment)
+}
 
 // Detekt — static analysis for Kotlin code smells. Runs Detekt's bundled defaults plus the narrow
 // Compose-aware overrides in config/detekt/detekt.yml (buildUponDefaultConfig layers them on top).
