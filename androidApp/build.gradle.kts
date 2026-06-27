@@ -11,6 +11,9 @@ plugins {
     // Gradle plugin, the pre-commit hook's CLI jars, and verifyKtfmtAlignment share one source.
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.detekt)
+    // Compose Stability Analyzer — emits a compose-compiler stability report (skippability /
+    // restartability / parameter stability per composable) via the on-demand `stabilityDump` task.
+    alias(libs.plugins.compose.stability.analyzer)
 }
 
 // ktfmt — Kotlin source formatter. Registers `ktfmtCheck` (verify) and `ktfmtFormat` (rewrite)
@@ -117,6 +120,45 @@ detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     parallel = true
     source.setFrom(files("src/main/java"))
+}
+
+// Compose Stability Analyzer — deliberately inert. Its on-demand `stabilityDump` task (variant form
+// `debugStabilityDump`) writes a human-readable compose-compiler stability report; until composable
+// product UI lands there is nothing meaningful to regression-gate on. The report goes under the
+// build directory (gitignored) rather than a committed baseline, so the scaffold ships no stale
+// snapshot. When real composables arrive, adopt the validation gate by pointing outputDir at a
+// committed `stability/` dir, flipping failOnStabilityChange to true, and re-attaching the
+// stabilityCheck tasks to `check` (see the detach below).
+composeStabilityAnalyzer {
+    stabilityValidation {
+        enabled.set(true)
+        outputDir.set(layout.buildDirectory.dir("compose-stability"))
+        // Belt-and-suspenders for inertness: never fail a build on stability drift, and tolerate
+        // the
+        // missing baseline, so an ad-hoc `stabilityDump`/`stabilityCheck` can't break on the
+        // empty/evolving composable set even though the check tasks are detached from `check`
+        // below.
+        failOnStabilityChange.set(false)
+        allowMissingBaseline.set(true)
+    }
+}
+
+// The analyzer auto-wires its per-variant `stabilityCheck` tasks (debug/release) into the `check`
+// lifecycle. Detach them so the analyzer stays inert until M-2 — the report is produced on demand
+// via
+// `stabilityDump`, and there is no committed baseline to validate against yet. Detaching also
+// avoids
+// a Gradle 9 strict-validation failure: the compiler plugin declares `build/stability` as an output
+// of every Kotlin compile task (unit-test compiles included), but each stabilityCheck task reads
+// that directory while depending only on its main-variant compile, which Gradle rejects as an
+// undeclared implicit dependency. Done in afterEvaluate so the AGP variant callbacks that add these
+// dependencies have already run. Re-attach when composable UI and a committed baseline land in M-2.
+afterEvaluate {
+    tasks.named("check").configure {
+        setDependsOn(
+            dependsOn.filterNot { it is TaskProvider<*> && it.name.endsWith("StabilityCheck") }
+        )
+    }
 }
 
 android {
