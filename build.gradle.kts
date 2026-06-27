@@ -1,3 +1,4 @@
+import java.io.File
 import javax.inject.Inject
 import org.gradle.process.ExecOperations
 
@@ -156,51 +157,74 @@ tasks.register("installGitHooks") {
     }
 }
 
-// iOS Swift formatting — Apple's toolchain `swift format` (config: iosApp/.swift-format). Advisory
-// and opt-in: deliberately NOT wired into `check` or CI, mirroring the inert Compose Stability
-// Analyzer, so it never blocks the Kotlin gate on the iOS sources before product UI lands (M-2).
-// `swift` ships with the Swift toolchain / Xcode and is macOS-only here, so both tasks no-op with
-// a clear message off Mac (e.g. Linux CI) rather than failing on a missing binary.
-// `swiftFormatCheck` is strict — it fails on any lint finding — so a developer can enforce iOS
-// formatting locally without the daemon-driven gate.
+// iOS Swift formatting — Apple's toolchain `swift format` (config: iosApp/.swift-format), the iOS
+// analog of the Kotlin ktfmt gate. `swiftFormatCheck` is wired into `check` (below) and the
+// pre-commit hook, so iOS formatting is enforced exactly like Kotlin. `swift` ships with the Swift
+// toolchain (present on macOS dev machines and on a CI runner once the toolchain is installed);
+// guarding on tool *availability* (resolving `swift` on PATH) rather than on the OS lets the same
+// task enforce in CI while skipping with a clear message anywhere swift is absent (e.g. a
+// contributor's Linux box) instead of hard-failing on a missing binary. Reading PATH through the
+// provider API keeps configuration-cache correctness — a PATH change invalidates the cache so
+// newly-installed toolchains are picked up. `swiftFormatApply` rewrites in place;
+// `swiftFormatCheck`
+// is strict and fails on any finding.
 val swiftAppSources = "iosApp/iosApp"
+val pathDirs = providers.environmentVariable("PATH")
 
+// Resolve `swift` on PATH inline (not via a script-level fun — referencing one from doLast captures
+// the build script object, which the configuration cache cannot serialize). Returns null when the
+// toolchain is absent so the tasks self-skip instead of hard-failing.
 tasks.register("swiftFormatApply") {
     group = "formatting"
-    description =
-        "Apply swift-format to the iOS app sources in place (macOS; needs the Swift toolchain)."
+    description = "Apply swift-format to the iOS app sources in place (needs the Swift toolchain)."
     val injected = project.objects.newInstance<ExecInjected>()
     val srcDir = file(swiftAppSources)
-    val osName = System.getProperty("os.name")
+    val pathValue = pathDirs.orNull
     doLast {
-        if (!osName.startsWith("Mac")) {
-            logger.lifecycle(
-                "swiftFormatApply skipped: swift-format is macOS-only here (os=$osName)."
-            )
+        val swift =
+            pathValue
+                ?.split(File.pathSeparator)
+                ?.map { File(it, "swift") }
+                ?.firstOrNull { it.canExecute() }
+        if (swift == null) {
+            logger.lifecycle("swiftFormatApply skipped: `swift` not found on PATH.")
             return@doLast
         }
         injected.exec.exec {
-            commandLine("swift", "format", "--in-place", "--recursive", srcDir.path)
+            commandLine(swift.path, "format", "--in-place", "--recursive", srcDir.path)
         }
     }
 }
 
-tasks.register("swiftFormatCheck") {
-    group = "verification"
-    description =
-        "Lint iOS app sources with swift-format (strict). Advisory — not wired into `check`."
-    val injected = project.objects.newInstance<ExecInjected>()
-    val srcDir = file(swiftAppSources)
-    val osName = System.getProperty("os.name")
-    doLast {
-        if (!osName.startsWith("Mac")) {
-            logger.lifecycle(
-                "swiftFormatCheck skipped: swift-format is macOS-only here (os=$osName)."
-            )
-            return@doLast
-        }
-        injected.exec.exec {
-            commandLine("swift", "format", "lint", "--strict", "--recursive", srcDir.path)
+val swiftFormatCheck =
+    tasks.register("swiftFormatCheck") {
+        group = "verification"
+        description =
+            "Lint iOS app sources with swift-format (strict); part of `check` where swift is present."
+        val injected = project.objects.newInstance<ExecInjected>()
+        val srcDir = file(swiftAppSources)
+        val pathValue = pathDirs.orNull
+        doLast {
+            val swift =
+                pathValue
+                    ?.split(File.pathSeparator)
+                    ?.map { File(it, "swift") }
+                    ?.firstOrNull { it.canExecute() }
+            if (swift == null) {
+                logger.lifecycle(
+                    "swiftFormatCheck skipped: `swift` not found on PATH — install the Swift " +
+                        "toolchain to enforce iOS formatting."
+                )
+                return@doLast
+            }
+            injected.exec.exec {
+                commandLine(swift.path, "format", "lint", "--strict", "--recursive", srcDir.path)
+            }
         }
     }
-}
+
+// iOS formatting rides the same aggregate gate as Kotlin: every subproject's `check` depends on
+// swiftFormatCheck, so `./gradlew check` runs it once (it self-skips where swift is absent).
+// Mirrors
+// the checkNoDetektBaseline wiring above.
+subprojects { tasks.matching { it.name == "check" }.configureEach { dependsOn(swiftFormatCheck) } }

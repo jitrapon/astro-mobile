@@ -24,6 +24,11 @@ if [[ "${OSTYPE:-}" == "darwin"* ]]; then
     [ -n "$line" ] && DETEKT_FILES+=("$line")
   done < <(git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kt$' || true; })
 
+  SWIFT_FILES=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && SWIFT_FILES+=("$line")
+  done < <(git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.swift$' || true; })
+
   BASELINE_FILES=()
   while IFS= read -r line; do
     [ -n "$line" ] && BASELINE_FILES+=("$line")
@@ -35,12 +40,15 @@ else
   mapfile -t DETEKT_FILES < <(
     git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.kt$' || true; }
   )
+  mapfile -t SWIFT_FILES < <(
+    git diff --cached --name-only --diff-filter=ACMR | { grep -E '\.swift$' || true; }
+  )
   mapfile -t BASELINE_FILES < <(
     git diff --cached --name-only --diff-filter=ACMR | { grep -E "$BASELINE_FILE_PATTERN" || true; }
   )
 fi
 
-if [ ${#KT_FILES[@]} -eq 0 ] && [ ${#BASELINE_FILES[@]} -eq 0 ]; then
+if [ ${#KT_FILES[@]} -eq 0 ] && [ ${#SWIFT_FILES[@]} -eq 0 ] && [ ${#BASELINE_FILES[@]} -eq 0 ]; then
   exit 0
 fi
 
@@ -120,6 +128,41 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
       --config config/detekt/detekt.yml \
       --base-path . \
       --build-upon-default-config
+  fi
+fi
+
+# Swift formatting chunk — the iOS analog of the Kotlin path, for staged .swift files. Uses Apple's
+# toolchain `swift format` (config iosApp/.swift-format, discovered by walking up from each file),
+# strict so any finding fails the commit exactly like ktfmt's --set-exit-if-changed. warn-and-skip
+# when the Swift toolchain is absent (e.g. a contributor on Linux without swift installed) so the
+# hook never hard-fails on a missing binary — the same belt-and-suspenders posture as the pre-push
+# security scanners. The swiftFormatCheck Gradle task + CI gate remain the authoritative enforcement.
+if [ ${#SWIFT_FILES[@]} -gt 0 ]; then
+  if ! command -v swift >/dev/null 2>&1; then
+    echo "[pre-commit] swift not found on PATH — skipping Swift format check (install the Swift toolchain to enforce locally)" >&2
+  else
+    # Abort on partial staging: swift format reads from disk, so unstaged edits on a staged file
+    # would lint content that isn't part of the commit (mirrors the Kotlin partial-staging guard).
+    SWIFT_PARTIAL=()
+    while IFS= read -r line; do
+      [ -n "$line" ] && SWIFT_PARTIAL+=("$line")
+    done < <(
+      comm -12 \
+        <(printf '%s\n' "${SWIFT_FILES[@]}" | sort -u) \
+        <(git diff --name-only --diff-filter=ACMR | { grep -E '\.swift$' || true; } | sort -u)
+    )
+    if [ ${#SWIFT_PARTIAL[@]} -gt 0 ]; then
+      {
+        echo "error: partially staged Swift file(s) detected — pre-commit lints disk content, not the staged snapshot:"
+        printf '  %s\n' "${SWIFT_PARTIAL[@]}"
+        echo "Fix: run 'git add' on the remaining hunks (or 'git restore' to drop them), then commit again."
+        echo "Override: git commit --no-verify"
+      } >&2
+      exit 1
+    fi
+    # --strict promotes findings to errors (non-zero exit), matching the swiftFormatCheck Gradle gate.
+    echo "[pre-commit] swift format lint on ${#SWIFT_FILES[@]} staged .swift file(s)"
+    swift format lint --strict "${SWIFT_FILES[@]}"
   fi
 fi
 
