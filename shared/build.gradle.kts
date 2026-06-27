@@ -58,3 +58,31 @@ kotlin {
         }
     }
 }
+
+// Detect Apple Silicon *hardware*. `System.getProperty("os.arch")` is unreliable here: a Rosetta-
+// translated Gradle daemon reports `x86_64` even on an arm64 Mac, so it would misclassify the host.
+// `sysctl -n hw.optional.arm64` queries the hardware (not the process), returning "1" on every
+// arm64 Mac regardless of translation; on Intel Macs / non-macOS it errors or returns 0, which we
+// treat as "not Apple Silicon".
+val isAppleSiliconHost =
+    System.getProperty("os.name").startsWith("Mac") &&
+        providers
+            .exec {
+                commandLine("sysctl", "-n", "hw.optional.arm64")
+                isIgnoreExitValue = true
+            }
+            .standardOutput
+            .asText
+            .map { it.trim() == "1" }
+            .getOrElse(false)
+
+// `iosX64Test` runs an x86_64 iOS-simulator test binary, which cannot be exec'd on Apple Silicon
+// hardware — the launcher aborts with "Bad CPU type in executable". Since `check` aggregates every
+// target's test task, leaving it enabled would fail the gate on every arm64 dev machine and arm64
+// CI runner. Disable the task on Apple Silicon; `iosSimulatorArm64Test` covers the simulator-test
+// surface there, and on a genuine Intel Mac iosX64Test stays enabled and runs. This is decided at
+// configuration time — a `Task.onlyIf` predicate does not work because the Kotlin Native test task
+// resets onlyIf during execution.
+if (isAppleSiliconHost) {
+    tasks.named("iosX64Test") { enabled = false }
+}

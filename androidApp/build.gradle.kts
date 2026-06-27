@@ -1,4 +1,8 @@
 import com.android.build.api.dsl.Packaging
+import com.ncorti.ktfmt.gradle.FormattingOptionsBean
+import com.ncorti.ktfmt.gradle.KtfmtExtension
+import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
+import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 
 plugins {
     id("com.android.application")
@@ -11,6 +15,54 @@ plugins {
 // lifecycle tasks. `kotlinLangStyle()` selects ktfmt's Kotlin-official-style-guide preset,
 // matching `kotlin.code.style=official` — not the default Meta style or `googleStyle()`.
 ktfmt { kotlinLangStyle() }
+
+// The ncorti ktfmt plugin discovers an Android application module's Kotlin source sets through
+// AGP's legacy `com.android.build.gradle.api.AndroidSourceSet` API, which AGP 9 removed. Its
+// discovery is wrapped in a swallowed `runCatching`, so on AGP 9 it silently creates no
+// source-set tasks for this module — the aggregate `ktfmtCheck`/`ktfmtFormat` end up covering only
+// build scripts, leaving the app's Kotlin under src/main/java unformatted and unchecked. Re-create
+// the per-source check/format tasks explicitly over src/main/java using the plugin's public task
+// API, deriving the formatting options from the configured `ktfmt { kotlinLangStyle() }` extension
+// so the app module formats identically to `:shared`. (The KMP `:shared` module is unaffected — the
+// plugin's multiplatform path does not use the removed AGP API.)
+run {
+    val ktfmtExtension = the<KtfmtExtension>()
+    val ktfmtClasspathConfig = configurations.named("ktfmt")
+    val androidKotlinSources = fileTree("src/main/java") { include("**/*.kt") }
+    val formattingOptions = provider {
+        FormattingOptionsBean(
+            ktfmtExtension.maxWidth.get(),
+            ktfmtExtension.blockIndent.get(),
+            ktfmtExtension.continuationIndent.get(),
+            ktfmtExtension.trailingCommaManagementStrategy.get(),
+            ktfmtExtension.removeUnusedImports.get(),
+            ktfmtExtension.debuggingPrintOpsAfterFormatting.get(),
+        )
+    }
+    val androidKtfmtCheck =
+        tasks.register<KtfmtCheckTask>("ktfmtCheckAndroidMain") {
+            source(androidKotlinSources)
+            ktfmtClasspath.from(ktfmtClasspathConfig)
+            formattingOptionsBean.set(formattingOptions)
+            useClassloaderIsolation.set(ktfmtExtension.useClassloaderIsolation)
+        }
+    val androidKtfmtFormat =
+        tasks.register<KtfmtFormatTask>("ktfmtFormatAndroidMain") {
+            source(androidKotlinSources)
+            ktfmtClasspath.from(ktfmtClasspathConfig)
+            formattingOptionsBean.set(formattingOptions)
+            useClassloaderIsolation.set(ktfmtExtension.useClassloaderIsolation)
+        }
+    tasks.named("ktfmtCheck") { dependsOn(androidKtfmtCheck) }
+    tasks.named("ktfmtFormat") { dependsOn(androidKtfmtFormat) }
+}
+
+// Make `./gradlew check` a real format + static-analysis gate for this module. The ncorti plugin
+// only auto-wires `ktfmtCheckScripts` into `check` on AGP 9 (its broken Android source-set path —
+// see above), so the aggregate `ktfmtCheck` that now covers src/main/java is not reached by `check`
+// unless wired explicitly. Detekt's plugin already wires `detekt` into `check`; it is named here
+// too so the gate's composition is self-documenting and survives a change in that default.
+tasks.named("check") { dependsOn(tasks.named("ktfmtCheck"), tasks.named("detekt")) }
 
 // Detekt — static analysis for Kotlin code smells. Runs Detekt's bundled defaults plus the narrow
 // Compose-aware overrides in config/detekt/detekt.yml (buildUponDefaultConfig layers them on top).

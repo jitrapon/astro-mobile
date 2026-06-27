@@ -12,11 +12,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            AstroTheme {
-                MessageCard("Boat")
-            }
-        }
+        setContent { AstroTheme { MessageCard("Boat") } }
     }
 }
 

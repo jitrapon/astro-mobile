@@ -20,7 +20,7 @@ Astro is a Kotlin Multiplatform Mobile (KMP) smart planner app targeting Android
 ./gradlew :shared:testDebugUnitTest      # Shared module Android unit tests
 ./gradlew :shared:iosSimulatorArm64Test  # Shared module iOS tests (simulator)
 
-./gradlew check                          # Aggregate gate: compile + tests + (once added) Detekt/ktfmt verify
+./gradlew check                          # Aggregate gate: compile + tests + Detekt + ktfmt verification
 ```
 
 The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consumes the `shared` framework produced by the shared module).
@@ -31,8 +31,8 @@ The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consum
 | Android debug APK            | `./gradlew :androidApp:assembleDebug`        |
 | Unit tests (JVM/Android)     | `./gradlew test`                             |
 | iOS shared tests             | `./gradlew :shared:iosSimulatorArm64Test`    |
-| Format (Kotlin) — *planned*  | `./gradlew ktfmtFormat`                      |
-| Lint (Kotlin) — *planned*    | `./gradlew detekt`                           |
+| Format (Kotlin)              | `./gradlew ktfmtFormat`                      |
+| Lint (Kotlin)                | `./gradlew detekt`                           |
 | Full CI gate                 | `./gradlew check`                            |
 
 ## Architecture
@@ -83,8 +83,8 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 
 ## Linting
 
-- **Kotlin formatting:** ktfmt (`./gradlew ktfmtFormat` to apply, verified by `./gradlew check`) — *to be wired up by the scaffolding*. Until then, `kotlin.code.style=official` governs IDE formatting.
-- **Kotlin static analysis:** Detekt (`./gradlew detekt`) — *to be wired up by the scaffolding*. No custom complexity thresholds are configured yet; honor Detekt's defaults. Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead. This convention will be enforced mechanically once the scaffolding lands: a `checkNoDetektBaseline` task (fails if any `detekt-baseline.xml` exists) plus Detekt's `ForbiddenSuppress` rule.
+- **Kotlin formatting:** ktfmt (`./gradlew ktfmtFormat` to apply, verified by `./gradlew check`), using ktfmt's `kotlinLangStyle()` preset to match `kotlin.code.style=official`. `./gradlew check` runs `ktfmtCheck` across both modules (including the Android app's `src/main/java`) and fails on unformatted Kotlin.
+- **Kotlin static analysis:** Detekt (`./gradlew detekt`), wired into `./gradlew check`. No custom complexity thresholds are configured; honor Detekt's defaults (the only override is the narrow Compose-rule exemption in `config/detekt/detekt.yml`). Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead. This convention will be enforced mechanically once the scaffolding lands: a `checkNoDetektBaseline` task (fails if any `detekt-baseline.xml` exists) plus Detekt's `ForbiddenSuppress` rule.
 - **iOS:** SwiftLint / swift-format for the SwiftUI app — *planned*.
 - **Git hooks:** *planned* — a `pre-commit` hook (ktfmt + Detekt on staged Kotlin, via the fast CLI path) and a `pre-push` hook (security scanners on pushed commits), installable via `./gradlew installGitHooks` (sets `core.hooksPath=.githooks`); both skippable with `--no-verify`. Until they land, run the formatter/linter manually before committing. The CI gate (`./gradlew check`) is the authoritative enforcement point whether or not the hooks are installed — they are a fast local pre-flight, not a replacement.
 
