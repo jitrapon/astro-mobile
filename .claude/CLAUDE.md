@@ -56,6 +56,7 @@ The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consum
 - **Repository pattern** — a repository (e.g. `LoginRepository`) wraps a data source (`LoginDataSource`) and manages cached state.
 - **Package layout** — base package `io.jitrapon.astro`, organized by layer (`data/`, `ui/`).
 - **UI stays out of `:shared`** — Compose code lives in `androidApp`, SwiftUI code lives in `iosApp`. The shared module exposes platform-agnostic models and logic only.
+- **Calendar layout-engine seam** (reserved, M-2+) — `io.jitrapon.astro.calendar.layout` in `commonMain` is the reserved home of the shared, UI-agnostic calendar layout engine (column-pack + multi-day segmentation). Per astro-plans `ADR-calendar-layout-engine-sharing-strategy`, it is a single source compiled to JS for web and native on mobile; its public seam takes/returns plain JSON-like values only (no `kotlinx.datetime`/`Flow`/sealed objects/`Result<T>` crossing it, so the same source compiles to JS). The golden-vector corpus lives at `shared/src/commonTest/resources/calendar-layout-golden/`. See the README in each directory.
 
 ## Conventions
 
@@ -83,9 +84,9 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 ## Linting
 
 - **Kotlin formatting:** ktfmt (`./gradlew ktfmtFormat` to apply, verified by `./gradlew check`) — *to be wired up by the scaffolding*. Until then, `kotlin.code.style=official` governs IDE formatting.
-- **Kotlin static analysis:** Detekt (`./gradlew detekt`) — *to be wired up by the scaffolding*. No custom complexity thresholds are configured yet; honor Detekt's defaults. Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead.
+- **Kotlin static analysis:** Detekt (`./gradlew detekt`) — *to be wired up by the scaffolding*. No custom complexity thresholds are configured yet; honor Detekt's defaults. Do **not** add a Detekt baseline file or `@Suppress` to silence findings — refactor instead. This convention will be enforced mechanically once the scaffolding lands: a `checkNoDetektBaseline` task (fails if any `detekt-baseline.xml` exists) plus Detekt's `ForbiddenSuppress` rule.
 - **iOS:** SwiftLint / swift-format for the SwiftUI app — *planned*.
-- There is **no pre-commit hook**. Run the formatter/linter manually before committing; the CI gate (`./gradlew check`) is the enforcement point.
+- **Git hooks:** *planned* — a `pre-commit` hook (ktfmt + Detekt on staged Kotlin, via the fast CLI path) and a `pre-push` hook (security scanners on pushed commits), installable via `./gradlew installGitHooks` (sets `core.hooksPath=.githooks`); both skippable with `--no-verify`. Until they land, run the formatter/linter manually before committing. The CI gate (`./gradlew check`) is the authoritative enforcement point whether or not the hooks are installed — they are a fast local pre-flight, not a replacement.
 
 ## Tech stack & versions
 
@@ -93,11 +94,11 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 - Android: compileSdk 36, minSdk 23, targetSdk 36, Java 17.
 - Jetpack Compose for Android UI; SwiftUI for iOS UI.
 - iOS targets: `iosX64`, `iosArm64`, `iosSimulatorArm64`.
-- No Gradle version catalog (`gradle/libs.versions.toml`) yet — dependency versions are declared inline in the `build.gradle.kts` files.
+- Gradle version catalog (`gradle/libs.versions.toml`) — *being introduced by the scaffolding* for the lint toolchain versions (ktfmt plugin / `ktfmt-cli` / Detekt), so `verifyKtfmtAlignment` and the pre-commit hook share one source of truth. Other dependency versions remain declared inline in the `build.gradle.kts` files for now (a partial catalog is fine).
 
 ## Documented config files
 
-Files with load-bearing detail a reviewer/agent should re-read when they change: `build.gradle.kts`, `shared/build.gradle.kts`, `androidApp/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, and (once added) the Detekt config and `.github/workflows/ci.yml`.
+Files with load-bearing detail a reviewer/agent should re-read when they change: `build.gradle.kts`, `shared/build.gradle.kts`, `androidApp/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, and (once added) `gradle/libs.versions.toml`, the Detekt config, the `.githooks/` scripts (`pre-commit`, `pre-push`), and `.github/workflows/ci.yml`.
 
 ## Development workflow
 
@@ -109,3 +110,8 @@ This repo uses a spec-driven, skill-based workflow (see `.claude/skills/`). Per 
 4. `finish-branch` resets agent working files to the `main` skeleton, pushes, and opens the PR.
 
 `.claude/SPEC.md`, `.claude/REVIEW_PLAN.md`, and `.claude/REVIEW_ADVERSARIAL.md` are per-branch working files that reset to skeletons on `main`.
+
+## References
+
+- **Adding KMP dependencies** — [multiplatform dependencies](https://kotlinlang.org/docs/multiplatform/multiplatform-dependencies.html) and [upgrading a multiplatform app](https://kotlinlang.org/docs/multiplatform/multiplatform-upgrade-app.html). Canonical how-to for adding/upgrading `commonMain` and platform-specific dependencies (e.g. Ktor Client, kotlinx.serialization) — follow it rather than guessing source-set wiring.
+- **Calendar layout-engine sharing** — astro-plans `ADR-calendar-layout-engine-sharing-strategy` (decision D-15) and the `W-S1` spike. Background for the reserved `commonMain` layout seam.
