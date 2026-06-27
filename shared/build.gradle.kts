@@ -1,8 +1,10 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
-    id("com.ncorti.ktfmt.gradle") version "0.26.0"
-    id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    // ktfmt + Detekt versions come from the root version catalog (gradle/libs.versions.toml) so the
+    // Gradle plugin, the pre-commit hook's CLI jars, and verifyKtfmtAlignment share one source.
+    alias(libs.plugins.ktfmt)
+    alias(libs.plugins.detekt)
 }
 
 // ktfmt — Kotlin source formatter. Registers `ktfmtCheck` (verify) and `ktfmtFormat` (rewrite)

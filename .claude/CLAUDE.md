@@ -94,7 +94,7 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 - Android: compileSdk 36, minSdk 23, targetSdk 36, Java 17.
 - Jetpack Compose for Android UI; SwiftUI for iOS UI.
 - iOS targets: `iosX64`, `iosArm64`, `iosSimulatorArm64`.
-- Gradle version catalog (`gradle/libs.versions.toml`) — *being introduced by the scaffolding* for the lint toolchain versions (ktfmt plugin / `ktfmt-cli` / Detekt), so `verifyKtfmtAlignment` and the pre-commit hook share one source of truth. Other dependency versions remain declared inline in the `build.gradle.kts` files for now (a partial catalog is fine).
+- Gradle version catalog (`gradle/libs.versions.toml`) — holds the lint toolchain versions (the ncorti ktfmt plugin / `ktfmt-cli` / Detekt) plus the `ktfmt`/`detekt` plugin aliases, so the Gradle plugin, the pre-commit hook's CLI jars, and `verifyKtfmtAlignment` share one source of truth. Deliberately partial: other dependency versions remain declared inline in the `build.gradle.kts` files for now.
 
 ## Documented config files
 
