@@ -1,0 +1,30 @@
+# 14.1 Missing CoroutineName (DEBUG_001)
+
+## Bad Practice
+
+`launch` / `async` without `CoroutineName` in context — hard to debug in logs and Coroutines Debugger.
+
+```kotlin
+// BAD: anonymous coroutine — hard to debug
+scope.launch { syncOrders() }
+```
+
+## Recommended
+
+`launch(CoroutineName("load-user-${id}")) { }` for non-trivial work (opt-in Detekt rule).
+
+```kotlin
+// GOOD: named for logs and debugger
+scope.launch(CoroutineName("sync-orders")) { syncOrders() }
+```
+
+## Why
+
+Named coroutines appear in debugging tools and structured logs, shortening time to find
+which job failed or is still running.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `scope.launch { syncOrders() }` | `scope.launch(CoroutineName("sync-orders")) { syncOrders() }` |

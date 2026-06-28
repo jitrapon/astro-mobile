@@ -1,0 +1,38 @@
+# 10.2 callbackFlow Without awaitClose (INTEROP_002)
+
+## Bad Practice
+
+Using `callbackFlow { }` without `awaitClose { }`. Starting from kotlinx-coroutines 1.6, a `callbackFlow` without `awaitClose` throws `IllegalStateException` at runtime when the flow is cancelled. Additionally, registered listeners are never unregistered, causing memory leaks.
+
+```kotlin
+// [INTEROP_002] callbackFlow without awaitClose — IllegalStateException + listener leak
+fun locationFlow(): Flow<Location> = callbackFlow {
+    val cb = LocationCallback { trySend(it) }
+    manager.register(cb)
+    // Missing awaitClose!
+}
+```
+
+## Recommended
+
+Always include `awaitClose { /* unregister listener */ }` at the end of every `callbackFlow` block. `awaitClose` suspends until the collector cancels or completes, giving you the lifecycle hook to clean up. Note: this rule does NOT apply to `channelFlow`.
+
+```kotlin
+// callbackFlow with awaitClose ensures listener cleanup
+fun locationFlow(): Flow<Location> = callbackFlow {
+    val cb = LocationCallback { trySend(it) }
+    manager.register(cb)
+    awaitClose { manager.unregister(cb) }
+}
+```
+
+## Why
+
+`awaitClose` suspends until the collector completes or cancels, giving the hook to tear
+down platform callbacks. Without it, flows leak and may throw at runtime.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `fun locationFlow(): Flow<Location> = callbackFlow {` | `fun locationFlow(): Flow<Location> = callbackFlow {` |

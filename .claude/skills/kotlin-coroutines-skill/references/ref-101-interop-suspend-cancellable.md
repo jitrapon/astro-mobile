@@ -1,0 +1,42 @@
+# 10.1 Wrapping Callbacks Without Cancellation Support (INTEROP_001)
+
+## Bad Practice
+
+Using `suspendCoroutine` to wrap async callbacks. When the parent coroutine is cancelled the callback remains registered, leaking memory and resuming a dead continuation. The callback may call `resume` on a continuation that was already discarded, causing undefined behavior.
+
+```kotlin
+// [INTEROP_001] suspendCoroutine does not support cancellation
+suspend fun fetchUser(id: String): User = suspendCoroutine { cont ->
+    api.getUser(id,
+        onSuccess = { cont.resume(it) },
+        onError = { cont.resumeWithException(it) }
+    )
+    // if parent cancels, the listener stays active
+}
+```
+
+## Recommended
+
+Use `suspendCancellableCoroutine` and register cleanup in `invokeOnCancellation`. This ensures that when the parent coroutine cancels, the callback is unregistered and resources are released properly.
+
+```kotlin
+// suspendCancellableCoroutine + invokeOnCancellation for proper cleanup
+suspend fun fetchUser(id: String): User = suspendCancellableCoroutine { cont ->
+    val call = api.getUser(id,
+        onSuccess = { cont.resume(it) },
+        onError = { cont.resumeWithException(it) }
+    )
+    cont.invokeOnCancellation { call.cancel() }
+}
+```
+
+## Why
+
+Cancellation must be wired for callback APIs. Without `invokeOnCancellation`, cancelled
+coroutines leave zombie callbacks that violate structured concurrency.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `suspend fun fetchUser(id: String): User = suspendCoroutine { cont ->` | `suspend fun fetchUser(id: String): User = suspendCancellableCoroutine { cont ->` |

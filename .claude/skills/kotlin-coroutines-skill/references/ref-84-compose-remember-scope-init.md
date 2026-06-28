@@ -1,0 +1,39 @@
+# 8.4 rememberCoroutineScope For Initialization (COMPOSE_002)
+
+## Bad Practice
+
+`rememberCoroutineScope().launch { }` in the Composable body for init/load work (runs again on recomposition).
+
+```kotlin
+// BAD: launch in Composable body — reruns on recomposition
+@Composable
+fun ProfileScreen(vm: ProfileViewModel) {
+    val scope = rememberCoroutineScope()
+    scope.launch { vm.loadProfile() }
+    Text(vm.name)
+}
+```
+
+## Recommended
+
+Use `LaunchedEffect(key) { }` for one-shot or key-driven effects; reserve `rememberCoroutineScope` for user handlers (`onClick`, etc.).
+
+```kotlin
+// GOOD: one-shot effect keyed to entry
+@Composable
+fun ProfileScreen(vm: ProfileViewModel) {
+    LaunchedEffect(vm.userId) { vm.loadProfile() }
+    Text(vm.name)
+}
+```
+
+## Why
+
+The Composable body must be idempotent. Side-effectful `launch` in the body ties work
+to recomposition count, causing duplicate loads.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `@Composable` | `@Composable` |

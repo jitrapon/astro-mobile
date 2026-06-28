@@ -1,0 +1,34 @@
+# 3.7 ThreadLocal / MDC Not Propagated (BACKEND_002)
+
+## Bad Practice
+
+`MDC.put` / `MDC.get` in `suspend` code with `withContext(Dispatchers.IO)` (or `Default`) without `MDCContext()` from `kotlinx-coroutines-slf4j`.
+
+```kotlin
+// BAD: MDC lost after withContext switches thread
+suspend fun audit() = withContext(Dispatchers.IO) {
+    log.info("user=${MDC.get("userId")}")
+}
+```
+
+## Recommended
+
+`withContext(Dispatchers.IO + MDCContext()) { … }` so trace/user context survives dispatcher switches. Active only when SLF4J MDC is on the classpath.
+
+```kotlin
+// GOOD: propagate MDC across dispatcher boundaries
+suspend fun audit() = withContext(Dispatchers.IO + MDCContext()) {
+    log.info("user=${MDC.get("userId")}")
+}
+```
+
+## Why
+
+`ThreadLocal` and SLF4J MDC are thread-bound. Without `MDCContext()`, logs after
+`withContext` lose trace or user context.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `suspend fun audit() = withContext(Dispatchers.IO) {` | `suspend fun audit() = withContext(Dispatchers.IO + MDCContext()) {` |

@@ -1,0 +1,32 @@
+# 9.10 FlatMap Operator Choice (FLOW_009)
+
+## Bad Practice
+
+`flatMapLatest` for downloads (cancels in-flight work); `flatMapConcat` for live search (stale results queue).
+
+```kotlin
+// BAD: flatMapLatest cancels in-flight download when query changes slowly
+searchQuery.flatMapLatest { url -> downloadFile(url) }
+```
+
+## Recommended
+
+`flatMapLatest` for search/last-wins; `flatMapMerge` for parallel unordered work; `flatMapConcat` for ordered pipelines.
+
+```kotlin
+// GOOD: pick operator for semantics
+// Search (last wins): flatMapLatest { repo.search(it) }
+// Parallel downloads: flatMapMerge(concurrency = 4) { download(it) }
+// Ordered pages: flatMapConcat { fetchPage(it) }
+```
+
+## Why
+
+Each `flatMap*` variant defines different cancellation and ordering. The wrong choice
+causes lost work, stale UI, or unnecessary serialization.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| See examples above | Apply Recommended pattern |

@@ -1,0 +1,38 @@
+# 8.5 Side Effect In Composable Body (COMPOSE_003)
+
+## Bad Practice
+
+Analytics, logging, or state mutation called directly in the Composable body (runs every recomposition).
+
+```kotlin
+// BAD: analytics on every recomposition
+@Composable
+fun HomeScreen() {
+    analytics.logScreen("home")
+    Text("Welcome")
+}
+```
+
+## Recommended
+
+Move side effects to `SideEffect`, `LaunchedEffect`, or `DisposableEffect`, or event handlers.
+
+```kotlin
+// GOOD: scoped side effect
+@Composable
+fun HomeScreen() {
+    SideEffect { analytics.logScreen("home") }
+    Text("Welcome")
+}
+```
+
+## Why
+
+Recomposition can happen frequently. Unscoped side effects in the body multiply
+executions and break predictability.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `@Composable` | `@Composable` |
