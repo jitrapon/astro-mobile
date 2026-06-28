@@ -67,10 +67,13 @@ struct FieldTextErrorHint: View {
     @State private var showingAlert = false
 
     var body: some View {
-        Button(action: { self.showingAlert = true }) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
-        }
+        Button(
+            action: { self.showingAlert = true },
+            label: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+            }
+        )
         .alert(isPresented: $showingAlert) {
             Alert(
                 title: Text("Error"), message: Text(error), dismissButton: .default(Text("Got it!"))

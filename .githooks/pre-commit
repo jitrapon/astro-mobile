@@ -131,38 +131,52 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
   fi
 fi
 
-# Swift formatting chunk — the iOS analog of the Kotlin path, for staged .swift files. Uses Apple's
-# toolchain `swift format` (config iosApp/.swift-format, discovered by walking up from each file),
-# strict so any finding fails the commit exactly like ktfmt's --set-exit-if-changed. warn-and-skip
-# when the Swift toolchain is absent (e.g. a contributor on Linux without swift installed) so the
-# hook never hard-fails on a missing binary — the same belt-and-suspenders posture as the pre-push
-# security scanners. The swiftFormatCheck Gradle task + CI gate remain the authoritative enforcement.
+# Swift chunk — the iOS analog of the Kotlin path, for staged .swift files. Two independent tools
+# mirror the Kotlin ktfmt+detekt pair: `swift format` (formatting, config iosApp/.swift-format) and
+# `swiftlint` (static analysis, config iosApp/.swiftlint.yml). Each warn-and-skips when its binary is
+# absent (a contributor on Linux without swift, or a machine without SwiftLint installed) so the hook
+# never hard-fails on a missing tool — the same belt-and-suspenders posture as the pre-push security
+# scanners — and the one that IS present still runs. The swiftFormatCheck/swiftLintCheck Gradle tasks
+# + CI gate remain the authoritative enforcement.
 if [ ${#SWIFT_FILES[@]} -gt 0 ]; then
+  # Abort on partial staging once, up front: both Swift tools read from disk, so unstaged edits on a
+  # staged file would lint content that isn't part of the commit (mirrors the Kotlin guard). Runs
+  # regardless of which Swift tools are installed, so it can't be skipped by a missing binary.
+  SWIFT_PARTIAL=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && SWIFT_PARTIAL+=("$line")
+  done < <(
+    comm -12 \
+      <(printf '%s\n' "${SWIFT_FILES[@]}" | sort -u) \
+      <(git diff --name-only --diff-filter=ACMR | { grep -E '\.swift$' || true; } | sort -u)
+  )
+  if [ ${#SWIFT_PARTIAL[@]} -gt 0 ]; then
+    {
+      echo "error: partially staged Swift file(s) detected — pre-commit lints disk content, not the staged snapshot:"
+      printf '  %s\n' "${SWIFT_PARTIAL[@]}"
+      echo "Fix: run 'git add' on the remaining hunks (or 'git restore' to drop them), then commit again."
+      echo "Override: git commit --no-verify"
+    } >&2
+    exit 1
+  fi
+
+  # swift format (formatting) — --strict promotes findings to errors, matching the swiftFormatCheck
+  # Gradle gate; walks up from each file to discover iosApp/.swift-format.
   if ! command -v swift >/dev/null 2>&1; then
     echo "[pre-commit] swift not found on PATH — skipping Swift format check (install the Swift toolchain to enforce locally)" >&2
   else
-    # Abort on partial staging: swift format reads from disk, so unstaged edits on a staged file
-    # would lint content that isn't part of the commit (mirrors the Kotlin partial-staging guard).
-    SWIFT_PARTIAL=()
-    while IFS= read -r line; do
-      [ -n "$line" ] && SWIFT_PARTIAL+=("$line")
-    done < <(
-      comm -12 \
-        <(printf '%s\n' "${SWIFT_FILES[@]}" | sort -u) \
-        <(git diff --name-only --diff-filter=ACMR | { grep -E '\.swift$' || true; } | sort -u)
-    )
-    if [ ${#SWIFT_PARTIAL[@]} -gt 0 ]; then
-      {
-        echo "error: partially staged Swift file(s) detected — pre-commit lints disk content, not the staged snapshot:"
-        printf '  %s\n' "${SWIFT_PARTIAL[@]}"
-        echo "Fix: run 'git add' on the remaining hunks (or 'git restore' to drop them), then commit again."
-        echo "Override: git commit --no-verify"
-      } >&2
-      exit 1
-    fi
-    # --strict promotes findings to errors (non-zero exit), matching the swiftFormatCheck Gradle gate.
     echo "[pre-commit] swift format lint on ${#SWIFT_FILES[@]} staged .swift file(s)"
     swift format lint --strict "${SWIFT_FILES[@]}"
+  fi
+
+  # swiftlint (static analysis) — --strict promotes warnings to errors, matching the swiftLintCheck
+  # Gradle gate. swiftlint is NOT toolchain-bundled (install via Homebrew), so guard it independently
+  # of swift: a machine with one tool but not the other still enforces the tool it has.
+  if ! command -v swiftlint >/dev/null 2>&1; then
+    echo "[pre-commit] swiftlint not found on PATH — skipping Swift lint (brew install swiftlint to enforce locally)" >&2
+  else
+    echo "[pre-commit] swiftlint on ${#SWIFT_FILES[@]} staged .swift file(s)"
+    swiftlint lint --strict --config iosApp/.swiftlint.yml "${SWIFT_FILES[@]}"
   fi
 fi
 

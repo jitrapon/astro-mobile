@@ -228,3 +228,95 @@ val swiftFormatCheck =
 // Mirrors
 // the checkNoDetektBaseline wiring above.
 subprojects { tasks.matching { it.name == "check" }.configureEach { dependsOn(swiftFormatCheck) } }
+
+// iOS static analysis — SwiftLint (config: iosApp/.swiftlint.yml), the iOS analog of Detekt the way
+// swiftFormatCheck is the analog of ktfmtCheck: swift-format owns formatting, SwiftLint owns the
+// style / code-smell / complexity rules. `--strict` promotes warnings to errors so any finding
+// fails
+// the gate exactly like detekt and the strict swift-format check. Unlike `swift`, `swiftlint` is
+// NOT
+// toolchain-bundled (install via Homebrew or the SwiftPM plugin); guarding on `swiftlint` resolving
+// on PATH lets the same task enforce where it's installed (dev machines, CI once it installs the
+// binary) and self-skip with a clear message where it's absent — the same posture as
+// swiftFormatCheck.
+val swiftLintConfig = "iosApp/.swiftlint.yml"
+val swiftLintCheck =
+    tasks.register("swiftLintCheck") {
+        group = "verification"
+        description =
+            "Lint iOS app sources with SwiftLint (strict); part of `check` where swiftlint is present."
+        val injected = project.objects.newInstance<ExecInjected>()
+        val srcDir = file(swiftAppSources)
+        val configFile = file(swiftLintConfig)
+        val pathValue = pathDirs.orNull
+        doLast {
+            val swiftlint =
+                pathValue
+                    ?.split(File.pathSeparator)
+                    ?.map { File(it, "swiftlint") }
+                    ?.firstOrNull { it.canExecute() }
+            if (swiftlint == null) {
+                logger.lifecycle(
+                    "swiftLintCheck skipped: `swiftlint` not found on PATH — install SwiftLint " +
+                        "(brew install swiftlint) to enforce iOS static analysis."
+                )
+                return@doLast
+            }
+            injected.exec.exec {
+                commandLine(
+                    swiftlint.path,
+                    "lint",
+                    "--strict",
+                    "--config",
+                    configFile.path,
+                    srcDir.path,
+                )
+            }
+        }
+    }
+
+// SwiftLint rides the same aggregate gate as Detekt/swift-format: every subproject's `check`
+// depends
+// on swiftLintCheck (it self-skips where swiftlint is absent). Mirrors the swiftFormatCheck wiring.
+subprojects { tasks.matching { it.name == "check" }.configureEach { dependsOn(swiftLintCheck) } }
+
+// iOS unused-code analysis — Periphery (config: iosApp/.periphery.yml). This is the parity for the
+// unused-member rules Detekt covers on the Kotlin side and SwiftLint only partially covers. It is
+// DELIBERATELY NOT wired into `check`: unlike swift-format/SwiftLint (fast, per-file), Periphery is
+// a
+// whole-program analysis that must run a full `xcodebuild` to produce an index store before it can
+// resolve symbols — a scan takes minutes and needs macOS + Xcode + the `shared` KMP framework
+// built,
+// so it cannot self-skip cleanly on a toolchain-less CI host the way the other iOS tools do. It is
+// therefore an on-demand task, the iOS analog of the on-demand `:androidApp:debugStabilityDump`
+// Compose-stability task (also kept out of `check` for the same heavyweight-build reason). Run it
+// manually on a macOS dev machine before a refactor or release; guarded on `periphery` resolving on
+// PATH (install via `brew install periphery`) so it self-skips with a clear message where absent.
+tasks.register("peripheryScan") {
+    group = "verification"
+    description =
+        "Scan iOS app sources for unused code with Periphery (on-demand; not part of `check`)."
+    val injected = project.objects.newInstance<ExecInjected>()
+    val iosDir = file("iosApp")
+    val pathValue = pathDirs.orNull
+    doLast {
+        val periphery =
+            pathValue
+                ?.split(File.pathSeparator)
+                ?.map { File(it, "periphery") }
+                ?.firstOrNull { it.canExecute() }
+        if (periphery == null) {
+            logger.lifecycle(
+                "peripheryScan skipped: `periphery` not found on PATH — install it " +
+                    "(brew install periphery) to scan for unused iOS code."
+            )
+            return@doLast
+        }
+        // Run from iosApp/ so `periphery scan` auto-discovers iosApp/.periphery.yml (project +
+        // schemes). The full xcodebuild it triggers is why this is on-demand, not a `check` gate.
+        injected.exec.exec {
+            workingDir = iosDir
+            commandLine(periphery.path, "scan")
+        }
+    }
+}

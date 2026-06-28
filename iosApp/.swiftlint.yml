@@ -1,0 +1,51 @@
+# SwiftLint configuration for the iOS app — the iOS static-analysis analog of Detekt on the Kotlin
+# side. swift-format (iosApp/.swift-format) owns formatting the way ktfmt does for Kotlin; SwiftLint
+# owns the style / code-smell / complexity rules the way Detekt does. The two tools must never fight
+# over the same byte, so every SwiftLint rule whose concern is whitespace, brace placement, line
+# wrapping, blank lines, commas, colons, or any other pure-layout decision is disabled here and left
+# to swift-format as the sole formatter — mirroring how config/detekt/detekt.yml leaves formatting to
+# ktfmt. Everything else honors SwiftLint's defaults.
+#
+# This is NOT a mechanism to silence code-smell findings: only formatting rules that overlap with
+# swift-format are disabled. Genuine SwiftLint findings (e.g. multiple_closures_with_trailing_closure)
+# are fixed in the source, never blanket-disabled.
+#
+# Run via `./gradlew swiftLintCheck` (wired into `./gradlew check`) or directly with
+# `swiftlint lint --strict --config iosApp/.swiftlint.yml iosApp/iosApp`.
+
+# Formatting-only rules that overlap with swift-format. Disabled so swift-format stays the sole
+# formatter and the two tools never oscillate on the same file.
+#
+# MAINTENANCE: this list mirrors swift-format's formatting responsibilities. When swift-format's rule
+# set (iosApp/.swift-format) or SwiftLint's default formatting rules change across a version bump,
+# re-audit this list — run `swiftlint rules` and disable any new default-enabled rule whose `kind` is
+# layout/whitespace and whose behavior swift-format already governs.
+disabled_rules:
+  - attribute_name_spacing            # @attribute spacing — swift-format
+  - closing_brace                     # `}` spacing — swift-format
+  - colon                             # spacing around `:` — swift-format
+  - comma                             # spacing around `,` — swift-format
+  - control_statement                 # parens around conditions — swift-format NoParensAroundConditions
+  - empty_parentheses_with_trailing_closure  # swift-format NoEmptyTrailingClosureParentheses
+  - leading_whitespace                # leading file whitespace — swift-format
+  - line_length                       # line wrapping — swift-format lineLength: 100
+  - mark                              # MARK comment spacing — swift-format
+  - no_space_in_method_call           # call-site spacing — swift-format
+  - opening_brace                     # `{` placement/spacing — swift-format
+  - return_arrow_whitespace           # `->` spacing — swift-format
+  - redundant_void_return             # `-> Void` in signatures — swift-format NoVoidReturnOnFunctionSignature
+  - statement_position                # else/catch placement — swift-format
+  - switch_case_alignment             # case indentation — swift-format indentSwitchCaseLabels
+  - trailing_comma                    # swift-format multiElementCollectionTrailingCommas
+  - trailing_newline                  # final newline — swift-format
+  - trailing_semicolon                # `;` removal — swift-format DoNotUseSemicolons
+  - trailing_whitespace               # line-trailing whitespace — swift-format
+  - vertical_parameter_alignment      # parameter alignment — swift-format
+  - vertical_whitespace               # blank-line collapsing — swift-format maximumBlankLines
+  - void_return                       # `-> Void` vs `-> ()` — swift-format ReturnVoidInsteadOfEmptyTuple
+
+# Never descend into generated/build output. swiftLintCheck and the pre-commit hook pass explicit
+# paths (which override `included`), but `excluded` still applies as a backstop for directory scans.
+excluded:
+  - build
+  - iosApp/build
