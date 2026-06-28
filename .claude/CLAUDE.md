@@ -119,6 +119,32 @@ This repo uses a spec-driven, skill-based workflow (see `.claude/skills/`). Per 
 
 `.claude/SPEC.md`, `.claude/REVIEW_PLAN.md`, and `.claude/REVIEW_ADVERSARIAL.md` are per-branch working files that reset to skeletons on `main`.
 
+### Agent skill routing & precedence
+
+The repo carries skills from three families with **non-overlapping domains** — route by where the work lands, not by keyword overlap:
+
+| Work domain | Skills | Where they live |
+| --- | --- | --- |
+| **Android app & UI** — Jetpack Compose UI, navigation, adaptive layouts, theming, edge-to-edge, Android test infra, and driving the build/run/emulator/screenshots/doc-search tooling | the official Google **`android/*`** skills | `android-cli` is vendored at `.claude/skills/android-cli/`; the rest are served **on-demand** by the Android CLI |
+| **`:shared` / KMP architecture** — data layer, repositories, `expect`/`actual` platform bridges, module boundaries, KMP Gradle structure, refactor safety | the vendored **`kotlin-*`** skills | `.claude/skills/` (committed) |
+| **Async / concurrency (any module)** | **`kotlin-coroutines-skill`** | `.claude/skills/` (committed) |
+
+**Precedence rule:** for any Android-platform / `:androidApp` / Compose-UI / Android-tooling task, prefer the official `android/*` skill over a `kotlin-*` skill that merely mentions the same surface — the `android/*` skills are Google-authored, versioned, and kept current by the CLI. The `kotlin-*` skills own everything inside `:shared` and cross-module KMP architecture and do **not** cover Android UI. There is no genuine build-tooling clash: the official `agp-9-upgrade` skill explicitly excludes KMP projects, so KMP Gradle work stays with `kotlin-build-kmp-gradle-governance`.
+
+**On-demand `android/*` skills** — not vendored (so they never drift from the CLI); fetch a fresh copy with `android skills add <name> --agent=claude-code --project .` when a task needs one:
+
+| Task | Skill |
+| --- | --- |
+| Phone/tablet/foldable responsive Compose layouts | `adaptive` |
+| Jetpack Navigation 3 (multi-backstack, list-detail, two-pane, deep links) | `navigation-3` |
+| Edge-to-edge insets / system-bar overlap fixes | `edge-to-edge` |
+| Jetpack Compose Styles API / theming migration | `styles` |
+| Android test strategy & harness setup (`:androidApp`; **not** `:shared`) | `testing-setup` |
+
+`android skills list` / `android skills find <keyword>` enumerate the full catalog. Always pass `--agent=claude-code` so the skill lands in `.claude/skills/` only — omitting it also writes a stray top-level `skills/` copy.
+
+**Not applicable to this stack** (do not install): `jetpack-compose-m3` (Wear OS only — `androidx.wear.compose.*`), `agp-9-upgrade` (its own description excludes KMP), `camera1-to-camerax` (no camera/legacy), `migrate-xml-views-to-jetpack-compose` (this app is born-in-Compose), `display-glasses-with-jetpack-compose-glimmer` (XR), `engage-sdk-integration` (media content surfaces). Revisit only if the product scope changes.
+
 ## References
 
 - **Adding KMP dependencies** — [multiplatform dependencies](https://kotlinlang.org/docs/multiplatform/multiplatform-dependencies.html) and [upgrading a multiplatform app](https://kotlinlang.org/docs/multiplatform/multiplatform-upgrade-app.html). Canonical how-to for adding/upgrading `commonMain` and platform-specific dependencies (e.g. Ktor Client, kotlinx.serialization) — follow it rather than guessing source-set wiring.
