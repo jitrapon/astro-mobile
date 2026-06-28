@@ -1,0 +1,106 @@
+# Betterleaks secret-scan config for astro-mobile.
+#
+# Consumed by the pre-push hook (.githooks/pre-push) and the CI backstop job
+# (.github/workflows/security.yml → betterleaks), and runnable by hand:
+#     betterleaks dir . --config .betterleaks.toml --redact
+#
+# Why this file exists (vs. extending upstream blindly):
+#   Betterleaks' README recommends production users maintain their OWN config
+#   rather than relying on the upstream default implicitly, so the rule set
+#   stays stable across binary upgrades and new upstream rules are reviewed
+#   before adoption. This file IS that owned control point: we still inherit
+#   the upstream default ruleset ([extend].useDefault) — it's our only secret
+#   gate, so we WANT upstream's provider-rule improvements — but we pin a
+#   binary floor and review bumps in PRs, and every project-specific
+#   suppression lives here under version control instead of as ad-hoc CLI flags
+#   or an unreviewed `.gitleaksignore`. If we ever need to freeze the rule set
+#   itself, vendor config/betterleaks.toml from the upstream repo and drop
+#   `useDefault`.
+
+title = "astro-mobile secret scan"
+
+# Floor on the betterleaks binary. An older binary that predates a CEL function
+# or rule we rely on fails loudly here instead of silently under-scanning. The
+# CI job installs exactly this version and asserts it is >= this floor; the
+# pre-push hook skips the scan loudly when the local binary is below it.
+betterleaksMinVersion = "1.5.0"
+
+# Global post-match filter: a finding is DROPPED when this CEL expression is
+# true. Order: vendored upstream defaults, then path checks, then value-shape.
+# `path` may be repo-relative (the pre-push hook's `betterleaks git` history
+# scan) or absolute (a hand-run `betterleaks dir`), so every path pattern is
+# unanchored at the front (`(^|/)`) to match either form.
+#
+# IMPORTANT: this top-level `filter` key MUST stay ABOVE the [extend] table.
+# In TOML, any bare key after a [table] header belongs to that table, so moving
+# this below [extend] silently turns it into `extend.filter` and the global
+# filter stops applying.
+filter = '''
+(
+  // Vendored verbatim from the upstream default config's global `filter`
+  // (config/betterleaks.toml). betterleaks' [extend] REPLACES the default global
+  // filter when a child config defines its own — it does NOT merge — so without
+  // re-including it here we'd lose the default's value-shape false-positive drops
+  // ($VAR, %VAR%, true/false/null, repeated chars, unix paths, …) and start
+  // blocking pushes on noise the upstream config discards. Re-sync this block on
+  // betterleaks version bumps; the betterleaksMinVersion pin + PR review is the
+  // checkpoint where that happens.
+  filter.matchesAny(finding["secret"], [
+    r"""(?i)^true|false|null$""",
+    r"""^(?i:a+|b+|c+|d+|e+|f+|g+|h+|i+|j+|k+|l+|m+|n+|o+|p+|q+|r+|s+|t+|u+|v+|w+|x+|y+|z+|\*+|\.+)$""",
+    r"""^\$(?:\d+|{\d+})$""",
+    r"""^\$(?:[A-Z_]+|[a-z_]+)$""",
+    r"""^\${(?:[A-Z_]+|[a-z_]+)}$""",
+    r"""^\{\{[ \t]*[\w ().|]+[ \t]*}}$""",
+    r"""^\$\{\{[ \t]*(?:(?:env|github|secrets|vars)(?:\.[A-Za-z]\w+)+[\w "'&./=|]*)[ \t]*}}$""",
+    r"""^%(?:[A-Z_]+|[a-z_]+)%$""",
+    r"""^%[+\-# 0]?[bcdeEfFgGoOpqstTUvxX]$""",
+    r"""^\{\d{0,2}}$""",
+    r"""^@(?:[A-Z_]+|[a-z_]+)@$""",
+    r"""^/Users/(?i)[a-z0-9]+/[\w .-/]+$""",
+    r"""^/(?:bin|etc|home|opt|tmp|usr|var)/[\w ./-]+$"""
+  ]) || filter.containsAny(finding["secret"], [
+    "abcdefghijklmnopqrstuvwxyz",
+    "014df517-39d1-4453-b7b3-9930c563627c"
+  ])
+)
+||
+(
+  // Under KMP test source sets and their fixture resources, suppress ONLY the
+  // broad low-confidence `generic-*` rules (generic-api-key etc.) that sample
+  // payloads and golden-vector JSON routinely trip. NAMED provider credentials
+  // — AWS, GCP, Google, GitHub, GitLab, Slack, Stripe, … — and private keys are
+  // deliberately NOT path-suppressed: a real live token pasted into a fixture is
+  // a genuine leak and must still fail the push. (Intentionally narrower than a
+  // blanket test-path allowlist; if a legitimate fixture trips a named rule
+  // later, suppress that specific finding by fingerprint rather than widening
+  // this.) Paths mirror this repo's layout: the per-source-set test dirs
+  // (`src/commonTest`, `src/androidTest`, `src/iosTest`, `src/test`) under any
+  // module, which also covers the golden-vector corpus at
+  // `shared/src/commonTest/resources/calendar-layout-golden/`.
+  filter.matchesAny(attributes[?"path"].orValue(""), [
+    r"""(^|/)src/[A-Za-z]*[Tt]est/"""
+  ])
+  && filter.matchesAny(finding["rule_id"], [r"""(?i)^generic"""])
+)
+||
+(
+  // Placeholder-shaped values are config templates, not secrets — regardless of
+  // path. The gitignored `local.properties` and docs/examples use ${VAR},
+  // <your-key>, CHANGEME, xxxxx; CI/workflow scaffolding ships {{VAR}}-style
+  // placeholders. This is value-shape based, so a REAL credential accidentally
+  // pasted into a committed file is still caught.
+  filter.matchesAny(finding["secret"], [
+    r"""^\{\{.*\}\}$""",
+    r"""^\$\{.*\}$""",
+    r"""^<.*>$""",
+    r"""(?i)^(?:changeme|placeholder|example|your[-_]?\w+|x{4,})$"""
+  ])
+)
+'''
+
+# Inherit the upstream default provider ruleset (~150 rules: AWS, GCP, GitHub,
+# private keys, JWTs, …). Reviewed on each binary bump rather than vendored.
+# Keep this table LAST — see the note on the top-level `filter` key above.
+[extend]
+useDefault = true
