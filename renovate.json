@@ -1,0 +1,78 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "automerge": false,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"],
+    "groupName": "security updates",
+    "groupSlug": "security",
+    "labels": ["security"],
+    "description": "Vulnerability-remediation PRs (GitHub + OSV alerts) bypass the Monday window and surface immediately. This is Renovate's dedicated hook for vuln-driven bumps; a packageRules `matchCategories: [security]` matches manager/language categories (java, ...), NOT vulnerability alerts, so it never classifies these PRs."
+  },
+  "configMigration": true,
+  "dependencyDashboard": true,
+  "minimumReleaseAge": "1 day",
+  "internalChecksFilter": "strict",
+  "schedule": ["before 9am on Monday"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "schedule": ["at any time"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "description": "Pin GitHub Actions to immutable commit-SHA digests so a re-tag or force-push at the action repo cannot inject a different artifact than the one reviewed. Keeps the action-pin CI gate continuously satisfied as actions are bumped."
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest"],
+      "groupName": "action digests",
+      "groupSlug": "action-digests",
+      "description": "Group digest-only rotations (tag unchanged, hash moved) into a single PR so they don't drown out version bumps."
+    },
+    {
+      "groupName": "kotlin/agp build toolchain",
+      "groupSlug": "kotlin-agp-toolchain",
+      "minimumReleaseAge": "7 days",
+      "description": "Keep the Kotlin compiler, the Kotlin Gradle/Compose-compiler plugins, and the Android Gradle Plugin in lockstep. AGP declares a supported-Kotlin range and the Compose compiler plugin (org.jetbrains.kotlin:compose-compiler-gradle-plugin) is versioned identically to Kotlin itself, so splitting these across PRs yields individually-unmergeable bumps (an AGP major usually needs a matching Kotlin, and the compose-compiler plugin must equal the Kotlin version). Grouping forces the compatible build-toolchain set to land together.",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin:**",
+        "org.jetbrains.kotlin{/,}**",
+        "com.android.tools.build:gradle",
+        "com.android.application",
+        "com.android.library",
+        "com.android.kotlin.multiplatform.library",
+        "com.android{/,}**"
+      ]
+    },
+    {
+      "groupName": "androidx compose",
+      "groupSlug": "androidx-compose",
+      "minimumReleaseAge": "7 days",
+      "description": "Keep the AndroidX Compose UI libraries (ui, material, animation, foundation, runtime, tooling) in lockstep. They share a single BOM-aligned release train and tight inter-module ranges, so splitting them across PRs produces individually-unmergeable bumps. Grouping forces the compatible Compose set to land together. Distinct from the Kotlin compose-compiler plugin, which moves with the Kotlin toolchain group above.",
+      "matchPackageNames": ["androidx.compose.**", "androidx.compose**"]
+    },
+    {
+      "matchPackageNames": ["com.facebook:ktfmt"],
+      "enabled": false,
+      "minimumReleaseAge": "7 days",
+      "description": "Pin the ktfmt CLI (com.facebook:ktfmt, catalog key ktfmt-cli) manually. The ncorti ktfmt-gradle plugin bundles a specific com.facebook:ktfmt version and the verifyKtfmtAlignment task asserts ktfmt-cli equals that bundled version. Renovate would otherwise bump the CLI ahead of any plugin release that bundles it (e.g. cli 0.63 while plugin 0.26.0 still bundles 0.62), breaking the lockstep guard. Bump this by hand together with com.ncorti.ktfmt.gradle."
+    },
+    {
+      "matchPackageNames": [
+        "com.github.skydoves.compose.stability.analyzer",
+        "com.github.skydoves.compose.stability.analyzer{/,}**"
+      ],
+      "enabled": false,
+      "minimumReleaseAge": "7 days",
+      "description": "Pin the Compose Stability Analyzer manually. It is a Kotlin compiler plugin that embeds kotlin-compiler-embeddable, so its version is hard-pinned to a specific Kotlin build (its version numbering — e.g. 0.7.0 — does not track Kotlin's, so Renovate cannot reason about compatibility). Bump it by hand together with any Kotlin upgrade, using the analyzer's README Kotlin-Version-Mapping table — the same manual-lockstep posture as com.facebook:ktfmt above."
+    }
+  ]
+}
