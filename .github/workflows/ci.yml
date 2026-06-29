@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: build-check-ios-test
+    # macOS runner is required, not a preference: `./gradlew check` aggregates
+    # the iOS lint gates (`swiftFormatCheck`, `swiftLintCheck`) and the shared
+    # module's `iosSimulatorArm64Test`. `swift` ships with the runner's Xcode and
+    # `swiftlint` is installed below, so both resolve on PATH and the iOS gates
+    # actually enforce here instead of self-skipping (full parity with the Kotlin
+    # ktfmt + Detekt gate). On Linux the Swift toolchain is absent and the gate
+    # would silently skip iOS checks.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Provides the Gradle dependency/build cache. No `gradle-version` — the
+      # repo's committed wrapper (Gradle 9.x) is authoritative.
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      # SwiftLint is not toolchain-bundled (unlike swift-format, which ships with
+      # Xcode). Without it `swiftLintCheck` self-skips; install it so the iOS
+      # static-analysis gate enforces in CI.
+      - run: brew install swiftlint
+
+      - run: ./gradlew build
+      - run: ./gradlew check
+      - run: ./gradlew :shared:iosSimulatorArm64Test
