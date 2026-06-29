@@ -15,6 +15,28 @@ buildscript {
     }
 }
 
+plugins {
+    // ktfmt on the ROOT project itself, not just :shared/:androidApp. Those subprojects only format
+    // their own build scripts, leaving the root build.gradle.kts / settings.gradle.kts unchecked by
+    // `./gradlew check` (the pre-commit hook's CLI was the only thing catching them). Applying the
+    // plugin here registers `ktfmtCheckScripts` over the root `*.gradle.kts`; it is wired into the
+    // gate and the CI partition below.
+    alias(libs.plugins.ktfmt)
+}
+
+// Match the subprojects' formatter: ktfmt's Kotlin-official-style preset, per kotlin.code.style.
+ktfmt { kotlinLangStyle() }
+
+// Pull the root script-format check into the gate, mirroring the checkNoDetektBaseline / swift
+// wiring below: every subproject's `check` depends on it, so `./gradlew check` verifies the root
+// `*.gradle.kts`. It is also added to the verifyAndroidCommon partition below so the drift guard
+// stays balanced.
+subprojects {
+    tasks
+        .matching { it.name == "check" }
+        .configureEach { dependsOn(rootProject.tasks.named("ktfmtCheck")) }
+}
+
 allprojects {
     repositories {
         google()
@@ -372,6 +394,7 @@ val androidCommonVerification =
         ":shared" to "ktfmtCheck",
         ":shared" to "verifyKtfmtAlignment",
         ":" to "checkNoDetektBaseline",
+        ":" to "ktfmtCheck",
     )
 
 val verifyIos =
