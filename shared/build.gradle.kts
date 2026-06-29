@@ -78,27 +78,12 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting
+        // The `iosMain` / `iosTest` intermediate source sets — and their dependsOn edges across
+        // iosX64/iosArm64/iosSimulatorArm64 — are created automatically by Kotlin's default
+        // hierarchy template once the iOS targets above are declared. Declaring them by hand would
+        // disable the template (and emit a "Default Kotlin Hierarchy Template was not applied"
+        // warning). Configure a source set explicitly only when it needs its own deps or sources.
         val commonTest by getting { dependencies { implementation(kotlin("test")) } }
-        val androidMain by getting
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by creating {
-            dependsOn(commonMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
-        }
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting
-        val iosTest by creating {
-            dependsOn(commonTest)
-            iosX64Test.dependsOn(this)
-            iosArm64Test.dependsOn(this)
-            iosSimulatorArm64Test.dependsOn(this)
-        }
     }
 }
 
