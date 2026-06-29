@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# `./gradlew check` stays the single local gate (see CLAUDE.md). CI splits that same work across two
+# runners so the expensive macOS runner (~10x the per-minute cost of Linux) only carries the
+# genuinely Mac-bound surface. The split is defined once in the root build as two aggregate tasks —
+# verifyAndroidCommon (host-portable) and verifyIos (macOS-only) — and the `verifyCheckPartition`
+# drift guard (run as part of verifyAndroidCommon) fails the build if their union ever stops equaling
+# what `check` runs, so local and CI can't silently diverge.
+jobs:
+  verify-android-common:
+    # Host-portable half of `check`: Android build/unit tests, JVM/common (host) tests, and Kotlin
+    # static-analysis + formatting (Detekt + ktfmt over every source set, iosMain Kotlin included —
+    # parsing needs no Mac, only iOS *compilation* does). Runs on the cheap Linux runner. This job
+    # also runs verifyCheckPartition, so a partition drift fails here regardless of the macOS job.
+    name: verify-android-common
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Provides the Gradle dependency/build cache. No `gradle-version` — the repo's committed
+      # wrapper (Gradle 9.x) is authoritative.
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - run: ./gradlew verifyAndroidCommon
+
+      # Build coverage beyond `check`: assemble the APKs (the release variant exercises R8/minify).
+      # Deliberately outside the verifyCheckPartition guard — assembling an artifact is not a `check`
+      # task, it's an extra packaging assurance. Reuses the Kotlin already compiled by the step above.
+      - run: ./gradlew :androidApp:assemble
+
+  verify-ios:
+    # macOS-only half of `check`: the shared module's iOS simulator tests (Kotlin/Native cross-
+    # compiles iOS targets only on a macOS host) plus the Swift gates. `swift` ships with the
+    # runner's Xcode and `swiftlint` is installed below, so swiftFormatCheck/swiftLintCheck enforce
+    # here instead of self-skipping — full parity with the Kotlin ktfmt + Detekt gate.
+    name: verify-ios
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      # SwiftLint is not toolchain-bundled (unlike swift-format, which ships with Xcode). Without it
+      # swiftLintCheck self-skips; install it so the iOS static-analysis gate enforces in CI.
+      - run: brew install swiftlint
+
+      - run: ./gradlew verifyIos
+
+      # Build coverage beyond `check`: link the shipping iOS device framework with release codegen.
+      # Outside the verifyCheckPartition guard for the same reason as the Android assemble — it's an
+      # artifact-link assurance, not a `check` task. The iOS Kotlin already compiled for the tests
+      # above, so this just exercises the release link of the framework the iosApp consumes.
+      - run: ./gradlew :shared:linkReleaseFrameworkIosArm64

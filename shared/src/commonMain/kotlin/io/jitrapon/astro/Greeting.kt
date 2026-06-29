@@ -1,7 +1,7 @@
 package io.jitrapon.astro
 
 class Greeting {
-    fun greeting(): String {
-        return "Hello, ${Platform().platform}!"
+    fun greet(): String {
+        return "Hello, ${Platform().name}!"
     }
 }

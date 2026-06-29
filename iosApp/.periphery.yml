@@ -1,0 +1,12 @@
+# Periphery configuration — unused-code / dead-declaration analysis for the iOS app. This is the
+# parity for the Detekt unused-member rules SwiftLint only partially covers. Unlike swift-format and
+# SwiftLint (fast, per-file), Periphery is a whole-program analysis: it must run a full xcodebuild to
+# produce an index store before it can resolve symbols, so a scan takes minutes and needs macOS +
+# Xcode + the `shared` KMP framework built. That cost is why it is deliberately NOT in `./gradlew
+# check` (which must stay fast and cross-platform) — it runs on demand via `./gradlew peripheryScan`,
+# the iOS analog of the on-demand `:androidApp:debugStabilityDump` Compose-stability task.
+#
+# `periphery scan` (run from iosApp/, where this file lives) auto-discovers these settings.
+project: iosApp.xcodeproj
+schemes:
+  - iosApp

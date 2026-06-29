@@ -9,12 +9,18 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 15.0) {
-            ValidatedTextField(titleKey: "Username", secured: false, text: $username, errorMessage: viewModel.formState.usernameError, onChange: {
-                viewModel.loginDataChanged(username: username, password: password)
-            })
-            ValidatedTextField(titleKey: "Password", secured: true, text: $password, errorMessage: viewModel.formState.passwordError, onChange: {
-                viewModel.loginDataChanged(username: username, password: password)
-            })
+            ValidatedTextField(
+                titleKey: "Username", secured: false, text: $username,
+                errorMessage: viewModel.formState.usernameError,
+                onChange: {
+                    viewModel.loginDataChanged(username: username, password: password)
+                })
+            ValidatedTextField(
+                titleKey: "Password", secured: true, text: $password,
+                errorMessage: viewModel.formState.passwordError,
+                onChange: {
+                    viewModel.loginDataChanged(username: username, password: password)
+                })
             Button("Login") {
                 viewModel.login(username: username, password: password)
             }.disabled(!viewModel.formState.isDataValid || (username.isEmpty && password.isEmpty))
@@ -28,12 +34,12 @@ struct ValidatedTextField: View {
     let secured: Bool
     @Binding var text: String
     let errorMessage: String?
-    let onChange: () -> ()
+    let onChange: () -> Void
 
     @ViewBuilder var textField: some View {
         if secured {
             SecureField(titleKey, text: $text)
-        }  else {
+        } else {
             TextField(titleKey, text: $text)
         }
     }
@@ -61,12 +67,17 @@ struct FieldTextErrorHint: View {
     @State private var showingAlert = false
 
     var body: some View {
-        Button(action: { self.showingAlert = true }) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
-        }
+        Button(
+            action: { self.showingAlert = true },
+            label: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+            }
+        )
         .alert(isPresented: $showingAlert) {
-            Alert(title: Text("Error"), message: Text(error), dismissButton: .default(Text("Got it!")))
+            Alert(
+                title: Text("Error"), message: Text(error), dismissButton: .default(Text("Got it!"))
+            )
         }
     }
 }
@@ -77,7 +88,7 @@ extension ContentView {
         let usernameError: String?
         let passwordError: String?
         var isDataValid: Bool {
-            get { return usernameError == nil && passwordError == nil }
+            return usernameError == nil && passwordError == nil
         }
     }
 
@@ -93,7 +104,9 @@ extension ContentView {
         }
 
         func login(username: String, password: String) {
-            if let result = loginRepository.login(username: username, password: password) as? ResultSuccess  {
+            if let result = loginRepository.login(username: username, password: password)
+                as? ResultSuccess
+            {
                 print("Successful login. Welcome, \(result.data.displayName)")
             } else {
                 print("Error while logging in")
@@ -102,8 +115,10 @@ extension ContentView {
 
         func loginDataChanged(username: String, password: String) {
             formState = LoginFormState(
-                usernameError: (loginValidator.checkUsername(username: username) as? LoginDataValidator.ResultError)?.message,
-                passwordError: (loginValidator.checkPassword(password: password) as? LoginDataValidator.ResultError)?.message)
+                usernameError: (loginValidator.checkUsername(username: username)
+                    as? LoginDataValidator.ResultError)?.message,
+                passwordError: (loginValidator.checkPassword(password: password)
+                    as? LoginDataValidator.ResultError)?.message)
         }
     }
 }

@@ -1,0 +1,259 @@
+name: Security
+
+# Deterministic security gates. Findings FAIL the job — results are never
+# uploaded to GitHub code scanning / the Security tab, because that SARIF
+# ingestion API requires GitHub Advanced Security, which this private repo does
+# not have. A failing job (optionally plus PR comments) is the enforcement path.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.12'
+
+      # Pin Semgrep by version rather than an action ref — no third-party
+      # Action to SHA-pin, and the version is the reproducibility anchor.
+      - name: Install Semgrep
+        run: pip install semgrep==1.164.0
+
+      # --error makes any finding a non-zero exit (the gate). --metrics off keeps
+      # the run offline-friendly and quiet. No SARIF / upload step by design.
+      # The committed .semgrep/astro-mobile.yml ruleset turns this repo's Kotlin
+      # threat model (hardcoded credential literals, cleartext http:// endpoints,
+      # sensitive data in logs) into build-blocking rules alongside the registry
+      # rulesets.
+      #
+      # Scope is the Kotlin code surface only (--include '*.kt'/'*.kts' over the
+      # `shared` + `androidApp` source trees), matching the committed ruleset's
+      # `languages: [kotlin]` scope. Restricting to Kotlin files keeps the registry
+      # packs from flagging framework-mandated XML — notably the single launcher
+      # `MainActivity`, which MUST carry `android:exported="true"` to host the
+      # MAIN/LAUNCHER intent filter and is therefore not a real exposure. Android
+      # manifest / component-export hardening is a distinct concern handled when
+      # real exported surfaces (beyond the launcher) land, not by this Kotlin gate.
+      #
+      # The engine is version-pinned above, but the p/* REGISTRY packs below resolve
+      # their rule CONTENT live from the Semgrep Registry each run — so a registry-side
+      # change can newly fail an unchanged PR or quietly drop coverage with no repo
+      # diff. Accepted residual risk: the committed .semgrep/astro-mobile.yml is the
+      # reviewable blocking source of truth for this repo's invariants; the p/* packs
+      # (p/kotlin, p/owasp-top-ten, p/secrets) are general-purpose defense-in-depth
+      # on top.
+      - name: Semgrep scan (fail on findings)
+        run: |
+          semgrep scan \
+            --config p/kotlin \
+            --config p/owasp-top-ten \
+            --config p/secrets \
+            --config .semgrep/astro-mobile.yml \
+            --error \
+            --metrics off \
+            --include='*.kt' \
+            --include='*.kts' \
+            shared androidApp
+
+  actions-pin:
+    name: actions-pin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+
+      - name: Enforce SHA-pinned third-party actions
+        run: ./scripts/check-action-pins.sh
+
+  # CI backstop to the local .githooks/pre-push secret scan: `git push --no-verify`
+  # bypasses the hook, so the same betterleaks scan runs here as a blocking gate.
+  # Scans the commit range this PR/push ADDS (mirrors the hook's history scan, so
+  # a secret added-then-removed within the range is still caught) against the
+  # committed .betterleaks.toml. Findings fail the job — no SARIF upload (this
+  # private repo has no GitHub Advanced Security; the Security tab is unavailable).
+  betterleaks:
+    name: betterleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+          # Full history: the range scan needs the base commit present so
+          # `<tip> --not <base>` resolves to exactly the commits being added.
+          fetch-depth: 0
+
+      - name: Install betterleaks (version pinned to the .betterleaks.toml floor)
+        env:
+          # SHA-256 of betterleaks_1.5.0_linux_x64.tar.gz from the release
+          # checksums.txt. Pinned like a SHA-pinned action (per the repo's
+          # supply-chain policy): a retagged or replaced release asset fails the
+          # checksum here. Bumping betterleaksMinVersion in .betterleaks.toml
+          # requires updating BOTH this digest and PINNED_VERSION below — that
+          # coupling is the deliberate review checkpoint for a binary bump.
+          BETTERLEAKS_SHA256: b883e8c61a3a14c90ff46a08c203cf88fe340ed88251d4c049db5530ec0ac54b
+          PINNED_VERSION: 1.5.0
+        run: |
+          set -euo pipefail
+
+          # Enforce the betterleaksMinVersion floor: the pinned install must be
+          # >= the floor the committed config declares, or the gate is running on
+          # stale rules. GNU `sort -V` is fine here (CI is always Linux).
+          floor="$(sed -n 's/^[[:space:]]*betterleaksMinVersion[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' .betterleaks.toml | head -n1)"
+          if [ -z "$floor" ]; then
+            echo "::error file=.betterleaks.toml::betterleaksMinVersion not found"; exit 1
+          fi
+          lowest="$(printf '%s\n%s\n' "$floor" "$PINNED_VERSION" | sort -V | head -n1)"
+          if [ "$lowest" != "$floor" ]; then
+            echo "::error::pinned betterleaks $PINNED_VERSION is below the .betterleaks.toml floor $floor"; exit 1
+          fi
+
+          tarball="betterleaks_${PINNED_VERSION}_linux_x64.tar.gz"
+          url="https://github.com/betterleaks/betterleaks/releases/download/v${PINNED_VERSION}/${tarball}"
+          curl --fail --silent --show-error --location "$url" -o "$tarball"
+          echo "${BETTERLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" betterleaks
+          install -m 0755 betterleaks /usr/local/bin/betterleaks
+          installed="$(betterleaks --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+          if [ "$installed" != "$PINNED_VERSION" ]; then
+            echo "::error::installed betterleaks $installed != pinned $PINNED_VERSION"; exit 1
+          fi
+          echo "betterleaks $installed installed (floor $floor)"
+
+      - name: Secret scan over the added commit range (fail on findings)
+        run: |
+          set -euo pipefail
+          zero=0000000000000000000000000000000000000000
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base='${{ github.event.pull_request.base.sha }}'
+            tip='${{ github.event.pull_request.head.sha }}'
+          else
+            base='${{ github.event.before }}'
+            tip='${{ github.sha }}'
+          fi
+          # `<tip> --not <base>` = commits reachable from the tip but not the base
+          # = exactly what this push introduces. --diff-merges=first-parent makes
+          # secrets introduced while resolving a merge conflict visible. If the
+          # base is the all-zero sha (new branch / first push / unavailable), fall
+          # back to scanning the tip alone so the gate fails safe by scanning more,
+          # never silently skips.
+          if [ -z "$base" ] || [ "$base" = "$zero" ]; then
+            logopts="$tip --diff-merges=first-parent"
+          else
+            logopts="$tip --not $base --diff-merges=first-parent"
+          fi
+          echo "[betterleaks] scanning range: $logopts"
+          # --redact keeps matched secrets out of the logs; live validation stays
+          # OFF (offline). Default exit code is non-zero when leaks are found.
+          betterleaks git . \
+            --log-opts="$logopts" \
+            --config .betterleaks.toml \
+            --redact --no-banner
+
+  # SCA blocking gate over the Gradle/Kotlin dependency graph. osv-scanner is the
+  # single cross-ecosystem SCA tool here — there is no Gradle-native lockfile-audit
+  # analog to web's `pnpm audit`, so (unlike astro-web's two-scanner job) this job
+  # runs osv-scanner alone. Findings fail the job (never SARIF; this private repo
+  # has no GitHub Advanced Security). osv-scanner has no severity threshold — it
+  # fails on ANY matched advisory — so sub-`high` advisories are routed to the
+  # Renovate `osvVulnerabilityAlerts` baseline via the ignore list in
+  # osv-scanner.toml, keeping this gate at parity with a `high` threshold.
+  sca:
+    name: sca
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+
+      # osv-scanner installed as a checksum-pinned release binary rather than via the
+      # google/osv-scanner-action Docker action. Even with that action's ref SHA-pinned,
+      # its action.yml runs a container image pulled by MUTABLE tag at runtime, so a
+      # retagged GHCR image could change what executes while the actions-pin gate still
+      # passes. Pinning the binary by SHA-256 (same pattern as betterleaks above) makes
+      # the runtime artifact immutable. Bumping the scanner requires updating BOTH
+      # OSV_SCANNER_SHA256 and OSV_SCANNER_VERSION together — the deliberate review
+      # checkpoint for a binary bump.
+      - name: Install osv-scanner (release binary, checksum-pinned)
+        env:
+          # SHA-256 of osv-scanner_linux_amd64 from the v2.4.0 release's
+          # osv-scanner_SHA256SUMS. A retagged/replaced asset fails this check.
+          OSV_SCANNER_SHA256: 15314940c10d26af9c6649f150b8a47c1262e8fc7e17b1d1029b0e479e8ed8a0
+          OSV_SCANNER_VERSION: 2.4.0
+        run: |
+          set -euo pipefail
+          asset="osv-scanner_linux_amd64"
+          url="https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/${asset}"
+          curl --fail --silent --show-error --location "$url" -o osv-scanner
+          echo "${OSV_SCANNER_SHA256}  osv-scanner" | sha256sum -c -
+          install -m 0755 osv-scanner /usr/local/bin/osv-scanner
+          installed="$(osv-scanner --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+          if [ "$installed" != "$OSV_SCANNER_VERSION" ]; then
+            echo "::error::installed osv-scanner $installed != pinned $OSV_SCANNER_VERSION"; exit 1
+          fi
+          echo "osv-scanner $installed installed"
+
+      # Recursively scans the repo for supported package sources (Gradle lockfiles
+      # or an SBOM); exits non-zero on findings. osv-scanner.toml at the repo root
+      # supplies the sub-high ignore list. --allow-no-lockfiles makes "no package
+      # sources found" a PASS rather than a hard error (exit 128): the Gradle
+      # ecosystem does not commit lockfiles the way npm/pnpm do, so there is no
+      # scannable source here. This osv-scanner job is therefore a DORMANT,
+      # complementary lockfile/SBOM-scanner — it activates only if a lockfile or
+      # SBOM source is ever committed. The LIVE supply-chain coverage for the
+      # build/runtime dependency graph is the `dependency-submission` job below
+      # (GitHub Dependency Graph + the renovate.json osvVulnerabilityAlerts
+      # baseline), which needs no lockfile. No SARIF upload by design.
+      - name: osv-scanner (fail on findings)
+        run: |
+          osv-scanner scan source \
+            --recursive \
+            --allow-no-lockfiles \
+            --config=osv-scanner.toml \
+            .
+
+  # LIVE SCA channel for the Gradle dependency graph. The Gradle ecosystem does
+  # not commit lockfiles the way npm/pnpm do (this repo pins exact versions in the
+  # catalog/build files instead), so osv-scanner's source scan has nothing to read
+  # — it stays dormant above. Instead, this job resolves the full build dependency
+  # graph and submits it to GitHub's Dependency Graph, which powers Dependabot/OSV
+  # alerts AND activates the `osvVulnerabilityAlerts: true` baseline already set in
+  # renovate.json — no lockfile required. This is the idiomatic Gradle path to real
+  # SCA coverage, so the `:androidApp` Compose/AndroidX transitive graph is audited
+  # today rather than "once a lockfile lands".
+  #
+  # Runs only on push to the default branch: the Dependency Graph snapshot is taken
+  # from `main`, and fork PRs lack the `contents: write` token needed to submit. It
+  # therefore shows as skipped on PRs (expected — it is not a per-PR blocking gate).
+  dependency-submission:
+    name: dependency-submission
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Resolves the full build dependency graph and submits it to the GitHub
+      # Dependency Graph API. Same gradle/actions release SHA the CI workflow pins
+      # for setup-gradle (v6.2.0) — dependency-submission ships from the same repo.
+      - uses: gradle/actions/dependency-submission@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0

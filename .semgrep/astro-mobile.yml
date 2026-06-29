@@ -1,0 +1,109 @@
+# Repo-specific Semgrep rules encoding the astro-mobile threat model as
+# deterministic, build-blocking gates. They complement (not replace) the
+# registry/auto scan the security workflow and pre-push hook run: a finding here
+# FAILS the job — every rule is ERROR severity and the callers invoke Semgrep
+# with `--error`.
+#
+# Scope is the Kotlin surface (`languages: [kotlin]`) — the shared KMP module
+# and the Android app, where this app's secrets, network calls, and logging
+# live. The thin SwiftUI layer carries no business logic and is covered by the
+# iOS lint toolchain (swift-format + SwiftLint) instead, so it is deliberately
+# out of scope here.
+#
+# Three rule groups map 1:1 onto the three concrete mobile exposures for a KMP
+# planner app that will grow a networked, credentialed data layer:
+#
+#   1. Hardcoded credentials baked into the binary  -> kotlin-hardcoded-credential-literal
+#   2. Cleartext / insecure http:// endpoints       -> kotlin-cleartext-http-url
+#   3. Sensitive data leaked to logs                -> kotlin-sensitive-data-in-log
+#
+# Each rule fires on the dangerous shape while leaving the current scaffold's
+# sanctioned patterns alone (see the inline false-positive notes). Network-layer
+# rules (TLS trust-all managers, hostname-verifier bypass, base-URL-from-literal)
+# are intentionally NOT included yet: there is no networking code for them to
+# match, and a rule that can never fire cannot be proven non-hollow. Add them
+# alongside the data layer that introduces a real HTTP client.
+
+rules:
+  # --- 1. Hardcoded credentials ----------------------------------------------
+  - id: kotlin-hardcoded-credential-literal
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      A credential-shaped property is initialized from a string literal, which
+      bakes the secret into the compiled APK / iOS framework where anyone with
+      the binary can extract it. Read secrets at runtime from the build
+      environment, a secrets manager, or encrypted storage — never a source
+      literal. (Fires only on secret / token / password / api-key-shaped names
+      assigned a non-empty string literal: an Int constant like
+      MINIMUM_PASSWORD_LENGTH, or a value read from config such as
+      `config.get("apiKey")`, does not match.)
+    patterns:
+      - pattern-either:
+          - pattern: val $NAME = $VAL
+          - pattern: var $NAME = $VAL
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: '(?i)(api[_]?key|secret|passwd|password|token|bearer|credential|private[_]?key|access[_]?key|client[_]?secret|auth[_]?token|session[_]?token)'
+      - metavariable-regex:
+          metavariable: $VAL
+          # A non-empty (not whitespace-only) double-quoted string literal. The
+          # leading-quote anchor is what makes this rule precise: a value read
+          # from config, a function call, or a numeric / boolean constant does
+          # not start with a quote and so is excluded — only an inline literal
+          # secret matches. Raw triple-quoted strings are a deliberate residual
+          # (vanishingly rare as a hardcoded secret).
+          regex: '^"[^"]*[^"\s][^"]*"'
+
+  # --- 2. Cleartext / insecure network endpoints -----------------------------
+  - id: kotlin-cleartext-http-url
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      A cleartext http:// URL sends traffic unencrypted, exposing it to
+      interception and tampering on any shared network. Use https://. For a
+      documented local-development endpoint, route it through a debug-only
+      build config rather than a hardcoded literal. (Loopback hosts used for
+      on-device / emulator development — localhost, 127.0.0.1, and the Android
+      emulator's 10.0.2.2 — are exempt.)
+    patterns:
+      # Match the http:// scheme inside a double-quoted string literal. The
+      # trailing-host requirement (`[^"\s]`) avoids matching a bare "http://".
+      - pattern-regex: '"http://[^"\s]+"'
+      # Exempt loopback / emulator dev hosts, with or without a port or path.
+      - pattern-not-regex: '"http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:[0-9]+)?(/[^"]*)?"'
+
+  # --- 3. Sensitive data leaked to logs --------------------------------------
+  - id: kotlin-sensitive-data-in-log
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      A log / print call references a credential- or PII-shaped value. Device
+      logs are readable via logcat and are routinely captured by crash
+      reporters and shipped to aggregators, so a token / password / PII written
+      here becomes an exfiltration sink. Redact the value or drop the field.
+      (Fires on android.util.Log.*, println, and print when the call text
+      references a password / token / secret / credential / key / PII-shaped
+      name — a deliberately conservative name heuristic.)
+    patterns:
+      - pattern-either:
+          - pattern: Log.v(...)
+          - pattern: Log.d(...)
+          - pattern: Log.i(...)
+          - pattern: Log.w(...)
+          - pattern: Log.e(...)
+          - pattern: Log.wtf(...)
+          - pattern: Log.println(...)
+          - pattern: android.util.Log.v(...)
+          - pattern: android.util.Log.d(...)
+          - pattern: android.util.Log.i(...)
+          - pattern: android.util.Log.w(...)
+          - pattern: android.util.Log.e(...)
+          - pattern: android.util.Log.wtf(...)
+          - pattern: println(...)
+          - pattern: print(...)
+      # Restrict to calls whose text references a high-signal sensitive name.
+      # Combined with the AST patterns above (logical AND), this matches only
+      # within the bounds of an actual log/print call — not anywhere in the
+      # file — so a comment mentioning "token" elsewhere does not trip it.
+      - pattern-regex: '(?i)(password|passwd|secret|bearer|credential|token|api[_]?key|private[_]?key|access[_]?key|client[_]?secret|\bjwt\b|\bssn\b|\bcvv\b|card[_]?number)'

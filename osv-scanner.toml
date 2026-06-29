@@ -1,0 +1,25 @@
+# osv-scanner ignore list for the SCA blocking CI gate (security.yml `sca` job).
+#
+# Why this file exists: osv-scanner has no severity threshold — it exits non-zero
+# on ANY advisory it matches, regardless of severity. The SCA gate's threshold is
+# `high`: sub-`high` advisories against the Gradle/Kotlin dependency graph are
+# deliberately routed to the Renovate `osvVulnerabilityAlerts` visibility baseline
+# (renovate.json), not this blocking gate. Each entry below records ONE such
+# advisory that osv-scanner would otherwise fail on, with the reason it is left to
+# the baseline. Remove an entry the moment a parent bump drops the advisory from the
+# resolved dependency graph, or the moment its severity is reclassified to `high`+.
+
+# Scope note: this file governs the osv-scanner `sca` job, which scans committed
+# lockfiles/SBOMs. The Gradle ecosystem does not commit lockfiles the way npm/pnpm
+# do (this repo pins exact versions in the catalog/build files instead), so that
+# job stays dormant (--allow-no-lockfiles). The LIVE SCA coverage for the Gradle
+# dependency graph — including the :androidApp Compose/AndroidX transitive tree —
+# is the `dependency-submission` job in security.yml: it submits the resolved graph
+# to GitHub's Dependency Graph, powering Dependabot/OSV alerts and the renovate.json
+# `osvVulnerabilityAlerts` baseline, no lockfile required. The ignore list below
+# applies only if a lockfile/SBOM source is ever committed and osv-scanner activates.
+#
+# No active ignores. Add a new [[IgnoredVulns]] block here only when a sub-`high`
+# advisory with no patched parent would otherwise fail the osv-scanner gate;
+# document the affected dependency coordinate and the reason it's routed to the
+# Renovate OSV baseline.

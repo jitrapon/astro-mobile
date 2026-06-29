@@ -1,0 +1,11 @@
+{
+  "enabledPlugins": {
+    "codex@openai-codex": true,
+    "code-simplifier@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "semgrep@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "kotlin-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true
+  }
+}

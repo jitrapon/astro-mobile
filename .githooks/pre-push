@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+#
+# pre-push: local secret-scan + SAST backstop over the commits being pushed.
+#
+# Two independent scanners run against the exact commit range this push adds
+# (`<tip> --not --remotes`), mirroring the CI gates in
+# .github/workflows/security.yml so a problem is caught locally before it ever
+# reaches a PR:
+#
+#   1. betterleaks — secret scan over the pushed git history (offline, redacted).
+#   2. semgrep     — the repo's threat-model ruleset (.semgrep/astro-mobile.yml)
+#                    over the Kotlin source files the pushed commits touch.
+#
+# Each scanner is best-effort on tool availability: a missing or below-floor tool
+# is WARNED and skipped so the other still runs. That is deliberately weaker than
+# the CI jobs, which cannot be bypassed with `git push --no-verify` and remain
+# the authoritative gate. A real finding from either tool fails the hook and
+# blocks the push.
+#
+# Secret scanning lives here (pre-push), not pre-commit: betterleaks scans the
+# pushed commit RANGE from git history, not the staged hunks. The pre-commit hook
+# stays the ktfmt/detekt + swift-format/swiftlint staged-file lint.
+#
+# Installed via `./gradlew installGitHooks`. Skip with `git push --no-verify`.
+
+set -u
+
+zero=0000000000000000000000000000000000000000
+
+# Collect the tips being pushed from the pre-push stdin protocol. Each line is
+#   <local ref> <local sha> <remote ref> <remote sha>
+# Skip branch deletions (all-zero local sha). When run by hand (no stdin) fall
+# back to HEAD so the hook is testable outside a real push.
+tips=""
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  tips="$tips $local_sha"
+done
+# Strip the leading space the accumulator leaves behind: it would otherwise pass
+# an empty '' token to `git`/betterleaks via --log-opts and abort the scan.
+tips="${tips# }"
+[ -n "$tips" ] || tips="HEAD"
+
+# Commits this push introduces: reachable from the pushed tips but not from
+# anything already on a remote. --diff-merges=first-parent surfaces secrets
+# introduced while resolving a merge (betterleaks) and bounds the diff (semgrep).
+range_opts="$tips --not --remotes --diff-merges=first-parent"
+
+failed=0
+
+# --- 1. betterleaks: secret scan over the pushed range ----------------------
+if command -v betterleaks >/dev/null 2>&1; then
+  # Enforce the committed version floor: a binary older than the rules the
+  # config relies on would silently under-scan, so skip loudly instead. The
+  # comparison is a portable per-component numeric sort (avoids GNU `sort -V`).
+  floor=$(sed -n 's/^[[:space:]]*betterleaksMinVersion[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' .betterleaks.toml | head -n1)
+  installed=$(betterleaks --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+  lowest=$(printf '%s\n%s\n' "$floor" "$installed" | sort -t. -k1,1n -k2,2n -k3,3n | head -n1)
+  if [ -n "$floor" ] && [ -n "$installed" ] && [ "$lowest" != "$floor" ]; then
+    printf 'pre-push: betterleaks %s is below the .betterleaks.toml floor %s — skipping secret scan (CI gate still enforces).\n' "$installed" "$floor" >&2
+  else
+    printf 'pre-push: betterleaks secret scan over %s\n' "$tips" >&2
+    # --redact keeps matched secrets out of the log; no live validation (offline).
+    if ! betterleaks git . --log-opts="$range_opts" --config .betterleaks.toml --redact --no-banner; then
+      printf 'pre-push: betterleaks found secrets in the pushed commits — push blocked.\n' >&2
+      failed=1
+    fi
+  fi
+else
+  printf 'pre-push: betterleaks not installed — skipping secret scan (the CI betterleaks gate still enforces).\n' >&2
+fi
+
+# --- 2. semgrep: threat-model ruleset over the changed source files ---------
+# Only the committed offline ruleset runs here (no p/* registry fetch) so the
+# hook stays fast and works without network; the full registry rulesets are the
+# CI semgrep gate. Scope to the Kotlin source files the pushed commits touch that
+# still exist (a file deleted within the range must not be handed to semgrep).
+if command -v semgrep >/dev/null 2>&1; then
+  changed=$(git log --name-only --pretty=format: $range_opts 2>/dev/null | grep -E '\.kts?$' | sort -u)
+  files=""
+  for f in $changed; do
+    [ -f "$f" ] && files="$files $f"
+  done
+  if [ -n "$files" ]; then
+    printf 'pre-push: semgrep (.semgrep/astro-mobile.yml) over the pushed changes\n' >&2
+    if ! semgrep scan --config .semgrep/astro-mobile.yml --error --metrics off --quiet $files; then
+      printf 'pre-push: semgrep flagged the pushed changes — push blocked.\n' >&2
+      failed=1
+    fi
+  else
+    printf 'pre-push: no changed Kotlin source files in the pushed range — skipping semgrep.\n' >&2
+  fi
+else
+  printf 'pre-push: semgrep not installed — skipping local SAST (the CI semgrep gate still enforces).\n' >&2
+fi
+
+exit $failed

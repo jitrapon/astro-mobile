@@ -1,0 +1,70 @@
+# Claude-backed security review — the ONE LLM reviewer in the pipeline (the
+# deterministic gates in security.yml + ci.yml are the blocking backbone; this
+# layer only advises). It posts findings as PR comments and never fails the
+# build: LLM review is advisory by design, so a false positive can't block a
+# merge.
+#
+# Gated to PRs targeting `main` to bound API usage (a solo-dev throughput +
+# cost guardrail). The action holds `pull-requests: write` AND reads the
+# CLAUDE_API_KEY secret, so it is SHA-pinned (never @main) — a retagged or
+# compromised upstream would otherwise run with that token + key. It is also
+# not hardened against prompt injection and is for TRUSTED PRs only; before
+# outside contributors arrive, enable "require approval for all external
+# contributors" so it does not run on fork PRs.
+#
+# Dormant by default: the job is gated on the SECURITY_REVIEW_ENABLED repo
+# variable, which is unset — so the job is skipped on every PR. To activate, set
+# the secret AND flip the flag (both, together):
+#   gh secret set CLAUDE_API_KEY
+#   gh variable set SECURITY_REVIEW_ENABLED --body true
+# A job-level `if` can't read `secrets`, so this `vars` flag is the toggle; the
+# action hard-exits 1 without the key, so we skip the whole job rather than red-X
+# every PR. Docs: https://github.com/anthropics/claude-code-security-review
+
+name: Security Review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security-review:
+    name: security-review
+    # Dormant until activated: skipped unless the SECURITY_REVIEW_ENABLED repo
+    # variable is "true" (it is unset, so this evaluates false → the job is skipped).
+    # A job-level `if` can't read `secrets`, so this `vars` flag is the manual
+    # toggle; set it together with the CLAUDE_API_KEY secret to turn the review on.
+    if: ${{ vars.SECURITY_REVIEW_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # fetch-depth: 2 gives the action the PR head + its parent so it can
+          # diff the change set.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+
+      # Third-party action holding `pull-requests: write` + the CLAUDE_API_KEY
+      # secret — SHA-pinned (not @main) so the actions-pin gate stays green and a
+      # mutable upstream ref can't run with those privileges.
+      #
+      # The trailing `# main` is a Renovate ref comment: Renovate's github-actions
+      # manager reads it to know which upstream ref to track, and opens a PR that
+      # rotates THIS digest to the latest `main` commit (still a pinned SHA, so the
+      # actions-pin gate stays green). Renovate needs a bare tag/branch (not a
+      # date-annotated ref) for the rotation to fire. Each rotation lands as a
+      # reviewable PR.
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main
+        with:
+          comment-pr: true
+          # Review EVERY pushed revision, not just the first. The action caches a
+          # per-PR marker and skips later `synchronize` runs unless this is true,
+          # which would leave commits added after the initial review unscanned —
+          # exactly the changes most likely to introduce a regression. We trigger
+          # on every PR update, so opt into re-running per commit to match.
+          run-every-commit: true
+          claude-api-key: ${{ secrets.CLAUDE_API_KEY }}

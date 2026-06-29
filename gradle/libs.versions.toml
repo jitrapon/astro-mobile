@@ -1,0 +1,27 @@
+# Gradle version catalog — single source of truth for the Kotlin lint/format toolchain versions.
+#
+# Deliberately partial: only the lint toolchain lives here so the Gradle plugin, the pre-commit
+# hook's standalone CLI jars, and `verifyKtfmtAlignment` all read the same versions and can never
+# drift. Other dependency versions (Kotlin, AGP, Compose, AndroidX) remain inline in the
+# build.gradle.kts files for now — a partial catalog is intentional.
+#
+# `ktfmt` is the ncorti Gradle plugin; `ktfmt-cli` is the `com.facebook:ktfmt` formatter the plugin
+# bundles AND the standalone jar the pre-commit hook invokes. These two MUST stay aligned: ncorti
+# plugin 0.26.0 bundles com.facebook:ktfmt 0.62, so local Gradle, the hook, and CI all format
+# identically. `verifyKtfmtAlignment` enforces this pairing mechanically.
+
+[versions]
+ktfmt = "0.26.0"
+ktfmt-cli = "0.62"
+detekt = "1.23.8"
+# skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
+# version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.3.10; the analyzer's
+# version→Kotlin map has no 2.3.10 build, so 0.7.0 (built against Kotlin 2.3.0 — the nearest version
+# at or below 2.3.10) is used for forward-compatible loading. Bump this in lockstep with any Kotlin
+# upgrade using the analyzer's README "Kotlin Version Mapping" table.
+compose-stability-analyzer = "0.7.0"
+
+[plugins]
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+compose-stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version.ref = "compose-stability-analyzer" }

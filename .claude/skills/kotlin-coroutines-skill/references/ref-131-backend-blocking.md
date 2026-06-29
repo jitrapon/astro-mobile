@@ -1,0 +1,32 @@
+# 13.1 Blocking Call in Coroutine (Backend) (BACKEND_001)
+
+## Bad Practice
+
+Blocking JVM calls (`Thread.sleep`, JDBC, `CountDownLatch.await`, etc.) in coroutines without `withContext(Dispatchers.IO)` (or injected IO dispatcher).
+
+```kotlin
+// BAD: blocking JDBC on Default dispatcher
+suspend fun findUser(id: String): User = jdbcTemplate.queryForObject(sql, id)
+```
+
+## Recommended
+
+Wrap blocking work in `withContext(Dispatchers.IO) { }` or use non-blocking drivers (e.g. R2DBC for Spring).
+
+```kotlin
+// GOOD: isolate blocking I/O
+suspend fun findUser(id: String): User = withContext(Dispatchers.IO) {
+    jdbcTemplate.queryForObject(sql, id)
+}
+```
+
+## Why
+
+Server coroutines multiplex on a limited pool. Blocking on `Default` exhausts workers
+and increases latency under load.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `suspend fun findUser(id: String): User = jdbcTemplate.queryForObject(sql, id)` | `suspend fun findUser(id: String): User = withContext(Dispatchers.IO) {` |

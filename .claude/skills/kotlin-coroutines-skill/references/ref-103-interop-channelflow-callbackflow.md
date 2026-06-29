@@ -1,0 +1,37 @@
+# 10.3 ChannelFlow vs callbackFlow (INTEROP_003)
+
+## Bad Practice
+
+`channelFlow` wrapping external callbacks without `awaitClose`; `callbackFlow` used only for internal coroutine emission.
+
+```kotlin
+// BAD: channelFlow for external GPS callback without close semantics
+fun locationUpdates(): Flow<Location> = channelFlow {
+    val cb = LocationCallback { trySend(it) }
+    manager.register(cb)
+}
+```
+
+## Recommended
+
+`callbackFlow` + `awaitClose` for external listeners; `channelFlow` for multi-coroutine emission inside the builder.
+
+```kotlin
+// GOOD: callbackFlow + awaitClose for external listeners
+fun locationUpdates(): Flow<Location> = callbackFlow {
+    val cb = LocationCallback { trySend(it) }
+    manager.register(cb)
+    awaitClose { manager.unregister(cb) }
+}
+```
+
+## Why
+
+`callbackFlow` is for register/unregister lifecycle. `channelFlow` is for fan-in from
+coroutines launched inside the builder.
+
+## Quick fix
+
+| Erroneous | Optimized |
+|-----------|-----------|
+| `fun locationUpdates(): Flow<Location> = channelFlow {` | `fun locationUpdates(): Flow<Location> = callbackFlow {` |

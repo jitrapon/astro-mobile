@@ -3,10 +3,10 @@ package io.jitrapon.astro
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class IosGreetingTest {
+class CommonGreetingTest {
 
     @Test
     fun testExample() {
-        assertTrue(Greeting().greeting().contains("iOS"), "Check iOS is mentioned")
+        assertTrue(Greeting().greet().contains("Hello"), "Check 'Hello' is mentioned")
     }
 }
