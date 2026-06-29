@@ -320,3 +320,166 @@ tasks.register("peripheryScan") {
         }
     }
 }
+
+// ----------------------------------------------------------------------------------------------
+// Reproducible CI partition — verifyAndroidCommon (host-portable) + verifyIos (macOS-only)
+//
+// `./gradlew check` stays THE local gate (see CLAUDE.md): one command, runs everything. CI instead
+// splits that same work across two runners so the expensive macOS runner (~10x the per-minute cost
+// of Linux) only carries the genuinely Mac-bound surface. The two aggregates partition everything
+// `check` runs:
+//   * verifyAndroidCommon — Android build/unit tests, JVM/common (host) tests, and Kotlin
+//     static-analysis + formatting (Detekt + ktfmt). Runs on a cheap Linux runner. It also lints
+//     iosMain *source* — Detekt/ktfmt parse every Kotlin source set, and parsing needs no Mac; only
+//     iOS *compilation* does. So "android-common" is the host-portable half, not "no iOS at all".
+//   * verifyIos — the shared module's iOS simulator tests plus the Swift gates (swift-format +
+//     SwiftLint). These need a Mac: Kotlin/Native cross-compiles iOS targets only on a macOS host,
+//     and the Swift tools ship with / are installed onto the macOS runner.
+//
+// `verifyCheckPartition` mechanically proves the split stays exhaustive — local == CI by
+// construction. It fails if the set of action-bearing tasks reachable from `check` differs from the
+// set reachable from the two aggregates, so a verification task wired into `check` but forgotten in
+// a partition can't silently go un-run in CI. This is the same posture as the repo's other drift
+// guards (checkNoDetektBaseline, verifyKtfmtAlignment): a task enforces the convention, not a
+// reviewer.
+// ----------------------------------------------------------------------------------------------
+// The partition as data: (projectPath, taskName) pairs. This single source both wires each
+// aggregate's `dependsOn` and feeds the drift guard's walk below, so the two can never disagree.
+// Paths use ":" for the root project. Each named task is itself either an action-bearing leaf or a
+// no-action umbrella (e.g. ktfmtCheck) the guard expands to its per-source leaves.
+fun taskPath(projectPath: String, taskName: String) =
+    if (projectPath == ":") ":$taskName" else "$projectPath:$taskName"
+
+val iosVerification =
+    listOf(
+        // iosX64Test is disabled on Apple Silicon hosts (see shared/build.gradle.kts) but stays
+        // listed so a genuine Intel runner still covers it; iosArm64 is a device target (no test).
+        ":shared" to "iosSimulatorArm64Test",
+        ":shared" to "iosX64Test",
+        ":" to "swiftFormatCheck",
+        ":" to "swiftLintCheck",
+    )
+
+val androidCommonVerification =
+    listOf(
+        ":androidApp" to "testDebugUnitTest",
+        ":androidApp" to "lintDebug",
+        ":androidApp" to "detekt",
+        ":androidApp" to "ktfmtCheck",
+        ":androidApp" to "verifyKtfmtAlignment",
+        ":shared" to "testAndroidHostTest",
+        ":shared" to "detekt",
+        ":shared" to "ktfmtCheck",
+        ":shared" to "verifyKtfmtAlignment",
+        ":" to "checkNoDetektBaseline",
+    )
+
+val verifyIos =
+    tasks.register("verifyIos") {
+        group = "verification"
+        description = "macOS-only half of `check`: iOS simulator tests + Swift format/lint gates."
+        dependsOn(iosVerification.map { (p, t) -> taskPath(p, t) })
+    }
+
+val verifyAndroidCommon =
+    tasks.register("verifyAndroidCommon") {
+        group = "verification"
+        description = "Host-portable half of `check`: Android build/tests, host tests, Kotlin lint."
+        dependsOn(androidCommonVerification.map { (p, t) -> taskPath(p, t) })
+    }
+
+// Tasks excluded from the closure comparison below. The two aggregates, the guard, and `check`
+// itself are scaffolding/lifecycle roots, not verification work. `allTests` is the KMP
+// KotlinTestReport aggregator: it has an action but runs no tests — it only collates the per-target
+// test results, and those individual test tasks ARE partitioned, so it carries no coverage of its
+// own. It also inherently spans both platforms (it reports iOS *and* Android host results), so it
+// can't sit in either half; excluding it keeps the partition honest without losing any signal.
+val partitionMetaTaskNames =
+    setOf("check", "verifyIos", "verifyAndroidCommon", "verifyCheckPartition", "allTests")
+
+val verifyCheckPartition =
+    tasks.register("verifyCheckPartition") {
+        group = "verification"
+        description =
+            "Fail if `check` and verifyAndroidCommon ∪ verifyIos don't run the same task set."
+    }
+
+// Run the guard as part of the local gate (every subproject `check`, mirroring the other drift
+// guards) AND as part of the Linux CI aggregate, so the partition is validated even though CI never
+// invokes `check` directly. The guard only walks task metadata, so it runs fine on a Linux host.
+verifyAndroidCommon { dependsOn(verifyCheckPartition) }
+
+subprojects {
+    tasks.matching { it.name == "check" }.configureEach { dependsOn(verifyCheckPartition) }
+}
+
+// Compute both task closures once all projects (including AGP's afterEvaluate wiring) are evaluated
+// so the comparison sees the final graph. Only task *paths* (Strings) are captured into the task
+// action, keeping it configuration-cache-safe.
+gradle.projectsEvaluated {
+    // Walk the verification work `check` (or an aggregate) pulls in, collecting only action-bearing
+    // leaf tasks. Two rules make this both meaningful and Gradle-9-safe:
+    //   * Record only tasks that carry actions (real work). Pure lifecycle/aggregator tasks
+    //     (`check`, `build`, `allTests`, the `ktfmtCheck` umbrella, the two aggregates) carry none,
+    //     so the comparison lines up on real work no matter how each side aggregates it.
+    //   * Expand (recurse into) ONLY no-action aggregators. Calling getDependencies() on an
+    //     action-bearing task such as `testAndroidHostTest` resolves its runtime classpath, which
+    //     needs the owning project's state lock and throws when walked from the root thread. Those
+    //     tasks are leaves here anyway — we record them and stop — so we never trigger that
+    //     resolution, and shared compile plumbing beneath them (which would cancel out regardless)
+    //     simply never gets recorded.
+    fun actionBearingClosure(roots: List<Task>): Set<String> {
+        val visited = mutableSetOf<String>()
+        val withActions = mutableSetOf<String>()
+        val stack = ArrayDeque(roots)
+        while (stack.isNotEmpty()) {
+            val task = stack.removeLast()
+            if (!visited.add(task.path)) continue
+            if (task.actions.isNotEmpty()) {
+                if (task.name !in partitionMetaTaskNames) withActions.add(task.path)
+                continue
+            }
+            task.taskDependencies.getDependencies(task).forEach { stack.addLast(it) }
+        }
+        return withActions
+    }
+
+    // Resolve the aggregate roots to concrete Task objects via findByName (lock-safe cross-project
+    // at this phase, unlike walking the aggregate tasks' lazily-resolved string-path dependencies).
+    fun resolveRoots(pairs: List<Pair<String, String>>) = pairs.mapNotNull { (p, t) ->
+        rootProject.project(p).tasks.findByName(t)
+    }
+
+    val checkClosure = actionBearingClosure(allprojects.mapNotNull { it.tasks.findByName("check") })
+    val verifyClosure =
+        actionBearingClosure(resolveRoots(iosVerification + androidCommonVerification))
+
+    val onlyInCheck = (checkClosure - verifyClosure).toSortedSet()
+    val onlyInVerify = (verifyClosure - checkClosure).toSortedSet()
+    val closureSize = checkClosure.size
+
+    verifyCheckPartition.configure {
+        doLast {
+            check(onlyInCheck.isEmpty() && onlyInVerify.isEmpty()) {
+                buildString {
+                    append("CI partition drift: `check` and verifyAndroidCommon ∪ verifyIos must ")
+                    append("run the same action-bearing tasks, but they diverge.\n")
+                    if (onlyInCheck.isNotEmpty()) {
+                        append("  Run by `check` but no CI aggregate — CI would SKIP these:\n")
+                        onlyInCheck.forEach { append("    - $it\n") }
+                        append("  Fix: add each to verifyAndroidCommon or verifyIos.\n")
+                    }
+                    if (onlyInVerify.isNotEmpty()) {
+                        append("  Run by a CI aggregate but not `check` — CI does extra work:\n")
+                        onlyInVerify.forEach { append("    - $it\n") }
+                        append("  Fix: remove it from the aggregate, or wire it into `check`.\n")
+                    }
+                }
+            }
+            logger.lifecycle(
+                "CI partition OK: verifyAndroidCommon ∪ verifyIos covers exactly the $closureSize " +
+                    "action-bearing tasks `check` runs."
+            )
+        }
+    }
+}

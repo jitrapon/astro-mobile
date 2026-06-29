@@ -37,7 +37,19 @@ The iOS app is built and run via Xcode from `iosApp/iosApp.xcodeproj` (it consum
 | Lint (Swift, format)         | `./gradlew swiftFormatCheck`                 |
 | Lint (Swift, static analysis)| `./gradlew swiftLintCheck`                   |
 | Unused iOS code (on-demand)  | `./gradlew peripheryScan`                    |
-| Full CI gate                 | `./gradlew check`                            |
+| Full CI gate (local)         | `./gradlew check`                            |
+| CI host-portable half        | `./gradlew verifyAndroidCommon`              |
+| CI macOS-only half           | `./gradlew verifyIos`                        |
+| CI partition drift guard     | `./gradlew verifyCheckPartition`             |
+
+### Continuous integration — split runners, one local gate
+
+`./gradlew check` stays **the** local gate: one command, runs everything. CI (`.github/workflows/ci.yml`) does *not* run `check` directly — it splits the same work across two runners so the expensive `macos-latest` runner (~10x the per-minute cost of Linux) only carries the genuinely Mac-bound surface:
+
+- **`verify-android-common`** (`ubuntu-latest`) → `./gradlew verifyAndroidCommon` — Android build/unit tests, JVM/common host tests, and Kotlin Detekt + ktfmt. ktfmt/Detekt parse *every* source set, so this also lints `iosMain` Kotlin **source** (parsing needs no Mac; only iOS *compilation* does). Then `:androidApp:assemble` for APK packaging (release exercises R8).
+- **`verify-ios`** (`macos-latest`) → `./gradlew verifyIos` — the shared module's iOS simulator tests plus the Swift gates (swift-format + SwiftLint), since Kotlin/Native cross-compiles iOS only on macOS. Then `:shared:linkReleaseFrameworkIosArm64` to link the shipping framework.
+
+The two aggregates and the split are defined in the root `build.gradle.kts` from a single data list. **`verifyCheckPartition`** is the drift guard: it walks the action-bearing task closure of `check` versus the two aggregates and fails if they diverge, so local (`check`) and CI (the aggregates) can never silently drift apart. It runs inside every `check` and inside `verifyAndroidCommon`. When you wire a new verification task into `check`, this guard fails until you classify it into `verifyIos` or `verifyAndroidCommon`. The per-job `:androidApp:assemble` / `:shared:linkReleaseFrameworkIosArm64` steps are deliberately **outside** the guard — they assemble artifacts, which is coverage beyond `check`, not part of it.
 
 ## Architecture
 
