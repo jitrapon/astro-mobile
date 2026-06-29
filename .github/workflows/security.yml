@@ -206,13 +206,16 @@ jobs:
           echo "osv-scanner $installed installed"
 
       # Recursively scans the repo for supported package sources (Gradle lockfiles
-      # once dependency locking is enabled and a runtime dependency graph exists);
-      # exits non-zero on findings. osv-scanner.toml at the repo root supplies the
-      # sub-high ignore list. --allow-no-lockfiles makes "no package sources found"
-      # a PASS rather than a hard error (exit 128): this scaffold has only the
-      # lint/build toolchain and no committed lockfile yet, so there is nothing to
-      # resolve — the gate goes live automatically the moment a scannable source
-      # lands. No SARIF upload by design.
+      # or an SBOM); exits non-zero on findings. osv-scanner.toml at the repo root
+      # supplies the sub-high ignore list. --allow-no-lockfiles makes "no package
+      # sources found" a PASS rather than a hard error (exit 128): the Gradle
+      # ecosystem does not commit lockfiles the way npm/pnpm do, so there is no
+      # scannable source here. This osv-scanner job is therefore a DORMANT,
+      # complementary lockfile/SBOM-scanner — it activates only if a lockfile or
+      # SBOM source is ever committed. The LIVE supply-chain coverage for the
+      # build/runtime dependency graph is the `dependency-submission` job below
+      # (GitHub Dependency Graph + the renovate.json osvVulnerabilityAlerts
+      # baseline), which needs no lockfile. No SARIF upload by design.
       - name: osv-scanner (fail on findings)
         run: |
           osv-scanner scan source \
@@ -220,3 +223,37 @@ jobs:
             --allow-no-lockfiles \
             --config=osv-scanner.toml \
             .
+
+  # LIVE SCA channel for the Gradle dependency graph. The Gradle ecosystem does
+  # not commit lockfiles the way npm/pnpm do (this repo pins exact versions in the
+  # catalog/build files instead), so osv-scanner's source scan has nothing to read
+  # — it stays dormant above. Instead, this job resolves the full build dependency
+  # graph and submits it to GitHub's Dependency Graph, which powers Dependabot/OSV
+  # alerts AND activates the `osvVulnerabilityAlerts: true` baseline already set in
+  # renovate.json — no lockfile required. This is the idiomatic Gradle path to real
+  # SCA coverage, so the `:androidApp` Compose/AndroidX transitive graph is audited
+  # today rather than "once a lockfile lands".
+  #
+  # Runs only on push to the default branch: the Dependency Graph snapshot is taken
+  # from `main`, and fork PRs lack the `contents: write` token needed to submit. It
+  # therefore shows as skipped on PRs (expected — it is not a per-PR blocking gate).
+  dependency-submission:
+    name: dependency-submission
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: false
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Resolves the full build dependency graph and submits it to the GitHub
+      # Dependency Graph API. Same gradle/actions release SHA the CI workflow pins
+      # for setup-gradle (v6.2.0) — dependency-submission ships from the same repo.
+      - uses: gradle/actions/dependency-submission@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
