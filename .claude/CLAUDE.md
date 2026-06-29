@@ -17,7 +17,7 @@ Astro is a Kotlin Multiplatform Mobile (KMP) smart planner app targeting Android
 ./gradlew :shared:build                  # Build shared module only
 
 ./gradlew test                           # Run JVM/Android unit tests across modules
-./gradlew :shared:testDebugUnitTest      # Shared module Android unit tests
+./gradlew :shared:testAndroidHostTest    # Shared module Android/JVM host unit tests
 ./gradlew :shared:iosSimulatorArm64Test  # Shared module iOS tests (simulator)
 
 ./gradlew check                          # Aggregate gate: compile + tests + Detekt + ktfmt verification

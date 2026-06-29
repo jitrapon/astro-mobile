@@ -71,6 +71,11 @@ kotlin {
     android {
         compileSdk { version = release(36) }
         namespace = "io.jitrapon.astro.shared"
+        // Opt into Android/JVM host (unit) tests. The com.android.kotlin.multiplatform.library
+        // plugin creates no host-test compilation by default, so without this commonTest would run
+        // only on iOS — `withHostTest` adds `testAndroidHostTest` so the same shared tests run on
+        // the JVM host too.
+        withHostTest {}
     }
 
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
