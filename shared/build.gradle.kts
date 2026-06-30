@@ -89,6 +89,11 @@ kotlin {
         // disable the template (and emit a "Default Kotlin Hierarchy Template was not applied"
         // warning). Configure a source set explicitly only when it needs its own deps or sources.
         val commonTest by getting { dependencies { implementation(kotlin("test")) } }
+        // Android host (JVM) unit tests created by `withHostTest {}` live in `androidHostTest`.
+        // AndroidGreetingTest asserts on the androidMain `Greeting` actual via JUnit directly, so
+        // the host-test source set needs JUnit on its classpath (commonTest's kotlin("test") does
+        // not supply org.junit on its own).
+        val androidHostTest by getting { dependencies { implementation("junit:junit:4.13.2") } }
     }
 }
 
