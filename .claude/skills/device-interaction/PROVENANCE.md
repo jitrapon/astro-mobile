@@ -9,7 +9,25 @@ copy never silently drifts from the upstream Apple ships.
 - **Exported with:** `xcrun agent skills export --output-dir <dir> --replace-existing`
   (requires a running Xcode 27 — skills are served live, not stored as static files in the app bundle).
 - **Xcode version at export:** `27.0 Beta 2 (27A5209h)`. Imported 2026-07-03.
-- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceEventSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent run-agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
+- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent run-agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
+
+## Known upstream discrepancy — `DeviceEventSynthesize`
+
+Apple's exported `SKILL.md` names the interaction tool **`DeviceEventSynthesize`** (in the
+Session Lifecycle diagram, the "## DeviceEventSynthesize tool" heading, and the capture
+note). **That tool does not exist on the bridge.** The mcpbridge `tools/list` (verified on
+`27.0 Beta 2 (27A5209h)`, 43 tools) registers it as **`DeviceInteractionSynthesize`** —
+matching the `DeviceInteraction*` prefix of the other three device tools. Calling
+`DeviceEventSynthesize` fails schema validation before any screenshot/hierarchy is captured.
+
+This is an upstream bug in Apple's skill text, **not** something a re-export fixes — the live
+skill server serves the wrong name too, so `xcrun agent skills export` would just re-write it.
+Per the "do not hand-edit" rule the vendored `SKILL.md` is left as-is; the correct name lives
+in the files we own (`.claude/CLAUDE.md`, `ios-device-debug/SKILL.md`, this list). Our
+`ios-device-debug` wrapper — the skill that actually drives the subagent — explicitly directs
+it to call `DeviceInteractionSynthesize`, so the runtime path is correct despite the vendored
+text. Re-confirm the real name against `tools/list` on the next Xcode upgrade; drop this note
+if Apple aligns the export.
 
 ## Vetting against the locked conventions
 

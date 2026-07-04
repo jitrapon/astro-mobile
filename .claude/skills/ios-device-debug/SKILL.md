@@ -151,10 +151,15 @@ DeviceHub interaction **must** run in a subagent that loads the
 `device-interaction` skill (StartSession's own response mandates this). Spawn a
 `general-purpose` agent that:
 - loads the `device-interaction` skill,
-- calls `DeviceInteractionSynthesize({interactSessionKey, interactionCommand})`
+- calls `DeviceInteractionSynthesize({interactionSessionKey, interactionCommand})`
   — an **empty** `interactionCommand` captures state (screenshot + UI hierarchy)
   without interacting; the command syntax (`t x y` tap, swipe, `sender keyboard
   kbd …` type, etc.) drives interactions,
+  - **The loaded `device-interaction` skill mis-names this tool** as
+    `DeviceEventSynthesize` — that tool does not exist on the bridge. The real
+    registered tool is `DeviceInteractionSynthesize` (verified via `tools/list`;
+    see `device-interaction/PROVENANCE.md`). Tell the subagent to call
+    `DeviceInteractionSynthesize`, ignoring the skill's `DeviceEventSynthesize`.
 - reads the returned screenshot + hierarchy and reports: did real UI render (vs.
   launch screen / SpringBoard), what's on screen (cite hierarchy elements +
   their `center` coords), any visual/functional defects, and the absolute

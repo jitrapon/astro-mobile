@@ -107,6 +107,10 @@ device/emulator is attached. (Equivalent low-level path:
 <pkg>/<activity>`.)
 
 ### 5. Capture — screenshot + UI layout
+When more than one device/emulator is attached, pass the **same** `--device=<serial>`
+from step 4 to every `android` command below (`layout`, `screen capture`, `screen
+resolve`) — without it they fail ("multiple devices") or inspect the wrong runtime.
+Omit it only when a single target is attached.
 - **Layout first (primary, cheap, structured):**
   `android layout -p` → JSON tree with per-element `text`, `resourceId`,
   `interactions`, `state`, `bounds`, `center`, `off-screen`. Use
@@ -118,14 +122,16 @@ device/emulator is attached. (Equivalent low-level path:
   "it runs" without the screenshot as evidence.
 - If `layout` fails (WebView / mid-animation), fall back to
   `android screen capture --annotate -o <png>` (labeled bounding boxes) and, to
-  act on a label, `android screen resolve --screenshot=<png> --string="tap #N"`.
+  act on a label, `android screen resolve --screen <png> --string "tap #N"`.
 
 ### 6. Interact (optional — the tap/type analog)
-Use `adb shell input` with `center` coords from the layout dump:
-- Tap: `adb shell input tap <x> <y>`
-- Swipe/scroll: `adb shell input swipe <x1> <y1> <x2> <y2> <ms>` (scroll slowly)
+Use `adb shell input` with `center` coords from the layout dump. With more than one
+device/emulator attached, target it with `adb -s <serial> shell …` (the same
+`<serial>` from step 4) — a bare `adb` fails "more than one device/emulator":
+- Tap: `adb -s <serial> shell input tap <x> <y>`
+- Swipe/scroll: `adb -s <serial> shell input swipe <x1> <y1> <x2> <y2> <ms>` (scroll slowly)
 - Type: ensure the field has `"focused"` in its `state` first, then
-  `adb shell input text 'hello'`
+  `adb -s <serial> shell input text 'hello'`
 Re-run `android layout --diff` after an interaction to confirm the result.
 (You *may* delegate steps 5–6 to a subagent for context hygiene, but — unlike
 iOS — it is **not required**; these are plain CLI calls.)
