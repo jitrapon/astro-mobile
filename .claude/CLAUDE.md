@@ -133,15 +133,30 @@ This repo uses a spec-driven, skill-based workflow (see `.claude/skills/`). Per 
 
 ### Agent skill routing & precedence
 
-The repo carries skills from three families with **non-overlapping domains** — route by where the work lands, not by keyword overlap:
+The repo carries skills from several families with **non-overlapping domains** — route by where the work lands, not by keyword overlap:
 
 | Work domain | Skills | Where they live |
 | --- | --- | --- |
-| **Android app & UI** — Jetpack Compose UI, navigation, adaptive layouts, theming, edge-to-edge, Android test infra, and driving the build/run/emulator/screenshots/doc-search tooling | the official Google **`android/*`** skills | `android-cli` is vendored at `.claude/skills/android-cli/`; the rest are served **on-demand** by the Android CLI |
+| **Android app & UI** — Jetpack Compose UI, navigation, adaptive layouts, theming, edge-to-edge, Android test infra, and driving the SDK/deploy/doc-search tooling | the official Google **`android/*`** skills | `android-cli` is vendored at `.claude/skills/android-cli/`; the rest are served **on-demand** by the Android CLI |
+| **`iosApp/` & SwiftUI** — SwiftUI APIs/best-practices, UIKit-interop modernization, XCTest→Swift Testing migration, and Xcode security-settings hardening | Apple's first-party **Xcode Agent Skills** (`swiftui-specialist`, `swiftui-whats-new-27`, `uikit-app-modernization`, `modernize-tests`, `audit-xcode-security-settings`, `device-interaction`) | `.claude/skills/` (committed, vendored from Xcode 27) |
+| **Runtime / on-device visual verification** (either platform) — the build→install→launch→screenshot→inspect loop that confirms a change actually renders/behaves on a device or emulator/simulator ("run the app", "screenshot it on the emulator", "does it run on device") | **`android-device-debug`** (Android) · **`ios-device-debug`** (iOS) — repo-specific wrappers that own the runtime loop; UI *development* still routes to the rows above | `.claude/skills/` (committed) |
 | **`:shared` / KMP architecture** — data layer, repositories, `expect`/`actual` platform bridges, module boundaries, KMP Gradle structure, refactor safety | the vendored **`kotlin-*`** skills | `.claude/skills/` (committed) |
 | **Async / concurrency (any module)** | **`kotlin-coroutines-skill`** | `.claude/skills/` (committed) |
 
-**Precedence rule:** for any Android-platform / `:androidApp` / Compose-UI / Android-tooling task, prefer the official `android/*` skill over a `kotlin-*` skill that merely mentions the same surface — the `android/*` skills are Google-authored, versioned, and kept current by the CLI. The `kotlin-*` skills own everything inside `:shared` and cross-module KMP architecture and do **not** cover Android UI. There is no genuine build-tooling clash: the official `agp-9-upgrade` skill explicitly excludes KMP projects, so KMP Gradle work stays with `kotlin-build-kmp-gradle-governance`.
+**Precedence rule:** for any Android-platform / `:androidApp` / Compose-UI / Android-tooling task, prefer the official `android/*` skill over a `kotlin-*` skill that merely mentions the same surface — the `android/*` skills are Google-authored, versioned, and kept current by the CLI. The `kotlin-*` skills own everything inside `:shared` and cross-module KMP architecture and do **not** cover Android UI. There is no genuine build-tooling clash: the official `agp-9-upgrade` skill explicitly excludes KMP projects, so KMP Gradle work stays with `kotlin-build-kmp-gradle-governance`. The mirror of this rule holds for iOS: any `iosApp/` / SwiftUI / Xcode task routes to the Apple Xcode Agent Skills below — they own the Swift/Xcode surface just as `kotlin-*` owns `:shared`, and never cross into it.
+
+**Apple Xcode Agent Skills** — vendored verbatim from Xcode 27's first-party bundle (Apple ships them via the `agent` CLI; each carries a `PROVENANCE.md`). Refresh on an Xcode upgrade by re-exporting with a running Xcode 27+: `xcrun agent skills export --output-dir .claude/skills --replace-existing` (they are served live, not stored as static files in the app bundle). One skill has a runtime dependency:
+
+- **`device-interaction`** is the bridge to **DeviceHub** (Xcode 27's connected-device inspector) — it lets an agent install/run the app and *see* it via screenshots + UI hierarchy and drive taps/swipes on a real device or simulator. It works **only when the agent is connected to Xcode's `mcpbridge` MCP host**, which exposes the `mcp__xcode__*` toolset (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `RenderPreview`, `BuildProject`, etc.). The other five are portable knowledge skills that run anywhere.
+
+  **Setup (per machine, one-time):** register the bridge as a **local-scope** MCP server (machine-specific — it pins an absolute Xcode-beta path, so it must NOT go in the committed `.mcp.json`):
+
+  ```bash
+  DEV=/Applications/Xcode-27.0.0-Beta.2.app/Contents/Developer   # adjust to your Xcode
+  claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
+  ```
+
+  The bridge auto-connects to the running Xcode (or honors `MCP_XCODE_PID`). The tool service only enumerates tools once a **project/workspace is open** in that Xcode — with none open, `tools/list` times out and the health check shows "Connected · tools fetch failed" (open `iosApp/iosApp.xcodeproj` to resolve). Alternatively, `xcrun agent run-agent claude` launches Claude Code already wired to the bridge. This is deliberately not in the committed `.mcp.json` because the path is per-developer.
 
 **On-demand `android/*` skills** — not vendored (so they never drift from the CLI); fetch a fresh copy with `android skills add <name> --agent=claude-code --project .` when a task needs one:
 
@@ -156,6 +171,8 @@ The repo carries skills from three families with **non-overlapping domains** —
 `android skills list` / `android skills find <keyword>` enumerate the full catalog. Always pass `--agent=claude-code` so the skill lands in `.claude/skills/` only — omitting it also writes a stray top-level `skills/` copy.
 
 **Not applicable to this stack** (do not install): `jetpack-compose-m3` (Wear OS only — `androidx.wear.compose.*`), `agp-9-upgrade` (its own description excludes KMP), `camera1-to-camerax` (no camera/legacy), `migrate-xml-views-to-jetpack-compose` (this app is born-in-Compose), `display-glasses-with-jetpack-compose-glimmer` (XR), `engage-sdk-integration` (media content surfaces). Revisit only if the product scope changes.
+
+From Xcode 27's seven bundled skills, **`c-bounds-safety`** is deliberately **not** vendored — it covers C/C++ bounds-safety adoption, and this app has no C surface (Swift UI + Kotlin shared logic). Re-export it if C/C++/Objective-C code is ever introduced under `iosApp/`.
 
 ## References
 
