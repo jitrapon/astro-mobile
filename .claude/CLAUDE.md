@@ -133,12 +133,13 @@ This repo uses a spec-driven, skill-based workflow (see `.claude/skills/`). Per 
 
 ### Agent skill routing & precedence
 
-The repo carries skills from four families with **non-overlapping domains** — route by where the work lands, not by keyword overlap:
+The repo carries skills from several families with **non-overlapping domains** — route by where the work lands, not by keyword overlap:
 
 | Work domain | Skills | Where they live |
 | --- | --- | --- |
-| **Android app & UI** — Jetpack Compose UI, navigation, adaptive layouts, theming, edge-to-edge, Android test infra, and driving the build/run/emulator/screenshots/doc-search tooling | the official Google **`android/*`** skills | `android-cli` is vendored at `.claude/skills/android-cli/`; the rest are served **on-demand** by the Android CLI |
-| **`iosApp/` & SwiftUI** — SwiftUI APIs/best-practices, UIKit-interop modernization, XCTest→Swift Testing migration, Xcode security-settings hardening, and on-device/simulator visual verification | Apple's first-party **Xcode Agent Skills** (`swiftui-specialist`, `swiftui-whats-new-27`, `uikit-app-modernization`, `modernize-tests`, `audit-xcode-security-settings`, `device-interaction`) | `.claude/skills/` (committed, vendored from Xcode 27) |
+| **Android app & UI** — Jetpack Compose UI, navigation, adaptive layouts, theming, edge-to-edge, Android test infra, and driving the SDK/deploy/doc-search tooling | the official Google **`android/*`** skills | `android-cli` is vendored at `.claude/skills/android-cli/`; the rest are served **on-demand** by the Android CLI |
+| **`iosApp/` & SwiftUI** — SwiftUI APIs/best-practices, UIKit-interop modernization, XCTest→Swift Testing migration, and Xcode security-settings hardening | Apple's first-party **Xcode Agent Skills** (`swiftui-specialist`, `swiftui-whats-new-27`, `uikit-app-modernization`, `modernize-tests`, `audit-xcode-security-settings`, `device-interaction`) | `.claude/skills/` (committed, vendored from Xcode 27) |
+| **Runtime / on-device visual verification** (either platform) — the build→install→launch→screenshot→inspect loop that confirms a change actually renders/behaves on a device or emulator/simulator ("run the app", "screenshot it on the emulator", "does it run on device") | **`android-device-debug`** (Android) · **`ios-device-debug`** (iOS) — repo-specific wrappers that own the runtime loop; UI *development* still routes to the rows above | `.claude/skills/` (committed) |
 | **`:shared` / KMP architecture** — data layer, repositories, `expect`/`actual` platform bridges, module boundaries, KMP Gradle structure, refactor safety | the vendored **`kotlin-*`** skills | `.claude/skills/` (committed) |
 | **Async / concurrency (any module)** | **`kotlin-coroutines-skill`** | `.claude/skills/` (committed) |
 
