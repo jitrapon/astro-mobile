@@ -152,7 +152,7 @@ The repo carries skills from several families with **non-overlapping domains** �
   **Setup (per machine, one-time):** register the bridge as a **local-scope** MCP server (machine-specific — it pins an absolute Xcode-beta path, so it must NOT go in the committed `.mcp.json`):
 
   ```bash
-  DEV=/Applications/Xcode-27.0.0-Beta.2.app/Contents/Developer   # adjust to your Xcode
+  DEV=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer   # adjust to your Xcode
   claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
   ```
 
@@ -172,7 +172,7 @@ The repo carries skills from several families with **non-overlapping domains** �
 
 **Not applicable to this stack** (do not install): `jetpack-compose-m3` (Wear OS only — `androidx.wear.compose.*`), `agp-9-upgrade` (its own description excludes KMP), `camera1-to-camerax` (no camera/legacy), `migrate-xml-views-to-jetpack-compose` (this app is born-in-Compose), `display-glasses-with-jetpack-compose-glimmer` (XR), `engage-sdk-integration` (media content surfaces). Revisit only if the product scope changes.
 
-From Xcode 27's seven bundled skills, **`c-bounds-safety`** is deliberately **not** vendored — it covers C/C++ bounds-safety adoption, and this app has no C surface (Swift UI + Kotlin shared logic). Re-export it if C/C++/Objective-C code is ever introduced under `iosApp/`.
+From Xcode 27's seven bundled skills, **`adopt-c-bounds-safety`** (named `c-bounds-safety` before Xcode 27 Beta 3) is deliberately **not** vendored — it covers C/C++ bounds-safety adoption, and this app has no C surface (Swift UI + Kotlin shared logic). Re-export it if C/C++/Objective-C code is ever introduced under `iosApp/`.
 
 ## References
 
