@@ -4,11 +4,11 @@ Vendored **verbatim** from Apple's first-party Agent Skills bundled in Xcode 27.
 not hand-edit `SKILL.md` or `references/`: refresh by re-exporting from Xcode so the
 copy never silently drifts from the upstream Apple ships.
 
-- **Upstream:** Apple, bundled in Xcode 27.0 Beta 2 (27A5209h). Served by the `agent` CLI at
+- **Upstream:** Apple, bundled in Xcode 27.0 Beta 3 (27A5218g). Served by the `agent` CLI at
   `Xcode.app/Contents/Developer/usr/bin/agent` (a.k.a. `xcrun agent` / `xcrun mcpbridge`).
 - **Exported with:** `xcrun agent skills export --output-dir <dir> --replace-existing`
   (requires a running Xcode 27 — skills are served live, not stored as static files in the app bundle).
-- **Xcode version at export:** `27.0 Beta 2 (27A5209h)`. Imported 2026-07-03.
+- **Xcode version at export:** `27.0 Beta 3 (27A5218g)`. Imported 2026-07-15.
 - **Portability:** Reads/edits the Xcode project's build settings (ships a helper `scripts/filter_build_settings.py`). Scoped to `iosApp/`; touches no Kotlin/Gradle surface.
 
 ## Vetting against the locked conventions

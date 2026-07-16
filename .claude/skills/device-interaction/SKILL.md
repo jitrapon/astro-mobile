@@ -1,6 +1,6 @@
 ---
-description: "Verify iOS app behavior on device or simulator via screenshots, UI hierarchy, and touch interactions."
 name: device-interaction
+description: "Verify iOS app behavior on device or simulator via screenshots, UI hierarchy, and touch interactions."
 ---
 # Device Interaction
 
@@ -72,6 +72,8 @@ UIView {{100, 200}, {50, 30}}, center: {125.0, 215.0}
 - `center: {125.0, 215.0}` - calculated center point (best for tapping)
 
 **Always prefer the center coordinates for touch events.**
+
+Warning: Elements marked `isRemoteLeafPlaceholder` do not report child elements — interacting with them requires falling back to screenshot-estimated coordinates.
 
 ## Interaction Command Syntax
 

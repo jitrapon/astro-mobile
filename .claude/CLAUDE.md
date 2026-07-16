@@ -145,14 +145,14 @@ The repo carries skills from several families with **non-overlapping domains** �
 
 **Precedence rule:** for any Android-platform / `:androidApp` / Compose-UI / Android-tooling task, prefer the official `android/*` skill over a `kotlin-*` skill that merely mentions the same surface — the `android/*` skills are Google-authored, versioned, and kept current by the CLI. The `kotlin-*` skills own everything inside `:shared` and cross-module KMP architecture and do **not** cover Android UI. There is no genuine build-tooling clash: the official `agp-9-upgrade` skill explicitly excludes KMP projects, so KMP Gradle work stays with `kotlin-build-kmp-gradle-governance`. The mirror of this rule holds for iOS: any `iosApp/` / SwiftUI / Xcode task routes to the Apple Xcode Agent Skills below — they own the Swift/Xcode surface just as `kotlin-*` owns `:shared`, and never cross into it.
 
-**Apple Xcode Agent Skills** — vendored verbatim from Xcode 27's first-party bundle (Apple ships them via the `agent` CLI; each carries a `PROVENANCE.md`). Refresh on an Xcode upgrade by re-exporting with a running Xcode 27+: `xcrun agent skills export --output-dir .claude/skills --replace-existing` (they are served live, not stored as static files in the app bundle). One skill has a runtime dependency:
+**Apple Xcode Agent Skills** — vendored verbatim from Xcode 27's first-party bundle (Apple ships them via the `agent` CLI; each carries a `PROVENANCE.md`). Refresh on an Xcode upgrade via the **`update-xcode`** skill ("update Xcode", "a new Xcode beta is out") — it drives the whole loop: `xcodes` install, license, hardcoded-path updates, mcpbridge re-registration, the re-export (`xcrun agent skills export --output-dir <absolute path to .claude/skills> --replace-existing`, which needs a running Xcode 27+ — skills are served live, not stored as static files in the app bundle), `PROVENANCE.md` restoration, and post-upgrade checks. One skill has a runtime dependency:
 
 - **`device-interaction`** is the bridge to **DeviceHub** (Xcode 27's connected-device inspector) — it lets an agent install/run the app and *see* it via screenshots + UI hierarchy and drive taps/swipes on a real device or simulator. It works **only when the agent is connected to Xcode's `mcpbridge` MCP host**, which exposes the `mcp__xcode__*` toolset (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `RenderPreview`, `BuildProject`, etc.). The other five are portable knowledge skills that run anywhere.
 
   **Setup (per machine, one-time):** register the bridge as a **local-scope** MCP server (machine-specific — it pins an absolute Xcode-beta path, so it must NOT go in the committed `.mcp.json`):
 
   ```bash
-  DEV=/Applications/Xcode-27.0.0-Beta.2.app/Contents/Developer   # adjust to your Xcode
+  DEV=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer   # adjust to your Xcode
   claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
   ```
 
@@ -172,7 +172,7 @@ The repo carries skills from several families with **non-overlapping domains** �
 
 **Not applicable to this stack** (do not install): `jetpack-compose-m3` (Wear OS only — `androidx.wear.compose.*`), `agp-9-upgrade` (its own description excludes KMP), `camera1-to-camerax` (no camera/legacy), `migrate-xml-views-to-jetpack-compose` (this app is born-in-Compose), `display-glasses-with-jetpack-compose-glimmer` (XR), `engage-sdk-integration` (media content surfaces). Revisit only if the product scope changes.
 
-From Xcode 27's seven bundled skills, **`c-bounds-safety`** is deliberately **not** vendored — it covers C/C++ bounds-safety adoption, and this app has no C surface (Swift UI + Kotlin shared logic). Re-export it if C/C++/Objective-C code is ever introduced under `iosApp/`.
+From Xcode 27's seven bundled skills, **`adopt-c-bounds-safety`** (named `c-bounds-safety` before Xcode 27 Beta 3) is deliberately **not** vendored — it covers C/C++ bounds-safety adoption, and this app has no C surface (Swift UI + Kotlin shared logic). Re-export it if C/C++/Objective-C code is ever introduced under `iosApp/`.
 
 ## References
 
