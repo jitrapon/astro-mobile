@@ -1,11 +1,69 @@
-# Narrow Detekt overrides layered on top of the bundled defaults (each module sets
-# buildUponDefaultConfig = true). Scope is deliberately minimal: only the two rules that conflict
-# with idiomatic Jetpack Compose, which mandates PascalCase @Composable functions and inline color
-# literals in theme code. Everything else honors Detekt's defaults.
+# Detekt overrides layered on top of the bundled defaults (each module sets buildUponDefaultConfig =
+# true). Two concerns live here:
+#   1. Narrow Compose corrections — the two rules that conflict with idiomatic Jetpack Compose
+#      (PascalCase @Composable functions; inline color literals in theme code). See `naming`/`style`.
+#   2. Coroutine enforcement — Detekt's own `coroutines` block plus the third-party
+#      `structured-coroutines` ruleset (bottom of this file), gated in tiers via `build.weights`
+#      below. This is the machine-enforceable half of the kotlin-coroutines skill.
 #
 # This is NOT a mechanism to silence findings: no baseline file is used and @Suppress remains
-# forbidden (enforced separately by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule). It
-# corrects two rules that are simply wrong for Compose UI, not findings we are dodging.
+# forbidden (enforced separately by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule). The
+# Compose entries correct two rules that are simply wrong for Compose UI, not findings we are dodging.
+
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+  weights:
+    # -------------------------------------------------------------------------
+    # WARN tier for the `structured-coroutines` ruleset (see that block at the
+    # bottom of this file). Detekt gates the build on the WEIGHTED issue count
+    # against maxIssues, so weight 0 means "report it, never fail on it". A rule
+    # lands here for one of three reasons, tagged inline: (FP) a demonstrated
+    # false positive, (HEURISTIC) a judgment a syntactic matcher can get wrong,
+    # or (UNVERIFIED) not yet watched firing in this repo. Promote to the blocking
+    # tier (drop the weight) only after a probe shows a true positive and no false
+    # one.
+    # -------------------------------------------------------------------------
+    # (FP) also fires on `async { .. }.await()`, which IS awaited.
+    UnusedDeferred: 0
+    # (HEURISTIC) cannot know whether the two async calls are independent.
+    SequentialAsyncAwait: 0
+    # (HEURISTIC) cannot resolve whether the dispatchers are really the same.
+    RedundantWithContext: 0
+    # (HEURISTIC) a suspend call in `finally` is correct under NonCancellable.
+    SuspendInFinally: 0
+    # (HEURISTIC) a loop without yield is fine when it does not spin.
+    LoopWithoutYield: 0
+    # (HEURISTIC) the channel may be closed by a helper the rule cannot see.
+    ChannelNotClosed: 0
+    # (HEURISTIC) withTimeout around a non-cancellable bridge is a per-call
+    # judgment the rule cannot make.
+    WithTimeoutScopeCancellation: 0
+    # New coroutine unit tests should prefer runTest, but an instrumented/
+    # integration test may legitimately runBlocking over real I/O, so this stays a
+    # per-test judgment until the coroutine test harness is exercised here.
+    RunBlockingInsteadOfRunTest: 0
+    RunBlockingWithDelayInTest: 0
+    # (UNVERIFIED) not yet exercised by a probe here.
+    CancellationExceptionSwallowed: 0
+    BlockingCallInCoroutineBackend: 0
+    ExternalScopeLaunch: 0
+    ScopeReuseAfterCancel: 0
+    RedundantLaunchInCoroutineScope: 0
+    ConsumeEachMultipleConsumers: 0
+    ThreadLocalNotPropagated: 0
+    SharedMutableStateInCoroutine: 0
+    MutableFlowExposed: 0
+    # (UNVERIFIED) Flow/Channel rules. The repo uses neither construct today, so
+    # these are armed for the branch that introduces one — not dead config: they
+    # work, they simply have nothing to match yet.
+    CallbackFlowWithoutAwaitClose: 0
+    ChannelFlowVsCallbackFlow: 0
+    FlowBlockingCall: 0
+    MissingCatchInFlow: 0
+    SharedFlowForOneshotEvents: 0
+    SideEffectInMapOperator: 0
+    StateInWithEagerlyStrategy: 0
 
 naming:
   FunctionNaming:
@@ -240,3 +298,183 @@ style:
       - VariableNaming
       - WildcardImport
       - WrongEqualsTypeParameter
+
+# Detekt's own coroutine ruleset. Only GlobalCoroutineUsage runs on the plain `detekt` task this repo
+# uses — every other rule here needs type resolution, which the Kotlin-version wall (detekt 1.23.8
+# bundles Kotlin 2.0.21; this repo runs Kotlin 2.3.10) prevents, so those are configured but INERT.
+# They are kept active as documentation of intent and to arm a future type-resolution run; the checks
+# they would perform are covered meanwhile by the syntactic `structured-coroutines` rules below and by
+# .semgrep/coroutines.yml (kotlin-hardcoded-dispatcher), neither of which needs type resolution.
+coroutines:
+  active: true
+  # The one rule that runs without type resolution. Keeping it on means GlobalScope stays guarded even
+  # though the structured-coroutines GlobalScopeUsage duplicate is disabled below.
+  GlobalCoroutineUsage:
+    active: true
+  # INERT (needs type resolution). Forbids the hardcoded dispatcher *literal*, not withContext, so it
+  # agrees with the inject-the-dispatcher contract. Enforced meanwhile by kotlin-hardcoded-dispatcher
+  # in .semgrep/coroutines.yml and HardcodedDispatcherInClass below.
+  InjectDispatcher:
+    active: true
+    dispatcherNames:
+      - 'IO'
+      - 'Default'
+      - 'Unconfined'
+  # INERT (needs type resolution) — would false-positive on suspend funs whose only suspension is a
+  # library call the bundled compiler cannot resolve.
+  RedundantSuspendModifier:
+    active: true
+  # INERT (needs type resolution) — covered meanwhile by structured-coroutines:BlockingCallInCoroutine.
+  SleepInsteadOfDelay:
+    active: true
+  # INERT (needs type resolution).
+  SuspendFunWithFlowReturnType:
+    active: true
+
+# ---------------------------------------------------------------------------
+# structured-coroutines — third-party Detekt ruleset (io.github.santimattius),
+# wired via `detektPlugins` in shared/androidApp build.gradle.kts (and handed to
+# the pre-commit hook's detekt-cli via --plugins). 40 rules, all syntactic, so —
+# unlike Detekt's own `coroutines` ruleset above — they run on the plain `detekt`
+# task with no type resolution and no coupling to the Kotlin version.
+#
+# Tiers:
+#   BLOCKING  — `active: true` with no weight override. Fails the build when it
+#               fires. Reserved for rules that are always wrong when they match.
+#   WARN      — `active: true` plus `weight: 0` under `build.weights` at the top
+#               of this file. Reported, never fails the build. See that block for
+#               why each is here (FP / HEURISTIC / UNVERIFIED).
+#   INACTIVE  — `active: false`, reason inline.
+#
+# NOTE: this repo forbids the @Suppress escape hatch, but Detekt's ForbiddenSuppress
+# (in `style` above) enumerates only first-party rule ids — it does not catch a
+# @Suppress of these third-party ids. Reject such suppressions in review and
+# refactor instead, per the repo's no-suppression posture.
+#
+# KMP DELTA vs. a JVM-only service: the three commonMain rules
+# (DispatchersIOInCommonMain, RunBlockingInCommonMain, MainScopeWithoutCancel) are
+# ACTIVE and BLOCKING here — this repo has a real commonMain source set where each
+# is a genuine portability/correctness defect (Kotlin/Native has no Dispatchers.IO
+# or runBlocking), so they are exactly the rules worth gating on. A JVM-only backend
+# leaves them inactive because they can never match.
+# ---------------------------------------------------------------------------
+structured-coroutines:
+  active: true
+
+  # --- BLOCKING -------------------------------------------------------------
+  # `runBlocking` inside a suspend fun: blocks the calling thread across suspension.
+  RunBlockingInSuspend:
+    active: true
+  # `CoroutineScope(..).launch { }`: an orphan coroutine with no lifecycle owner.
+  InlineCoroutineScope:
+    active: true
+  # `launch(Job())` / `async(SupervisorJob())`: severs the parent-child link.
+  JobInBuilderContext:
+    active: true
+  # Hardcoded dispatcher in a class member. Only fires INSIDE a class — the
+  # top-level and coroutine-builder-argument cases are covered by
+  # kotlin-hardcoded-dispatcher in .semgrep/coroutines.yml. The exclude is scoped
+  # to a DI-module file (`di/*Module.kt`), the reserved single place a dispatcher
+  # may be named and provided for injection, rather than the whole `di/` subtree —
+  # so a non-module class under `di/` is still checked. Mirrors the scope in
+  # .semgrep/coroutines.yml. (No DI module exists yet; the exclude is armed for
+  # when one lands.)
+  HardcodedDispatcherInClass:
+    active: true
+    excludes: ['**/di/*Module.kt']
+  # `Dispatchers.Unconfined` resumes on whatever thread completed the previous
+  # suspension — rarely intended, and a footgun on a UI/main dispatcher.
+  DispatchersUnconfined:
+    active: true
+  # Blocking call (Thread.sleep, blocking I/O) inside a coroutine or suspend fun.
+  BlockingCallInCoroutine:
+    active: true
+  # `suspendCoroutine` cannot be cancelled; use suspendCancellableCoroutine. Will
+  # matter most when the auth/network provider SDK bridges land.
+  SuspendCoroutineWithoutCancellation:
+    active: true
+  # `CompletableFuture.get()` inside a coroutine blocks the calling thread.
+  BlockingFutureGet:
+    active: true
+  # `synchronized` inside a coroutine blocks the thread across a suspension.
+  SynchronizedInCoroutine:
+    active: true
+  # A domain exception extending CancellationException is silently swallowed by
+  # coroutine machinery, which treats it as normal cancellation.
+  CancellationExceptionSubclass:
+    active: true
+
+  # --- BLOCKING (KMP commonMain — the reason this ruleset earns its keep here) --
+  # `Dispatchers.IO` referenced from commonMain: it does not exist on Kotlin/Native
+  # (iOS), so common code must take an injected CoroutineDispatcher instead.
+  DispatchersIOInCommonMain:
+    active: true
+  # `runBlocking` in commonMain: unavailable on Kotlin/Native — common code that
+  # blocks cannot compile for iOS.
+  RunBlockingInCommonMain:
+    active: true
+  # `MainScope()` created without a matching `.cancel()` leaks the scope.
+  MainScopeWithoutCancel:
+    active: true
+
+  # --- WARN (weight 0 in build.weights at the top of this file) -------------
+  UnusedDeferred:
+    active: true
+  SequentialAsyncAwait:
+    active: true
+  RedundantWithContext:
+    active: true
+  SuspendInFinally:
+    active: true
+  LoopWithoutYield:
+    active: true
+  ChannelNotClosed:
+    active: true
+  WithTimeoutScopeCancellation:
+    active: true
+  RunBlockingInsteadOfRunTest:
+    active: true
+  RunBlockingWithDelayInTest:
+    active: true
+  CancellationExceptionSwallowed:
+    active: true
+  BlockingCallInCoroutineBackend:
+    active: true
+  ExternalScopeLaunch:
+    active: true
+  ScopeReuseAfterCancel:
+    active: true
+  RedundantLaunchInCoroutineScope:
+    active: true
+  ConsumeEachMultipleConsumers:
+    active: true
+  ThreadLocalNotPropagated:
+    active: true
+  SharedMutableStateInCoroutine:
+    active: true
+  MutableFlowExposed:
+    active: true
+  CallbackFlowWithoutAwaitClose:
+    active: true
+  ChannelFlowVsCallbackFlow:
+    active: true
+  FlowBlockingCall:
+    active: true
+  MissingCatchInFlow:
+    active: true
+  SharedFlowForOneshotEvents:
+    active: true
+  SideEffectInMapOperator:
+    active: true
+  StateInWithEagerlyStrategy:
+    active: true
+
+  # --- INACTIVE -------------------------------------------------------------
+  # Duplicate of Detekt's own `coroutines > GlobalCoroutineUsage`, enabled above.
+  # Keeping the first-party rule means GlobalScope stays guarded even if this
+  # third-party ruleset is ever dropped.
+  GlobalScopeUsage:
+    active: false
+  # Informational only ("name your coroutines for debugging"); pure noise here.
+  MissingCoroutineName:
+    active: false

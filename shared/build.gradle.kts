@@ -67,6 +67,13 @@ detekt {
     source.setFrom(files("src"))
 }
 
+// Load the third-party `structured-coroutines` ruleset onto Detekt's rule classpath (40 syntactic
+// coroutine rules; tiers live under `structured-coroutines:` in config/detekt/detekt.yml). Its
+// KMP-only rules — DispatchersIOInCommonMain, RunBlockingInCommonMain, MainScopeWithoutCancel —
+// earn their keep here: commonMain must stay dispatcher- and blocking-clean across every target.
+// Version pinned in the catalog so the Gradle task, the pre-commit hook, and CI all load one jar.
+dependencies { detektPlugins(libs.structured.coroutines.detekt.rules) }
+
 kotlin {
     android {
         compileSdk { version = release(36) }

@@ -1,0 +1,66 @@
+# Project-specific structured-concurrency rules — the syntactic floor beneath the coroutine-first
+# discipline the kotlin-coroutines skill teaches.
+#
+# The bulk of coroutine enforcement lives in Detekt, via the third-party `structured-coroutines`
+# ruleset (see config/detekt/detekt.yml). Only the rule below remains here, because it covers ground
+# that ruleset does not:
+#
+#   kotlin-hardcoded-dispatcher
+#       Detekt's HardcodedDispatcherInClass fires only INSIDE a class. A top-level `suspend fun`
+#       calling `withContext(Dispatchers.IO)`, or the builder-argument form `launch(Dispatchers.IO)`
+#       / `async(Dispatchers.Default)`, is not flagged by it. This rule closes that gap.
+#
+# Rule the source ruleset (astro-auth-service) carries that does NOT apply here, and is omitted:
+#   kotlin-vertx-future-chain-in-suspend — Vert.x-specific; this app has no Vert.x.
+# Rules folded into the upstream Detekt ruleset (do not re-add here):
+#   runBlocking-in-suspend  -> structured-coroutines:RunBlockingInSuspend
+#   thread-sleep-in-suspend -> structured-coroutines:BlockingCallInCoroutine
+#
+# Semgrep is syntactic, so it has no coupling to the Kotlin version. The tradeoff is that it matches
+# how code is *written*: a dispatcher reached through an import alias or a helper will not be caught.
+# This rule is a floor.
+#
+# Fixtures in .semgrep/coroutines.kt pin the intended behaviour. Run:
+#   semgrep --test --config .semgrep/coroutines.yml .semgrep/coroutines.kt
+#
+# CAVEAT — the `paths:` filters below are honoured only when Semgrep is given a DIRECTORY target. A
+# file named explicitly on the command line bypasses them and is always scanned. The CI semgrep job
+# (.github/workflows/security.yml) passes the `shared`/`androidApp` DIRECTORIES, so the excludes apply
+# there. The .githooks/pre-push hook passes an explicit changed-file list (which would bypass these
+# excludes and re-flag test sources / the fixture), so this ruleset is deliberately NOT wired into
+# pre-push — coroutine SAST is the CI job + the pre-commit detekt pass. `semgrep --test` matching the
+# fixture despite `**/.semgrep/**` relies on the same file-target bypass.
+
+rules:
+  - id: kotlin-hardcoded-dispatcher
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      Hardcoded `Dispatchers.*`. Take a `CoroutineDispatcher` as an injected
+      dependency instead, so tests can substitute a `TestDispatcher` and run
+      blocking bridges under virtual time rather than a real thread pool, and so
+      commonMain stays free of `Dispatchers.IO` (which does not exist on
+      Kotlin/Native). Name a concrete dispatcher only in the DI / composition-root
+      module that provides the injected one.
+    paths:
+      exclude:
+        # The reserved single place a dispatcher may be named — the DI-module file
+        # that provides it for injection. Scoped to `*Module.kt` rather than the
+        # whole `di/` subtree so a non-module helper under `di/` can't hardcode a
+        # dispatcher and slip through. Mirrors HardcodedDispatcherInClass's exclude
+        # in config/detekt/detekt.yml. (No DI module exists yet; armed for when one
+        # lands.)
+        - "**/di/*Module.kt"
+        # KMP + Android test source sets. Globs are "**/"-prefixed so they match
+        # both a repo-root scan (shared/src/..) and any materialized tree; "**/"
+        # matches zero directories too.
+        - "**/src/commonTest/**"
+        - "**/src/androidHostTest/**"
+        - "**/src/iosTest/**"
+        - "**/src/test/**"
+        - "**/src/androidTest/**"
+        - "**/.semgrep/**"
+    pattern-either:
+      - pattern: Dispatchers.IO
+      - pattern: Dispatchers.Default
+      - pattern: Dispatchers.Unconfined

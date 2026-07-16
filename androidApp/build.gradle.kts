@@ -187,6 +187,11 @@ android {
 }
 
 dependencies {
+    // The `structured-coroutines` ruleset on Detekt's rule classpath (40 syntactic coroutine
+    // rules; tiers live under `structured-coroutines:` in config/detekt/detekt.yml). Applied here
+    // too so the app's Compose ViewModels / coroutine call sites get the same gate as :shared.
+    detektPlugins(libs.structured.coroutines.detekt.rules)
+
     implementation(project(":shared"))
 
     // Jetpack Compose
