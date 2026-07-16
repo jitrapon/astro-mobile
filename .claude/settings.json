@@ -6,6 +6,15 @@
     "semgrep@claude-plugins-official": true,
     "github@claude-plugins-official": true,
     "kotlin-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true
+    "swift-lsp@claude-plugins-official": true,
+    "chrisbanes-skills@chrisbanes-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "chrisbanes-skills": {
+      "source": {
+        "source": "github",
+        "repo": "chrisbanes/skills"
+      }
+    }
   }
 }
