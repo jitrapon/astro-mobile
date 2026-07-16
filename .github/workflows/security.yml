@@ -31,12 +31,24 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep==1.164.0
 
+      # Prove the committed coroutine ruleset still matches its fixtures before the
+      # scan below relies on it. Runs unconditionally (no token needed), so a forked
+      # PR that breaks a rule is gated too. The fixture is a single explicit file
+      # target, which bypasses the ruleset's `paths:` excludes so every // ruleid /
+      # // ok annotation in .semgrep/coroutines.kt is evaluated.
+      - name: Semgrep rule unit tests (coroutine fixtures)
+        run: semgrep --test --config .semgrep/coroutines.yml .semgrep/coroutines.kt
+
       # --error makes any finding a non-zero exit (the gate). --metrics off keeps
       # the run offline-friendly and quiet. No SARIF / upload step by design.
-      # The committed .semgrep/astro-mobile.yml ruleset turns this repo's Kotlin
-      # threat model (hardcoded credential literals, cleartext http:// endpoints,
-      # sensitive data in logs) into build-blocking rules alongside the registry
-      # rulesets.
+      # The committed .semgrep/*.yml rulesets turn this repo's Kotlin invariants
+      # into build-blocking rules alongside the registry rulesets: astro-mobile.yml
+      # covers the threat model (hardcoded credential literals, cleartext http://
+      # endpoints, sensitive data in logs) and coroutines.yml the structured-
+      # concurrency floor (hardcoded Dispatchers.* outside a DI module — the top-
+      # level/builder-arg gap Detekt's HardcodedDispatcherInClass misses). Both are
+      # passed DIRECTORY targets (shared/androidApp) so their `paths:` excludes
+      # (test source sets, the fixture) apply.
       #
       # Scope is the Kotlin code surface only (--include '*.kt'/'*.kts' over the
       # `shared` + `androidApp` source trees), matching the committed ruleset's
@@ -61,6 +73,7 @@ jobs:
             --config p/owasp-top-ten \
             --config p/secrets \
             --config .semgrep/astro-mobile.yml \
+            --config .semgrep/coroutines.yml \
             --error \
             --metrics off \
             --include='*.kt' \

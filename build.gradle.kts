@@ -109,11 +109,23 @@ val detektTool by configurations.creating {
     isTransitive = false
 }
 
+// The `structured-coroutines` ruleset jar, resolved separately so the pre-commit hook can hand
+// it to detekt-cli via `--plugins`. Without it the CLI rejects config/detekt/detekt.yml outright:
+// with config validation on (Detekt's default), the unknown `structured-coroutines:` block reads
+// as a misspelled property and detekt-cli exits non-zero, so every Kotlin commit would fail. The
+// Gradle `detekt` task gets the same jar via each module's `detektPlugins` configuration.
+val detektRuleset by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+
 dependencies {
     // `with-dependencies` (ktfmt) and `all` (detekt-cli) are the self-contained fat-jar
     // classifiers.
     ktfmtTool("com.facebook:ktfmt:${libs.versions.ktfmt.cli.get()}:with-dependencies")
     detektTool("io.gitlab.arturbosch.detekt:detekt-cli:${libs.versions.detekt.get()}:all")
+    detektRuleset(libs.structured.coroutines.detekt.rules)
 }
 
 // ExecOperations must be injected to stay configuration-cache-safe — Project.exec is not available
@@ -130,12 +142,15 @@ tasks.register("resolveLintTools") {
     val toolsFile = layout.projectDirectory.file(".gradle/lint-tools.properties")
     val ktfmtJars = ktfmtTool.incoming.files
     val detektJars = detektTool.incoming.files
+    val rulesetJars = detektRuleset.incoming.files
     val ktfmtVersion = libs.versions.ktfmt.cli.get()
     val detektVersion = libs.versions.detekt.get()
+    val rulesetVersion = libs.versions.structured.coroutines.get()
 
-    inputs.files(ktfmtJars, detektJars)
+    inputs.files(ktfmtJars, detektJars, rulesetJars)
     inputs.property("ktfmtVersion", ktfmtVersion)
     inputs.property("detektVersion", detektVersion)
+    inputs.property("rulesetVersion", rulesetVersion)
     outputs.file(toolsFile)
 
     doLast {
@@ -145,6 +160,11 @@ tasks.register("resolveLintTools") {
         val detektJar =
             detektJars.singleFile.takeIf { it.name.endsWith("-all.jar") }
                 ?: error("detekt-cli jar not resolved; got=${detektJars.files.map { it.name }}")
+        val rulesetJar =
+            rulesetJars.singleFile.takeIf { it.name.endsWith(".jar") }
+                ?: error(
+                    "detekt ruleset jar not resolved; got=${rulesetJars.files.map { it.name }}"
+                )
         val out = toolsFile.asFile
         out.parentFile.mkdirs()
         out.writeText(
@@ -153,6 +173,8 @@ tasks.register("resolveLintTools") {
             ktfmt.version=$ktfmtVersion
             detekt.jar=${detektJar.absolutePath.replace("\\", "/")}
             detekt.version=$detektVersion
+            detekt.ruleset.jar=${rulesetJar.absolutePath.replace("\\", "/")}
+            detekt.ruleset.version=$rulesetVersion
 
             """
                 .trimIndent()

@@ -83,8 +83,13 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
 
   KTFMT_JAR=$(grep '^ktfmt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
   DETEKT_JAR=$(grep '^detekt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
+  # The structured-coroutines ruleset jar — passed to detekt-cli via --plugins so the
+  # `structured-coroutines:` block in config/detekt/detekt.yml is recognized (config validation
+  # would otherwise reject it and fail every Kotlin commit) and its coroutine rules actually run.
+  DETEKT_RULESET_JAR=$(grep '^detekt.ruleset.jar=' "$TOOLS_FILE" | cut -d= -f2-)
   KTFMT_RESOLVED=$(grep '^ktfmt.version=' "$TOOLS_FILE" | cut -d= -f2-)
   DETEKT_RESOLVED=$(grep '^detekt.version=' "$TOOLS_FILE" | cut -d= -f2-)
+  RULESET_RESOLVED=$(grep '^detekt.ruleset.version=' "$TOOLS_FILE" | cut -d= -f2-)
 
   # Guard against stale resolution: if libs.versions.toml has bumped ktfmt-cli/detekt since the
   # last `resolveLintTools` run, the hook would silently lint with an outdated jar — diverging
@@ -97,16 +102,20 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
   }
   KTFMT_EXPECTED=$(read_version "ktfmt-cli")
   DETEKT_EXPECTED=$(read_version "detekt")
+  # `structured-coroutines` matches only the [versions] line, not the
+  # `structured-coroutines-detekt-rules` library key (that name is followed by `-detekt-rules`, not
+  # the `[[:space:]]*=` the read_version anchor requires).
+  RULESET_EXPECTED=$(read_version "structured-coroutines")
 
-  if [ -z "$KTFMT_EXPECTED" ] || [ -z "$DETEKT_EXPECTED" ]; then
-    echo "error: could not read ktfmt-cli/detekt versions from $LIBS_FILE" >&2
+  if [ -z "$KTFMT_EXPECTED" ] || [ -z "$DETEKT_EXPECTED" ] || [ -z "$RULESET_EXPECTED" ]; then
+    echo "error: could not read ktfmt-cli/detekt/structured-coroutines versions from $LIBS_FILE" >&2
     exit 1
   fi
-  if [ "$KTFMT_RESOLVED" != "$KTFMT_EXPECTED" ] || [ "$DETEKT_RESOLVED" != "$DETEKT_EXPECTED" ]; then
+  if [ "$KTFMT_RESOLVED" != "$KTFMT_EXPECTED" ] || [ "$DETEKT_RESOLVED" != "$DETEKT_EXPECTED" ] || [ "$RULESET_RESOLVED" != "$RULESET_EXPECTED" ]; then
     {
       echo "error: lint tool versions are stale — rerun ./gradlew resolveLintTools"
-      echo "  expected (from $LIBS_FILE): ktfmt=$KTFMT_EXPECTED, detekt=$DETEKT_EXPECTED"
-      echo "  resolved (from $TOOLS_FILE): ktfmt=${KTFMT_RESOLVED:-<missing>}, detekt=${DETEKT_RESOLVED:-<missing>}"
+      echo "  expected (from $LIBS_FILE): ktfmt=$KTFMT_EXPECTED, detekt=$DETEKT_EXPECTED, structured-coroutines=$RULESET_EXPECTED"
+      echo "  resolved (from $TOOLS_FILE): ktfmt=${KTFMT_RESOLVED:-<missing>}, detekt=${DETEKT_RESOLVED:-<missing>}, structured-coroutines=${RULESET_RESOLVED:-<missing>}"
     } >&2
     exit 1
   fi
@@ -119,12 +128,16 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
 
   if [ ${#DETEKT_FILES[@]} -gt 0 ]; then
     # No --baseline: astro-mobile forbids a Detekt baseline (checkNoDetektBaseline + ForbiddenSuppress).
-    # --build-upon-default-config mirrors the Gradle task's buildUponDefaultConfig = true so the
-    # config/detekt/detekt.yml Compose exemptions layer on top of the defaults identically.
+    # --plugins loads the structured-coroutines ruleset jar so its `structured-coroutines:` config
+    # block is recognized (without it, config validation rejects the block and fails the commit) and
+    # its coroutine rules run on staged .kt. --build-upon-default-config mirrors the Gradle task's
+    # buildUponDefaultConfig = true so the config/detekt/detekt.yml overrides layer on top of the
+    # defaults identically.
     echo "[pre-commit] detekt on ${#DETEKT_FILES[@]} staged .kt file(s)"
     joined=$(IFS=,; echo "${DETEKT_FILES[*]}")
     java -jar "$DETEKT_JAR" \
       --input "$joined" \
+      --plugins "$DETEKT_RULESET_JAR" \
       --config config/detekt/detekt.yml \
       --base-path . \
       --build-upon-default-config
