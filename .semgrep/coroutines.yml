@@ -64,3 +64,8 @@ rules:
       - pattern: Dispatchers.IO
       - pattern: Dispatchers.Default
       - pattern: Dispatchers.Unconfined
+      # `Dispatchers.Main` too: HardcodedDispatcherInClass catches only the in-class
+      # form, so a top-level `scope.launch(Dispatchers.Main)` or main-dispatcher
+      # helper would otherwise slip through both gates. Also matches
+      # `Dispatchers.Main.immediate` (the `Dispatchers.Main` sub-expression).
+      - pattern: Dispatchers.Main

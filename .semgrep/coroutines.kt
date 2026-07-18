@@ -32,6 +32,13 @@ fun returnsUnconfined(): CoroutineDispatcher {
     return Dispatchers.Unconfined
 }
 
+// Main dispatcher at top level — also outside HardcodedDispatcherInClass's reach. Hardcoding it
+// defeats TestDispatcher substitution just like the others, so the rule must flag it too.
+fun mainDispatcherLaunch(scope: CoroutineScope) {
+    // ruleid: kotlin-hardcoded-dispatcher
+    scope.launch(Dispatchers.Main) { println("ui work") }
+}
+
 // Injected dispatcher — the sanctioned shape the rule must leave alone.
 suspend fun takesInjectedDispatcher(io: CoroutineDispatcher) {
     // ok: kotlin-hardcoded-dispatcher

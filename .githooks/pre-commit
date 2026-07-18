@@ -81,15 +81,21 @@ if [ ${#KT_FILES[@]} -gt 0 ]; then
     exit 1
   fi
 
-  KTFMT_JAR=$(grep '^ktfmt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
-  DETEKT_JAR=$(grep '^detekt.jar=' "$TOOLS_FILE" | cut -d= -f2-)
+  # Each extraction ends in `|| true`: under `set -euo pipefail`, a `VAR=$(grep ... )` whose grep
+  # finds nothing exits non-zero and would abort the hook *here*, silently — before the drift guard
+  # below can print the "rerun resolveLintTools" message. That is exactly the case for a stale
+  # lint-tools.properties written before the detekt.ruleset.* keys existed: `|| true` yields an empty
+  # value instead, so the missing key surfaces as a `<missing>` mismatch in the guard, not a silent
+  # death. Do not remove the guards without moving the missing-key detection earlier.
+  KTFMT_JAR=$(grep '^ktfmt.jar=' "$TOOLS_FILE" | cut -d= -f2- || true)
+  DETEKT_JAR=$(grep '^detekt.jar=' "$TOOLS_FILE" | cut -d= -f2- || true)
   # The structured-coroutines ruleset jar — passed to detekt-cli via --plugins so the
   # `structured-coroutines:` block in config/detekt/detekt.yml is recognized (config validation
   # would otherwise reject it and fail every Kotlin commit) and its coroutine rules actually run.
-  DETEKT_RULESET_JAR=$(grep '^detekt.ruleset.jar=' "$TOOLS_FILE" | cut -d= -f2-)
-  KTFMT_RESOLVED=$(grep '^ktfmt.version=' "$TOOLS_FILE" | cut -d= -f2-)
-  DETEKT_RESOLVED=$(grep '^detekt.version=' "$TOOLS_FILE" | cut -d= -f2-)
-  RULESET_RESOLVED=$(grep '^detekt.ruleset.version=' "$TOOLS_FILE" | cut -d= -f2-)
+  DETEKT_RULESET_JAR=$(grep '^detekt.ruleset.jar=' "$TOOLS_FILE" | cut -d= -f2- || true)
+  KTFMT_RESOLVED=$(grep '^ktfmt.version=' "$TOOLS_FILE" | cut -d= -f2- || true)
+  DETEKT_RESOLVED=$(grep '^detekt.version=' "$TOOLS_FILE" | cut -d= -f2- || true)
+  RULESET_RESOLVED=$(grep '^detekt.ruleset.version=' "$TOOLS_FILE" | cut -d= -f2- || true)
 
   # Guard against stale resolution: if libs.versions.toml has bumped ktfmt-cli/detekt since the
   # last `resolveLintTools` run, the hook would silently lint with an outdated jar — diverging

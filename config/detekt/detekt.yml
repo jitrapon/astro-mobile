@@ -298,6 +298,28 @@ style:
       - VariableNaming
       - WildcardImport
       - WrongEqualsTypeParameter
+      # --- structured-coroutines (third-party ruleset, config block below) -------
+      # ForbiddenSuppress matches arbitrary configured names, not just first-party
+      # ids, so the custom coroutine rules that FAIL the build must be listed here
+      # too — otherwise `@Suppress("RunBlockingInCommonMain")` would silently defeat
+      # a blocking gate. Scope: the BLOCKING tier only. The WARN tier (weight 0 in
+      # build.weights) never gates the build and carries known FP/HEURISTIC caveats,
+      # so suppressing one bypasses nothing and forbidding it would only strand a
+      # false positive — deliberately omitted. Keep in sync with the `active: true`
+      # BLOCKING rules in the `structured-coroutines:` block when that block changes.
+      - BlockingCallInCoroutine
+      - BlockingFutureGet
+      - CancellationExceptionSubclass
+      - DispatchersIOInCommonMain
+      - DispatchersUnconfined
+      - HardcodedDispatcherInClass
+      - InlineCoroutineScope
+      - JobInBuilderContext
+      - MainScopeWithoutCancel
+      - RunBlockingInCommonMain
+      - RunBlockingInSuspend
+      - SuspendCoroutineWithoutCancellation
+      - SynchronizedInCoroutine
 
 # Detekt's own coroutine ruleset. Only GlobalCoroutineUsage runs on the plain `detekt` task this repo
 # uses — every other rule here needs type resolution, which the Kotlin-version wall (detekt 1.23.8
@@ -346,10 +368,12 @@ coroutines:
 #               why each is here (FP / HEURISTIC / UNVERIFIED).
 #   INACTIVE  — `active: false`, reason inline.
 #
-# NOTE: this repo forbids the @Suppress escape hatch, but Detekt's ForbiddenSuppress
-# (in `style` above) enumerates only first-party rule ids — it does not catch a
-# @Suppress of these third-party ids. Reject such suppressions in review and
-# refactor instead, per the repo's no-suppression posture.
+# NOTE: this repo forbids the @Suppress escape hatch. Detekt's ForbiddenSuppress
+# (in `style` above) matches arbitrary configured rule names, so the BLOCKING rule
+# ids from this block are enumerated there too — a `@Suppress` of any of them is
+# rejected mechanically, not just in review. The WARN tier is intentionally left
+# out of that list (weight 0, never gates, may false-positive); keep the two in
+# sync when a rule moves between the BLOCKING and WARN tiers.
 #
 # KMP DELTA vs. a JVM-only service: the three commonMain rules
 # (DispatchersIOInCommonMain, RunBlockingInCommonMain, MainScopeWithoutCancel) are
