@@ -266,7 +266,20 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Resolves the full build dependency graph and submits it to the GitHub
+      # Resolves the build dependency graph and submits it to the GitHub
       # Dependency Graph API. Same gradle/actions release SHA the CI workflow pins
       # for setup-gradle (v6.2.0) — dependency-submission ships from the same repo.
+      #
+      # DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS drops the buildscript `classpath`
+      # configuration from the submitted graph. That configuration is where the
+      # Android Gradle Plugin and its transitive build-time tooling live (apksig →
+      # BouncyCastle, the Google API/analytics client → Netty/jose4j/httpclient,
+      # jdom2, OpenTelemetry). Those run only on the build machine and never ship in
+      # the APK or the iOS app, yet Dependabot was raising ~36 alerts against them
+      # rooted at settings.gradle.kts — noise we can't remediate independently (they
+      # are pinned by AGP). The regex is anchored (`^classpath$`) so it excludes only
+      # the buildscript classpath configs, never the app's `*RuntimeClasspath`
+      # configurations that carry dependencies we actually ship.
       - uses: gradle/actions/dependency-submission@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        env:
+          DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS: "^classpath$"
