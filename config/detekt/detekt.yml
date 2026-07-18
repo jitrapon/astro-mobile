@@ -8,9 +8,9 @@
 #
 # This is NOT a mechanism to silence findings: no baseline file is used and @Suppress remains
 # forbidden (enforced by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule for the bare rule-id
-# form, plus the semgrep rule kotlin-forbidden-detekt-suppress for the qualified/wildcard spellings
-# ForbiddenSuppress cannot match). The Compose entries correct two rules that are simply wrong for
-# Compose UI, not findings we are dodging.
+# form; the qualified/wildcard/ruleset/file-level/grouped spellings ForbiddenSuppress cannot match are
+# tracked for a complete AST-based gate in a custom Detekt rule — see issue #109). The Compose entries
+# correct two rules that are simply wrong for Compose UI, not findings we are dodging.
 
 build:
   maxIssues: 0
@@ -86,11 +86,12 @@ style:
     # escape hatches closed; the only way to clear a finding is to refactor.
     #
     # LIMITATION (why this is not the whole gate): ForbiddenSuppress does exact-string matching, but
-    # Detekt honors several equivalent spellings of the same suppression — `detekt:Rule` / `detekt.Rule`
-    # (universal prefix), `<ruleset>:Rule` / `<ruleset>.Rule`, and the `all` / `ALL` wildcard — none of
-    # which appear in this list, so ForbiddenSuppress alone would miss them. The semgrep rule
-    # kotlin-forbidden-detekt-suppress (.semgrep/astro-mobile.yml) closes exactly those spellings; the
-    # two gates together cover every form. This list stays the bare-id layer (fast, in-Detekt feedback).
+    # Detekt honors many equivalent spellings of the same suppression — `detekt:Rule` / `detekt.Rule`
+    # (universal prefix), `<ruleset>:Rule` / `<ruleset>.Rule`, a bare ruleset id (`structured-coroutines`
+    # suppresses the whole ruleset), the `all` / `ALL` wildcard (bare or `detekt:all`), file-level
+    # `@file:Suppress`, grouped `@[Suppress(...) …]`, and multi-line annotations — none of which this
+    # exact-match list catches. Closing every spelling needs an AST-based custom Detekt rule (a text
+    # gate cannot); that is tracked in issue #109. This list is the fast bare-id layer meanwhile.
     #
     # MAINTENANCE: this list is the full rule-id set of Detekt 1.23.8 (harvested from the plugin's
     # bundled default-detekt-config.yml). Regenerate it whenever the catalog's `detekt` version
@@ -380,11 +381,12 @@ coroutines:
 # NOTE: this repo forbids the @Suppress escape hatch. Detekt's ForbiddenSuppress
 # (in `style` above) matches arbitrary configured rule names, so the BLOCKING rule
 # ids from this block are enumerated there too — a bare `@Suppress` of any of them
-# is rejected mechanically, not just in review. The qualified/wildcard spellings
-# ForbiddenSuppress cannot match (detekt:/ruleset:/all) are caught by the semgrep
-# rule kotlin-forbidden-detekt-suppress. The WARN tier is intentionally left out of
-# the ForbiddenSuppress list (weight 0, never gates, may false-positive); keep the
-# two in sync when a rule moves between the BLOCKING and WARN tiers.
+# is rejected mechanically, not just in review. The qualified/wildcard/ruleset/
+# file-level/grouped spellings ForbiddenSuppress cannot match need an AST-based
+# custom Detekt rule (tracked in issue #109). The WARN tier is intentionally left
+# out of the ForbiddenSuppress list (weight 0, never gates, may false-positive) —
+# and that custom rule must keep exempting it; keep the two in sync when a rule
+# moves between the BLOCKING and WARN tiers.
 #
 # KMP DELTA vs. a JVM-only service: the three commonMain rules
 # (DispatchersIOInCommonMain, RunBlockingInCommonMain, MainScopeWithoutCancel) are

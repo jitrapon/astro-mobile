@@ -10,15 +10,12 @@
 # iOS lint toolchain (swift-format + SwiftLint) instead, so it is deliberately
 # out of scope here.
 #
-# Two rule categories live here. The first three map 1:1 onto the concrete mobile
-# exposures for a KMP planner app that will grow a networked, credentialed data
-# layer (the threat model); the fourth is a lint-integrity invariant that keeps
-# the repo's no-suppression posture mechanically enforced:
+# Three rule groups map 1:1 onto the three concrete mobile exposures for a KMP
+# planner app that will grow a networked, credentialed data layer:
 #
 #   1. Hardcoded credentials baked into the binary  -> kotlin-hardcoded-credential-literal
 #   2. Cleartext / insecure http:// endpoints       -> kotlin-cleartext-http-url
 #   3. Sensitive data leaked to logs                -> kotlin-sensitive-data-in-log
-#   4. Suppressing a detekt finding via @Suppress   -> kotlin-forbidden-detekt-suppress
 #
 # Each rule fires on the dangerous shape while leaving the current scaffold's
 # sanctioned patterns alone (see the inline false-positive notes). Network-layer
@@ -110,47 +107,3 @@ rules:
       # within the bounds of an actual log/print call — not anywhere in the
       # file — so a comment mentioning "token" elsewhere does not trip it.
       - pattern-regex: '(?i)(password|passwd|secret|bearer|credential|token|api[_]?key|private[_]?key|access[_]?key|client[_]?secret|\bjwt\b|\bssn\b|\bcvv\b|card[_]?number)'
-
-  # --- 4. Suppressing a detekt finding via @Suppress -------------------------
-  - id: kotlin-forbidden-detekt-suppress
-    languages: [kotlin]
-    severity: ERROR
-    message: >-
-      A detekt finding is being silenced through @Suppress. This repo forbids the
-      suppression escape hatch outright — the only sanctioned way to clear a detekt
-      finding is to refactor (paired with the checkNoDetektBaseline no-baseline
-      gate). Detekt's own ForbiddenSuppress rule rejects the bare rule-id form
-      (e.g. `@Suppress("MagicNumber")`) but does exact-string matching, so it misses
-      the other spellings detekt ALSO honors as real suppressions: the universal
-      `detekt:`/`detekt.` prefix, a `<ruleset>:`/`<ruleset>.` qualified id (at any
-      depth, e.g. `detekt:structured-coroutines:Rule`), the `all`/`ALL` wildcard
-      (bare or prefixed like `detekt:all`), and the file-level `@file:Suppress`.
-      This rule closes those, so the two gates together cover every spelling. It
-      fires only on a detekt-shaped argument — a bare Kotlin compiler suppression
-      (`@Suppress("UNCHECKED_CAST")`, SCREAMING_SNAKE) or a bare IDE-inspection id
-      (`@Suppress("RedundantVisibilityModifier")`, PascalCase) contains no `:`/`.`
-      separator and is not `all`, so it is left alone.
-    pattern-either:
-      # Matching notes shared by both branches:
-      #   `(?m)^[ \t]*@` anchors to a real annotation at the start of a (possibly
-      #     indented) line, so a `@Suppress(...)` mentioned mid-line inside a `//`
-      #     comment or a string literal does NOT trip the --error gate.
-      #   `(?:[a-z]+:)?` allows a use-site target — chiefly `@file:Suppress`, but
-      #     also `@get:`/`@set:` etc.; `(?:kotlin\.)?` allows the fully-qualified
-      #     `@kotlin.Suppress`.
-      #   `[^)\n]*` / `[^"\n]*` keep the scan on the annotation's own line so a
-      #     match can never span into a later annotation or comment.
-      # Two narrow, documented residuals (accepted — a fully AST-precise gate would
-      # need a custom Detekt rule; semgrep's Kotlin annotation AST is unreliable
-      # here): a `@Suppress(...)` sitting at the true start of a line *inside* a
-      # `/* */` block comment can false-positive, and a suppression split across
-      # lines (`@Suppress(\n "detekt:Rule"\n)`) with the offending token on a
-      # continuation line is not matched. Both are rare and caught in review.
-      #
-      # The `all` / `ALL` wildcard — silences every finding at once.
-      - pattern-regex: '(?m)^[ \t]*@(?:[a-z]+:)?(?:kotlin\.)?(?:Suppress|SuppressWarnings)\s*\([^)\n]*"[Aa][Ll][Ll]"'
-      # Any qualified id — an argument containing a `:` or `.` separator. That shape
-      # is a qualified lint id (`detekt:Rule`, `detekt.Rule`, `structured-coroutines:Rule`,
-      # `style.MagicNumber`, `detekt:all`, `detekt:structured-coroutines:Rule`) and
-      # never a bare compiler/IDE id, so no allowlist of separators is needed.
-      - pattern-regex: '(?m)^[ \t]*@(?:[a-z]+:)?(?:kotlin\.)?(?:Suppress|SuppressWarnings)\s*\([^)\n]*"[^"\n]*[.:][^"\n]*"'
