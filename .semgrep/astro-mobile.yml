@@ -10,12 +10,15 @@
 # iOS lint toolchain (swift-format + SwiftLint) instead, so it is deliberately
 # out of scope here.
 #
-# Three rule groups map 1:1 onto the three concrete mobile exposures for a KMP
-# planner app that will grow a networked, credentialed data layer:
+# Two rule categories live here. The first three map 1:1 onto the concrete mobile
+# exposures for a KMP planner app that will grow a networked, credentialed data
+# layer (the threat model); the fourth is a lint-integrity invariant that keeps
+# the repo's no-suppression posture mechanically enforced:
 #
 #   1. Hardcoded credentials baked into the binary  -> kotlin-hardcoded-credential-literal
 #   2. Cleartext / insecure http:// endpoints       -> kotlin-cleartext-http-url
 #   3. Sensitive data leaked to logs                -> kotlin-sensitive-data-in-log
+#   4. Suppressing a detekt finding via @Suppress   -> kotlin-forbidden-detekt-suppress
 #
 # Each rule fires on the dangerous shape while leaving the current scaffold's
 # sanctioned patterns alone (see the inline false-positive notes). Network-layer
@@ -107,3 +110,33 @@ rules:
       # within the bounds of an actual log/print call — not anywhere in the
       # file — so a comment mentioning "token" elsewhere does not trip it.
       - pattern-regex: '(?i)(password|passwd|secret|bearer|credential|token|api[_]?key|private[_]?key|access[_]?key|client[_]?secret|\bjwt\b|\bssn\b|\bcvv\b|card[_]?number)'
+
+  # --- 4. Suppressing a detekt finding via @Suppress -------------------------
+  - id: kotlin-forbidden-detekt-suppress
+    languages: [kotlin]
+    severity: ERROR
+    message: >-
+      A detekt finding is being silenced through @Suppress. This repo forbids the
+      suppression escape hatch outright — the only sanctioned way to clear a detekt
+      finding is to refactor (paired with the checkNoDetektBaseline no-baseline
+      gate). Detekt's own ForbiddenSuppress rule rejects the bare rule-id form
+      (e.g. `@Suppress("MagicNumber")`) but does exact-string matching, so it
+      misses the equivalent spellings detekt ALSO honors as real suppressions: the
+      universal `detekt:`/`detekt.` prefix, a `<ruleset>:`/`<ruleset>.` qualified
+      id, and the `all`/`ALL` wildcard. This rule closes exactly those, so the two
+      gates together cover every spelling. (It fires only on those detekt-shaped
+      tokens — a Kotlin compiler suppression like `@Suppress("UNCHECKED_CAST")` or a
+      bare IDE-inspection id such as `@Suppress("RedundantVisibilityModifier")` is
+      SCREAMING_SNAKE or bare PascalCase, never `lowercase:Pascal`, so it does not
+      match.)
+    pattern-either:
+      # The `all` / `ALL` wildcard — silences every finding at once. Anchored to
+      # the exact 3-char token so `"allowlist"` and similar do not match.
+      - pattern-regex: '@(?:kotlin\.)?(?:Suppress|SuppressWarnings)\s*\([^)]*"[Aa][Ll][Ll]"'
+      # A qualified detekt id: `detekt:Rule` / `detekt.Rule` (universal prefix) or
+      # `<ruleset>:Rule` / `<ruleset>.Rule` (e.g. `structured-coroutines:` /
+      # `style.`). The `lowercase-run [:.] Uppercase-run` shape is characteristic
+      # of a detekt suppression and never of a compiler / IDE-inspection id (those
+      # start uppercase or are SCREAMING_SNAKE). `[^)]*` lets the offending token
+      # sit at any argument position, including a multi-line annotation.
+      - pattern-regex: '@(?:kotlin\.)?(?:Suppress|SuppressWarnings)\s*\([^)]*"[a-z][A-Za-z0-9_-]*[.:][A-Z][A-Za-z0-9_]*"'
