@@ -7,8 +7,10 @@
 #      below. This is the machine-enforceable half of the kotlin-coroutines skill.
 #
 # This is NOT a mechanism to silence findings: no baseline file is used and @Suppress remains
-# forbidden (enforced separately by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule). The
-# Compose entries correct two rules that are simply wrong for Compose UI, not findings we are dodging.
+# forbidden (enforced by checkNoDetektBaseline + Detekt's ForbiddenSuppress rule for the bare rule-id
+# form; the qualified/wildcard/ruleset/file-level/grouped spellings ForbiddenSuppress cannot match are
+# tracked for a complete AST-based gate in a custom Detekt rule — see issue #109). The Compose entries
+# correct two rules that are simply wrong for Compose UI, not findings we are dodging.
 
 build:
   maxIssues: 0
@@ -82,6 +84,14 @@ style:
     # here to reject suppression of any tracked finding repo-wide, with no path/boundary excludes.
     # This pairs with the checkNoDetektBaseline gate (no baseline file) to keep both finding-dodging
     # escape hatches closed; the only way to clear a finding is to refactor.
+    #
+    # LIMITATION (why this is not the whole gate): ForbiddenSuppress does exact-string matching, but
+    # Detekt honors many equivalent spellings of the same suppression — `detekt:Rule` / `detekt.Rule`
+    # (universal prefix), `<ruleset>:Rule` / `<ruleset>.Rule`, a bare ruleset id (`structured-coroutines`
+    # suppresses the whole ruleset), the `all` / `ALL` wildcard (bare or `detekt:all`), file-level
+    # `@file:Suppress`, grouped `@[Suppress(...) …]`, and multi-line annotations — none of which this
+    # exact-match list catches. Closing every spelling needs an AST-based custom Detekt rule (a text
+    # gate cannot); that is tracked in issue #109. This list is the fast bare-id layer meanwhile.
     #
     # MAINTENANCE: this list is the full rule-id set of Detekt 1.23.8 (harvested from the plugin's
     # bundled default-detekt-config.yml). Regenerate it whenever the catalog's `detekt` version
@@ -298,6 +308,28 @@ style:
       - VariableNaming
       - WildcardImport
       - WrongEqualsTypeParameter
+      # --- structured-coroutines (third-party ruleset, config block below) -------
+      # ForbiddenSuppress matches arbitrary configured names, not just first-party
+      # ids, so the custom coroutine rules that FAIL the build must be listed here
+      # too — otherwise `@Suppress("RunBlockingInCommonMain")` would silently defeat
+      # a blocking gate. Scope: the BLOCKING tier only. The WARN tier (weight 0 in
+      # build.weights) never gates the build and carries known FP/HEURISTIC caveats,
+      # so suppressing one bypasses nothing and forbidding it would only strand a
+      # false positive — deliberately omitted. Keep in sync with the `active: true`
+      # BLOCKING rules in the `structured-coroutines:` block when that block changes.
+      - BlockingCallInCoroutine
+      - BlockingFutureGet
+      - CancellationExceptionSubclass
+      - DispatchersIOInCommonMain
+      - DispatchersUnconfined
+      - HardcodedDispatcherInClass
+      - InlineCoroutineScope
+      - JobInBuilderContext
+      - MainScopeWithoutCancel
+      - RunBlockingInCommonMain
+      - RunBlockingInSuspend
+      - SuspendCoroutineWithoutCancellation
+      - SynchronizedInCoroutine
 
 # Detekt's own coroutine ruleset. Only GlobalCoroutineUsage runs on the plain `detekt` task this repo
 # uses — every other rule here needs type resolution, which the Kotlin-version wall (detekt 1.23.8
@@ -346,10 +378,15 @@ coroutines:
 #               why each is here (FP / HEURISTIC / UNVERIFIED).
 #   INACTIVE  — `active: false`, reason inline.
 #
-# NOTE: this repo forbids the @Suppress escape hatch, but Detekt's ForbiddenSuppress
-# (in `style` above) enumerates only first-party rule ids — it does not catch a
-# @Suppress of these third-party ids. Reject such suppressions in review and
-# refactor instead, per the repo's no-suppression posture.
+# NOTE: this repo forbids the @Suppress escape hatch. Detekt's ForbiddenSuppress
+# (in `style` above) matches arbitrary configured rule names, so the BLOCKING rule
+# ids from this block are enumerated there too — a bare `@Suppress` of any of them
+# is rejected mechanically, not just in review. The qualified/wildcard/ruleset/
+# file-level/grouped spellings ForbiddenSuppress cannot match need an AST-based
+# custom Detekt rule (tracked in issue #109). The WARN tier is intentionally left
+# out of the ForbiddenSuppress list (weight 0, never gates, may false-positive) —
+# and that custom rule must keep exempting it; keep the two in sync when a rule
+# moves between the BLOCKING and WARN tiers.
 #
 # KMP DELTA vs. a JVM-only service: the three commonMain rules
 # (DispatchersIOInCommonMain, RunBlockingInCommonMain, MainScopeWithoutCancel) are
