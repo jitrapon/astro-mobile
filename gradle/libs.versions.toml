@@ -11,7 +11,7 @@
 # identically. `verifyKtfmtAlignment` enforces this pairing mechanically.
 
 [versions]
-ktfmt = "0.26.0"
+ktfmt = "0.27.0"
 ktfmt-cli = "0.62"
 detekt = "1.23.8"
 # santimattius structured-coroutines Detekt ruleset — 40 syntactic coroutine rules. Being syntactic
