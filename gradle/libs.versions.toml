@@ -17,16 +17,18 @@ detekt = "1.23.8"
 # santimattius structured-coroutines Detekt ruleset — 40 syntactic coroutine rules. Being syntactic
 # (no type resolution) they run on the plain `detekt` task, unlike Detekt's own coroutine rules,
 # which need type resolution the Kotlin-version wall (detekt 1.23.8 bundles Kotlin 2.0.21, this repo
-# runs Kotlin 2.3.10) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
+# runs Kotlin 2.4.10) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
 # in the pre-commit hook — bump both in lockstep. An upstream port is needed when Detekt 2.0 renames
 # the RuleSetProvider package to `dev.detekt`.
 structured-coroutines = "1.1.0"
 # skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
-# version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.3.10; the analyzer's
-# version→Kotlin map has no 2.3.10 build, so 0.7.0 (built against Kotlin 2.3.0 — the nearest version
-# at or below 2.3.10) is used for forward-compatible loading. Bump this in lockstep with any Kotlin
-# upgrade using the analyzer's README "Kotlin Version Mapping" table.
-compose-stability-analyzer = "0.7.0"
+# version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.4.10; the analyzer's
+# version→Kotlin map has no 2.4.10 build, so 0.12.0 (built against Kotlin 2.4.0 — the nearest
+# version at or below 2.4.10) is used for forward-compatible loading. Bump this in lockstep with any
+# Kotlin upgrade using the analyzer's README "Kotlin Version Mapping" table: a version built against
+# a Kotlin older than the compiler that loads it fails the build with a ClassCastException on
+# FirExtensionRegistrarAdapter as the plugin registers its FIR extensions.
+compose-stability-analyzer = "0.12.0"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`
