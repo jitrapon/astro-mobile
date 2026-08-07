@@ -162,12 +162,12 @@ afterEvaluate {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.jitrapon.astro"
         minSdk = 23
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 2
         versionName = "0.1.1"
         vectorDrawables { useSupportLibrary = true }
@@ -195,14 +195,14 @@ dependencies {
     implementation(project(":shared"))
 
     // Jetpack Compose
-    implementation("androidx.activity:activity-compose:1.12.4")
+    implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.material:material:1.10.4")
     implementation("androidx.compose.animation:animation:1.10.4")
     implementation("androidx.compose.ui:ui-tooling:1.10.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.compose.ui:ui:1.10.4")
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.4")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.4")
 }

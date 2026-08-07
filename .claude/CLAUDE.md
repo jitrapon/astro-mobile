@@ -112,7 +112,7 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 ## Tech stack & versions
 
 - Kotlin 2.3.10, Gradle 9.x, Android Gradle Plugin 9.x.
-- Android: compileSdk 36, minSdk 23, targetSdk 36, Java 17.
+- Android: compileSdk 37, minSdk 23, targetSdk 37, Java 17.
 - Jetpack Compose for Android UI; SwiftUI for iOS UI.
 - iOS targets: `iosX64`, `iosArm64`, `iosSimulatorArm64`.
 - Gradle version catalog (`gradle/libs.versions.toml`) — holds the lint toolchain versions (the ncorti ktfmt plugin / `ktfmt-cli` / Detekt / the `structured-coroutines` Detekt ruleset) plus the `ktfmt`/`detekt` plugin aliases and the `structured-coroutines-detekt-rules` library alias, so the Gradle plugin, the pre-commit hook's CLI jars, and `verifyKtfmtAlignment` share one source of truth. Deliberately partial: other dependency versions remain declared inline in the `build.gradle.kts` files for now.

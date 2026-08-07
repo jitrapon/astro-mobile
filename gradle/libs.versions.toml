@@ -7,12 +7,12 @@
 #
 # `ktfmt` is the ncorti Gradle plugin; `ktfmt-cli` is the `com.facebook:ktfmt` formatter the plugin
 # bundles AND the standalone jar the pre-commit hook invokes. These two MUST stay aligned: ncorti
-# plugin 0.26.0 bundles com.facebook:ktfmt 0.62, so local Gradle, the hook, and CI all format
+# plugin 0.27.0 bundles com.facebook:ktfmt 0.64, so local Gradle, the hook, and CI all format
 # identically. `verifyKtfmtAlignment` enforces this pairing mechanically.
 
 [versions]
-ktfmt = "0.26.0"
-ktfmt-cli = "0.62"
+ktfmt = "0.27.0"
+ktfmt-cli = "0.64"
 detekt = "1.23.8"
 # santimattius structured-coroutines Detekt ruleset — 40 syntactic coroutine rules. Being syntactic
 # (no type resolution) they run on the plain `detekt` task, unlike Detekt's own coroutine rules,
