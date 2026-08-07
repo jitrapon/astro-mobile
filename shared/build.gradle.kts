@@ -76,7 +76,7 @@ dependencies { detektPlugins(libs.structured.coroutines.detekt.rules) }
 
 kotlin {
     android {
-        compileSdk { version = release(36) }
+        compileSdk { version = release(37) }
         namespace = "io.jitrapon.astro.shared"
         // Opt into Android/JVM host (unit) tests. The com.android.kotlin.multiplatform.library
         // plugin creates no host-test compilation by default, so without this commonTest would run

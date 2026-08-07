@@ -162,12 +162,12 @@ afterEvaluate {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.jitrapon.astro"
         minSdk = 23
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 2
         versionName = "0.1.1"
         vectorDrawables { useSupportLibrary = true }
