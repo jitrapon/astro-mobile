@@ -92,6 +92,121 @@ subprojects {
     tasks.matching { it.name == "check" }.configureEach { dependsOn(checkNoDetektBaseline) }
 }
 
+// Vendored-contract drift guard. `contracts/astro-bff/openapi.yaml` and the month-screen example
+// under `shared/src/commonTest/resources/contract/` are copies of files the `docs/astro-docs`
+// submodule owns — plain copies rather than a generated client, because the `astro-bff` repo that
+// will own the contract does not exist yet and the mirror is not its owner either, so pointing
+// codegen at astro-docs would only relocate the copy. Nothing in the build reads the vendored
+// contract as a build input, which is exactly the problem: a copy left stale by an upstream edit is
+// invisible to every other check in this repo until a request 400s against the real BFF. This task
+// is the only signal that the copies are current.
+//
+// The two artifacts are held to different standards deliberately. The contract must be BYTE-
+// identical, because the shared module's conformance test reads it by slicing the YAML textually —
+// a re-indent or a reordered key changes what that test sees even when the contract still means the
+// same thing. The fixture is compared as parsed JSON with the top-level `_comment` dropped, because
+// that key is the one sanctioned local adaptation: it re-words the upstream note to name this
+// repo's use of the file. Every other key, `_comment_theme` included, must agree, so a fixture edit
+// that forgets its cross-repo half fails here.
+//
+// No inputs/outputs are declared, so the task re-reads the live files on every run rather than
+// reporting UP-TO-DATE from a snapshot taken before `git submodule update --init` populated the
+// mirror. Capturing `File`s and comparing them in `doLast` keeps it configuration-cache-safe.
+val verifyVendoredContractParity =
+    tasks.register("verifyVendoredContractParity") {
+        group = "verification"
+        description =
+            "Fail if the vendored BFF contract or screen fixture has drifted from the astro-docs " +
+                "mirror."
+
+        val vendoredContract = file("contracts/astro-bff/openapi.yaml")
+        val mirroredContract = file("docs/astro-docs/openapi.yaml")
+        val vendoredFixture =
+            file("shared/src/commonTest/resources/contract/calendar-month-screen.v0.example.json")
+        val mirroredFixture = file("docs/astro-docs/calendar-month-screen.v0.example.json")
+        val treeRoot = rootDir
+
+        doLast {
+            fun rel(f: File) = f.relativeTo(treeRoot).path
+
+            // The mirror is a git submodule, so it is absent on a clone made without
+            // `--recurse-submodules`. Name the remedy instead of failing on a comparison against a
+            // file that isn't there — and never skip: a parity check that quietly passes when it
+            // could not run is indistinguishable from one that ran and found nothing.
+            val absentMirror = listOf(mirroredContract, mirroredFixture).filterNot { it.isFile }
+            check(absentMirror.isEmpty()) {
+                "The astro-docs mirror is not checked out, so the vendored contract artifacts " +
+                    "cannot be verified:\n" +
+                    absentMirror.joinToString("\n") { "  - missing ${rel(it)}" } +
+                    "\nRun `git submodule update --init` to fetch it."
+            }
+
+            val absentVendored = listOf(vendoredContract, vendoredFixture).filterNot { it.isFile }
+            check(absentVendored.isEmpty()) {
+                "Vendored contract artifacts are missing from this repository:\n" +
+                    absentVendored.joinToString("\n") { "  - missing ${rel(it)}" }
+            }
+
+            check(vendoredContract.readBytes().contentEquals(mirroredContract.readBytes())) {
+                "${rel(vendoredContract)} is not byte-identical to the astro-docs mirror at " +
+                    "${rel(mirroredContract)}. The mirror is upstream: re-copy its file over the " +
+                    "vendored one rather than editing the vendored copy."
+            }
+
+            // Report where the fixtures diverge, not merely that they do: the file is ~430 lines of
+            // nested JSON, and "not equal" would leave the reader to diff it by hand.
+            fun firstDifference(vendored: Any?, mirrored: Any?, path: String): String? =
+                when {
+                    vendored is Map<*, *> && mirrored is Map<*, *> -> {
+                        val vendoredOnly = vendored.keys - mirrored.keys
+                        val mirroredOnly = mirrored.keys - vendored.keys
+                        when {
+                            vendoredOnly.isNotEmpty() ->
+                                "$path: only in the vendored copy: ${vendoredOnly.joinToString()}"
+                            mirroredOnly.isNotEmpty() ->
+                                "$path: only in the mirror: ${mirroredOnly.joinToString()}"
+                            else ->
+                                vendored.keys.firstNotNullOfOrNull { key ->
+                                    firstDifference(vendored[key], mirrored[key], "$path.$key")
+                                }
+                        }
+                    }
+                    vendored is List<*> && mirrored is List<*> ->
+                        if (vendored.size != mirrored.size) {
+                            "$path: ${vendored.size} entries in the vendored copy, " +
+                                "${mirrored.size} in the mirror"
+                        } else {
+                            vendored.indices.firstNotNullOfOrNull { i ->
+                                firstDifference(vendored[i], mirrored[i], "$path[$i]")
+                            }
+                        }
+                    vendored == mirrored -> null
+                    else -> "$path: vendored=$vendored, mirror=$mirrored"
+                }
+
+            // JsonSlurper ships with the Gradle distribution, so reading the fixture structurally
+            // costs no dependency. Comparing parsed values rather than text also makes the check
+            // indifferent to whitespace and to the trailing newline the vendored copy adds.
+            fun withoutLocalComment(f: File): Any? {
+                val parsed = groovy.json.JsonSlurper().parse(f, "UTF-8")
+                return if (parsed is Map<*, *>) parsed.filterKeys { it != "_comment" } else parsed
+            }
+
+            val fixtureDifference =
+                firstDifference(
+                    withoutLocalComment(vendoredFixture),
+                    withoutLocalComment(mirroredFixture),
+                    "fixture",
+                )
+            check(fixtureDifference == null) {
+                "${rel(vendoredFixture)} has drifted from the astro-docs mirror at " +
+                    "${rel(mirroredFixture)}:\n  $fixtureDifference\n" +
+                    "Only the top-level `_comment` may differ between the two copies; every other " +
+                    "key must agree."
+            }
+        }
+    }
+
 // Git-hook tooling. The pre-commit hook invokes ktfmt and detekt as standalone CLI jars rather than
 // through the Gradle daemon — the daemon path is ~15–20 s, the direct-jar path is ~1–2 s, which is
 // the difference between a hook that runs on every commit and one that gets `--no-verify`'d away.
