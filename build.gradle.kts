@@ -9,9 +9,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10")
+        classpath(libs.kotlin.gradle.plugin)
         classpath("com.android.tools.build:gradle:9.3.1")
-        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.10")
+        classpath(libs.kotlin.compose.compiler.gradle.plugin)
+        // The kotlinx.serialization Kotlin compiler plugin. It sits on the classpath rather than
+        // in `plugins {}` because :shared applies it by id with no version
+        // (`kotlin("plugin.serialization")`) and inherits the version pinned here. The catalog
+        // locks it to the same `kotlin` ref as the Kotlin Gradle plugin above: a serialization
+        // plugin built against a different Kotlin than the compiler loading it fails the build.
+        classpath(libs.kotlin.serialization.gradle.plugin)
     }
 }
 

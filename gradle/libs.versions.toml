@@ -1,9 +1,14 @@
-# Gradle version catalog — single source of truth for the Kotlin lint/format toolchain versions.
+# Gradle version catalog — single source of truth for build-plugin and product dependency versions.
 #
-# Deliberately partial: only the lint toolchain lives here so the Gradle plugin, the pre-commit
-# hook's standalone CLI jars, and `verifyKtfmtAlignment` all read the same versions and can never
-# drift. Other dependency versions (Kotlin, AGP, Compose, AndroidX) remain inline in the
-# build.gradle.kts files for now — a partial catalog is intentional.
+# Two families live here:
+#
+#   * The Kotlin lint/format toolchain, so the Gradle plugin, the pre-commit hook's standalone CLI
+#     jars, and `verifyKtfmtAlignment` all read the same versions and can never drift.
+#   * The product dependencies the shared module ships (kotlinx.serialization, kotlinx.coroutines,
+#     Ktor, Koin) together with the Kotlin version their compiler plugins are locked to.
+#
+# Android Gradle Plugin remains declared inline in the root `buildscript` classpath — it is the one
+# build-plugin version with no catalog consumer and no lockstep partner.
 #
 # `ktfmt` is the ncorti Gradle plugin; `ktfmt-cli` is the `com.facebook:ktfmt` formatter the plugin
 # bundles AND the standalone jar the pre-commit hook invokes. These two MUST stay aligned: ncorti
@@ -11,6 +16,11 @@
 # identically. `verifyKtfmtAlignment` enforces this pairing mechanically.
 
 [versions]
+# The Kotlin version every Kotlin *compiler* plugin on the buildscript classpath is locked to. The
+# Kotlin Gradle plugin, the Compose compiler plugin, and the kotlinx.serialization plugin all embed
+# compiler internals, so a mismatch against the Kotlin the build runs is a hard failure, not a
+# warning. Bumping Kotlin means bumping this one ref and re-checking compose-stability-analyzer.
+kotlin = "2.4.10"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
 detekt = "1.23.8"
@@ -29,12 +39,44 @@ structured-coroutines = "1.1.0"
 # a Kotlin older than the compiler that loads it fails the build with a ClassCastException on
 # FirExtensionRegistrarAdapter as the plugin registers its FIR extensions.
 compose-stability-analyzer = "0.12.0"
+# kotlinx.serialization RUNTIME. Versioned independently of the compiler plugin above: the plugin
+# generates the serializers, this library supplies the format (JSON) they are encoded through.
+kotlinx-serialization = "1.11.0"
+kotlinx-coroutines = "1.11.0"
+# Ktor 3.x. One version spans every client artifact — core, the content-negotiation plugin, the
+# kotlinx-json converter, both platform engines, and the MockEngine the tests drive — so they must
+# be bumped together off this single ref.
+ktor = "3.5.2"
+# Koin — the shared module's DI container. Runtime resolution with no compile-time graph
+# validation, so `koin-test`'s graph-resolution check is the only thing that catches a missing
+# binding; keep the test artifact on the same version as the runtime.
+koin = "4.2.2"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`
 # in :shared/:androidApp (the Gradle `detekt` task) and the root `detektRuleset` configuration that
 # `resolveLintTools` hands to the pre-commit hook's detekt-cli via `--plugins`.
 structured-coroutines-detekt-rules = { module = "io.github.santimattius:structured-coroutines-detekt-rules", version.ref = "structured-coroutines" }
+
+# Kotlin compiler plugins consumed as root `buildscript` classpath artifacts rather than through the
+# `plugins {}` DSL, because the modules apply them by id with no version (`kotlin("multiplatform")`,
+# `kotlin("plugin.serialization")`) and inherit the classpath version.
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+
+# Product dependencies — shared module.
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
