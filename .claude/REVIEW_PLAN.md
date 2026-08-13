@@ -38,3 +38,29 @@ Addressed by: §4 item 15 now also requires an `iosTest` driving the same facade
 Addressed by: §4 item 9 now states the nullability and why it is load-bearing; §4 item 18 adds the inverse parity case (fixture with `themeDocument` removed must still decode with its `theme` reference intact); §4 item 20 adds the matching `MockEngine` success case.
 
 **Net effect on the plan:** 21 → 23 implementation items (new items 13 and 19; subsequent items renumbered), and §5 regrouped to match. No finding required editing §§1–3 or §7.
+
+### Round 2 — verdict `needs-attention` (3 findings: 2 high, 1 medium)
+
+> Codex summary: "No-ship. The round-1 request/version/nullability work is now planned, but the plan still permits response-contract drift, an absent repository layer, and unverified platform startup behavior to pass all gates."
+
+Round 1's four findings were confirmed closed and not re-raised.
+
+**1. [high] Response-schema drift can still pass the parity gate — PARTIAL**
+
+The valid kernel: the strict decode covers one month fixture, and there is no agenda fixture upstream (confirmed — `astro-docs` ships only `calendar-month-screen.v0.example.json`), so the agenda models §3 explicitly requires would have had **no** mechanical gate at all. That is precisely the "dead code with no caller" the issue set out to avoid. Agreed and closed by extending the generator (item 9) to embed each modelled response schema's `required:` list and enums — following the discriminator mapping to reach `AgendaBody`, not just the inline month schema — and asserting the models against them in item 21.
+
+Rejected: the recommendation's full scope — "a contract-derived response conformance corpus covering every declared screen branch, required field, discriminator, and enum … include negative schema mutations". That is an OpenAPI schema validator hand-written in Kotlin, and it duplicates what `./gradlew openApiGenerate` provides for free at M-5, which §3 explicitly places out of scope. astro-web reached the same conclusion from the same position and recorded it in its own parity suite: the other body components "are contract-valid but have no fixture in this repo, and a branch nothing exercises is an untested claim dressed as coverage." Requiredness plus enum conformance is the proportionate gate at this stage; whole-schema validation arrives with codegen.
+
+**2. [high] The required repository graph is never planned or tested — AGREE**
+
+Factually correct and a genuine miss against user prose: §3 says "wire the HTTP client, API client, and repository graph through it", and CLAUDE.md documents the repository-wraps-a-data-source pattern as a project convention, yet the plan bound only `HttpClient`, `Json`, and the API client. Left unaddressed, M-2 would either reach past the data layer into the API client or need a graph change to introduce one.
+
+Addressed by: new §4 item 15 adds `CalendarScreenRepository` wrapping the API client and owning the last-fetched screen as cached state — deliberately thin, inventing no caching policy or refresh scheduler, since those need M-2's view model; item 16 binds it in the Koin graph; item 17 has the iOS facade resolve the repository rather than the API client; item 22 adds repository behaviour tests (successful fetch populates cached state, failed fetch surfaces `Result.Error` without discarding it) and extends the graph smoke test to resolve it; item 23 refreshes CLAUDE.md's Repository-pattern entry, whose example is the `LoginRepository` this branch deletes.
+
+**3. [medium] App-launch graph resolution unverified on both entry paths — PARTIAL**
+
+Agreed on the gap: Android received only an `assembleDebug` check, so an `Application` that throws inside `startKoin` would crash at launch with every listed check green, and the iOS runtime loop confirmed only "did not crash" rather than "Swift resolved through the facade". Closed by making **both** runtime loops mandatory in §5 (neither substitutes for the other, with the failure mode each one catches stated), and by requiring item 18's iOS view to render state derived from the resolved repository rather than a static string — so the simulator screenshot is evidence of resolution.
+
+Rejected: the recommendation to add "Android instrumentation launch plus graph resolution" and an "iOS UI/integration assertion". `androidApp` has no `androidTest` source set and CI runs no emulator, so this means standing up an instrumentation harness — its own task, and the `testing-setup` skill's domain — as a rider on a data-layer branch. The repo's documented `android-device-debug` / `ios-device-debug` loops are the established mechanism for exactly this verification and are now mandatory rather than optional. The §5 entry records that the omission is deliberate so it reads as a decision, not an oversight.
+
+**Net effect on the plan:** 23 → 25 implementation items (item 8 split into generator mechanism + contract-fact extraction; new repository item 15), §5 regrouped to match. No finding required editing §§1–3 or §7.
