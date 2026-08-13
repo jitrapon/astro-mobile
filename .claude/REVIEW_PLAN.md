@@ -64,3 +64,17 @@ Agreed on the gap: Android received only an `assembleDebug` check, so an `Applic
 Rejected: the recommendation to add "Android instrumentation launch plus graph resolution" and an "iOS UI/integration assertion". `androidApp` has no `androidTest` source set and CI runs no emulator, so this means standing up an instrumentation harness — its own task, and the `testing-setup` skill's domain — as a rider on a data-layer branch. The repo's documented `android-device-debug` / `ios-device-debug` loops are the established mechanism for exactly this verification and are now mandatory rather than optional. The §5 entry records that the omission is deliberate so it reads as a decision, not an oversight.
 
 **Net effect on the plan:** 23 → 25 implementation items (item 8 split into generator mechanism + contract-fact extraction; new repository item 15), §5 regrouped to match. No finding required editing §§1–3 or §7.
+
+### Round 3 — verdict `needs-attention` (1 finding: 1 high)
+
+> Codex summary: "No-ship: the new repository cache can return the wrong calendar screen after a range/view/timezone/theme change, and the planned tests do not detect it."
+
+Rounds 1 and 2 were confirmed closed; nothing previously rebutted was re-raised.
+
+**1. [high] Repository cache has no request identity or ordering contract — AGREE**
+
+Valid, and it caught a contradiction inside round 2's own fix: item 15 said the repository "owns the last successfully-fetched screen as cached state and the decision of when to re-fetch" *and* that it "does not invent a caching policy" — both at once. A cache keyed on nothing, while the request varies by view, start, end, timezone, locale, `dayCount`, and `knownTheme`, hands the next caller a screen belonging to a different request; item 22's single success/failure pair would not have noticed.
+
+Taken Codex's first option — make the repository a stateless forwarding boundary until M-2 defines caching — rather than its second (specify cache identity and generation ordering now). Defining ordering semantics with no consumer to define them for is guesswork, and it re-creates the unexercised-dead-code problem this branch exists to avoid; the whole class of stale-data bugs disappears instead at zero cost. Item 15 now states the statelessness, names the request-identity and out-of-order hazards as the reason, and requires the KDoc to record it as a decision. Item 22's repository test becomes: forwards `Result` unchanged on both paths, and two successive calls with different parameters each return their own response — the assertion that fails if a keyless cache is added later.
+
+**Net effect on the plan:** no item count change (25 items). No finding required editing §§1–3 or §7.
