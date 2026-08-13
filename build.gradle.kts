@@ -207,6 +207,13 @@ val verifyVendoredContractParity =
         }
     }
 
+// Every module's `check` runs the contract drift guard, mirroring the checkNoDetektBaseline wiring:
+// the vendored copies are a repo-wide artifact, not a :shared-only one, so the gate belongs to
+// `./gradlew check` as a whole rather than to whichever subproject happens to hold the fixture.
+subprojects {
+    tasks.matching { it.name == "check" }.configureEach { dependsOn(verifyVendoredContractParity) }
+}
+
 // Git-hook tooling. The pre-commit hook invokes ktfmt and detekt as standalone CLI jars rather than
 // through the Gradle daemon — the daemon path is ~15–20 s, the direct-jar path is ~1–2 s, which is
 // the difference between a hook that runs on every commit and one that gets `--no-verify`'d away.
@@ -538,6 +545,10 @@ val androidCommonVerification =
         ":shared" to "verifyKtfmtAlignment",
         ":" to "checkNoDetektBaseline",
         ":" to "ktfmtCheck",
+        // Host-portable: the guard only reads two checked-out files and compares them, so it needs
+        // no Mac. It sits in this half because the astro-docs submodule is fetched on the Linux
+        // job.
+        ":" to "verifyVendoredContractParity",
     )
 
 val verifyIos =
