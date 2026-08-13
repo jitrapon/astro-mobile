@@ -1,6 +1,12 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
+    // The kotlinx.serialization compiler plugin — it generates the `KSerializer` implementations
+    // that `@Serializable` declarations resolve to. Applied by id with no version so it inherits
+    // the artifact pinned on the root buildscript classpath, which the catalog locks to the same
+    // `kotlin` ref as the Kotlin Gradle plugin; a serialization plugin built against a different
+    // Kotlin than the compiler loading it fails the build outright.
+    kotlin("plugin.serialization")
     // ktfmt + Detekt versions come from the root version catalog (gradle/libs.versions.toml) so the
     // Gradle plugin, the pre-commit hook's CLI jars, and verifyKtfmtAlignment share one source.
     alias(libs.plugins.ktfmt)
@@ -86,6 +92,11 @@ kotlin {
     }
 
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        // No `export(...)` here deliberately. Every dependency below is `implementation`, so Ktor
+        // and Koin types stay out of the generated Objective-C headers and Swift never sees them.
+        // The framework's public surface is the Kotlin facade this module owns; exporting the DI
+        // or HTTP libraries instead would let Swift call-sites bind directly to them and turn a
+        // library swap into an iOS-app refactor.
         it.binaries.framework { baseName = "shared" }
     }
 
@@ -94,13 +105,43 @@ kotlin {
         // iosX64/iosArm64/iosSimulatorArm64 — are created automatically by Kotlin's default
         // hierarchy template once the iOS targets above are declared. Declaring them by hand would
         // disable the template (and emit a "Default Kotlin Hierarchy Template was not applied"
-        // warning). Configure a source set explicitly only when it needs its own deps or sources.
-        val commonTest by getting { dependencies { implementation(kotlin("test")) } }
+        // warning). The accessors below are the Kotlin plugin's lazy providers, which only
+        // configure what the template already created; the eager `by getting` delegate cannot be
+        // used for `iosMain` — the template registers it too late for that to resolve.
+        commonMain.dependencies {
+            // Declared explicitly rather than inherited transitively through Ktor: this module's
+            // data-layer API is suspend-based, so coroutines is part of its own contract and must
+            // not silently follow whatever Ktor happens to depend on.
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.ktor.client.core)
+            // ContentNegotiation is the plugin; ktor-serialization-kotlinx-json is the converter
+            // it delegates to. Neither works without the other.
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.koin.core)
+        }
+        // Each platform contributes only its HTTP engine; everything else is shared. The engine is
+        // the one piece that cannot be common — it binds to the platform's native networking stack
+        // (OkHttp on Android, NSURLSession via Darwin on iOS).
+        androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
+        iosMain.dependencies { implementation(libs.ktor.client.darwin) }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            // MockEngine substitutes for a real engine so the client's request-building and
+            // response-decoding halves are asserted without a network.
+            implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.test)
+            // Koin resolves at runtime with no compile-time graph validation, so a graph smoke
+            // test is the only thing that catches a missing binding.
+            implementation(libs.koin.test)
+        }
         // Android host (JVM) unit tests created by `withHostTest {}` live in `androidHostTest`.
         // AndroidGreetingTest asserts on the androidMain `Greeting` actual via JUnit directly, so
         // the host-test source set needs JUnit on its classpath (commonTest's kotlin("test") does
-        // not supply org.junit on its own).
-        val androidHostTest by getting { dependencies { implementation("junit:junit:4.13.2") } }
+        // not supply org.junit on its own). No Kotlin-plugin accessor exists for this source set —
+        // the Android KMP library plugin creates it — so it is looked up by name.
+        getByName("androidHostTest").dependencies { implementation("junit:junit:4.13.2") }
     }
 }
 
