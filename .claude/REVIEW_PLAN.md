@@ -94,3 +94,19 @@ In scope rather than gold-plating: §2 names the API client for the range-based 
 Addressed by: item 9 now extracts each parameter's declared type and format alongside its name; item 21 asserts over a captured `MockEngine` request that `start` / `end` are date-only (no time, offset, or `Z`), that `dayCount` appears only for the time-grid view and within 1–7, and that an absent optional parameter is omitted from the query string rather than sent empty or `null`; item 22 asserts on both halves of each exchange — the emitted request as well as the returned `Result`. §5 item 9 additionally asserts the extraction captured `format: date`, since extracting it as empty would make the wire-format assertions pass vacuously, and §5 item 19–22 adds the negative mutation: switching the client to a date-time encoding must fail the conformance test on the encoding, not on the name.
 
 **Net effect on the plan:** no item count change (25 items). No finding required editing §§1–3 or §7.
+
+### Round 5 — verdict `needs-attention` (1 finding: 1 high)
+
+> Codex summary: "No-ship: the plan permits cancellation to be returned as a normal API error, which can surface stale failures after a caller has moved on."
+
+Round 4 was confirmed closed; nothing previously rebutted was re-raised.
+
+**1. [high] Cancellation propagation is neither required nor tested — AGREE**
+
+Item 13 said "map transport and decode failures onto `Result.Error` rather than letting exceptions escape" without excluding `CancellationException`, and item 22 exercised only HTTP and decode failures. A blanket `catch (e: Exception)` around the suspending Ktor call therefore satisfied the plan as written while breaking structured concurrency: when M-2 cancels a superseded range or view request, the coroutine delivers an error to a caller that has already moved on.
+
+Confirmed the mechanical gate does not cover this, which is what makes it worth planning explicitly: `CancellationExceptionSwallowed` is in the `structured-coroutines` WARN tier in `config/detekt/detekt.yml` at `weight: 0` — tagged `(UNVERIFIED)`, reported but never failing the build. So this defect ships with a fully green `./gradlew check`. In scope by §§2–3, which make the API client and its `Result<T>` mapping the branch's core deliverable, and consistent with `kotlin-coroutines-skill` being the repo's canonical coroutine authority.
+
+Addressed by: item 13 now requires cancellation to be rethrown ahead of the mapping catch and never converted into a `Result`, naming the failure mode and the weight-0 lint tier so the requirement reads as load-bearing; item 22 adds a controlled cancellation test — a `MockEngine` held at a suspension point, the calling coroutine cancelled, asserting the `CancellationException` reaches the caller and no `Result` is emitted.
+
+**Net effect on the plan:** no item count change (25 items). No finding required editing §§1–3 or §7.
