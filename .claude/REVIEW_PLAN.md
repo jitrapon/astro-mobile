@@ -78,3 +78,19 @@ Valid, and it caught a contradiction inside round 2's own fix: item 15 said the 
 Taken Codex's first option — make the repository a stateless forwarding boundary until M-2 defines caching — rather than its second (specify cache identity and generation ordering now). Defining ordering semantics with no consumer to define them for is guesswork, and it re-creates the unexercised-dead-code problem this branch exists to avoid; the whole class of stale-data bugs disappears instead at zero cost. Item 15 now states the statelessness, names the request-identity and out-of-order hazards as the reason, and requires the KDoc to record it as a decision. Item 22's repository test becomes: forwards `Result` unchanged on both paths, and two successive calls with different parameters each return their own response — the assertion that fails if a keyless cache is added later.
 
 **Net effect on the plan:** no item count change (25 items). No finding required editing §§1–3 or §7.
+
+### Round 4 — verdict `needs-attention` (1 finding: 1 high)
+
+> Codex summary: "No-ship: the stateless repository change closes round 3, but request conformance can still pass while serializing calendar ranges in a BFF-incompatible form."
+
+Round 3 was confirmed closed; nothing previously rebutted was re-raised.
+
+**1. [high] Request conformance omits query-value format and conditional encoding — AGREE**
+
+Correct on the facts. Item 9 extracted parameter *names*, the `view` enum, and the path — no types or formats — and item 21 compared name sets and enum membership while item 22 asserted only on responses. Nothing in the plan looked at the query string the client actually emits. A client serializing `start` as an instant, sending `knownTheme=` empty instead of omitting it, or attaching `dayCount` to a month request would pass every planned check and then 400 against the real BFF. The contract does declare what is required to catch this: `start` / `end` are `type: string, format: date` and `dayCount` is an integer bounded 1–7.
+
+In scope rather than gold-plating: §2 names the API client for the range-based endpoint as part of the objective, and §3 specifies the parameters it is built on — the wire format is that client's core correctness, not an extra.
+
+Addressed by: item 9 now extracts each parameter's declared type and format alongside its name; item 21 asserts over a captured `MockEngine` request that `start` / `end` are date-only (no time, offset, or `Z`), that `dayCount` appears only for the time-grid view and within 1–7, and that an absent optional parameter is omitted from the query string rather than sent empty or `null`; item 22 asserts on both halves of each exchange — the emitted request as well as the returned `Result`. §5 item 9 additionally asserts the extraction captured `format: date`, since extracting it as empty would make the wire-format assertions pass vacuously, and §5 item 19–22 adds the negative mutation: switching the client to a date-time encoding must fail the conformance test on the encoding, not on the name.
+
+**Net effect on the plan:** no item count change (25 items). No finding required editing §§1–3 or §7.
