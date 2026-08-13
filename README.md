@@ -10,6 +10,8 @@ Kotlin 2.3.10 · Gradle 9.x · Android Gradle Plugin 9.x · Jetpack Compose (And
 
 ## Getting started
 
+Clone with `--recurse-submodules` (or run `git submodule update --init` afterwards) — `docs/astro-docs` is the upstream planning/docs repo, and the vendored BFF contract in `contracts/astro-bff/` is checked for drift against it.
+
 Requires JDK 17 and (for the iOS app) Xcode. Build everything and run the gate:
 
 ```bash

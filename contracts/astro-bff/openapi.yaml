@@ -1,0 +1,1279 @@
+openapi: 3.1.0
+
+# ============================================================================
+# Astro Planner — BFF View-Model Contract (v0.2.0)
+# ----------------------------------------------------------------------------
+# Consolidated after the D-13 decisions and the Codex layout-ownership review.
+# This file is the canonical artifact in astro-bff and the interim source for
+# astro-web's hand-written TS types until `api:generate` is wired.
+#
+# ── Layout-ownership boundary (ADR resolved → midpoint) ─────────────────────
+#   The BFF owns SEMANTIC composition: which native component renders, which
+#   semantic region an event occupies, which presentation type (monthAllDayBar/
+#   monthTimedMarker/timeGridAllDayBar/block/card), actions, labels, resolved
+#   preferences, and composed display
+#   strings. The CLIENT owns SPATIAL realization: cells, day columns, week-
+#   boundary segmentation, lane-packing, overlap columns, overflow slicing
+#   ("+N more"), virtualization, drag previews, optimistic/offline recompute,
+#   and all pixel geometry. The contract carries NO pixel/lane/width/coordinate
+#   values and never turns the BFF into a remote rendering engine.
+#   `weekStart` is a BFF-resolved preference returned with the screen; it is
+#   NEVER a request parameter — the client owns grid construction.
+#
+# ── Conventions ─────────────────────────────────────────────────────────────
+#   - JSON is camelCase.
+#   - Events are a discriminated union on the STRING `kind` (D-13 #1). Every
+#     union in this contract discriminates on a string: event `kind`, item
+#     `itemType`, body `component`, event-presentation `component`, action
+#     `type`, view-selection `type`.
+#   - All date ranges are INCLUSIVE of both endpoints, uniformly (D-13 #2): the
+#     `start`/`end` request params, CalendarRange, and AllDayEvent.endDate all
+#     name the last covered date. The sole inclusive↔exclusive conversion lives
+#     in the BFF's Google adapter. Clients never convert.
+#   - Two identifier families, both platform-neutral and version-in-name
+#     (`family.vN`), versioned on INDEPENDENT clocks:
+#       • itemType (`calendar.event.v1`) — DATA axis; selects the props schema.
+#       • component (`calendar.month.v1` for canvases; `calendar.event.<rep>.v1`
+#         for event presentations) — UI axis; selects the render component.
+#     The version token is part of the discriminator. RULES: bump `vN` ONLY on a
+#     breaking schema change for that identifier's thing (props for itemType, the
+#     render component's payload for component) — new mapping entry + type-safe
+#     migration window; additive changes use an optional field + a `schemaVersion`
+#     bump, name unchanged. `schemaVersion` is envelope-level and independent of
+#     `vN`. A/B / experiment buckets are NEVER part of the discriminator-bound
+#     name (unbounded values can't be statically mapped, and a same-schema variant
+#     must not fork the type) — resolve A/B server-side or via a non-discriminating
+#     presentation/telemetry field.
+#     CODEGEN NOTE: smoke-test dotted, digit-bearing discriminator values
+#     (`calendar.event.monthTimedMarker.v1`) against the Kotlin generator at the
+#     B-3 scaffold — some generators sanitize separators in generated type names.
+#   - serverTime is an NTP-disciplined UTC instant; clients derive "today" by
+#     converting into timeZone, never from the device clock.
+#   - Presentation styles are SEMANTIC only (styleVariant / styleToken); never
+#     width/margin/height/offset.
+#
+# ── Changelog v0.0.0 → v0.1.0 ───────────────────────────────────────────────
+#   D-13 #1  : CalendarEvent union now discriminates on string `kind` (+ formal
+#              discriminator/mapping); `isAllDay` removed everywhere.
+#   D-13 #2  : AllDayEvent.endDate confirmed inclusive; adapter round-trip note.
+#   D-13 #3  : RESOLVED — per-event presentation+region (no flat-vs-split); see
+#              PresentedCalendarEvent. Server assigns region (may diverge from
+#              kind, e.g. long timed event → all-day band); client packs/segments.
+#   D-13 #4  : RESOLVED — client owns grid construction, so month weekday-name
+#              headers are client-formatted (Intl). Date-specific column headers
+#              (timegrid CalendarDayColumn.headerLabel) stay server-emitted.
+#   D-13 #5  : chipDensity keeps {level, maxSubtitleLines}; source vs resolved
+#              authority sharpened in descriptions.
+#   Codex §1 : Dropped generic `data` wrapper and the `shell` misnomer; one
+#              `screen` object holds chrome + body. Errors are RFC 7807.
+#   Codex §2 : `body` is a typed, version-in-name component union (CalendarBody),
+#              discriminator on `component`; props bound per component.
+#   Codex §3 : PresentedCalendarEvent = { itemType, presentation, props }.
+#              props is the canonical CalendarEvent; presentation is a typed
+#              union. (Trim: per-event integer componentVersion dropped — version
+#              is in the name.) The DATA discriminator is `itemType`
+#              (calendar.event.v1), the future event/task/reminder selector; the
+#              UI discriminator is `presentation.component`
+#              (calendar.event.<rep>.v1), versioned independently.
+#   Post-D-13: month presentations recut on fill-vs-marker — all-day (single +
+#              multi-day) = monthAllDayBar (chipStyle applies); timed =
+#              monthTimedMarker (dot from `accent` + single combined `line`).
+#              Each presentation is a versioned UI component via
+#              `presentation.component`; wrapper `component` renamed `itemType`.
+#   Codex §4 : subtitleLines → PresentationLine { text, iconToken? }; plus a
+#              leadingIconToken on the event presentation.
+#   Codex §5 : timeGrid unifies N-day + week via column count; view-model field
+#              `days` → `columns`; request param `days` → `dayCount`.
+#   Codex §5 : CalendarViewSelection (typed, carries dayCount) drives active
+#              state, switcher options, and switch-view actions.
+#   Codex §6 : Agenda is a Calendar view option, not a nav destination. (The
+#              specific destination list is product IA, not contract.)
+#   Codex §7 : Action is a real discriminated union.
+#   #4 micro : title + accessibilityLabel moved to presentation; props is now
+#              pure identity + interaction + temporal.
+#
+# ── Changelog v0.1.0 → v0.2.0 (BREAKING) ────────────────────────────────────
+#   Theme    : `resolvedPreferences.theme` REMOVED. It was a `light|dark|system`
+#              string enum; the theme reference is now the REQUIRED envelope
+#              field `theme: ThemeRef {id, version}`. Moved to the envelope
+#              because /screens/event-detail has no resolvedPreferences block,
+#              so a deep link there could not discover the theme at all.
+#   Theme    : NEW optional envelope field `themeDocument: ThemeDocument`, sent
+#              only when the request's `knownTheme` did not name the active
+#              theme. INVARIANT: its id/version MUST equal `theme`'s.
+#   Theme    : NEW shared parameter component `KnownTheme` (`knownTheme` query),
+#              referenced by every /screens/* operation.
+#   Theme    : NEW `POST /preferences/theme/seed` — the server half of first-run
+#              seeding, create-if-absent.
+#   Theme    : NEW schemas ThemeRef / ThemeDocument / ColorValue / ShadowValue.
+#
+#   WHY THIS IS A MAJOR-SHAPED BREAK AT 0.x: a client selecting a parser on
+#   `schemaVersion` cannot otherwise distinguish the incompatible payload, and
+#   models generated against 0.1.0 reject the object where they expect a string
+#   enum. `assertSupportedSchemaVersion` in astro-web fails closed on the new
+#   value, which is the intended behaviour: a stale client must not silently
+#   mis-render a changed contract.
+# ============================================================================
+
+info:
+  title: Astro Planner BFF
+  version: 0.2.0
+  description: >
+    View-model API for the Astro Planner web and mobile clients. M1 read
+    surface: five calendar views (month, agenda, time-grid [N-day + week],
+    year) behind a shared canonical core.
+
+servers:
+  - url: /api
+    description: Same-origin via Firebase Hosting rewrite to BFF Cloud Run
+
+tags:
+  - name: screens
+    description: Read endpoints returning full screen view-models
+  - name: actions
+    description: Mutation endpoints (v0 stubs)
+
+paths:
+  /screens/calendar:
+    get:
+      tags: [screens]
+      operationId: getCalendarScreen
+      summary: Calendar screen for a date range, in one of five views
+      description: >
+        Range-based. The client computes its own visible window from its
+        week-start preference and requests [start, end]. `view` selects the
+        view-model shape returned in `screen.body.props`. Week-start is NOT a
+        request parameter — the client owns grid layout. The request uses flat
+        query params; the response carries the typed CalendarViewSelection.
+      parameters:
+        - name: view
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [month, agenda, timegrid, year]
+        - name: start
+          in: query
+          required: true
+          description: Inclusive first date of the requested window (date-only).
+          schema: { type: string, format: date, examples: ["2026-03-30"] }
+        - name: end
+          in: query
+          required: true
+          description: Inclusive last date of the requested window (date-only).
+          schema: { type: string, format: date, examples: ["2026-05-10"] }
+        - name: tz
+          in: query
+          required: true
+          description: IANA time zone used for all server-side date/time formatting.
+          schema: { type: string, examples: ["Asia/Bangkok"] }
+        - name: locale
+          in: query
+          required: true
+          description: BCP-47 locale used for all server-formatted strings.
+          schema: { type: string, examples: ["th-TH"] }
+        - name: dayCount
+          in: query
+          required: false
+          description: >
+            Column count for `view=timegrid` (1–7; 1–5 = N-day, 7 = week).
+            Ignored by other views. (Renamed from `days`.)
+          schema: { type: integer, minimum: 1, maximum: 7, examples: [3] }
+        - $ref: "#/components/parameters/KnownTheme"
+      responses:
+        "200":
+          description: Calendar screen view-model
+          headers:
+            ETag:
+              schema: { type: string }
+              description: Screen-level etag for conditional GETs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarScreenResponse"
+        "400": { $ref: "#/components/responses/ProblemResponse" }
+        "404": { $ref: "#/components/responses/ProblemResponse" }
+        default: { $ref: "#/components/responses/ProblemResponse" }
+
+  /screens/event-detail/{eventId}:
+    get:
+      tags: [screens]
+      operationId: getEventDetail
+      summary: Event detail view-model (v0 stub)
+      description: Stub for M1; fleshed out when the detail screen is built. Returns the canonical event under `event`.
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: tz
+          in: query
+          required: true
+          schema: { type: string }
+        - name: locale
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/KnownTheme"
+      responses:
+        "200":
+          description: Event detail (stub returns the canonical event)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [schemaVersion, serverTime, locale, timeZone, theme, event]
+                properties:
+                  schemaVersion: { type: string, examples: ["0.2.0"] }
+                  serverTime: { type: string, format: date-time }
+                  locale: { type: string }
+                  timeZone: { type: string }
+                  theme:
+                    $ref: "#/components/schemas/ThemeRef"
+                    description: >
+                      Required, exactly as on the calendar screen. A deep link
+                      that opens this screen first must be able to discover the
+                      active theme without going via /screens/calendar.
+                  themeDocument:
+                    $ref: "#/components/schemas/ThemeDocument"
+                    description: >
+                      Same conditional rule and same id/version invariant as
+                      CalendarScreenResponse.themeDocument.
+                  event: { $ref: "#/components/schemas/CalendarEvent" }
+        "404": { $ref: "#/components/responses/ProblemResponse" }
+        default: { $ref: "#/components/responses/ProblemResponse" }
+
+  /preferences/theme/seed:
+    post:
+      tags: [preferences]
+      operationId: seedThemePreference
+      summary: First-run theme seeding (create-if-absent)
+      description: >
+        The server half of first-run seeding. There is no follow-system mode, so
+        the OS scheme is consulted EXACTLY ONCE — when no stored theme preference
+        exists — and the result becomes an ordinary stored preference that a later
+        OS change does not move.
+
+        Clients call this only when the envelope's `theme` indicates no preference
+        has been established. Every client platform must implement it, not just
+        web: an account's first run may happen on mobile, and nothing else would
+        seed the preference.
+
+        CREATE-IF-ABSENT, never overwrite. The response always carries the
+        EFFECTIVE preference, so the call is idempotent and safe to retry:
+
+          - 201 — no preference existed; the reported scheme seeded it.
+          - 200 — a preference already existed and is returned UNCHANGED. This is
+            the correct outcome for two concurrent first runs, and for a client
+            that retries after a dropped response. The client adopts the returned
+            value rather than its own report.
+
+        The server never trusts the reported scheme as an identity or authorization
+        input; it selects between the built-in `light` and `dark` ids only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [colorScheme]
+              properties:
+                colorScheme:
+                  type: string
+                  enum: [light, dark]
+                  description: >
+                    The OS scheme observed at first run (web: `prefers-color-scheme`).
+                    A REPORT, not a binding — the OS is never consulted again.
+      responses:
+        "200":
+          description: A preference already existed; returned unchanged.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ThemeRef" }
+        "201":
+          description: Preference created from the reported scheme.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ThemeRef" }
+        "400": { $ref: "#/components/responses/ProblemResponse" }
+        default: { $ref: "#/components/responses/ProblemResponse" }
+
+  /actions/events:
+    post:
+      tags: [actions]
+      operationId: createEvent
+      summary: Create an event (v0 stub)
+      description: >
+        Mutation stub. Clients send an `Idempotency-Key` header; responses will
+        return the updated entity plus cache-invalidation keys. Body schema
+        deferred past the M1 read surface.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "501": { description: Not implemented in M1 read surface }
+        default: { $ref: "#/components/responses/ProblemResponse" }
+
+  /actions/events/{eventId}:
+    patch:
+      tags: [actions]
+      operationId: updateEvent
+      summary: Update an event (v0 stub)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          description: Entity version/etag (CalendarEvent.version) for optimistic concurrency.
+          schema: { type: string }
+      responses:
+        "501": { description: Not implemented in M1 read surface }
+        "412": { $ref: "#/components/responses/ProblemResponse" }
+        default: { $ref: "#/components/responses/ProblemResponse" }
+
+components:
+
+  parameters:
+    # Shared so every /screens/* operation negotiates the theme identically.
+    # Defined once because the alternative -- hand-copying it per operation --
+    # is exactly how /screens/event-detail shipped without it.
+    KnownTheme:
+      name: knownTheme
+      in: query
+      required: false
+      description: >
+        The `id@version` of the theme document the client already holds — bundled
+        at build time, or in its validated local cache. The server OMITS
+        `themeDocument` from the response when this equals the active theme;
+        otherwise it includes the full document. Omitting this parameter always
+        yields the document.
+
+        Compare on `id@version`, never on `id` alone: a built-in whose tokens were
+        republished keeps its id, and a client rendering its stale bundled copy
+        would disagree with the per-calendar triples the server resolved against
+        the current one.
+
+        This is an etag input.
+      schema:
+        type: string
+        pattern: '^[a-z][a-z0-9-]{0,31}@[A-Za-z0-9._-]{1,64}$'
+        examples: ["light@3"]
+
+  responses:
+    ProblemResponse:
+      description: RFC 7807 problem details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+
+    # ----------------------------------------------------------------------
+    # Errors — RFC 7807 (replaces the universal { data, error } envelope)
+    # ----------------------------------------------------------------------
+    ProblemDetails:
+      type: object
+      description: RFC 7807 Problem Details.
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri, examples: ["about:blank"] }
+        title: { type: string, examples: ["Invalid range"] }
+        status: { type: integer, examples: [400] }
+        detail: { type: string }
+        instance: { type: string, format: uri }
+      additionalProperties: true
+
+    # ----------------------------------------------------------------------
+    # Top-level screen response (no generic `data` wrapper)
+    # ----------------------------------------------------------------------
+    CalendarScreenResponse:
+      type: object
+      required: [schemaVersion, serverTime, locale, timeZone, theme, screen]
+      properties:
+        schemaVersion:
+          type: string
+          description: Envelope schema version (independent of component `vN`).
+          examples: ["0.2.0"]
+        serverTime:
+          type: string
+          format: date-time
+          description: >
+            Server-authoritative, NTP-disciplined UTC instant. Clients derive
+            "today" by converting into `timeZone` and truncating to date, and
+            seed a day-rollover timer from it. Never use the device clock.
+          examples: ["2026-04-16T03:30:00Z"]
+        locale: { type: string, examples: ["th-TH"] }
+        timeZone: { type: string, examples: ["Asia/Bangkok"] }
+        theme:
+          $ref: "#/components/schemas/ThemeRef"
+          description: >
+            Identifies the active theme. REQUIRED on every screen response.
+
+            It lives on the envelope rather than inside `resolvedPreferences`
+            because it must be answerable on screens that have no preferences
+            block at all — `/screens/event-detail` shipped without any way to
+            discover the theme precisely because the reference was nested inside
+            one screen's preferences.
+        themeDocument:
+          $ref: "#/components/schemas/ThemeDocument"
+          description: >
+            The active theme document. OPTIONAL: present only when the request's
+            `knownTheme` did not name the active theme's `id@version` (or was
+            omitted). Its absence NEVER means "no theme" — the active theme is
+            always identified by the envelope's `theme`.
+
+            INVARIANT: when present, `themeDocument.id` MUST equal `theme.id` and
+            `themeDocument.version` MUST equal `theme.version`. The schema alone
+            cannot express this, so the BFF asserts it in tests and the client
+            MUST verify it before applying. Without the check a response pairing
+            `theme: dark@5` with a valid document for `light@5` satisfies both
+            schemas, and the client would apply light tokens over triples resolved
+            for dark — defeating the atomicity that inline delivery exists to
+            provide. A client that sees a mismatch MUST discard the document and
+            fall back, never apply it.
+
+            When present and matching, this document and the per-calendar color
+            triples in `screen.body` were resolved together, so they cannot
+            disagree.
+        screen: { $ref: "#/components/schemas/CalendarScreen" }
+
+    CalendarScreen:
+      type: object
+      description: >
+        The complete returned screen: identity, chrome (navigation, view
+        switcher), resolved preferences, and the typed body component.
+      required: [id, title, navigation, viewSwitcher, resolvedPreferences, body]
+      properties:
+        id: { type: string, examples: ["calendar"] }
+        titleToken: { type: string, examples: ["screen.calendar.title"] }
+        title:
+          type: string
+          description: Contextual page heading, server-formatted.
+          examples: ["เมษายน 2569"]
+        navigation: { $ref: "#/components/schemas/Navigation" }
+        viewSwitcher: { $ref: "#/components/schemas/ViewSwitcher" }
+        resolvedPreferences: { $ref: "#/components/schemas/ResolvedPreferences" }
+        body: { $ref: "#/components/schemas/CalendarBody" }
+
+    # ----------------------------------------------------------------------
+    # Navigation (product destinations; agenda is NOT here — it's a view)
+    # ----------------------------------------------------------------------
+    Navigation:
+      type: object
+      description: >
+        Semantic, platform-agnostic destinations. Web renders a sidebar; mobile
+        renders bottom tabs — from the same list. The concrete destination set
+        is product IA, not fixed by this contract.
+      required: [destinations]
+      properties:
+        destinations:
+          type: array
+          items: { $ref: "#/components/schemas/NavDestination" }
+
+    NavDestination:
+      type: object
+      required: [id, label, action]
+      properties:
+        id: { type: string, examples: ["calendar", "expense"] }
+        labelToken: { type: string }
+        label: { type: string }
+        iconToken: { type: string, examples: ["icon.calendar"] }
+        action: { $ref: "#/components/schemas/Action" }
+
+    # ----------------------------------------------------------------------
+    # View switcher + typed view selection (carries timegrid dayCount)
+    # ----------------------------------------------------------------------
+    ViewSwitcher:
+      type: object
+      required: [activeSelection, options]
+      properties:
+        activeSelection: { $ref: "#/components/schemas/CalendarViewSelection" }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ViewSwitcherOption" }
+
+    ViewSwitcherOption:
+      type: object
+      required: [id, label, selection]
+      properties:
+        id: { type: string, examples: ["three-days", "week"] }
+        label: { type: string, examples: ["3 Days", "Week"] }
+        labelToken: { type: string }
+        selection: { $ref: "#/components/schemas/CalendarViewSelection" }
+
+    CalendarViewSelection:
+      description: >
+        Typed selection used for active state, switcher options, switch-view
+        actions, and URL/request construction. timeGrid carries dayCount so
+        "3 Days" and "Week" are distinguishable (both are timeGrid).
+      oneOf:
+        - $ref: "#/components/schemas/AgendaViewSelection"
+        - $ref: "#/components/schemas/TimeGridViewSelection"
+        - $ref: "#/components/schemas/MonthViewSelection"
+        - $ref: "#/components/schemas/YearViewSelection"
+      discriminator:
+        propertyName: type
+        mapping:
+          agenda: "#/components/schemas/AgendaViewSelection"
+          timeGrid: "#/components/schemas/TimeGridViewSelection"
+          month: "#/components/schemas/MonthViewSelection"
+          year: "#/components/schemas/YearViewSelection"
+
+    AgendaViewSelection:
+      type: object
+      required: [type]
+      properties:
+        type: { const: agenda }
+
+    TimeGridViewSelection:
+      type: object
+      required: [type, dayCount]
+      properties:
+        type: { const: timeGrid }
+        dayCount: { type: integer, minimum: 1, maximum: 7 }
+
+    MonthViewSelection:
+      type: object
+      required: [type]
+      properties:
+        type: { const: month }
+
+    YearViewSelection:
+      type: object
+      required: [type]
+      properties:
+        type: { const: year }
+
+    # ----------------------------------------------------------------------
+    # Body — typed, version-in-name component union (discriminator = component)
+    # ----------------------------------------------------------------------
+    CalendarBody:
+      description: >
+        The server selects the body component and its semantic role; the client
+        decides size, location, scroll, and responsive realization. Each
+        component name is statically bound to its props schema — a year
+        component carrying month props is not representable.
+      oneOf:
+        - $ref: "#/components/schemas/MonthBody"
+        - $ref: "#/components/schemas/AgendaBody"
+        - $ref: "#/components/schemas/TimeGridBody"
+        - $ref: "#/components/schemas/YearBody"
+      discriminator:
+        propertyName: component
+        mapping:
+          "calendar.month.v1": "#/components/schemas/MonthBody"
+          "calendar.agenda.v1": "#/components/schemas/AgendaBody"
+          "calendar.timeGrid.v1": "#/components/schemas/TimeGridBody"
+          "calendar.year.v1": "#/components/schemas/YearBody"
+
+    MonthBody:
+      type: object
+      required: [component, props]
+      properties:
+        component: { const: "calendar.month.v1" }
+        props: { $ref: "#/components/schemas/CalendarMonthViewModel" }
+
+    AgendaBody:
+      type: object
+      required: [component, props]
+      properties:
+        component: { const: "calendar.agenda.v1" }
+        props: { $ref: "#/components/schemas/CalendarAgendaViewModel" }
+
+    TimeGridBody:
+      type: object
+      required: [component, props]
+      properties:
+        component: { const: "calendar.timeGrid.v1" }
+        props: { $ref: "#/components/schemas/CalendarTimeGridViewModel" }
+
+    YearBody:
+      type: object
+      required: [component, props]
+      properties:
+        component: { const: "calendar.year.v1" }
+        props: { $ref: "#/components/schemas/CalendarYearViewModel" }
+
+    # ----------------------------------------------------------------------
+    # Server-resolved UI preferences (policy → BFF; geometry stays client-side)
+    # ----------------------------------------------------------------------
+    ResolvedPreferences:
+      type: object
+      description: >
+        User UI preferences resolved server-side so web and mobile render
+        consistently. Geometry (grid sizing, lane-packing, segmentation, drag
+        snap, overflow slicing) is NOT here — it is client-owned.
+      required: [weekStart, chipStyle, chipDensity]
+      properties:
+        weekStart:
+          type: string
+          enum: [monday, sunday]
+          description: Client orders its grid from this; never sent in requests.
+        chipStyle:
+          type: string
+          enum: [accentEdge, pastel]
+          description: >
+            Fill treatment for the FILLED-BAR presentations only
+            (monthAllDayBar, timeGridAllDayBar): accentEdge = solid left edge in
+            the calendar accent color; pastel = no edge (low-opacity background
+            only). Does NOT apply to the month timed dot marker (no fill), to
+            time-grid blocks, or to agenda cards.
+        chipDensity:
+          type: object
+          required: [level, maxSubtitleLines]
+          description: >
+            Source + resolved pair (D-13 #5). `level` is the user's chosen
+            preset (what a settings UI binds its segmented control to);
+            `maxSubtitleLines` is the BFF's resolution of that preset into a
+            concrete cap. Related but distinct: the preset→cap mapping may
+            change server-side without `level` changing.
+          properties:
+            level:
+              type: string
+              enum: [compact, comfortable, detailed]
+              description: >
+                Authoritative for WHICH preset is active (settings UI, preset
+                identity). Clients MUST NOT re-derive a line cap from this.
+            maxSubtitleLines:
+              type: integer
+              minimum: 0
+              description: >
+                Authoritative for HOW MANY subtitle lines to render (title +
+                first N). Clients MUST NOT infer the preset from this value.
+        # NOTE: `theme` deliberately does NOT live here. It is an envelope-level
+        # field, because it must be answerable on screen responses that carry no
+        # ResolvedPreferences at all. See CalendarScreenResponse.theme.
+
+    # ----------------------------------------------------------------------
+    # Theme: reference + document. See ADR-theme-token-architecture.
+    # Values are TYPED and PLATFORM-NEUTRAL — never CSS strings, because
+    # astro-mobile consumes these same documents and Compose cannot parse CSS.
+    # ----------------------------------------------------------------------
+    ThemeRef:
+      type: object
+      required: [id, version]
+      properties:
+        id:
+          type: string
+          pattern: '^[a-z][a-z0-9-]{0,31}$'
+          description: >
+            Ids beginning `user-` are user-authored; every other id is reserved
+            for built-ins. The split is syntactic so "is this a built-in?" is
+            answerable at boot before any registry loads. Reserved does not mean
+            bundled — only the client's own build says whether it can paint it.
+          examples: ["light", "dark", "user-a1b2"]
+        version:
+          type: string
+          pattern: '^[A-Za-z0-9._-]{1,64}$'
+          description: >
+            Opaque, but NOT unconstrained: it is concatenated into `knownTheme`
+            as `id@version`, so it must be drawn from the character set that
+            parameter accepts. A version outside this grammar could not be
+            expressed in the request at all, forcing the client to omit
+            `knownTheme` and receive the full document on EVERY request —
+            defeating the once-per-theme-change delivery this design exists for.
+
+            Changes on ANY render- or validation-affecting field of the document,
+            not only `tokens`. Pair with `id` to form `knownTheme` and the
+            screen-cache tag.
+          examples: ["3"]
+
+    ThemeDocument:
+      type: object
+      description: >
+        A complete theme — never a partial diff over a base theme. One schema
+        serves both delivery channels: built-in themes are emitted at build time
+        by astro-web's token pipeline (and published as the artifact the BFF
+        consumes to resolve per-calendar triples); user themes are stored by the
+        BFF. `additionalProperties: false` is deliberately NOT set at the
+        document level, so a later envelope field cannot break older clients —
+        exactness applies to the token key set and is enforced by the client's
+        validator, not by this schema.
+      required: [id, colorScheme, version, tokenSetVersion, tokens]
+      properties:
+        id: { type: string, pattern: '^[a-z][a-z0-9-]{0,31}$' }
+        label: { type: string, description: Display name for a settings UI. }
+        version:
+          type: string
+          pattern: '^[A-Za-z0-9._-]{1,64}$'
+          description: >
+            Same grammar as ThemeRef.version — it must survive concatenation into
+            `knownTheme`. MUST equal the version of the ThemeRef that selected
+            this document; see CalendarScreenResponse.themeDocument.
+        tokenSetVersion:
+          type: integer
+          description: >
+            Which era of the semantic vocabulary this document was authored
+            against. METADATA ONLY — it drives the server-side backfill sweep
+            and diagnostics. It is NOT the read-time validation key: readers
+            validate against their OWN supported key set, filling what they
+            require and ignoring what they do not recognize.
+        colorScheme:
+          type: string
+          enum: [light, dark]
+          description: >
+            Drives native control styling, and selects the canonical fallback
+            (`light` or `dark`) used to fill roles a reader requires and this
+            document lacks.
+        tokens:
+          type: object
+          required: [colors, shadows, fonts]
+          properties:
+            colors:
+              type: object
+              additionalProperties: { $ref: "#/components/schemas/ColorValue" }
+            shadows:
+              type: object
+              additionalProperties: { $ref: "#/components/schemas/ShadowValue" }
+            fonts:
+              type: object
+              additionalProperties:
+                type: string
+                description: >
+                  An id from the vendored font allowlist — never a URL and never
+                  a CSS font stack. Font files are parsed by a complex binary
+                  parser with a long CVE history, and a font URL is a clean
+                  exfiltration beacon.
+
+    ColorValue:
+      type: object
+      description: >
+        Six OPAQUE hex digits plus a separate numeric alpha. Eight-digit colors
+        are forbidden: CSS reads #RRGGBBAA while Android's conventional form is
+        #AARRGGBB, so the same eight characters would denote different colors on
+        the two clients. Splitting alpha out makes that ambiguity
+        unrepresentable rather than merely documented.
+      required: [hex]
+      properties:
+        hex: { type: string, pattern: '^#[0-9a-f]{6}$' }
+        alpha:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 1
+          description: >
+            MUST be 1 for every role that participates in a contrast pair — which,
+            of the 18 semantic roles, is all of them EXCEPT `outline-variant` and
+            `scrim`. Two independent reasons, and the schema cannot express either
+            (it does not know which key it is under), so the validator enforces both:
+
+              1. A translucent SURFACE leaves the BFF's per-calendar derivation
+                 underdetermined — the visible surface is a composition with a layer
+                 the server cannot see.
+              2. A translucent role on EITHER side of a contrast pair makes the
+                 required ratio uncomputable from the two colors alone. A theme
+                 setting `alpha < 1` on `primary` or `error-container` would pass a
+                 raw-color comparison and still render below the promised contrast
+                 over a particular backdrop.
+
+            Requiring opacity rather than specifying a compositing backdrop is
+            deliberate: the backdrop varies by screen and by platform, so any fixed
+            choice would validate against a surface the role is not always over.
+            `scrim` is exempt because translucency IS its function, and it has no
+            fixed partner; `outline-variant` is exempt as the hairline grid rule.
+
+    ShadowValue:
+      type: object
+      description: >
+        All magnitudes are FINITE and BOUNDED. Unbounded numbers are not merely
+        untidy: a contract-valid `1e308` becomes Infinity in the 32-bit Float
+        Compose uses, while web may reject, clamp, or attempt to paint an enormous
+        shadow — so a saved theme satisfying the grammar could still break or
+        exhaust a renderer, differently on each platform. The bounds are generous
+        relative to any real elevation ramp and exist to keep the value
+        representable, not to express design intent.
+      required: [offsetX, offsetY, blur, color]
+      properties:
+        offsetX:
+          type: number
+          minimum: -64
+          maximum: 64
+          description: "Density-independent: px on web, dp on Android."
+        offsetY: { type: number, minimum: -64, maximum: 64 }
+        blur:
+          type: number
+          minimum: 0
+          maximum: 128
+          description: A blur radius cannot be negative; CSS discards the whole declaration.
+        spread: { type: number, minimum: -64, maximum: 64, default: 0, description: May be negative. }
+        color: { $ref: "#/components/schemas/ColorValue" }
+
+    # ----------------------------------------------------------------------
+    # Canonical core: Calendar + CalendarEvent (props is pure identity/temporal)
+    # ----------------------------------------------------------------------
+    Calendar:
+      type: object
+      description: A user's calendar (provider link). Referenced by calendarId.
+      required: [id, displayName, color]
+      properties:
+        id: { type: string, examples: ["cal-work"] }
+        displayName: { type: string, examples: ["งาน"] }
+        color: { $ref: "#/components/schemas/CalendarColor" }
+
+    CalendarColor:
+      type: object
+      description: >
+        Per-calendar color triple. Each slot carries a semantic token name and
+        a resolved fallback value. accent = edge; background = low-opacity fill;
+        foreground = text (contrast-checked against background).
+      required:
+        [accentToken, accentColor, backgroundToken, backgroundColor,
+         foregroundToken, foregroundColor]
+      properties:
+        accentToken: { type: string, examples: ["calendar.work.accent"] }
+        accentColor: { type: string, examples: ["#b81311"] }
+        backgroundToken: { type: string, examples: ["calendar.work.background"] }
+        backgroundColor: { type: string, examples: ["#f9dcda"] }
+        foregroundToken: { type: string, examples: ["calendar.work.foreground"] }
+        foregroundColor: { type: string, examples: ["#5c0a09"] }
+
+    CalendarMap:
+      type: object
+      description: Normalized calendars keyed by id.
+      additionalProperties: { $ref: "#/components/schemas/Calendar" }
+
+    EventBase:
+      type: object
+      description: >
+        Canonical event identity + interaction + temporal core. Display strings
+        (title, subtitleLines, icons, accessibilityLabel) live in the wrapping
+        presentation, not here. This object is exactly the mutation/concurrency
+        payload.
+      required: [id, calendarId, kind, permissions, version]
+      properties:
+        id: { type: string }
+        calendarId:
+          type: string
+          description: References a key in the view-model's `calendars` map.
+        kind:
+          type: string
+          enum: [timed, allDay]
+          description: >
+            String discriminator (D-13 #1), narrowed to one value per branch.
+            Clients switch on this (TS `event.kind`; Kotlin sealed `when`).
+        permissions: { $ref: "#/components/schemas/EventPermissions" }
+        version:
+          type: string
+          description: Entity version/etag for optimistic concurrency (If-Match).
+
+    EventPermissions:
+      type: object
+      required: [canEdit, canDelete, canMove]
+      properties:
+        canEdit: { type: boolean }
+        canDelete: { type: boolean }
+        canMove: { type: boolean }
+
+    TimedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventBase"
+        - type: object
+          required: [kind, startAt, endAt]
+          properties:
+            kind: { const: timed }
+            startAt:
+              type: string
+              format: date-time
+              description: Time-zone-aware instant.
+            endAt:
+              type: string
+              format: date-time
+
+    AllDayEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventBase"
+        - type: object
+          required: [kind, startDate, endDate]
+          properties:
+            kind: { const: allDay }
+            startDate:
+              type: string
+              format: date
+              description: Floating date (no time, no zone).
+            endDate:
+              type: string
+              format: date
+              description: >
+                Inclusive last day the event covers (D-13 #2); a single-day
+                all-day event has startDate == endDate. The BFF's Google adapter
+                is the ONLY place that converts to/from Google's exclusive
+                end.date, using pure calendar-date arithmetic (LocalDate ±1 day)
+                — never instant math, since all-day dates are floating (no zone).
+                Adapter round-trip tests MUST cover both a single-day and a
+                multi-day all-day event so a regression cannot silently shorten
+                or extend a span.
+
+    CalendarEvent:
+      description: >
+        Canonical event — discriminated union on the string `kind`. Carried as
+        `props` inside a PresentedCalendarEvent in view-models, and returned
+        directly by the event-detail stub.
+      oneOf:
+        - $ref: "#/components/schemas/TimedEvent"
+        - $ref: "#/components/schemas/AllDayEvent"
+      discriminator:
+        propertyName: kind
+        mapping:
+          timed: "#/components/schemas/TimedEvent"
+          allDay: "#/components/schemas/AllDayEvent"
+
+    # ----------------------------------------------------------------------
+    # Presentation — composed display content + semantic placement (no geometry)
+    # ----------------------------------------------------------------------
+    PresentationLine:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          description: Server-composed, locale/tz-formatted (e.g. "09:30 – 10:30").
+        iconToken:
+          type: string
+          description: Optional leading icon for this line (e.g. "icon.location").
+
+    PresentationContentBase:
+      type: object
+      description: >
+        Display content + semantic style common to all presentation types.
+        Composed and locale/tz-formatted by the BFF (D-13 #4 micro: title and
+        accessibilityLabel live here, not in canonical props).
+      required: [title]
+      properties:
+        title:
+          type: string
+          description: Required event title (bar / marker / block / card).
+        subtitleLines:
+          type: array
+          description: >
+            Ordered, optional. The client renders the first N per
+            resolvedPreferences.chipDensity.maxSubtitleLines, then applies any
+            geometry-dependent clipping.
+          items: { $ref: "#/components/schemas/PresentationLine" }
+        leadingIconToken:
+          type: string
+          description: Optional primary icon for the event/activity. Never inline SVG.
+        accessibilityLabel:
+          type: string
+        styleVariant:
+          type: string
+          description: Optional semantic style override (e.g. "muted"). Never geometry.
+        styleToken:
+          type: string
+          description: Optional semantic style token override (e.g. "calendar.event.travel").
+
+    EventPresentation:
+      description: >
+        The UI component + content for rendering an event in a view. The BFF
+        chooses the component and region (policy — region may diverge from kind,
+        e.g. a long timed event placed in an all-day band). Each `component` names
+        a versioned UI render component (calendar.event.<representation>.vN) and
+        binds to exactly one region, so invalid component×region combinations are
+        not representable. Components are VIEW-SPECIFIC and may evolve and version
+        individually. Month is cut on fill-vs-marker: all-day events (single- AND
+        multi-day) are one filled-bar component; timed events are a dot marker.
+        Time-grid timed = positioned block; agenda timed = card.
+      oneOf:
+        - $ref: "#/components/schemas/MonthAllDayBarPresentation"
+        - $ref: "#/components/schemas/MonthTimedMarkerPresentation"
+        - $ref: "#/components/schemas/TimeGridAllDayBarPresentation"
+        - $ref: "#/components/schemas/EventBlockPresentation"
+        - $ref: "#/components/schemas/EventCardPresentation"
+      discriminator:
+        propertyName: component
+        mapping:
+          "calendar.event.monthAllDayBar.v1": "#/components/schemas/MonthAllDayBarPresentation"
+          "calendar.event.monthTimedMarker.v1": "#/components/schemas/MonthTimedMarkerPresentation"
+          "calendar.event.timeGridAllDayBar.v1": "#/components/schemas/TimeGridAllDayBarPresentation"
+          "calendar.event.block.v1": "#/components/schemas/EventBlockPresentation"
+          "calendar.event.card.v1": "#/components/schemas/EventCardPresentation"
+
+    MonthAllDayBarPresentation:
+      description: >
+        Month all-day representation: a filled bar spanning 1..N day cells
+        (single-day = span of 1; multi-day = span of N) — ONE representation for
+        both. The client computes which cells the bar covers, lane-packs, and
+        segments at week boundaries from props.startDate/endDate + weekStart.
+        Filled per resolvedPreferences.chipStyle (accentEdge | pastel).
+      allOf:
+        - $ref: "#/components/schemas/PresentationContentBase"
+        - type: object
+          required: [component, region]
+          properties:
+            component: { const: "calendar.event.monthAllDayBar.v1" }
+            region: { type: string, const: monthSpanBand }
+
+    MonthTimedMarkerPresentation:
+      description: >
+        Month timed component: a leading calendar-color dot, then a single content
+        line (combined leading time + title, BFF-composed) — one row in a day
+        cell. Does NOT extend PresentationContentBase (no separate title): the
+        text is `line`. The dot color is resolved client-side from
+        calendars[props.calendarId].color.accent — the same calendars-map lookup
+        the client already does for every event; no color is denormalized onto
+        the presentation. chipStyle does NOT apply (no fill). The client buckets
+        markers into the cell and slices overflow ("+N more").
+      type: object
+      required: [component, region, line]
+      properties:
+        component: { const: "calendar.event.monthTimedMarker.v1" }
+        region: { type: string, const: monthCell }
+        line:
+          allOf:
+            - $ref: "#/components/schemas/PresentationLine"
+          description: >
+            The single content line, rendered after the dot. The BFF composes the
+            full text — leading time + title in one string (e.g. "20:00 Tennis
+            with Wish and Trit") — and may carry an optional iconToken. Replaces
+            the former separate title + leadingLine.
+        accessibilityLabel: { type: string }
+
+    TimeGridAllDayBarPresentation:
+      description: >
+        Time-grid all-day representation: a column-spanning bar in the
+        above-grid all-day band. Client lane-packs and segments at column
+        boundaries. Filled per resolvedPreferences.chipStyle. A long timed event
+        may be placed here too — region is server policy and may diverge from
+        kind.
+      allOf:
+        - $ref: "#/components/schemas/PresentationContentBase"
+        - type: object
+          required: [component, region]
+          properties:
+            component: { const: "calendar.event.timeGridAllDayBar.v1" }
+            region: { type: string, const: timeGridAllDayBand }
+
+    EventBlockPresentation:
+      description: Time-positioned block in the time-grid body. Client derives vertical position/height from props startAt/endAt.
+      allOf:
+        - $ref: "#/components/schemas/PresentationContentBase"
+        - type: object
+          required: [component, region]
+          properties:
+            component: { const: "calendar.event.block.v1" }
+            region: { type: string, const: timeGridBody }
+
+    EventCardPresentation:
+      description: Agenda list row.
+      allOf:
+        - $ref: "#/components/schemas/PresentationContentBase"
+        - type: object
+          required: [component, region]
+          properties:
+            component: { const: "calendar.event.card.v1" }
+            region: { type: string, const: agendaList }
+
+    PresentedCalendarEvent:
+      type: object
+      description: >
+        A canonical event placed in a view, across two independent axes plus the
+        data. `itemType` is the DATA/item discriminator — it selects the `props`
+        schema and is reserved for a future item union (calendar.event.v1 /
+        calendar.task.v1 / calendar.reminder.v1); v0 has only events, a single
+        const today, and the view-model `events` arrays become a oneOf on
+        `itemType` additively when siblings land. `presentation.component` is the
+        independent UI/render discriminator — a versioned UI component (e.g.
+        calendar.event.monthTimedMarker.v1). `props` is the canonical
+        CalendarEvent (identity/interaction/temporal). itemType (props/data) and
+        component (UI) version on their own clocks — the cross product is the
+        accepted complexity of treating each representation as its own component.
+      required: [itemType, presentation, props]
+      properties:
+        itemType: { const: "calendar.event.v1" }
+        presentation: { $ref: "#/components/schemas/EventPresentation" }
+        props: { $ref: "#/components/schemas/CalendarEvent" }
+
+    # ----------------------------------------------------------------------
+    # View-models — each references the canonical core via PresentedCalendarEvent
+    # (year is aggregate-only and carries no events)
+    # ----------------------------------------------------------------------
+    CalendarRange:
+      type: object
+      required: [start, end]
+      properties:
+        start: { type: string, format: date, description: Inclusive first date of the window. }
+        end: { type: string, format: date, description: Inclusive last date of the window. }
+
+    CalendarMonthViewModel:
+      type: object
+      description: >
+        Month view. The client builds the 6×7 grid from `range` + monthAnchor +
+        weekStart, buckets events by presentation.region (monthSpanBand →
+        all-day filled bars, lane-packed + segmented at week boundaries;
+        monthCell → timed dot markers, sliced to a fixed count + "+N more").
+        Weekday-name column headers are formatted client-side via Intl from
+        `locale`. No geometry here.
+      required: [range, monthAnchor, headerLabel, calendars, events]
+      properties:
+        range: { $ref: "#/components/schemas/CalendarRange" }
+        monthAnchor:
+          type: string
+          format: date
+          description: First day of the month this view is centered on.
+        headerLabel:
+          type: string
+          description: Server-formatted Buddhist-era month + year.
+          examples: ["เมษายน 2569"]
+        calendars: { $ref: "#/components/schemas/CalendarMap" }
+        events:
+          type: array
+          description: >
+            Flat, server-sorted in a stable display order: all-day bars first
+            (by props.startDate, then id), then timed markers (by props.startAt,
+            then id). The client buckets by presentation.region; it never
+            re-sorts. id is the final tiebreak for optimistic-update stability.
+          items: { $ref: "#/components/schemas/PresentedCalendarEvent" }
+
+    CalendarAgendaViewModel:
+      type: object
+      description: Agenda list. Events pre-grouped by day with server-formatted day headers; each rendered as a card.
+      required: [range, calendars, days]
+      properties:
+        range: { $ref: "#/components/schemas/CalendarRange" }
+        calendars: { $ref: "#/components/schemas/CalendarMap" }
+        days:
+          type: array
+          items:
+            type: object
+            required: [date, headerLabel, events]
+            properties:
+              date: { type: string, format: date }
+              headerLabel:
+                type: string
+                examples: ["พฤหัสบดี 16 เมษายน"]
+              events:
+                type: array
+                description: Server-sorted (all-day first, then by start, then id).
+                items: { $ref: "#/components/schemas/PresentedCalendarEvent" }
+
+    CalendarTimeGridViewModel:
+      type: object
+      description: >
+        Time grid for N-day (1–5) and week (7), parameterized by column count.
+        The client derives each block's vertical position/height from
+        props.startAt/endAt and lane-packs overlaps; events with presentation
+        region timeGridAllDayBand render in the above-grid band. The visible
+        hour window is a client default (no geometry in the contract).
+      required: [range, columns, calendars, events]
+      properties:
+        range: { $ref: "#/components/schemas/CalendarRange" }
+        columns:
+          type: array
+          description: Day columns, in order; length is the day count (1–7).
+          minItems: 1
+          maxItems: 7
+          items: { $ref: "#/components/schemas/CalendarDayColumn" }
+        calendars: { $ref: "#/components/schemas/CalendarMap" }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/PresentedCalendarEvent" }
+
+    CalendarDayColumn:
+      type: object
+      required: [date, headerLabel]
+      properties:
+        date: { type: string, format: date }
+        headerLabel:
+          type: string
+          description: Date-specific column header, server-formatted.
+          examples: ["พฤ. 16"]
+
+    CalendarYearViewModel:
+      type: object
+      description: >
+        Year overview. Per-day aggregates only (count + dominant calendar for a
+        density dot) — never full events. The client renders 12 mini-months and
+        resolves the dot color from `calendars[dominantCalendarId]`.
+      required: [year, headerLabel, range, calendars, days]
+      properties:
+        year:
+          type: integer
+          description: Gregorian year (the anchor); display is via headerLabel.
+          examples: [2026]
+        headerLabel:
+          type: string
+          description: Server-formatted Buddhist-era year.
+          examples: ["2569"]
+        range: { $ref: "#/components/schemas/CalendarRange" }
+        calendars: { $ref: "#/components/schemas/CalendarMap" }
+        days:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date: { type: string, format: date }
+              count:
+                type: integer
+                minimum: 0
+                description: Number of events on this day.
+              dominantCalendarId:
+                type: string
+                description: Calendar whose color drives the density dot. Absent if count==0.
+
+    # ----------------------------------------------------------------------
+    # Actions — real discriminated union (discriminator = type)
+    # ----------------------------------------------------------------------
+    Action:
+      description: Client action model. Each branch requires exactly its payload.
+      oneOf:
+        - $ref: "#/components/schemas/NavigateAction"
+        - $ref: "#/components/schemas/OpenUrlAction"
+        - $ref: "#/components/schemas/SwitchCalendarViewAction"
+        - $ref: "#/components/schemas/OpenEventDetailAction"
+        - $ref: "#/components/schemas/PresentModalAction"
+      discriminator:
+        propertyName: type
+        mapping:
+          navigate: "#/components/schemas/NavigateAction"
+          openUrl: "#/components/schemas/OpenUrlAction"
+          switchCalendarView: "#/components/schemas/SwitchCalendarViewAction"
+          openEventDetail: "#/components/schemas/OpenEventDetailAction"
+          presentModal: "#/components/schemas/PresentModalAction"
+
+    NavigateAction:
+      type: object
+      required: [type, screen]
+      properties:
+        type: { const: navigate }
+        screen: { type: string, description: Target screen id. }
+
+    OpenUrlAction:
+      type: object
+      required: [type, url]
+      properties:
+        type: { const: openUrl }
+        url: { type: string, format: uri }
+
+    SwitchCalendarViewAction:
+      type: object
+      required: [type, selection]
+      properties:
+        type: { const: switchCalendarView }
+        selection: { $ref: "#/components/schemas/CalendarViewSelection" }
+
+    OpenEventDetailAction:
+      type: object
+      required: [type, eventId]
+      properties:
+        type: { const: openEventDetail }
+        eventId: { type: string }
+
+    PresentModalAction:
+      type: object
+      description: Present a modal (e.g. overflow "+N more", or a day's events).
+      required: [type, eventIds]
+      properties:
+        type: { const: presentModal }
+        eventIds:
+          type: array
+          items: { type: string }
