@@ -40,21 +40,27 @@ class ContractParityTest {
 
     @Test
     fun deliversAThemeDocumentMatchingTheEnvelopeThemeReference() {
-        val response = decodeMonthScreenFixture()
-
-        val themeDocument =
-            assertNotNull(
-                response.themeDocument,
-                "The vendored fixture is the full-document response; a null document here means " +
-                    "it was regenerated from a knownTheme cache hit and no longer exercises the " +
-                    "document at all.",
-            )
-        // A response pairing one theme's reference with another theme's document satisfies the
-        // schema, so the pair is checked rather than assumed. Both halves: a matching id with a
-        // stale version paints tokens the reference no longer describes.
-        assertEquals(response.theme.id, themeDocument.id)
-        assertEquals(response.theme.version, themeDocument.version)
+        assertThemeDocumentMatchesReference(decodeMonthScreenFixture())
     }
+}
+
+/**
+ * Asserts the delivered theme document describes the theme the envelope names.
+ *
+ * A response pairing one theme's reference with another theme's document satisfies the schema, so
+ * the pair is checked rather than assumed. Both halves matter: a matching id with a stale version
+ * paints tokens the reference no longer describes.
+ */
+internal fun assertThemeDocumentMatchesReference(response: CalendarScreenResponse) {
+    val themeDocument =
+        assertNotNull(
+            response.themeDocument,
+            "The vendored fixture is the full-document response; a null document here means it " +
+                "was regenerated from a knownTheme cache hit and no longer exercises the document " +
+                "at all.",
+        )
+    assertEquals(response.theme.id, themeDocument.id)
+    assertEquals(response.theme.version, themeDocument.version)
 }
 
 /** The strict codec these tests decode through — see [ContractParityTest]. */
@@ -75,10 +81,17 @@ internal fun monthScreenFixtureJson(): JsonObject =
 
 /** Decodes [monthScreenFixtureJson] through the production models with the strict codec. */
 internal fun decodeMonthScreenFixture(): CalendarScreenResponse =
-    strictContractJson.decodeFromJsonElement(
-        CalendarScreenResponse.serializer(),
-        monthScreenFixtureJson(),
-    )
+    decodeCalendarScreenResponse(monthScreenFixtureJson())
+
+/**
+ * Decodes an arbitrary screen envelope through the production models with the strict codec.
+ *
+ * Taking the envelope as a parameter is what lets a deliberately perturbed copy of the fixture run
+ * through the very same decode path the parity checks use, so a mutation proves those checks bite
+ * rather than proving something about a parallel decode.
+ */
+internal fun decodeCalendarScreenResponse(envelope: JsonObject): CalendarScreenResponse =
+    strictContractJson.decodeFromJsonElement(CalendarScreenResponse.serializer(), envelope)
 
 private fun withoutAnnotationKeys(element: JsonElement): JsonElement =
     when (element) {
