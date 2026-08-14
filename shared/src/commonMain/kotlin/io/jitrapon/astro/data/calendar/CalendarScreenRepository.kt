@@ -18,8 +18,13 @@ import io.jitrapon.astro.data.Result
  *
  * Adding one later is a change confined to this class: callers already treat every fetch as a
  * suspending request for the screen matching a request, which is equally true of a cached answer.
+ *
+ * The type is public — it is what iOS and Android resolve from the graph — but its constructor is
+ * not, because [CalendarScreenApi] is internal and a public constructor taking one would put Ktor
+ * on the iOS framework's generated surface. The graph is the only thing that builds one.
  */
-class CalendarScreenRepository(private val calendarScreenApi: CalendarScreenApi) {
+class CalendarScreenRepository
+internal constructor(private val calendarScreenApi: CalendarScreenApi) {
 
     /**
      * Fetches the screen matching [request], forwarding the API client's [Result] unchanged.

@@ -18,8 +18,13 @@ import kotlinx.coroutines.CancellationException
  *
  * [baseUrl] is injected — origin and scheme belong to the environment the app was built for, and a
  * default baked in here would ship one environment's host to all of them.
+ *
+ * `internal` because the dependency graph is the only thing that constructs one, and because a
+ * public constructor taking an `HttpClient` would drag Ktor's entire type graph into the iOS
+ * framework's generated header — where a Swift call site could bind to it, turning a transport swap
+ * into an iOS-app refactor. Callers reach this client through [CalendarScreenRepository] instead.
  */
-class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: String) {
+internal class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: String) {
 
     private val calendarScreenUrl: String = baseUrl.trimEnd('/') + CALENDAR_SCREEN_PATH
 
