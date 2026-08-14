@@ -27,7 +27,8 @@ class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: String) {
      * Fetches one calendar screen.
      *
      * Every failure a caller can act on arrives as [Result.Error] rather than as a thrown
-     * exception: no response, a non-2xx status, or a body that does not decode.
+     * exception: no response, a non-2xx status, a body that does not decode, or a body that decodes
+     * but declares a schema version this client does not support.
      *
      * Cancellation is the one exception, and it is deliberately NOT one of those failures — it
      * propagates out untouched. A cancelled fetch has no caller left to answer: converting it into
@@ -37,7 +38,9 @@ class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: String) {
     suspend fun fetchCalendarScreen(
         request: CalendarScreenRequest
     ): Result<CalendarScreenResponse> {
-        val exchange = runCatching { requestCalendarScreen(request) }
+        val exchange = runCatching {
+            requestCalendarScreen(request).requireSupportedSchemaVersion()
+        }
         return exchange.fold(onSuccess = { Result.Success(it) }, onFailure = { asFetchError(it) })
     }
 
@@ -77,4 +80,21 @@ class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: String) {
     private companion object {
         const val CALENDAR_SCREEN_PATH = "/screens/calendar"
     }
+}
+
+/**
+ * Returns this response when its envelope declares exactly [SUPPORTED_SCHEMA_VERSION], and throws
+ * [UnsupportedSchemaVersionException] otherwise.
+ *
+ * This is the counterweight to decoding leniently. Unknown keys are ignored so that a field the
+ * backend adds cannot break a client already in users' hands — which means a response from an
+ * incompatible contract would otherwise deserialize into these models with defaults for everything
+ * it no longer carries, and reach the caller as a perfectly ordinary screen. Equality is exact in
+ * both directions: a version below the supported one is as unreadable as one above it.
+ */
+private fun CalendarScreenResponse.requireSupportedSchemaVersion(): CalendarScreenResponse {
+    if (schemaVersion != SUPPORTED_SCHEMA_VERSION) {
+        throw UnsupportedSchemaVersionException(schemaVersion, SUPPORTED_SCHEMA_VERSION)
+    }
+    return this
 }
