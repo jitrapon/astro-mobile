@@ -915,12 +915,10 @@ kotlin {
             // test is the only thing that catches a missing binding.
             implementation(libs.koin.test)
         }
-        // Android host (JVM) unit tests created by `withHostTest {}` live in `androidHostTest`.
-        // AndroidGreetingTest asserts on the androidMain `Greeting` actual via JUnit directly, so
-        // the host-test source set needs JUnit on its classpath (commonTest's kotlin("test") does
-        // not supply org.junit on its own). No Kotlin-plugin accessor exists for this source set —
-        // the Android KMP library plugin creates it — so it is looked up by name.
-        getByName("androidHostTest").dependencies { implementation("junit:junit:4.13.2") }
+        // `withHostTest {}` above creates the `androidHostTest` source set, which is what runs
+        // commonTest on the JVM host. It declares no dependencies of its own: everything the
+        // shared tests need comes from commonTest, and nothing here asserts through JUnit's own
+        // API rather than kotlin.test.
     }
 }
 
