@@ -93,6 +93,13 @@ internal fun decodeMonthScreenFixture(): CalendarScreenResponse =
 internal fun decodeCalendarScreenResponse(envelope: JsonObject): CalendarScreenResponse =
     strictContractJson.decodeFromJsonElement(CalendarScreenResponse.serializer(), envelope)
 
+/** Returns a copy of this object with [field] removed, whether or not it was present. */
+internal fun JsonObject.without(field: String): JsonObject = JsonObject(minus(field))
+
+/** Returns a copy of this object with [field] set to [value], added or overwritten. */
+internal fun JsonObject.replacing(field: String, value: JsonElement): JsonObject =
+    JsonObject(plus(field to value))
+
 private fun withoutAnnotationKeys(element: JsonElement): JsonElement =
     when (element) {
         is JsonObject ->

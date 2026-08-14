@@ -7,7 +7,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -129,11 +128,6 @@ private const val DIVERGENT_THEME_VERSION = "divergent-theme-version"
 private const val UNMODELLED_PROPERTY = "lanePacking"
 
 private const val UNENUMERATED_WEEK_START = "tuesday"
-
-private fun JsonObject.without(field: String): JsonObject = JsonObject(minus(field))
-
-private fun JsonObject.replacing(field: String, value: JsonElement): JsonObject =
-    JsonObject(plus(field to value))
 
 /** Returns a copy of the whole envelope with [edit] applied to the object reached by [path]. */
 private fun JsonObject.editingObjectAt(

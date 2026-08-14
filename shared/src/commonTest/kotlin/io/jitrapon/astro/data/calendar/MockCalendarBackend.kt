@@ -1,5 +1,6 @@
 package io.jitrapon.astro.data.calendar
 
+import io.jitrapon.astro.data.Result
 import io.jitrapon.astro.data.network.createBackendHttpClient
 import io.jitrapon.astro.data.network.createLenientBackendJson
 import io.ktor.client.engine.mock.MockEngine
@@ -11,6 +12,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlin.test.fail
 
 /**
  * The origin the stubbed backend answers on.
@@ -34,7 +36,11 @@ internal const val TEST_BACKEND_BASE_URL: String = "https://calendar.astro.test"
  */
 internal class MockCalendarBackend(
     baseUrl: String = TEST_BACKEND_BASE_URL,
-    respondTo: MockRequestHandleScope.(HttpRequestData) -> HttpResponseData = {
+    /**
+     * Suspending so a case can hold the exchange open on a suspension point — the only way to
+     * observe what the client does with a fetch that is cancelled mid-flight.
+     */
+    respondTo: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData = {
         respondWithMonthScreenFixture()
     },
 ) {
@@ -95,3 +101,36 @@ internal suspend fun emittedRequestFor(request: CalendarScreenRequest): HttpRequ
     backend.calendarScreenApi.fetchCalendarScreen(request)
     return backend.requests.single()
 }
+
+/**
+ * The screen a fetch delivered, failing the test — with the reported exception — when it did not.
+ *
+ * Unwrapping through this rather than casting is what puts the reason a fetch failed into the
+ * failure message: a cast reports only that the outcome was the wrong branch, which says nothing
+ * about the status, the decode, or the version that produced it.
+ */
+internal fun deliveredScreen(outcome: Result<CalendarScreenResponse>): CalendarScreenResponse =
+    when (outcome) {
+        is Result.Success -> outcome.data
+        is Result.Error ->
+            fail("Expected a delivered screen, but the fetch reported an error.", outcome.exception)
+    }
+
+/**
+ * The exception a fetch reported as [T], failing the test when it succeeded or failed otherwise.
+ */
+internal inline fun <reified T : Exception> reportedFailure(
+    outcome: Result<CalendarScreenResponse>
+): T =
+    when (outcome) {
+        is Result.Success ->
+            fail(
+                "Expected the fetch to report a ${T::class.simpleName}, but it delivered a screen."
+            )
+        is Result.Error ->
+            outcome.exception as? T
+                ?: fail(
+                    "Expected the fetch to report a ${T::class.simpleName}.",
+                    outcome.exception,
+                )
+    }
