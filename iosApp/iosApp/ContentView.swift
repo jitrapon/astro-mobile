@@ -22,7 +22,11 @@ struct ContentView: View {
         }
         .padding(.all)
         .task {
-            outcome = await CalendarScreenFetchOutcome.forCurrentMonth()
+            // A cancelled fetch settles nothing, so it leaves the last state standing rather than
+            // overwriting it with a failure the user never caused.
+            if let settled = await CalendarScreenFetchOutcome.forCurrentMonth() {
+                outcome = settled
+            }
         }
     }
 }
@@ -62,8 +66,14 @@ enum CalendarScreenFetchOutcome {
         return String(canonical.prefix { $0 != "@" })
     }
 
-    /// Fetches this month's screen through the graph and reduces the answer to a case above.
-    static func forCurrentMonth() async -> CalendarScreenFetchOutcome {
+    /// Fetches this month's screen through the graph and reduces the answer to a case above, or to
+    /// `nil` when the fetch was cancelled.
+    ///
+    /// Cancellation is not an outcome. The shared client deliberately lets `CancellationException`
+    /// propagate instead of turning it into a `Result`, precisely so a superseded request cannot
+    /// report a failure to a caller that has moved on; reducing it to `.failed` here would undo
+    /// that at the last step and leave a cancelled view showing an error it never earned.
+    static func forCurrentMonth() async -> CalendarScreenFetchOutcome? {
         let repository = DependencyGraph.shared.calendarScreenRepository()
         let today = Calendar.current.dateComponents([.year, .month], from: Date())
         guard let year = today.year, let month = today.month else {
@@ -91,9 +101,14 @@ enum CalendarScreenFetchOutcome {
                 return .failed(reason: failure.exception.message ?? "\(failure.exception)")
             }
             return .failed(reason: "unrecognized result \(result)")
+        } catch is CancellationError {
+            return nil
         } catch {
             // Only cancellation and non-Exception throwables reach here — everything a caller can
-            // act on already arrived as `Result.Error` above.
+            // act on already arrived as `Result.Error` above. Kotlin's `CancellationException` does
+            // not always surface as a Swift `CancellationError` across the framework boundary, so
+            // the task's own state is what settles whether this throw was a cancellation.
+            if Task.isCancelled { return nil }
             return .failed(reason: error.localizedDescription)
         }
     }
