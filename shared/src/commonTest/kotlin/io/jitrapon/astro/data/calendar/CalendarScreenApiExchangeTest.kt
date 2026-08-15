@@ -12,6 +12,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.fail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -100,6 +101,48 @@ class CalendarScreenApiExchangeTest {
     }
 
     @Test
+    fun dropsAThemeDocumentThatDescribesADifferentThemeThanTheEnvelopeDeclares() = runTest {
+        // Both halves of the pair are individually valid — this is why the schema cannot catch it.
+        // The tokens in the document were resolved against a different theme than the per-calendar
+        // colour triples in the body, so applying them would paint one theme's colours over the
+        // other's.
+        val backend = MockCalendarBackend {
+            respondWithMonthScreenEnvelope { envelope ->
+                envelope.replacing(
+                    "themeDocument",
+                    envelope
+                        .themeDocument()
+                        .replacing("version", JsonPrimitive("a-different-hash")),
+                )
+            }
+        }
+
+        val outcome = backend.calendarScreenApi.fetchCalendarScreen(monthScreenRequest())
+
+        // Dropped, not failed: the theme reference is still trustworthy and the screen is still
+        // worth showing, so the caller falls back to the theme it holds — the same path it takes on
+        // the far more common cache hit.
+        val screen = deliveredScreen(outcome)
+        assertNull(screen.themeDocument)
+        assertEquals(decodeMonthScreenFixture().theme, screen.theme)
+    }
+
+    @Test
+    fun keepsAThemeDocumentThatDescribesTheDeclaredTheme() = runTest {
+        // The guard above must discriminate rather than simply discard: a matching document is the
+        // whole point of inline delivery, and dropping it would send every caller back for a fetch
+        // the response already answered.
+        val backend = MockCalendarBackend()
+
+        val outcome = backend.calendarScreenApi.fetchCalendarScreen(monthScreenRequest())
+
+        val screen = deliveredScreen(outcome)
+        val document = assertNotNull(screen.themeDocument)
+        assertEquals(screen.theme.id, document.id)
+        assertEquals(screen.theme.version, document.version)
+    }
+
+    @Test
     fun reportsAStatusOutsideTwoHundredsAsAnErrorCarryingIt() = runTest {
         val backend = MockCalendarBackend {
             respondJson("{}", status = HttpStatusCode.ServiceUnavailable)
@@ -182,3 +225,13 @@ private const val KNOWN_THEME_REFERENCE = "light@8a95f0d5c35fdec5eab641a121ae068
 private fun MockRequestHandleScope.respondWithMonthScreenEnvelope(
     edit: (JsonObject) -> JsonObject
 ): HttpResponseData = respondJson(edit(monthScreenFixtureJson()).toString())
+
+/**
+ * This envelope's theme document, failing the test when it carries none.
+ *
+ * A case that perturbs the document has nothing to perturb without it, and would otherwise quietly
+ * assert the cache-hit path instead of the one it was written for.
+ */
+private fun JsonObject.themeDocument(): JsonObject =
+    this["themeDocument"] as? JsonObject
+        ?: fail("The month-screen fixture carries no themeDocument to perturb.")

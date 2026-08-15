@@ -44,7 +44,9 @@ internal class CalendarScreenApi(private val httpClient: HttpClient, baseUrl: St
         request: CalendarScreenRequest
     ): Result<CalendarScreenResponse> {
         val exchange = runCatching {
-            requestCalendarScreen(request).requireSupportedSchemaVersion()
+            requestCalendarScreen(request)
+                .requireSupportedSchemaVersion()
+                .withoutMismatchedThemeDocument()
         }
         return exchange.fold(onSuccess = { Result.Success(it) }, onFailure = { asFetchError(it) })
     }
@@ -102,4 +104,27 @@ private fun CalendarScreenResponse.requireSupportedSchemaVersion(): CalendarScre
         throw UnsupportedSchemaVersionException(schemaVersion, SUPPORTED_SCHEMA_VERSION)
     }
     return this
+}
+
+/**
+ * Returns this response with [CalendarScreenResponse.themeDocument] dropped when it does not
+ * describe the theme the envelope declares, and unchanged otherwise.
+ *
+ * A delivered document must carry the same `id` and `version` as the envelope's theme reference.
+ * Nothing in the schema can express that, so a response pairing `dark@5` with a valid document for
+ * `light@5` is structurally valid and decodes cleanly — and the tokens it carries were resolved
+ * against a different theme than the per-calendar colour triples in the body were. Applying it
+ * would paint light tokens over a screen resolved for dark, which is exactly the atomicity that
+ * delivering the document inline exists to guarantee.
+ *
+ * A mismatch is dropped rather than raised as an error because the theme reference itself is still
+ * trustworthy and the rest of the screen is still worth showing: a caller that receives no document
+ * falls back to the theme it already holds, which is the same path it takes on the far more common
+ * cache hit. Failing the whole screen over a theme the caller may already have would be a harsher
+ * answer than the mismatch warrants.
+ */
+private fun CalendarScreenResponse.withoutMismatchedThemeDocument(): CalendarScreenResponse {
+    val document = themeDocument ?: return this
+    val describesDeclaredTheme = document.id == theme.id && document.version == theme.version
+    return if (describesDeclaredTheme) this else copy(themeDocument = null)
 }
