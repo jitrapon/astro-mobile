@@ -66,6 +66,29 @@ enum CalendarScreenFetchOutcome {
         return String(canonical.prefix { $0 != "@" })
     }
 
+    /// The device's time zone read through the proleptic Gregorian calendar, whatever calendar the
+    /// user has chosen to see dates in.
+    ///
+    /// `Calendar.current` follows that choice, and a request window is not a display: the contract
+    /// declares `start` and `end` as ISO-8601 dates, which are Gregorian by definition. A device set
+    /// to the Buddhist calendar reports the year 2026 as 2569, so asking `Calendar.current` for the
+    /// current month would send a window five centuries away — a request the backend answers
+    /// perfectly well, with an empty calendar, giving nothing to trace the fault back from.
+    ///
+    /// The time zone stays the device's: which month it currently is genuinely depends on where the
+    /// user is. Only the era and year numbering are pinned. The user's own calendar preference
+    /// still reaches the server, through `locale`, where it belongs — it governs how the server
+    /// formats the labels it sends back, not which dates the client asks for.
+    ///
+    /// Qualified as `Foundation.Calendar` because the shared framework exports a `Calendar` of its
+    /// own — the contract's calendar-source model — and an unqualified name here resolves to
+    /// neither.
+    private static var gregorianDeviceCalendar: Foundation.Calendar {
+        var calendar = Foundation.Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        return calendar
+    }
+
     /// Fetches this month's screen through the graph and reduces the answer to a case above, or to
     /// `nil` when the fetch was cancelled.
     ///
@@ -75,7 +98,7 @@ enum CalendarScreenFetchOutcome {
     /// that at the last step and leave a cancelled view showing an error it never earned.
     static func forCurrentMonth() async -> CalendarScreenFetchOutcome? {
         let repository = DependencyGraph.shared.calendarScreenRepository()
-        let today = Calendar.current.dateComponents([.year, .month], from: Date())
+        let today = Self.gregorianDeviceCalendar.dateComponents([.year, .month], from: Date())
         guard let year = today.year, let month = today.month else {
             return .failed(reason: "the current month is unreadable")
         }
