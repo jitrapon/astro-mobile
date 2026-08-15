@@ -22,9 +22,15 @@ class AstroApplication : Application() {
          * The backend as an Android emulator reaches it: `10.0.2.2` is the host machine's loopback
          * seen from inside the emulator, and the contract declares its operations under `/api`.
          *
+         * Reaching it over cleartext takes more than naming it. The platform denies cleartext to
+         * every domain by default and grants loopback no exemption, so this origin is only
+         * reachable because `src/debug` carries a network-security config permitting it — a debug
+         * overlay that is merged into no other build type. A release build sends cleartext nowhere.
+         *
          * A development placeholder — the backend is not deployed anywhere yet, so there is no
          * environment to read a real origin from. Replace it with a build-type-specific value
-         * before a release build ships; this one resolves to nothing off a developer's machine.
+         * before a release build ships; this one resolves to nothing off a developer's machine, and
+         * the policy that permits it does not exist outside the debug build anyway.
          */
         const val DEVELOPMENT_BACKEND_BASE_URL = "http://10.0.2.2:8080/api"
     }
