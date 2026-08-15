@@ -35,6 +35,12 @@ data class CalendarScreenRequest(
  * discriminators are camel-case (`timeGrid`). They are two separate vocabularies that the contract
  * declares separately — request and response — and collapsing them into one would put the wrong
  * spelling on one side of the exchange.
+ *
+ * This enumerates every view the contract's `view` parameter accepts, which is deliberately wider
+ * than what [CalendarBody] can decode: only the month and agenda bodies are modelled, so asking for
+ * [TimeGrid] or [Year] yields a response that fails to decode and reaches the caller as an error.
+ * That is the intended signal until those bodies exist — see [CalendarBody] — rather than a request
+ * surface that happens to over-promise. Whoever builds one of those views adds its body branch.
  */
 sealed interface RequestedCalendarView {
 
