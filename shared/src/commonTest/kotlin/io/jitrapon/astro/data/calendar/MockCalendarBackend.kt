@@ -1,6 +1,7 @@
 package io.jitrapon.astro.data.calendar
 
 import io.jitrapon.astro.data.Result
+import io.jitrapon.astro.data.network.BackendRequestDeadlines
 import io.jitrapon.astro.data.network.createBackendHttpClient
 import io.jitrapon.astro.data.network.createLenientBackendJson
 import io.ktor.client.engine.mock.MockEngine
@@ -37,6 +38,15 @@ internal const val TEST_BACKEND_BASE_URL: String = "https://calendar.astro.test"
 internal class MockCalendarBackend(
     baseUrl: String = TEST_BACKEND_BASE_URL,
     /**
+     * The shipped policy by default. A case that stalls the backend on purpose shortens it, because
+     * the assertion is that the deadline is enforced at all — waiting out the real one would add
+     * half a minute to every run of the suite on both targets to learn nothing more.
+     *
+     * Ahead of [respondTo] so that the common `MockCalendarBackend { … }` form still binds its
+     * trailing lambda to the responder.
+     */
+    deadlines: BackendRequestDeadlines = BackendRequestDeadlines(),
+    /**
      * Suspending so a case can hold the exchange open on a suspension point — the only way to
      * observe what the client does with a fetch that is cancelled mid-flight.
      */
@@ -58,7 +68,7 @@ internal class MockCalendarBackend(
 
     val calendarScreenApi: CalendarScreenApi =
         CalendarScreenApi(
-            httpClient = createBackendHttpClient(engine, createLenientBackendJson()),
+            httpClient = createBackendHttpClient(engine, createLenientBackendJson(), deadlines),
             baseUrl = baseUrl,
         )
 

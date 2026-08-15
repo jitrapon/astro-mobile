@@ -1,8 +1,10 @@
 package io.jitrapon.astro.data.calendar
 
 import io.jitrapon.astro.data.Result
+import io.jitrapon.astro.data.network.BackendRequestDeadlines
 import io.jitrapon.astro.data.network.NonSuccessHttpStatusException
 import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
@@ -189,6 +191,29 @@ class CalendarScreenApiExchangeTest {
             assertContains(failure.message.orEmpty(), unsupportedVersion)
             assertContains(failure.message.orEmpty(), SUPPORTED_SCHEMA_VERSION)
         }
+    }
+
+    @Test
+    fun reportsABackendThatNeverAnswersAsAnErrorInsteadOfWaitingForever() = runTest {
+        // Accepted and then silent — the failure mode a status code cannot express. Without a
+        // deadline in the shared client this fetch never returns, and the only thing bounding it is
+        // whatever the platform's engine happens to default to, which is not the same number on
+        // both. The engine here defaults to nothing at all, so the assertion is on the client's own
+        // deadline.
+        val neverAnswered = CompletableDeferred<HttpResponseData>()
+        val backend =
+            // Short deadline because what is under test is that one is enforced at all, not what
+            // the shipped policy is set to. Waiting out the real one would spend half a minute per
+            // target proving the same thing.
+            MockCalendarBackend(deadlines = BackendRequestDeadlines(requestMillis = 50L)) {
+                neverAnswered.await()
+            }
+
+        val outcome = backend.calendarScreenApi.fetchCalendarScreen(monthScreenRequest())
+
+        // An abandoned request is a failure the caller must handle, not a throw out of a suspend
+        // call and not a cancellation — nothing cancelled this fetch; it ran out of time.
+        reportedFailure<HttpRequestTimeoutException>(outcome)
     }
 
     @Test
