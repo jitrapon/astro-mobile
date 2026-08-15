@@ -853,6 +853,17 @@ val generateEmbeddedContractSource =
         outputDirectory.set(layout.buildDirectory.dir("generated/contract/commonTest/kotlin"))
     }
 
+// Android Lint reads the source directories registered on a compilation as a plain file collection,
+// which drops the producing-task edge that `kotlin.srcDir(<task provider>)` carries into the Kotlin
+// compile tasks. Without an explicit dependency Gradle's validation fails the build — "uses this
+// output of task ':shared:generateEmbeddedContractSource' without declaring an explicit or implicit
+// dependency" — for the generated contract source. It surfaces only in `check`, because the
+// narrower
+// test tasks never run lint, so removing this edge fails the full gate and nothing before it.
+tasks
+    .matching { it.name.startsWith("lintAnalyze") || Regex("generate.*LintModel").matches(it.name) }
+    .configureEach { dependsOn(generateEmbeddedContractSource) }
+
 kotlin {
     android {
         compileSdk { version = release(37) }

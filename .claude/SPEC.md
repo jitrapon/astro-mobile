@@ -97,7 +97,7 @@ Verification commands, paired to the §4 items. `./gradlew :shared:build` and `.
 - [x] 19–22. `./gradlew :shared:testAndroidHostTest` and `./gradlew :shared:iosSimulatorArm64Test` — the parity, mutation, conformance, behaviour, repository, and Koin-resolution tests pass on both the JVM host and the iOS simulator. For item 20, confirm each mutation fails for the reason claimed by inspecting the assertion message, not merely that the suite is green. For item 21, prove the check is genuinely contract-derived on both sides: temporarily rename a query parameter in the vendored contract and confirm the request assertion fails, and temporarily add a field to `AgendaBody`'s `required:` list and confirm the response assertion fails. Then prove the wire-format half bites: temporarily switch the client to serialize `start` as a date-time and confirm the conformance test fails on the encoding, not merely on the name. Revert all three.
 - [x] 23–24. Re-read the edited `.claude/CLAUDE.md` sections against the final build files and CI workflow so no statement describes the pre-branch state; confirm the ADR file exists in `astro-plans/adr/` and is committed in that repo.
 - [x] 25. `gh issue view 100` shows the re-pointed trigger.
-- [ ] 26. Final gate: `./gradlew ktfmtFormat` then `./gradlew check` passes end-to-end on an Apple Silicon host, and `./gradlew verifyAndroidCommon` passes (the half CI's Linux runner executes).
+- [x] 26. Final gate: `./gradlew ktfmtFormat` then `./gradlew check` passes end-to-end on an Apple Silicon host, and `./gradlew verifyAndroidCommon` passes (the half CI's Linux runner executes).
 
 ## 6. Deployment
 
