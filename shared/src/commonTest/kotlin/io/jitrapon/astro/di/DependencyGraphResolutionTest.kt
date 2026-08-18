@@ -3,9 +3,12 @@ package io.jitrapon.astro.di
 import io.jitrapon.astro.data.calendar.CalendarScreenApi
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
@@ -41,6 +44,32 @@ class DependencyGraphResolutionTest {
         assertSame(graph.get<HttpClient>(), graph.get<HttpClient>())
         assertSame(graph.get<CalendarScreenApi>(), graph.get<CalendarScreenApi>())
         assertSame(graph.get<CalendarScreenRepository>(), graph.get<CalendarScreenRepository>())
+    }
+
+    /**
+     * A graph that is torn down must release the transport it was holding, on both platforms.
+     *
+     * The engine needs its own close callback and cannot inherit one from the client above it: an
+     * `HttpClient` built on an engine it was handed treats that engine as externally owned, so
+     * closing the client leaves the engine — and the dispatcher, connection pool, or NSURLSession
+     * underneath it — running. That costs nothing in an app, which stops the graph by ending the
+     * process, and leaks one engine per cycle in anything that starts a graph repeatedly.
+     *
+     * The engine's coroutine scope is what makes the release observable: an engine is a
+     * `CoroutineScope` whose job is completed by `close`, and neither engine exposes a closed flag.
+     */
+    @Test
+    fun releasesThePlatformEngineWhenTheGraphIsTornDown() {
+        initKoin(baseUrl = UNREACHABLE_BASE_URL)
+        val graph = KoinPlatformTools.defaultContext().get()
+        val engine = graph.get<HttpClientEngine>()
+        // Built here so teardown has to release an engine the client is actually running on, which
+        // is the arrangement that makes the engine externally owned in the first place.
+        graph.get<HttpClient>()
+
+        stopKoin()
+
+        assertFalse(engine.isActive, "the graph left its HTTP engine running after teardown")
     }
 }
 
