@@ -1,6 +1,6 @@
 ---
 name: update-xcode
-description: 'Upgrade the pinned Xcode (typically a 27.x beta) end-to-end and re-sync everything in this repo that hangs off its absolute path: install the new version via the `xcodes` CLI, accept the license, update every hardcoded `/Applications/Xcode-*.app` reference (.claude/CLAUDE.md, ios-device-debug, settings.local.json), re-register the local `xcode` MCP server (mcpbridge), re-export the six vendored Apple Agent Skills with PROVENANCE.md preservation, and run the post-upgrade checks (xcode-select, simulator runtimes, Swift lint gates). Use when the user says "update Xcode", "upgrade Xcode", "a new Xcode beta is out", "move to Beta N", "re-export the vendored Xcode skills", or after any Xcode install when the xcode MCP server fails to connect. Takes an optional target version; with none, targets the latest prerelease.'
+description: 'Upgrade the pinned Xcode (typically a 27.x beta) end-to-end and re-sync everything in this repo that hangs off its absolute path: install the new version via the `xcodes` CLI, accept the license, update every hardcoded `/Applications/Xcode-*.app` reference (.claude/CLAUDE.md, ios-device-debug, settings.local.json), re-register the local `xcode` MCP server (mcpbridge), re-export the eight vendored Apple Agent Skills with PROVENANCE.md preservation, and run the post-upgrade checks (xcode-select, simulator runtimes, Swift lint gates). Use when the user says "update Xcode", "upgrade Xcode", "a new Xcode beta is out", "move to Beta N", "re-export the vendored Xcode skills", or after any Xcode install when the xcode MCP server fails to connect. Takes an optional target version; with none, targets the latest prerelease.'
 argument-hint: '[target version, e.g. "27.0 Beta 4" or "26.1"; omit for the latest prerelease]'
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 version: '1.0.0'
@@ -21,7 +21,7 @@ The five surfaces:
 2. hardcoded path references (`.claude/CLAUDE.md`, `ios-device-debug/SKILL.md`,
    `.claude/settings.local.json`),
 3. the local-scope `xcode` MCP server (mcpbridge),
-4. the six vendored Apple Agent Skills + their `PROVENANCE.md` files,
+4. the eight vendored Apple Agent Skills + their `PROVENANCE.md` files,
 5. post-upgrade toolchain checks.
 
 ## Phase 0 — establish old & target versions
@@ -55,14 +55,28 @@ xcodes install --latest-prerelease --select     # or: xcodes install "27.0 Beta 
 
 **Accept the license** — needs sudo, so the user runs it in-session:
 
+**`sudo` cannot run through the `!` prefix** — it needs a controlling TTY and
+fails with "a terminal is required to read the password". Have the user run
+these in a real **Terminal.app** window, and **in this order** — acceptance is
+recorded against the *selected* developer dir, so selecting first is what makes
+it stick:
+
 ```
-! sudo $NEW_APP/Contents/Developer/usr/bin/xcodebuild -license accept
+sudo xcode-select -s $NEW_APP/Contents/Developer
+sudo xcodebuild -license accept
 ```
 
-Verify before continuing (phases 3–4 hard-fail on an unaccepted license):
+If `-license accept` still refuses, `sudo xcodebuild -license` opens the
+interactive agreement (page to the end, type `agree`).
+
+Verify before continuing (phases 3–4 hard-fail on an unaccepted license) — and
+verify with a command that actually **consults** the license, not just
+`xcodebuild -version`, which prints the version fine on an unaccepted install:
 
 ```bash
-DEVELOPER_DIR=$DEV xcodebuild -version    # prints version + build, e.g. "27.0 / 27A5218g"
+xcode-select -p                            # must print $NEW_APP/Contents/Developer
+DEVELOPER_DIR=$DEV xcrun simctl list runtimes | head -3   # exit 69 = license still unaccepted
+DEVELOPER_DIR=$DEV xcodebuild -version     # version + build, e.g. "27.0 / 27A5237l"
 ```
 
 Record the exact **marketing version + build** (e.g. `27.0 Beta 3 (27A5218g)`;
@@ -107,8 +121,9 @@ Expected health states:
 
 ## Phase 4 — re-export the vendored Apple Agent Skills
 
-The six vendored skills (`device-interaction`, `swiftui-specialist`,
+The eight vendored skills (`device-interaction`, `swiftui-specialist`,
 `swiftui-whats-new-27`, `uikit-app-modernization`, `modernize-tests`,
+`app-intents-specialist`, `app-intents-whats-new-27`,
 `audit-xcode-security-settings`) are served **live** by the running Xcode — the
 export needs the **new** Xcode running:
 
@@ -130,14 +145,21 @@ pgrep -fl "$(basename $NEW_APP)" || open -a "$NEW_APP"
    DEVELOPER_DIR=$DEV xcrun agent skills export \
      --output-dir "$(pwd)/.claude/skills" --replace-existing
    ```
-3. **Delete the excluded skill.** Apple exports seven; this repo deliberately
-   does not vendor the C bounds-safety one (no C surface):
-   `rm -rf .claude/skills/adopt-c-bounds-safety` (named `c-bounds-safety`
-   before Xcode 27 Beta 3 — check the export output for the current name).
-4. **Compare the exported set against the expected six.** A new, renamed, or
+3. **Delete the excluded skills.** Apple exports ten as of Beta 5; this repo
+   deliberately vendors neither the C bounds-safety one (no C surface) nor the
+   document-based one (no document surface) — check the export output for the
+   current names, both have been renamed before:
+   ```bash
+   rm -rf .claude/skills/adopt-c-bounds-safety \
+          .claude/skills/building-document-based-swiftui-applications
+   ```
+4. **Compare the exported set against the expected eight.** A new, renamed, or
    removed skill is a decision for the user — surface it and update the
    `.claude/CLAUDE.md` skill tables accordingly; don't silently vendor a new
-   one.
+   one. Apple also moves content *between* skills across betas (Beta 5 moved
+   `swiftui-whats-new-27`'s `references/document-based-apps.md` into the new
+   document-based skill), so a reference vanishing is not always a deletion —
+   check whether it reappeared elsewhere in the export before reporting it.
 5. **Restore each `PROVENANCE.md`** from the backup, updating the two version
    lines (`bundled in Xcode <old>` → new, and the `**Xcode version at
    export:**` line with the new version/build + today's date). Leave

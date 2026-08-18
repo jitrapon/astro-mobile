@@ -37,7 +37,7 @@ deployment-target floor — see Common build failures).
    tools once a project/workspace is open in the running Xcode; with none open,
    the MCP health check reads `Connected · tools fetch failed` (a `tools/list`
    timeout). Open it if needed:
-   `open -a "/Applications/Xcode-27.0.0-Beta.3.app" iosApp/iosApp.xcodeproj`
+   `open -a "/Applications/Xcode-27.0.0-Beta.5.app" iosApp/iosApp.xcodeproj`
    (adjust the Xcode path to yours). Confirm with `XcodeListWindows` → note the
    returned **`tabIdentifier`** (e.g. `windowtab1`); every `mcp__xcode__*` call
    needs it.
@@ -46,7 +46,7 @@ deployment-target floor — see Common build failures).
    intentionally *not* in the committed `.mcp.json`). If `mcp__xcode__*` tools
    are absent, register it once:
    ```bash
-   DEV=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer   # adjust to your Xcode
+   DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust to your Xcode
    claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
    ```
    (Full rationale in `.claude/CLAUDE.md` → "Apple Xcode Agent Skills".)
@@ -113,7 +113,7 @@ A cold simulator makes the first `InstallAndRun` time out
 ("Session initialization timed out" / "device simulator cannot be connected").
 Boot and settle it deterministically first:
 ```bash
-export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer  # adjust
+export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer  # adjust
 UUID=<sim-uuid>
 xcrun simctl boot "$UUID" 2>/dev/null || true      # idempotent; "already booted" is fine
 xcrun simctl bootstatus "$UUID" -b                  # blocks until boot completes

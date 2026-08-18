@@ -4,11 +4,11 @@ Vendored **verbatim** from Apple's first-party Agent Skills bundled in Xcode 27.
 not hand-edit `SKILL.md` or `references/`: refresh by re-exporting from Xcode so the
 copy never silently drifts from the upstream Apple ships.
 
-- **Upstream:** Apple, bundled in Xcode 27.0 Beta 3 (27A5218g). Served by the `agent` CLI at
+- **Upstream:** Apple, bundled in Xcode 27.0 Beta 5 (27A5237l). Served by the `agent` CLI at
   `Xcode.app/Contents/Developer/usr/bin/agent` (a.k.a. `xcrun agent` / `xcrun mcpbridge`).
 - **Exported with:** `xcrun agent skills export --output-dir <dir> --replace-existing`
   (requires a running Xcode 27 — skills are served live, not stored as static files in the app bundle).
-- **Xcode version at export:** `27.0 Beta 3 (27A5218g)`. Imported 2026-07-15.
+- **Xcode version at export:** `27.0 Beta 5 (27A5237l)`. Imported 2026-08-18.
 - **Portability:** Knowledge skill. Astro is SwiftUI-first, so relevance is limited to any UIKit interop that appears. Portable; runs anywhere.
 
 ## Vetting against the locked conventions
