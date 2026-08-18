@@ -188,9 +188,29 @@ active run destination changed (that's local IDE state, not a repo change).
   "deployment target … set to 14.1, but the range of supported deployment target
   versions is 15.0 to 27.0.x." Xcode 27's iOS SDK floor is **15.0**; bump the
   target (both Debug + Release in `iosApp.xcodeproj/project.pbxproj`).
-- **`Connected · tools fetch failed` / `tools/list` timeout** → no project open in
-  the running Xcode (Prerequisite 1), or the wrong Xcode is selected. Not a code
-  bug.
+- **`Connected · tools fetch failed` / `tools/list` timeout** → usually no project
+  open in the running Xcode (Prerequisite 1), or the wrong Xcode is selected. Not
+  a code bug.
+
+  **On 27.0 Beta 5 (27A5237l) this also happens with a project open** — the
+  documented cause does not apply and chasing it wastes the loop. Confirmed by
+  probing the bridge directly: `initialize` answers instantly (`xcode-tools`
+  v25280.8) but `tools/list` never returns and stderr stays empty. It reproduces
+  across a Claude Code restart, with `iosApp.xcodeproj` open, and with
+  `MCP_XCODE_PID` pinned to the running Xcode — so no `mcp__xcode__*` tools reach
+  the session and the whole loop is unavailable. Before spending attempts on it,
+  confirm the state cheaply:
+
+  ```bash
+  claude mcp get xcode | grep Status
+  osascript -e 'tell application "<your Xcode>" to get name of every window'
+  ```
+
+  A project window plus a failed fetch means you are in this case. Fall back to
+  `xcrun agent claude` (launches Claude Code wired to the bridge directly), or
+  build and run from Xcode's UI — which still answers whether the app compiles
+  and renders, just without a captured screenshot. Re-test on the next beta and
+  delete this note if the fetch returns.
 
 ## Boundaries
 

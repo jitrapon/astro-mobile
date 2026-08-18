@@ -170,7 +170,7 @@ The repo carries skills from several families with **mostly non-overlapping doma
   claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
   ```
 
-  The bridge auto-connects to the running Xcode (or honors `MCP_XCODE_PID`). The tool service only enumerates tools once a **project/workspace is open** in that Xcode — with none open, `tools/list` times out and the health check shows "Connected · tools fetch failed" (open `iosApp/iosApp.xcodeproj` to resolve). Alternatively, `xcrun agent run-agent claude` launches Claude Code already wired to the bridge. This is deliberately not in the committed `.mcp.json` because the path is per-developer.
+  The bridge auto-connects to the running Xcode (or honors `MCP_XCODE_PID`). The tool service enumerates tools only once a **project/workspace is open** in that Xcode — with none open, `tools/list` times out and the health check shows "Connected · tools fetch failed" (open `iosApp/iosApp.xcodeproj` to resolve). **On Beta 5 that fetch can hang even with a project open** — see `ios-device-debug` → "Common build failures". Alternatively, `xcrun agent claude` launches Claude Code already wired to the bridge (the argument is the agent name — `claude`, `claude-ext`, `codex`, `gemini`; there is no `run-agent` subcommand, `xcrun agent` *is* that entry point). This is deliberately not in the committed `.mcp.json` because the path is per-developer.
 
 **On-demand `android/*` skills** — not vendored (so they never drift from the CLI); fetch a fresh copy with `android skills add <name> --agent=claude-code --project .` when a task needs one:
 

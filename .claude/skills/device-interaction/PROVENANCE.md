@@ -9,7 +9,7 @@ copy never silently drifts from the upstream Apple ships.
 - **Exported with:** `xcrun agent skills export --output-dir <dir> --replace-existing`
   (requires a running Xcode 27 — skills are served live, not stored as static files in the app bundle).
 - **Xcode version at export:** `27.0 Beta 5 (27A5237l)`. Imported 2026-08-18.
-- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent run-agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
+- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
 
 ## Known upstream discrepancy — `DeviceEventSynthesize`
 
