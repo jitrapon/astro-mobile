@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only network policy. This file lives in `src/debug` and is merged into no other build type,
+  so a release build keeps the platform default and cannot send cleartext anywhere.
+
+  Since API 28 cleartext is denied for every domain unless a config permits it, and the platform
+  grants loopback no exemption. Without this the development backend below is unreachable: every
+  request fails with a cleartext-not-permitted error before it leaves the device, which reads as a
+  transport failure rather than as a policy one.
+
+  The exemption is scoped to the three hosts a backend on the developer's own machine answers on —
+  `10.0.2.2` is the host's loopback as seen from inside the Android emulator. Nothing else is
+  permitted, so a debug build pointed at a real origin still requires TLS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

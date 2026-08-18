@@ -22,6 +22,14 @@ It aggregates compile + unit tests + Detekt + ktfmt verification across `:shared
 
 Requires **JDK 17**. For the iOS app and Swift lint tooling you also need **Xcode** (macOS). Optional CLI tools the gate self-skips when absent: **SwiftLint** (`brew install swiftlint`) and, for the on-demand `peripheryScan`, **Periphery** (`brew install periphery`).
 
+Clone with `--recurse-submodules`, or initialize the submodule after the fact:
+
+```bash
+git submodule update --init
+```
+
+`docs/astro-docs` is the upstream planning/docs repo, pinned as a submodule. It is the mirror the vendored contract artifacts are checked against — `contracts/astro-bff/openapi.yaml` and `shared/src/commonTest/resources/contract/` are copies of files it owns, kept as plain checked-in copies because the BFF repo that will own the contract does not exist yet. Building and running the tests works without it; the drift check between the copies and the mirror is what needs it checked out.
+
 After cloning, install the git hooks once:
 
 ```bash

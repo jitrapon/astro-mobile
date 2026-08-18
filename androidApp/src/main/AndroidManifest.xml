@@ -2,11 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Network access for the shared module's Ktor client. Without it every request fails at
+         runtime with a SecurityException on Android, and no unit test would surface that: the
+         shared module's tests drive Ktor's MockEngine and never reach the platform network
+         stack, so this is only exercised on a real device or emulator. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-permission
         android:name="android.permission.READ_PHONE_STATE"
         tools:node="remove" />
 
     <application
+        android:name=".AstroApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"

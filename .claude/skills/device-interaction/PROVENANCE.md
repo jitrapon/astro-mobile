@@ -4,12 +4,12 @@ Vendored **verbatim** from Apple's first-party Agent Skills bundled in Xcode 27.
 not hand-edit `SKILL.md` or `references/`: refresh by re-exporting from Xcode so the
 copy never silently drifts from the upstream Apple ships.
 
-- **Upstream:** Apple, bundled in Xcode 27.0 Beta 3 (27A5218g). Served by the `agent` CLI at
+- **Upstream:** Apple, bundled in Xcode 27.0 Beta 5 (27A5237l). Served by the `agent` CLI at
   `Xcode.app/Contents/Developer/usr/bin/agent` (a.k.a. `xcrun agent` / `xcrun mcpbridge`).
 - **Exported with:** `xcrun agent skills export --output-dir <dir> --replace-existing`
   (requires a running Xcode 27 — skills are served live, not stored as static files in the app bundle).
-- **Xcode version at export:** `27.0 Beta 3 (27A5218g)`. Imported 2026-07-15.
-- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent run-agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
+- **Xcode version at export:** `27.0 Beta 5 (27A5237l)`. Imported 2026-08-18.
+- **Portability:** **Requires Xcode's live MCP host.** This skill drives DeviceHub through Xcode-provided MCP tools (`DeviceInteractionStartSession`, `DeviceInteractionInstallAndRun`, `DeviceInteractionSynthesize`, `DeviceInteractionEndSession`). It is **inert until an agent is connected to Xcode's `mcpbridge` MCP server** (`xcrun mcpbridge` / `xcrun agent claude`). Vendored to document the capability; wiring the MCP server into this repo is a separate step.
 
 ## Known upstream discrepancy — `DeviceEventSynthesize`
 
@@ -29,7 +29,7 @@ it to call `DeviceInteractionSynthesize`, so the runtime path is correct despite
 text. Re-confirm the real name against `tools/list` on the next Xcode upgrade; drop this note
 if Apple aligns the export.
 
-Status as of the Beta 3 re-export (2026-07-15): the exported `SKILL.md` still says
+Status as of the Beta 5 re-export (2026-08-18): the exported `SKILL.md` still says
 `DeviceEventSynthesize`, so the discrepancy persists at the text level. The live `tools/list`
 could not be re-confirmed at export time (the bridge only enumerates tools with a
 project open in Xcode) — re-verify on the next DeviceHub session.

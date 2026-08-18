@@ -24,6 +24,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # This repository only. `docs/astro-docs` is a private cross-repo submodule and the
+          # default GITHUB_TOKEN is scoped to this repo, so asking checkout to resolve it here
+          # would fail the clone outright. It is fetched by the two steps below instead, with a
+          # credential that can actually read it.
+          submodules: false
+
+      # `docs/astro-docs` is a build input on this half of the split, notwithstanding that it holds
+      # planning docs: it is the upstream mirror `verifyVendoredContractParity` compares the
+      # vendored `contracts/astro-bff/openapi.yaml` and screen fixture against. That gate is
+      # deliberately fail-closed — a skipped parity check is indistinguishable from a passing one —
+      # so the submodule is not optional here.
+      #
+      # The key is loaded into an agent rather than passed to checkout's `ssh-key:` input, because
+      # that input also governs the MAIN repository's clone and would therefore demand a credential
+      # valid for both repos. Keeping them separate leaves the main checkout on GITHUB_TOKEN and
+      # gives the submodule its own read-only deploy key.
+      #
+      # Requires the `ASTRO_DOCS_DEPLOY_KEY` secret (private half of a read-only deploy key on
+      # `jitrapon/astro-docs`). Absent it, this step fails and the job goes red — the intended
+      # behaviour, since the alternative is a green build whose parity gate never ran.
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.ASTRO_DOCS_DEPLOY_KEY }}
+
+      - run: git submodule update --init --recursive
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
@@ -50,6 +76,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # No submodule here, and no deploy key: `verifyVendoredContractParity` is classified into
+          # the host-portable aggregate, so nothing this job runs reads the astro-docs mirror.
+          # Fetching a private submodule onto the expensive runner to satisfy no gate would be cost
+          # and credential exposure for nothing.
+          submodules: false
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:

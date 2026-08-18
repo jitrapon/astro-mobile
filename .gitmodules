@@ -1,0 +1,3 @@
+[submodule "docs/astro-docs"]
+	path = docs/astro-docs
+	url = git@github.com:jitrapon/astro-docs.git

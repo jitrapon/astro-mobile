@@ -1,0 +1,434 @@
+{
+  "_comment": "Faithful copy of the canonical astro-docs calendar-month-screen.v0.example.json (BFF contract v0.2.0). Wrapper carries itemType (data axis, calendar.event.v1); presentation.component is the versioned UI component (calendar.event.monthAllDayBar.v1 | calendar.event.monthTimedMarker.v1). Month all-day events render as one filled-bar component; timed events render as a dot marker with a single combined `line` (dot color resolved client-side from the calendars map). Songkran Apr 13-15, Chiang Mai Apr 14-17, Apr 16 overflow day. Drives the :shared contract-parity test; colors illustrative. Keep diffable against the astro-docs source.",
+  "schemaVersion": "0.2.0",
+  "serverTime": "2026-04-16T03:30:00Z",
+  "locale": "th-TH",
+  "timeZone": "Asia/Bangkok",
+  "_comment_theme": "`theme` (the ThemeRef) is REQUIRED on every screen response and lives on the envelope, not in resolvedPreferences -- /screens/event-detail has no preferences block. `themeDocument` is present here because this example models a request whose `knownTheme` did not match (or was omitted); when the client already holds this id@version the server omits it entirely. Its id and version MUST equal `theme`. The document is a verbatim copy of the web client's published light theme (tokens/build/themes/light.json); `version` is content-derived, so regenerate this block whenever the light theme's tokens change. Values typed and platform-neutral: six-digit opaque hex + separate alpha, numeric shadows, font ids from the vendored allowlist. Only the 18 curated semantic roles appear. Calendar fills are derived against THIS document's `surface`: each backgroundColor clears 1.2:1 against it and each foregroundColor clears 4.5:1 against its own fill.",
+  "theme": { "id": "light", "version": "8a95f0d5c35fdec5eab641a121ae068f" },
+  "themeDocument": {
+    "id": "light",
+    "label": "Light",
+    "version": "8a95f0d5c35fdec5eab641a121ae068f",
+    "tokenSetVersion": 1,
+    "colorScheme": "light",
+    "tokens": {
+      "colors": {
+        "surface": { "hex": "#fbf9f9" },
+        "surface-container": { "hex": "#efeded" },
+        "surface-container-high": { "hex": "#eae8e8" },
+        "on-surface": { "hex": "#1b1c1c" },
+        "on-surface-variant": { "hex": "#5c403c" },
+        "outline": { "hex": "#906f6b" },
+        "outline-variant": { "hex": "#e5bdb8" },
+        "primary": { "hex": "#b81311" },
+        "on-primary": { "hex": "#ffffff" },
+        "primary-container": { "hex": "#dc3128" },
+        "on-primary-container": { "hex": "#fffbff" },
+        "error": { "hex": "#ba1a1a" },
+        "on-error": { "hex": "#ffffff" },
+        "error-container": { "hex": "#ffdad6" },
+        "on-error-container": { "hex": "#93000a" },
+        "inverse-surface": { "hex": "#303031" },
+        "inverse-on-surface": { "hex": "#f2f0f0" },
+        "scrim": { "hex": "#000000", "alpha": 0.32 }
+      },
+      "shadows": {
+        "elevation-1": {
+          "offsetX": 0,
+          "offsetY": 1,
+          "blur": 3,
+          "spread": 0,
+          "color": { "hex": "#000000", "alpha": 0.15 }
+        },
+        "elevation-2": {
+          "offsetX": 0,
+          "offsetY": 4,
+          "blur": 8,
+          "spread": 0,
+          "color": { "hex": "#000000", "alpha": 0.15 }
+        }
+      },
+      "fonts": {
+        "display": "space-mono",
+        "body": "trispace",
+        "thai": "ibm-plex-sans-thai"
+      }
+    }
+  },
+  "screen": {
+    "id": "calendar",
+    "titleToken": "screen.calendar.title",
+    "title": "เมษายน 2569",
+    "navigation": {
+      "destinations": [
+        {
+          "id": "calendar",
+          "labelToken": "nav.calendar",
+          "label": "ปฏิทิน",
+          "iconToken": "icon.calendar",
+          "action": {
+            "type": "navigate",
+            "screen": "calendar"
+          }
+        },
+        {
+          "id": "expense",
+          "labelToken": "nav.expense",
+          "label": "ค่าใช้จ่าย",
+          "iconToken": "icon.wallet",
+          "action": {
+            "type": "navigate",
+            "screen": "expense"
+          }
+        }
+      ]
+    },
+    "viewSwitcher": {
+      "activeSelection": {
+        "type": "month"
+      },
+      "options": [
+        {
+          "id": "agenda",
+          "label": "Agenda",
+          "labelToken": "view.agenda",
+          "selection": {
+            "type": "agenda"
+          }
+        },
+        {
+          "id": "three-days",
+          "label": "3 Days",
+          "labelToken": "view.threeDays",
+          "selection": {
+            "type": "timeGrid",
+            "dayCount": 3
+          }
+        },
+        {
+          "id": "week",
+          "label": "Week",
+          "labelToken": "view.week",
+          "selection": {
+            "type": "timeGrid",
+            "dayCount": 7
+          }
+        },
+        {
+          "id": "month",
+          "label": "Month",
+          "labelToken": "view.month",
+          "selection": {
+            "type": "month"
+          }
+        },
+        {
+          "id": "year",
+          "label": "Year",
+          "labelToken": "view.year",
+          "selection": {
+            "type": "year"
+          }
+        }
+      ]
+    },
+    "resolvedPreferences": {
+      "weekStart": "monday",
+      "chipStyle": "accentEdge",
+      "chipDensity": {
+        "level": "comfortable",
+        "maxSubtitleLines": 1
+      }
+    },
+    "body": {
+      "component": "calendar.month.v1",
+      "props": {
+        "range": {
+          "start": "2026-03-30",
+          "end": "2026-05-10"
+        },
+        "monthAnchor": "2026-04-01",
+        "headerLabel": "เมษายน 2569",
+        "calendars": {
+          "cal-work": {
+            "id": "cal-work",
+            "displayName": "งาน",
+            "color": {
+              "accentToken": "calendar.work.accent",
+              "accentColor": "#b81311",
+              "backgroundToken": "calendar.work.background",
+              "backgroundColor": "#f9dcda",
+              "foregroundToken": "calendar.work.foreground",
+              "foregroundColor": "#5c0a09"
+            }
+          },
+          "cal-personal": {
+            "id": "cal-personal",
+            "displayName": "ส่วนตัว",
+            "color": {
+              "accentToken": "calendar.personal.accent",
+              "accentColor": "#a33c32",
+              "backgroundToken": "calendar.personal.background",
+              "backgroundColor": "#f7e0db",
+              "foregroundToken": "calendar.personal.foreground",
+              "foregroundColor": "#5a1812"
+            }
+          },
+          "cal-holiday": {
+            "id": "cal-holiday",
+            "displayName": "วันหยุด",
+            "color": {
+              "accentToken": "calendar.holiday.accent",
+              "accentColor": "#7a7469",
+              "backgroundToken": "calendar.holiday.background",
+              "backgroundColor": "#e9e3da",
+              "foregroundToken": "calendar.holiday.foreground",
+              "foregroundColor": "#34302a"
+            }
+          },
+          "cal-travel": {
+            "id": "cal-travel",
+            "displayName": "ท่องเที่ยว",
+            "color": {
+              "accentToken": "calendar.travel.accent",
+              "accentColor": "#0f7d72",
+              "backgroundToken": "calendar.travel.background",
+              "backgroundColor": "#d2e9e5",
+              "foregroundToken": "calendar.travel.foreground",
+              "foregroundColor": "#073d38"
+            }
+          }
+        },
+        "events": [
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthAllDayBar.v1",
+              "region": "monthSpanBand",
+              "title": "สงกรานต์",
+              "accessibilityLabel": "สงกรานต์ วันหยุด 13 ถึง 15 เมษายน"
+            },
+            "props": {
+              "id": "s1",
+              "calendarId": "cal-holiday",
+              "kind": "allDay",
+              "startDate": "2026-04-13",
+              "endDate": "2026-04-15",
+              "permissions": {
+                "canEdit": false,
+                "canDelete": false,
+                "canMove": false
+              },
+              "version": "s1:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthAllDayBar.v1",
+              "region": "monthSpanBand",
+              "title": "ทริปเชียงใหม่"
+            },
+            "props": {
+              "id": "s2",
+              "calendarId": "cal-travel",
+              "kind": "allDay",
+              "startDate": "2026-04-14",
+              "endDate": "2026-04-17",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "s2:v3"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthAllDayBar.v1",
+              "region": "monthSpanBand",
+              "title": "ประชุมนอกสถานที่"
+            },
+            "props": {
+              "id": "s3",
+              "calendarId": "cal-work",
+              "kind": "allDay",
+              "startDate": "2026-04-21",
+              "endDate": "2026-04-23",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "s3:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "09:30 ประชุมทีม Sprint"
+              }
+            },
+            "props": {
+              "id": "e1",
+              "calendarId": "cal-work",
+              "kind": "timed",
+              "startAt": "2026-04-02T09:30:00+07:00",
+              "endAt": "2026-04-02T10:30:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "e1:v2"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "09:00 Standup"
+              },
+              "accessibilityLabel": "Standup, 09:00 ถึง 09:30"
+            },
+            "props": {
+              "id": "t1",
+              "calendarId": "cal-work",
+              "kind": "timed",
+              "startAt": "2026-04-16T09:00:00+07:00",
+              "endAt": "2026-04-16T09:30:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "t1:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "11:00 Product Sync"
+              }
+            },
+            "props": {
+              "id": "t2",
+              "calendarId": "cal-work",
+              "kind": "timed",
+              "startAt": "2026-04-16T11:00:00+07:00",
+              "endAt": "2026-04-16T12:00:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "t2:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "12:30 Lunch w/ Aom"
+              }
+            },
+            "props": {
+              "id": "t3",
+              "calendarId": "cal-personal",
+              "kind": "timed",
+              "startAt": "2026-04-16T12:30:00+07:00",
+              "endAt": "2026-04-16T13:30:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "t3:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "15:00 Design Crit"
+              }
+            },
+            "props": {
+              "id": "t4",
+              "calendarId": "cal-work",
+              "kind": "timed",
+              "startAt": "2026-04-16T15:00:00+07:00",
+              "endAt": "2026-04-16T16:00:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "t4:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "18:30 โยคะเย็น"
+              }
+            },
+            "props": {
+              "id": "t5",
+              "calendarId": "cal-personal",
+              "kind": "timed",
+              "startAt": "2026-04-16T18:30:00+07:00",
+              "endAt": "2026-04-16T19:30:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "t5:v1"
+            }
+          },
+          {
+            "itemType": "calendar.event.v1",
+            "presentation": {
+              "component": "calendar.event.monthTimedMarker.v1",
+              "region": "monthCell",
+              "line": {
+                "text": "06:40 Flight BKK → HKT"
+              }
+            },
+            "props": {
+              "id": "e9",
+              "calendarId": "cal-travel",
+              "kind": "timed",
+              "startAt": "2026-04-28T06:40:00+07:00",
+              "endAt": "2026-04-28T08:00:00+07:00",
+              "permissions": {
+                "canEdit": true,
+                "canDelete": true,
+                "canMove": true
+              },
+              "version": "e9:v1"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

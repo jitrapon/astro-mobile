@@ -1,124 +1,146 @@
 import SwiftUI
 import shared
 
+/// The whole iOS UI for now: it asks the shared graph for a calendar screen and shows what came
+/// back.
+///
+/// This is not product UI — M-2 replaces it. It exists so that launching the app exercises the
+/// framework boundary end to end: resolving `CalendarScreenRepository` from the graph, building a
+/// request in Kotlin, running it over the Darwin engine, and reading the `Result` back in Swift.
+/// A screen that rendered a fixed string would prove only that the app did not crash.
 struct ContentView: View {
-    @State private var username: String = ""
-    @State private var password: String = ""
-
-    @ObservedObject var viewModel: ContentView.ViewModel
+    @State private var outcome: CalendarScreenFetchOutcome = .fetching
 
     var body: some View {
-        VStack(spacing: 15.0) {
-            ValidatedTextField(
-                titleKey: "Username", secured: false, text: $username,
-                errorMessage: viewModel.formState.usernameError,
-                onChange: {
-                    viewModel.loginDataChanged(username: username, password: password)
-                })
-            ValidatedTextField(
-                titleKey: "Password", secured: true, text: $password,
-                errorMessage: viewModel.formState.passwordError,
-                onChange: {
-                    viewModel.loginDataChanged(username: username, password: password)
-                })
-            Button("Login") {
-                viewModel.login(username: username, password: password)
-            }.disabled(!viewModel.formState.isDataValid || (username.isEmpty && password.isEmpty))
+        VStack(spacing: 12.0) {
+            Text("Calendar screen")
+                .font(.headline)
+            Text(outcome.summary)
+                .font(.system(.footnote, design: .monospaced))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(outcome.isFailure ? .red : .primary)
         }
         .padding(.all)
-    }
-}
-
-struct ValidatedTextField: View {
-    let titleKey: String
-    let secured: Bool
-    @Binding var text: String
-    let errorMessage: String?
-    let onChange: () -> Void
-
-    @ViewBuilder var textField: some View {
-        if secured {
-            SecureField(titleKey, text: $text)
-        } else {
-            TextField(titleKey, text: $text)
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            textField
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .autocapitalization(.none)
-                .onChange(of: text) { _ in
-                    onChange()
-                }
-            if let errorMessage = errorMessage {
-                HStack {
-                    Spacer()
-                    FieldTextErrorHint(error: errorMessage)
-                }.padding(.horizontal, 5)
+        .task {
+            // A cancelled fetch settles nothing, so it leaves the last state standing rather than
+            // overwriting it with a failure the user never caused.
+            if let settled = await CalendarScreenFetchOutcome.forCurrentMonth() {
+                outcome = settled
             }
         }
     }
 }
 
-struct FieldTextErrorHint: View {
-    let error: String
-    @State private var showingAlert = false
+/// What the repository answered, reduced to the little this screen shows.
+enum CalendarScreenFetchOutcome {
+    case fetching
+    case delivered(schemaVersion: String, theme: String, title: String)
+    case failed(reason: String)
 
-    var body: some View {
-        Button(
-            action: { self.showingAlert = true },
-            label: {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.red)
-            }
-        )
-        .alert(isPresented: $showingAlert) {
-            Alert(
-                title: Text("Error"), message: Text(error), dismissButton: .default(Text("Got it!"))
-            )
-        }
+    var isFailure: Bool {
+        if case .failed = self { return true }
+        return false
     }
-}
 
-extension ContentView {
-
-    struct LoginFormState {
-        let usernameError: String?
-        let passwordError: String?
-        var isDataValid: Bool {
-            return usernameError == nil && passwordError == nil
+    var summary: String {
+        switch self {
+        case .fetching:
+            return "Fetching…"
+        case let .delivered(schemaVersion, theme, title):
+            return "\(title)\nschema \(schemaVersion) · theme \(theme)"
+        case let .failed(reason):
+            // Expected until a backend is running — the fetch reaching a real failure still proves
+            // the repository resolved and the request went out over the platform's HTTP stack.
+            return "No screen: \(reason)"
         }
     }
 
-    class ViewModel: ObservableObject {
-        @Published var formState = LoginFormState(usernameError: nil, passwordError: nil)
+    /// The device's locale as the BCP-47 tag the contract asks for.
+    ///
+    /// `Locale.current.identifier` is an ICU identifier, not a language tag: it separates with
+    /// underscores and carries keyword extensions (`en_TH@calendar=gregorian`). Canonicalizing
+    /// hyphenates it but keeps the keywords, so the suffix is dropped here. `identifier(.bcp47)`
+    /// would say all of this in one call, but it needs iOS 16 and this app deploys to 15.
+    private static var currentLanguageTag: String {
+        let canonical = Locale.canonicalLanguageIdentifier(from: Locale.current.identifier)
+        return String(canonical.prefix { $0 != "@" })
+    }
 
-        let loginValidator: LoginDataValidator
-        let loginRepository: LoginRepository
+    /// The device's time zone read through the proleptic Gregorian calendar, whatever calendar the
+    /// user has chosen to see dates in.
+    ///
+    /// `Calendar.current` follows that choice, and a request window is not a display: the contract
+    /// declares `start` and `end` as ISO-8601 dates, which are Gregorian by definition. A device set
+    /// to the Buddhist calendar reports the year 2026 as 2569, so asking `Calendar.current` for the
+    /// current month would send a window five centuries away — a request the backend answers
+    /// perfectly well, with an empty calendar, giving nothing to trace the fault back from.
+    ///
+    /// The time zone stays the device's: which month it currently is genuinely depends on where the
+    /// user is. Only the era and year numbering are pinned. The user's own calendar preference
+    /// still reaches the server, through `locale`, where it belongs — it governs how the server
+    /// formats the labels it sends back, not which dates the client asks for.
+    ///
+    /// Qualified as `Foundation.Calendar` because the shared framework exports a `Calendar` of its
+    /// own — the contract's calendar-source model — and an unqualified name here resolves to
+    /// neither.
+    private static var gregorianDeviceCalendar: Foundation.Calendar {
+        var calendar = Foundation.Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        return calendar
+    }
 
-        init(loginRepository: LoginRepository, loginValidator: LoginDataValidator) {
-            self.loginRepository = loginRepository
-            self.loginValidator = loginValidator
+    /// Fetches this month's screen through the graph and reduces the answer to a case above, or to
+    /// `nil` when the fetch was cancelled.
+    ///
+    /// Cancellation is not an outcome. The shared client deliberately lets `CancellationException`
+    /// propagate instead of turning it into a `Result`, precisely so a superseded request cannot
+    /// report a failure to a caller that has moved on; reducing it to `.failed` here would undo
+    /// that at the last step and leave a cancelled view showing an error it never earned.
+    static func forCurrentMonth() async -> CalendarScreenFetchOutcome? {
+        let repository = DependencyGraph.shared.calendarScreenRepository()
+        let now = Date()
+        let calendar = Self.gregorianDeviceCalendar
+        let today = calendar.dateComponents([.year, .month], from: now)
+        // The window has to end on the month's own last day: a fixed 28 would ask for a short month
+        // in every month that isn't February, and the days it left out would be missing from a
+        // screen that promises the current month.
+        guard let year = today.year, let month = today.month,
+            let lastDayOfMonth = calendar.range(of: .day, in: .month, for: now)?.count
+        else {
+            return .failed(reason: "the current month is unreadable")
         }
 
-        func login(username: String, password: String) {
-            if let result = loginRepository.login(username: username, password: password)
-                as? ResultSuccess
-            {
-                print("Successful login. Welcome, \(result.data.displayName)")
-            } else {
-                print("Error while logging in")
+        let request = CalendarScreenRequest(
+            view: RequestedCalendarViewMonth.shared,
+            start: CalendarDate(year: Int32(year), month: Int32(month), dayOfMonth: 1),
+            end: CalendarDate(
+                year: Int32(year), month: Int32(month), dayOfMonth: Int32(lastDayOfMonth)),
+            timeZone: TimeZone.current.identifier,
+            locale: Self.currentLanguageTag,
+            knownTheme: nil)
+
+        do {
+            let result = try await repository.fetchCalendarScreen(request: request)
+            if let success = result as? ResultSuccess<CalendarScreenResponse> {
+                let response = success.data
+                return .delivered(
+                    schemaVersion: response.schemaVersion,
+                    theme: response.theme.id,
+                    title: response.screen.title)
             }
-        }
-
-        func loginDataChanged(username: String, password: String) {
-            formState = LoginFormState(
-                usernameError: (loginValidator.checkUsername(username: username)
-                    as? LoginDataValidator.ResultError)?.message,
-                passwordError: (loginValidator.checkPassword(password: password)
-                    as? LoginDataValidator.ResultError)?.message)
+            if let failure = result as? ResultError {
+                return .failed(reason: failure.exception.message ?? "\(failure.exception)")
+            }
+            return .failed(reason: "unrecognized result \(result)")
+        } catch is CancellationError {
+            return nil
+        } catch {
+            // Only cancellation and non-Exception throwables reach here — everything a caller can
+            // act on already arrived as `Result.Error` above. Kotlin's `CancellationException` does
+            // not always surface as a Swift `CancellationError` across the framework boundary, so
+            // the task's own state is what settles whether this throw was a cancellation.
+            if Task.isCancelled { return nil }
+            return .failed(reason: error.localizedDescription)
         }
     }
 }

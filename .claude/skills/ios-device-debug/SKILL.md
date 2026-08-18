@@ -33,24 +33,31 @@ deployment-target floor — see Common build failures).
 
 ## Prerequisites (verify before the loop)
 
-1. **Xcode 27 is running with the project open.** The bridge only enumerates
-   tools once a project/workspace is open in the running Xcode; with none open,
+1. **Xcode 27 is running with the project open.** The bridge enumerates tools
+   only once a project/workspace is open in the running Xcode; with none open,
    the MCP health check reads `Connected · tools fetch failed` (a `tools/list`
-   timeout). Open it if needed:
-   `open -a "/Applications/Xcode-27.0.0-Beta.3.app" iosApp/iosApp.xcodeproj`
+   timeout). **On Beta 5+ the permission gate in step 2 produces that identical
+   string** — so a failed fetch does *not* by itself mean the project is closed;
+   check both. Open it if needed:
+   `open -a "/Applications/Xcode-27.0.0-Beta.5.app" iosApp/iosApp.xcodeproj`
    (adjust the Xcode path to yours). Confirm with `XcodeListWindows` → note the
    returned **`tabIdentifier`** (e.g. `windowtab1`); every `mcp__xcode__*` call
    needs it.
-2. **The `xcode` MCP server (mcpbridge) is registered and connected.** It is a
+2. **The MCP permission gate is enabled** (Beta 5+). `xcrun mcp-server status`
+   must not say `Permission: disabled` — if it does, no amount of project-opening
+   or restarting will produce tools. See "Common build failures" for the
+   sudo-gated fix. Also confirm `xcode-select -p` points at the Xcode you mean:
+   `mcpbridge` connects to *that* Xcode, not whichever one is running.
+3. **The `xcode` MCP server (mcpbridge) is registered and connected.** It is a
    per-machine, **local-scope** server (it pins an absolute Xcode path, so it is
    intentionally *not* in the committed `.mcp.json`). If `mcp__xcode__*` tools
    are absent, register it once:
    ```bash
-   DEV=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer   # adjust to your Xcode
+   DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust to your Xcode
    claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
    ```
    (Full rationale in `.claude/CLAUDE.md` → "Apple Xcode Agent Skills".)
-3. **Load the tools.** If the `mcp__xcode__*` tools are deferred, load them in one
+4. **Load the tools.** If the `mcp__xcode__*` tools are deferred, load them in one
    `ToolSearch` `select:` call:
    `select:mcp__xcode__XcodeListWindows,mcp__xcode__XcodeListRunDestinations,mcp__xcode__XcodeSwitchRunDestination,mcp__xcode__BuildProject,mcp__xcode__DeviceInteractionStartSession,mcp__xcode__DeviceInteractionInstallAndRun,mcp__xcode__DeviceInteractionEndSession`
    (add `GetBuildLog`, `XcodeListNavigatorIssues`, `GetConsoleOutput` when
@@ -113,7 +120,7 @@ A cold simulator makes the first `InstallAndRun` time out
 ("Session initialization timed out" / "device simulator cannot be connected").
 Boot and settle it deterministically first:
 ```bash
-export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.3.app/Contents/Developer  # adjust
+export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer  # adjust
 UUID=<sim-uuid>
 xcrun simctl boot "$UUID" 2>/dev/null || true      # idempotent; "already booted" is fine
 xcrun simctl bootstatus "$UUID" -b                  # blocks until boot completes
@@ -188,9 +195,81 @@ active run destination changed (that's local IDE state, not a repo change).
   "deployment target … set to 14.1, but the range of supported deployment target
   versions is 15.0 to 27.0.x." Xcode 27's iOS SDK floor is **15.0**; bump the
   target (both Debug + Release in `iosApp.xcodeproj/project.pbxproj`).
-- **`Connected · tools fetch failed` / `tools/list` timeout** → no project open in
-  the running Xcode (Prerequisite 1), or the wrong Xcode is selected. Not a code
-  bug.
+- **`Connected · tools fetch failed` / `tools/list` timeout** → on **27.0 Beta 5
+  (27A5237l) and later** this is almost always the **MCP permission gate**, not a
+  missing project. Beta 5 put Xcode's MCP tool service behind an explicit,
+  sudo-gated approval system that did not exist in Beta 3. Check first — it is one
+  command and it is definitive:
+
+  ```bash
+  xcrun mcp-server status        # "Permission: disabled" → this is your cause
+  ```
+
+  With permission disabled the bridge still completes the JSON-RPC handshake, so
+  `initialize` answers instantly (`xcode-tools` v25280.8) while `tools/list` hangs
+  forever with an **empty stderr** — and the health check reads exactly the same
+  `Connected · tools fetch failed` as the benign no-project-open case. That
+  collision is the trap: the symptom points at a precondition that is already
+  satisfied. Opening the project, restarting Claude Code, and pinning
+  `MCP_XCODE_PID` all leave it unchanged.
+
+  **Fix** — `sudo` needs a real TTY, so these run in Terminal.app, not through the
+  `!` prefix:
+
+  ```bash
+  DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust
+  sudo $DEV/usr/bin/mcp-server enable
+  sudo $DEV/usr/bin/mcp-server allow-folder /Users/<you>/Developer/Projects/Astro --always
+  ```
+
+  Then re-check `xcrun mcp-server status` and restart Claude Code so it reloads
+  the server. If `status` lists the agent as a *pending request*, approve it by
+  id: `sudo $DEV/usr/bin/mcp-server approve <id> --always` (`--for-24-hours` for a
+  time-boxed grant). `deny <id>` and `clear-permissions` reverse it.
+
+  **Do not use `enable --unsafe-always-allow-all-agents`.** Apple named it that
+  deliberately — it grants every agent on the machine blanket access. A
+  folder-scoped `allow-folder` gets DeviceHub working without that.
+
+  The older, benign causes still apply once permission is enabled: no project open
+  in the running Xcode (Prerequisite 1), or the wrong Xcode selected — `mcpbridge`
+  connects to the Xcode that **`xcode-select`** points at, so a stale selection
+  (e.g. still on `/Library/Developer/CommandLineTools` after an upgrade) sends it
+  to the wrong place.
+
+## Fallback when the bridge is unavailable — `simctl`
+
+When DeviceHub genuinely cannot be reached (permission gate un-fixable in the
+moment, or the loop is blocked for another reason), **do not report the app
+unverified** — `xcodebuild` + `simctl` still deliver build, install, launch, and
+a real screenshot. What is lost is the **UI hierarchy** and any *interaction*
+(taps/swipes): this path renders and captures, it does not drive. Say so when
+reporting, and prefer the bridge whenever it works.
+
+```bash
+export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer  # adjust
+UUID=$(xcrun simctl list devices available | awk '/-- iOS 27/{f=1;next} f&&/iPhone/{gsub(/[()]/,"",$4); print $4; exit}')
+
+xcrun simctl boot "$UUID" 2>/dev/null || true      # idempotent
+xcrun simctl bootstatus "$UUID" -b
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination "platform=iOS Simulator,id=$UUID" -derivedDataPath <scratchpad>/dd build
+
+APP=<scratchpad>/dd/Build/Products/Debug-iphonesimulator/iosApp.app
+BID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")
+xcrun simctl install "$UUID" "$APP"
+xcrun simctl launch "$UUID" "$BID"
+xcrun simctl io "$UUID" screenshot <scratchpad>/astro-sim.png
+```
+
+Then read the PNG and send it to the user — the same evidentiary bar as the
+bridge path: **no "it runs" without the screenshot.** `xcrun simctl spawn "$UUID"
+log stream --level error` is the console-output substitute when chasing a runtime
+error.
+
+Note this path also answers the question a major SDK bump most threatens — does
+the app still *compile and link* against the new iOS SDK, deployment-target floor
+included — which is often the real reason for running it after an Xcode upgrade.
 
 ## Boundaries
 
