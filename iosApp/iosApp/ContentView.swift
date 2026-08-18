@@ -98,15 +98,23 @@ enum CalendarScreenFetchOutcome {
     /// that at the last step and leave a cancelled view showing an error it never earned.
     static func forCurrentMonth() async -> CalendarScreenFetchOutcome? {
         let repository = DependencyGraph.shared.calendarScreenRepository()
-        let today = Self.gregorianDeviceCalendar.dateComponents([.year, .month], from: Date())
-        guard let year = today.year, let month = today.month else {
+        let now = Date()
+        let calendar = Self.gregorianDeviceCalendar
+        let today = calendar.dateComponents([.year, .month], from: now)
+        // The window has to end on the month's own last day: a fixed 28 would ask for a short month
+        // in every month that isn't February, and the days it left out would be missing from a
+        // screen that promises the current month.
+        guard let year = today.year, let month = today.month,
+            let lastDayOfMonth = calendar.range(of: .day, in: .month, for: now)?.count
+        else {
             return .failed(reason: "the current month is unreadable")
         }
 
         let request = CalendarScreenRequest(
             view: RequestedCalendarViewMonth.shared,
             start: CalendarDate(year: Int32(year), month: Int32(month), dayOfMonth: 1),
-            end: CalendarDate(year: Int32(year), month: Int32(month), dayOfMonth: 28),
+            end: CalendarDate(
+                year: Int32(year), month: Int32(month), dayOfMonth: Int32(lastDayOfMonth)),
             timeZone: TimeZone.current.identifier,
             locale: Self.currentLanguageTag,
             knownTheme: nil)
