@@ -37,7 +37,9 @@ class CalendarScreenModelConformanceTest {
             // as a property, so it is absent from the descriptor and added back here — the contract
             // requires it on the wire either way.
             val modelledFields =
-                modelled.descriptor.requiredElementNames() + setOfNotNull(modelled.discriminator)
+                modelled.descriptor.requiredElementNames() +
+                    setOfNotNull(modelled.discriminator) +
+                    modelled.pinnedProperties
 
             assertEquals(
                 declared,
@@ -67,6 +69,33 @@ class CalendarScreenModelConformanceTest {
                 "${modelled.descriptor.serialName} and the contract disagree on the values of " +
                     "${modelled.contractSites.joinToString { (schema, property) ->
                         "$schema.$property" }}.",
+            )
+        }
+    }
+
+    /**
+     * The pinned region on each presentation is the one the contract fixes for that component.
+     *
+     * [modelsRequireExactlyTheFieldsTheContractRequires] only knows `region` is accounted for, and
+     * [modelledEnumsCarryExactlyTheValuesTheContractEnumerates] only knows the five branches
+     * enumerate the five regions between them — neither can see whether a branch pins the *wrong*
+     * one. Since the value is supplied rather than decoded, nothing on the wire would correct it: a
+     * branch pinned to a region the contract gives to a different component would route every event
+     * of that component to a renderer that cannot draw it, silently.
+     */
+    @Test
+    fun pinsEachPresentationToTheSingleRegionTheContractFixesForIt() {
+        PINNED_PRESENTATION_REGIONS.forEach { (schemaName, presentation) ->
+            val declared =
+                assertNotNull(
+                    contractSchema(schemaName).enumsByProperty["region"],
+                    "$schemaName no longer fixes a single region.",
+                )
+
+            assertEquals(
+                declared.toSet(),
+                setOf(presentation.region.wireName()),
+                "$schemaName pins a region the contract gives to another component.",
             )
         }
     }
@@ -129,6 +158,13 @@ private class ModelledSchema(
     val descriptor: SerialDescriptor,
     /** The polymorphic discriminator this branch is encoded under, if it is a union branch. */
     val discriminator: String? = null,
+    /**
+     * Properties the contract requires on the wire that the model supplies from a constant rather
+     * than decoding into a property. They are absent from the descriptor for the same reason a
+     * discriminator is — the model fixes the value instead of reading it — so they are named here
+     * to keep that a deliberate registration rather than a silently missing field.
+     */
+    val pinnedProperties: Set<String> = emptySet(),
 )
 
 /** A modelled enum and every place the contract enumerates the same values. */
@@ -148,6 +184,9 @@ private class ModelledUnion(
 private const val TYPE_DISCRIMINATOR = "type"
 
 private const val COMPONENT_DISCRIMINATOR = "component"
+
+/** Every presentation branch supplies its own region; see [EventPresentation]. */
+private val PINNED_REGION = setOf("region")
 
 private const val KIND_DISCRIMINATOR = "kind"
 
@@ -185,26 +224,31 @@ private val MODELLED_SCHEMAS =
             "MonthAllDayBarPresentation",
             descriptorOf<MonthAllDayBarPresentation>(),
             COMPONENT_DISCRIMINATOR,
+            PINNED_REGION,
         ),
         ModelledSchema(
             "MonthTimedMarkerPresentation",
             descriptorOf<MonthTimedMarkerPresentation>(),
             COMPONENT_DISCRIMINATOR,
+            PINNED_REGION,
         ),
         ModelledSchema(
             "TimeGridAllDayBarPresentation",
             descriptorOf<TimeGridAllDayBarPresentation>(),
             COMPONENT_DISCRIMINATOR,
+            PINNED_REGION,
         ),
         ModelledSchema(
             "EventBlockPresentation",
             descriptorOf<EventBlockPresentation>(),
             COMPONENT_DISCRIMINATOR,
+            PINNED_REGION,
         ),
         ModelledSchema(
             "EventCardPresentation",
             descriptorOf<EventCardPresentation>(),
             COMPONENT_DISCRIMINATOR,
+            PINNED_REGION,
         ),
         ModelledSchema(
             "AgendaViewSelection",
@@ -339,7 +383,27 @@ private val UNMODELLED_SCHEMAS =
         "PresentationContentBase",
     )
 
+/**
+ * One instance of every presentation branch, paired with the contract schema that fixes its region.
+ *
+ * Instances rather than descriptors because a pinned region has no descriptor element to read — the
+ * only way to see the value is to hold a branch and ask it. Content is irrelevant here; every field
+ * but the region is left at whatever the branch needs to construct.
+ */
+private val PINNED_PRESENTATION_REGIONS: List<Pair<String, EventPresentation>> =
+    listOf(
+        "MonthAllDayBarPresentation" to MonthAllDayBarPresentation(title = ""),
+        "MonthTimedMarkerPresentation" to
+            MonthTimedMarkerPresentation(line = PresentationLine(text = "")),
+        "TimeGridAllDayBarPresentation" to TimeGridAllDayBarPresentation(title = ""),
+        "EventBlockPresentation" to EventBlockPresentation(title = ""),
+        "EventCardPresentation" to EventCardPresentation(title = ""),
+    )
+
 private inline fun <reified T> descriptorOf(): SerialDescriptor = serializer<T>().descriptor
+
+/** This region as the contract spells it, rather than as Kotlin names the constant. */
+private fun EventRegion.wireName(): String = descriptorOf<EventRegion>().getElementName(ordinal)
 
 private fun contractSchema(name: String): ContractSchema =
     assertNotNull(

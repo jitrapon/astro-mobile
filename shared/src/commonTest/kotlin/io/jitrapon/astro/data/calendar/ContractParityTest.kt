@@ -3,13 +3,19 @@ package io.jitrapon.astro.data.calendar
 import io.jitrapon.astro.contract.EmbeddedContract
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.serializer
 
 /**
  * Holds the vendored contract, the example fixture, and these hand-written models to one version of
@@ -42,7 +48,68 @@ class ContractParityTest {
     fun deliversAThemeDocumentMatchingTheEnvelopeThemeReference() {
         assertThemeDocumentMatchesReference(decodeMonthScreenFixture())
     }
+
+    /**
+     * Every component-to-region pairing the fixture declares is the one the models pin for it.
+     *
+     * The models supply a presentation's region rather than decoding it, so
+     * `monthScreenFixtureJson` strips that key before the strict decode. This is what keeps the
+     * strip from hiding a disagreement: real upstream data says which region belongs to which
+     * component, and a model pinned to a different one fails here rather than quietly re-labelling
+     * every event of that component.
+     */
+    @Test
+    fun pinsTheRegionTheFixtureDeclaresForEveryPresentationItCarries() {
+        val declared = declaredComponentRegionPairs(unstrippedMonthScreenFixtureJson())
+        assertTrue(
+            declared.isNotEmpty(),
+            "The fixture carries no presentation with a region, so this proves nothing.",
+        )
+
+        val body = assertIs<MonthBody>(decodeMonthScreenFixture().screen.body)
+        val pinned =
+            body.props.events
+                .map { event ->
+                    event.presentation.componentName() to event.presentation.regionName()
+                }
+                .toSet()
+
+        assertEquals(
+            declared,
+            pinned,
+            "The models pin a region the fixture assigns to a different component.",
+        )
+    }
 }
+
+/**
+ * Every `component`-to-`region` pairing this envelope declares, read before any key is stripped.
+ */
+private fun declaredComponentRegionPairs(element: JsonElement): Set<Pair<String, String>> =
+    when (element) {
+        is JsonObject -> {
+            val pair =
+                element["component"]?.jsonPrimitive?.content?.let { component ->
+                    element["region"]?.jsonPrimitive?.content?.let { component to it }
+                }
+            setOfNotNull(pair) + element.values.flatMap { declaredComponentRegionPairs(it) }
+        }
+        is JsonArray -> element.flatMap { declaredComponentRegionPairs(it) }.toSet()
+        else -> emptySet()
+    }
+
+/** The discriminator this presentation encodes under — the only place its component name exists. */
+private fun EventPresentation.componentName(): String =
+    strictContractJson
+        .encodeToJsonElement(serializer<EventPresentation>(), this)
+        .jsonObject
+        .getValue("component")
+        .jsonPrimitive
+        .content
+
+/** This presentation's pinned region as the contract spells it. */
+private fun EventPresentation.regionName(): String =
+    serializer<EventRegion>().descriptor.getElementName(region.ordinal)
 
 /**
  * Asserts the delivered theme document describes the theme the envelope names.
@@ -73,11 +140,48 @@ internal val strictContractJson: Json = Json { ignoreUnknownKeys = false }
  * contract, so they are stripped before the strict decode would reject them. Stripping recurses: an
  * annotation nested inside the screen body would otherwise fail a decode that has nothing wrong
  * with it.
+ *
+ * A presentation's `region` is stripped for a different reason: the models pin it per component
+ * rather than decoding it (see [EventPresentation]), so the strict decode would reject a field the
+ * models cover deliberately. What the fixture declares there is not discarded —
+ * [ContractParityTest.pinsTheRegionTheFixtureDeclaresForEveryPresentationItCarries] reads it off
+ * the unstripped fixture and holds the models to it.
  */
 internal fun monthScreenFixtureJson(): JsonObject =
-    withoutAnnotationKeys(
-        strictContractJson.decodeFromString<JsonObject>(EmbeddedContract.MONTH_SCREEN_FIXTURE_JSON)
-    )
+    withoutPinnedPresentationRegions(withoutAnnotationKeys(unstrippedMonthScreenFixtureJson()))
+
+/** The fixture exactly as vendored, before any key is stripped from it. */
+internal fun unstrippedMonthScreenFixtureJson(): JsonObject =
+    strictContractJson.decodeFromString<JsonObject>(EmbeddedContract.MONTH_SCREEN_FIXTURE_JSON)
+
+/**
+ * Returns [element] with the `region` removed from every presentation it carries.
+ *
+ * Keyed on the presence of the `component` discriminator, so it reaches presentations wherever a
+ * view-model nests them and touches nothing else — the other objects carrying a `component` declare
+ * no `region` for this to remove.
+ */
+private fun withoutPinnedPresentationRegions(element: JsonElement): JsonElement =
+    when (element) {
+        is JsonObject ->
+            buildJsonObject {
+                val isPresentation = element.containsKey(PRESENTATION_DISCRIMINATOR)
+                element.forEach { (key, value) ->
+                    if (!(isPresentation && key == PINNED_REGION_KEY))
+                        put(key, withoutPinnedPresentationRegions(value))
+                }
+            }
+        is JsonArray ->
+            buildJsonArray { element.forEach { add(withoutPinnedPresentationRegions(it)) } }
+        else -> element
+    }
+
+private fun withoutPinnedPresentationRegions(element: JsonObject): JsonObject =
+    withoutPinnedPresentationRegions(element as JsonElement) as JsonObject
+
+private const val PRESENTATION_DISCRIMINATOR = "component"
+
+private const val PINNED_REGION_KEY = "region"
 
 /** Decodes [monthScreenFixtureJson] through the production models with the strict codec. */
 internal fun decodeMonthScreenFixture(): CalendarScreenResponse =

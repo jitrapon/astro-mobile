@@ -25,9 +25,17 @@ enum class EventRegion {
 /**
  * The versioned UI component and the display content for rendering one event in one view.
  *
- * Each `component` binds to exactly one [region], so an invalid component-by-region combination is
- * not representable. Components are view-specific and version on their own clock, independently of
- * the data-axis `itemType` on [PresentedCalendarEvent].
+ * Each `component` binds to exactly one [region], and each branch below supplies that one region
+ * rather than accepting it, so an invalid component-by-region combination is not representable —
+ * neither a call site nor a response can produce one. The contract fixes the same pairing with a
+ * single-valued `region` on every branch; `CalendarScreenModelConformanceTest` holds the two to
+ * each other. Because the region is supplied rather than decoded, it is the `component`
+ * discriminator alone that decides it, and a response contradicting its own contract is normalized
+ * to the pairing the contract declares instead of routing an event to a renderer that cannot draw
+ * it.
+ *
+ * Components are view-specific and version on their own clock, independently of the data-axis
+ * `itemType` on [PresentedCalendarEvent].
  *
  * No geometry crosses this boundary: sizing, lane-packing, week-boundary segmentation and overflow
  * slicing are client-owned.
@@ -49,7 +57,6 @@ sealed interface EventPresentation {
 @Serializable
 @SerialName("calendar.event.monthAllDayBar.v1")
 data class MonthAllDayBarPresentation(
-    override val region: EventRegion,
     val title: String,
     /** Ordered; the client renders the first [ChipDensity.maxSubtitleLines] of them. */
     val subtitleLines: List<PresentationLine> = emptyList(),
@@ -57,7 +64,10 @@ data class MonthAllDayBarPresentation(
     override val accessibilityLabel: String? = null,
     val styleVariant: String? = null,
     val styleToken: String? = null,
-) : EventPresentation
+) : EventPresentation {
+    override val region: EventRegion
+        get() = EventRegion.MONTH_SPAN_BAND
+}
 
 /**
  * Month timed representation: a leading calendar-color dot then a single combined content line
@@ -69,10 +79,12 @@ data class MonthAllDayBarPresentation(
 @Serializable
 @SerialName("calendar.event.monthTimedMarker.v1")
 data class MonthTimedMarkerPresentation(
-    override val region: EventRegion,
     val line: PresentationLine,
     override val accessibilityLabel: String? = null,
-) : EventPresentation
+) : EventPresentation {
+    override val region: EventRegion
+        get() = EventRegion.MONTH_CELL
+}
 
 /**
  * Time-grid all-day representation: a column-spanning bar in the band above the grid. The client
@@ -81,14 +93,16 @@ data class MonthTimedMarkerPresentation(
 @Serializable
 @SerialName("calendar.event.timeGridAllDayBar.v1")
 data class TimeGridAllDayBarPresentation(
-    override val region: EventRegion,
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
     val leadingIconToken: String? = null,
     override val accessibilityLabel: String? = null,
     val styleVariant: String? = null,
     val styleToken: String? = null,
-) : EventPresentation
+) : EventPresentation {
+    override val region: EventRegion
+        get() = EventRegion.TIME_GRID_ALL_DAY_BAND
+}
 
 /**
  * Time-positioned block in the time-grid body. The client derives vertical position and height from
@@ -97,27 +111,31 @@ data class TimeGridAllDayBarPresentation(
 @Serializable
 @SerialName("calendar.event.block.v1")
 data class EventBlockPresentation(
-    override val region: EventRegion,
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
     val leadingIconToken: String? = null,
     override val accessibilityLabel: String? = null,
     val styleVariant: String? = null,
     val styleToken: String? = null,
-) : EventPresentation
+) : EventPresentation {
+    override val region: EventRegion
+        get() = EventRegion.TIME_GRID_BODY
+}
 
 /** Agenda list row. */
 @Serializable
 @SerialName("calendar.event.card.v1")
 data class EventCardPresentation(
-    override val region: EventRegion,
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
     val leadingIconToken: String? = null,
     override val accessibilityLabel: String? = null,
     val styleVariant: String? = null,
     val styleToken: String? = null,
-) : EventPresentation
+) : EventPresentation {
+    override val region: EventRegion
+        get() = EventRegion.AGENDA_LIST
+}
 
 /**
  * The data axis of a view-model item, kept independent of the UI axis on [EventPresentation].
