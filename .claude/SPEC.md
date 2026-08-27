@@ -65,7 +65,7 @@ is verified; what is missing is protection for *future* changes.
       actually buys (a deterministic, version-controlled scheme with pinned per-action
       configurations, which `.periphery.yml`'s `schemes: [iosApp]` and the CI invocation both name)
       rather than asserting it repairs a resolution failure.
-- [ ] **2. Establish the credential-free simulator build invocation.** Settle the exact `xcodebuild`
+- [x] **2. Establish the credential-free simulator build invocation.** Settle the exact `xcodebuild`
       command: the `iosApp` scheme, `Debug` configuration, a **generic** iOS Simulator destination
       (no booted device and no pinned runtime version, so a runner-image bump cannot break it), an
       explicit derived-data path, and signing disabled via build-setting overrides. The project pins
@@ -75,6 +75,37 @@ is verified; what is missing is protection for *future* changes.
       generated framework lives under `shared/build/`, *outside* Xcode's derived data, so clearing
       derived data alone leaves a previously-built framework in place and can mask whether this
       checkout produced the one the app linked against. Clear both.
+
+      **Settled invocation** (run from the repository root; this exact string is what item 4 wires
+      into `.github/workflows/ci.yml` and item 6 documents):
+
+      ```bash
+      xcodebuild build \
+        -project iosApp/iosApp.xcodeproj \
+        -scheme iosApp \
+        -configuration Debug \
+        -destination 'generic/platform=iOS Simulator' \
+        -derivedDataPath iosApp/build/DerivedData \
+        ARCHS=arm64 \
+        CODE_SIGNING_ALLOWED=NO \
+        CODE_SIGNING_REQUIRED=NO \
+        CODE_SIGN_IDENTITY="" \
+        DEVELOPMENT_TEAM=""
+      ```
+
+      **`ARCHS=arm64` is the cost decision, not a cosmetic one.** A generic simulator destination
+      resolves `ARCHS = arm64 x86_64`, and `--dry-run` on
+      `:shared:embedAndSignAppleFrameworkForXcode` confirms two archs pull
+      `:shared:compileKotlinIosX64` and `:shared:linkDebugFrameworkIosX64` into the graph — a second
+      complete Kotlin/Native target compile that `verifyIos` never produces (it runs
+      `iosSimulatorArm64Test`). `ONLY_ACTIVE_ARCH=YES` cannot fix this: Xcode force-resets it to `NO`
+      for generic destinations. Pinning the arch keeps the destination generic — no booted device, no
+      pinned runtime version — while restricting the build to the one target CI already compiles.
+      Note the arch is pinned to match that KMP target, not to match the runner's hardware, so an
+      Intel runner would still cross-compile it correctly.
+
+      **`iosApp/build/DerivedData` is already ignored** by `.gitignore`'s `**/build/` rule
+      (`git check-ignore -v` confirms), so no ignore-rule change is needed.
 - [ ] **3. Prove the gate actually catches a Kotlin-facade break.** The mutation must be one only
       the *generated framework header* can reject, or the test proves nothing beyond "Swift
       compiles": misspell a member on a Kotlin-declared type at an existing call site — e.g.
@@ -126,7 +157,7 @@ is verified; what is missing is protection for *future* changes.
       `iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` and contains no `xcuserdata`, and
       run the same `-list` against `main`'s tree to record whether the scheme name resolved there
       too.
-- [ ] **2.** The settled command reports `** BUILD SUCCEEDED **` after both the derived-data
+- [x] **2.** The settled command reports `** BUILD SUCCEEDED **` after both the derived-data
       directory and the generated framework output under `shared/build/` have been removed, and the
       log shows the framework being rebuilt, no code-signing step, and no "requires a development
       team" diagnostic. Re-run to confirm repeatability. A local run can only approximate a fresh
