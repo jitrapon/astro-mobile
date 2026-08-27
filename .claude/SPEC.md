@@ -134,13 +134,25 @@ is verified; what is missing is protection for *future* changes.
       proves nothing about a step that was skipped or made advisory. Assert the job's **full** run
       step sequence, not just the new entry: item 4 reorders steps, and an edit that displaced
       `./gradlew verifyIos` or `:shared:linkReleaseFrameworkIosArm64` would pass every other check
-      here while silently dropping the iOS tests, the Swift gates, or the release-framework link. The authoritative check is the
+      here while silently dropping the iOS tests, the Swift gates, or the release-framework link.
+      Make that concrete rather than judgemental: extract the job's step list from
+      `git show main:.github/workflows/ci.yml` and from the branch, and require the two to be equal
+      **but for exactly one insertion**. That explicitly covers `brew install swiftlint`, whose loss
+      would be invisible — `swiftLintCheck` is built to warn-and-skip when its binary is missing, so
+      removing the install step turns a gate into a silent no-op under a green build. Confirm from
+      the PR log that the Swift gates actually executed rather than emitting their skip message. The authoritative check is the
       `verify-ios` job on the PR, and "green" is not sufficient evidence: read that job's log and
       confirm the step ran and emitted `** BUILD SUCCEEDED **`. Local verification cannot cover the
       runner image, so do not claim CI coverage until that log exists — and confirm in that same log
       that `verifyIos` and the release-framework link ran and succeeded alongside it. Record the step's wall-clock
       duration from the same run — §3 makes added time on the macOS runner a real cost, and this is
-      the only point at which it becomes measurable.
+      the only point at which it becomes measurable. A bare number means nothing on its own, so
+      compare it against the same job's duration on `main` and record the delta, and read the Gradle
+      output to confirm the simulator framework *link* ran while the Kotlin compilation from
+      `verifyIos` was reused (up-to-date or from-cache) rather than repeated. Deliberately **no**
+      hard pass/fail threshold: hosted-runner variance would make a fixed budget a flake source, and
+      §3 asks for cost-awareness, not a cost SLO. If the delta is disproportionate, say so and
+      revisit item 4's placement rather than silently accepting it.
 - [ ] **5.** `git diff main...HEAD --name-only` lists no `*.gradle.kts` and no `*.kt` / `*.swift`
       path — run this *after* item 3's injected error is reverted, so the deliberate break cannot
       hide in it. With the diff so bounded, `./gradlew verifyCheckPartition` passing and
