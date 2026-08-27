@@ -88,10 +88,25 @@ is verified; what is missing is protection for *future* changes.
         -derivedDataPath iosApp/build/DerivedData \
         ARCHS=arm64 \
         CODE_SIGNING_ALLOWED=NO \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGN_IDENTITY="" \
         DEVELOPMENT_TEAM=""
       ```
+
+      **The override set is minimal by measurement, not by convention.** On the `iphonesimulator`
+      SDK the platform already forces `CODE_SIGN_IDENTITY = -` (ad-hoc, displayed as "Sign to Run
+      Locally") and `PROVISIONING_PROFILE_REQUIRED = NO`, overriding the project's
+      `CODE_SIGN_STYLE = Automatic`. Building each subset against a fresh derived-data directory
+      shows: `CODE_SIGNING_ALLOWED=NO` is the only override with an observable effect, taking the
+      build from three `CodeSign` phases to zero. `CODE_SIGNING_REQUIRED=NO` and
+      `CODE_SIGN_IDENTITY=""` are inert — passing either alone still ran all three phases with the
+      same ad-hoc identity — so both are dropped rather than carried as decoration.
+      `DEVELOPMENT_TEAM=""` is kept for a different reason: it is the one setting the project pins
+      to a real, personal team, and it is the one question local evidence cannot settle, because
+      this machine's Xcode is signed into that team and a CI runner is not. Blanking it costs
+      nothing and removes the only credential-shaped input the build still names.
+
+      Disabling signing does not leave the framework unsigned: `codesign -dv` on the embedded
+      `shared.framework` reports `adhoc, linker-signed`, which Kotlin/Native's linker emits for
+      arm64 independently of any `CodeSign` build phase.
 
       **`ARCHS=arm64` is the cost decision, not a cosmetic one.** A generic simulator destination
       resolves `ARCHS = arm64 x86_64`, and `--dry-run` on
