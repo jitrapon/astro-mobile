@@ -55,11 +55,59 @@ is verified; what is missing is protection for *future* changes.
 
 ## 4. Implementation Plan and Progress Tracking (for agent)
 
-<Filled by `spec-development` in plan mode. GitHub-style checkboxes (`- [ ]`), one item per concrete task small enough to finish in a single resume pass.>
+- [ ] **1. Commit a shared `iosApp` Xcode scheme.** Promote the currently user-scoped scheme to
+      `iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` so the scheme resolves for any
+      contributor and for CI. `.gitignore` excludes only `xcuserdata/`, so no ignore-rule change is
+      needed — confirm that rather than assume it. Strip anything user- or machine-specific from the
+      promoted file. Note this also repairs `peripheryScan`, whose config already names a scheme it
+      cannot resolve on a fresh clone.
+- [ ] **2. Establish the credential-free simulator build invocation.** Settle the exact `xcodebuild`
+      command: the `iosApp` scheme, `Debug` configuration, a **generic** iOS Simulator destination
+      (no booted device and no pinned runtime version, so a runner-image bump cannot break it), an
+      explicit derived-data path, and signing disabled via build-setting overrides. The project pins
+      `CODE_SIGN_STYLE = Automatic` with a concrete development team, so the overrides are what keep
+      a credential-less runner from being asked for one; the shared framework's embed-and-sign build
+      phase must still succeed with signing off. Verify locally from a cold derived-data directory.
+- [ ] **3. Prove the gate actually catches a Kotlin-facade break.** Temporarily introduce a Swift
+      type error against the shared framework's facade, confirm the item-2 command fails with that
+      error, then revert and confirm it passes again. Without this the branch ships a step that is
+      green for the wrong reason — the whole point of the issue is a failure mode that currently
+      merges undetected, so it has to be observed failing once.
+- [ ] **4. Add the build step to the `verify-ios` job.** Wire the item-2 command into
+      `.github/workflows/ci.yml` after the existing release-framework link step, with a comment
+      recording two decisions: (a) it sits **outside** the partition drift guard, as artifact/compile
+      coverage beyond `check` — the same classification the Android assemble and the framework link
+      already carry; and (b) it is a direct `xcodebuild` step rather than a Gradle task, because the
+      app target's first build phase itself shells out to `./gradlew`, so wrapping it in Gradle would
+      nest one build inside another and contend for the same project locks. Keep default output (no
+      log-formatter dependency) so a failure stays diagnosable.
+- [ ] **5. Confirm the CI partition is undisturbed.** The new step adds no task to `check`, so the
+      drift guard and both aggregates must be byte-for-byte unaffected in what they run. Verify
+      rather than reason about it.
+- [ ] **6. Update the canonical project doc.** `.claude/CLAUDE.md` enumerates exactly what the
+      `verify-ios` job runs and which steps are deliberately outside the guard — both statements
+      become stale with item 4. Update that bullet and add a command-table row for the local
+      simulator app build, so the invocation contributors need is discoverable without reading YAML.
 
 ## 5. Testing & Validation (for agent)
 
-<Filled by `spec-development` in plan mode. Each item pairs 1:1 with a §4 item: the test/build/lint command that verifies it.>
+- [ ] **1.** `git ls-files` lists the shared scheme. Then simulate a fresh clone —
+      `git archive HEAD | tar -x -C <scratchpad>/clean` — and run `xcodebuild -list -project` against
+      the extracted project: `iosApp` must appear under `Schemes`. Checking the working tree alone
+      would pass on the ignored user scheme and prove nothing.
+- [ ] **2.** The settled command reports `** BUILD SUCCEEDED **` from a cold derived-data directory,
+      and the log shows no code-signing step and no "requires a development team" diagnostic. Re-run
+      once more to confirm it is repeatable rather than dependent on warm local state.
+- [ ] **3.** With the injected Swift error the command exits non-zero and the log names that error;
+      after reverting, the command succeeds and `git status` is clean. Record both outcomes.
+- [ ] **4.** `.github/workflows/ci.yml` parses as YAML, and `actionlint` reports no findings if it
+      resolves on PATH. Read the job back to confirm step ordering. The authoritative check is the
+      `verify-ios` job going green on the PR — local verification cannot cover the runner image, so
+      do not claim CI coverage until that run exists.
+- [ ] **5.** `./gradlew verifyCheckPartition` passes, and `./gradlew check` completes green with the
+      same task set as before the branch.
+- [ ] **6.** Re-read the edited sections for accuracy against the final YAML, and confirm the
+      documented local command is the one item 2 settled on — copy-paste it and run it.
 
 ## 6. Deployment
 
