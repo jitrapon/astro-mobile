@@ -55,12 +55,16 @@ is verified; what is missing is protection for *future* changes.
 
 ## 4. Implementation Plan and Progress Tracking (for agent)
 
-- [ ] **1. Commit a shared `iosApp` Xcode scheme.** Promote the currently user-scoped scheme to
+- [x] **1. Commit a shared `iosApp` Xcode scheme.** Promote the currently user-scoped scheme to
       `iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` so the scheme resolves for any
       contributor and for CI. `.gitignore` excludes only `xcuserdata/`, so no ignore-rule change is
       needed — confirm that rather than assume it. Strip anything user- or machine-specific from the
-      promoted file. Note this also repairs `peripheryScan`, whose config already names a scheme it
-      cannot resolve on a fresh clone.
+      promoted file. Establish by control run whether a fresh clone resolves `iosApp` *without* the
+      committed file — Xcode autocreates an implicit scheme from the target, so `xcodebuild -list`
+      can report the scheme on a project that has none committed. Record what the shared file
+      actually buys (a deterministic, version-controlled scheme with pinned per-action
+      configurations, which `.periphery.yml`'s `schemes: [iosApp]` and the CI invocation both name)
+      rather than asserting it repairs a resolution failure.
 - [ ] **2. Establish the credential-free simulator build invocation.** Settle the exact `xcodebuild`
       command: the `iosApp` scheme, `Debug` configuration, a **generic** iOS Simulator destination
       (no booted device and no pinned runtime version, so a runner-image bump cannot break it), an
@@ -113,10 +117,15 @@ is verified; what is missing is protection for *future* changes.
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **1.** `git ls-files` lists the shared scheme. Then simulate a fresh clone —
+- [x] **1.** `git ls-files` lists the shared scheme. Then simulate a fresh clone —
       `git archive HEAD | tar -x -C <scratchpad>/clean` — and run `xcodebuild -list -project` against
       the extracted project: `iosApp` must appear under `Schemes`. Checking the working tree alone
-      would pass on the ignored user scheme and prove nothing.
+      would pass on the ignored user scheme and prove nothing. `-list` output is necessary but not
+      sufficient — Xcode reports an autocreated implicit scheme identically, so also assert the
+      extracted tree physically contains
+      `iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` and contains no `xcuserdata`, and
+      run the same `-list` against `main`'s tree to record whether the scheme name resolved there
+      too.
 - [ ] **2.** The settled command reports `** BUILD SUCCEEDED **` after both the derived-data
       directory and the generated framework output under `shared/build/` have been removed, and the
       log shows the framework being rebuilt, no code-signing step, and no "requires a development
