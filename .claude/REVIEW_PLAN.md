@@ -27,4 +27,25 @@ Adversarial review of `.claude/SPEC.md` §§4–5 (plan only; the diff is doc-on
 
 ## Resolution log
 
-_Round 1 dispositions are recorded under the round-2 heading once evaluated._
+### Round 1 dispositions (applied before iteration 2)
+
+| # | Disposition | Rationale |
+| --- | --- | --- |
+| 1 | **AGREE** | Correct that a green job is not evidence a step ran. §5.4 now asserts the workflow command equals item 2's byte-for-byte, forbids `if:`/`continue-on-error:` on it, and requires reading the PR log for `** BUILD SUCCEEDED **`. Also added a wall-clock reading, which §3's macOS-cost constraint had no acceptance point for at all. |
+| 2 | **PARTIAL** | The reasoning is sound but the recommendation (capture `main`'s task closure and diff it) is disproportionate for a branch that never edits Gradle. Replaced with the assertion that subsumes it: the branch diff must contain no `*.gradle.kts`. With no edit capable of moving a task between halves, running the current guard *is* sufficient. |
+| 3 | **AGREE** | Verified against the repo before acting: `linkDebugFrameworkIosSimulatorArm64` and `linkReleaseFrameworkIosArm64` are distinct tasks, so the device-release artifact genuinely cannot serve a simulator build. Item 4 now names the real producer (the app's own build phase), moves the step to immediately after `verifyIos`, and states that the placement is a cache-warmth decision, not a dependency. |
+| 4 | **AGREE** | Folded into the same scope assertion as finding 2: the branch diff must contain no `.kt`/`.swift`, checked after item 3's injected error is reverted. This makes "don't change the facade to make it compile" mechanically unfalsifiable rather than aspirational. |
+| 5 | **AGREE (escalated)** | §7 is user-owned prose, so it was put to the user rather than self-edited; the user authorized populating it. Verifying the proposal before writing it caught an error in my own draft — `README.md` carries a mirrored command table, so "no README change" was wrong. §7 now names `.claude/CLAUDE.md`, `README.md`, and `CONTRIBUTING.md` (no change expected), and item 6 covers all three. |
+
+
+## Round 2 — verdict `needs-attention`
+
+> No-ship: the plan can produce a green PR while dropping existing iOS coverage, testing the wrong
+> Swift failure, or building against stale generated artifacts.
+
+| # | Sev | Finding | Disposition | Rationale |
+| --- | --- | --- | --- | --- |
+| 1 | high | §5.4 validates the new step but never asserts `verifyIos` and the release-framework link remain and run; an edit could drop either and still pass. | **AGREE** | Item 4 *reorders* the job's steps, which makes this more than theoretical. §5.4 now asserts the job's full run-step sequence and requires the PR log to show all three steps succeeded. |
+| 2 | high | Item 3's facade-break test does not name a concrete Kotlin-facade call, so an ordinary Swift-only error would satisfy it and leave the Kotlin-to-Swift binding untested. | **AGREE** | The strongest finding of the round — it defeats the one item whose entire purpose is proving the gate works. Item 3 now names real call sites (`DependencyGraph.shared.calendarScreenRepository()`, `repository.fetchCalendarScreen(...)`, `DependencyGraph.shared.start(baseUrl:)`, all verified present in `ContentView.swift`/`iOSApp.swift`) and §5.3 now requires the diagnostic to name the Kotlin symbol, not merely a non-zero exit. |
+| 3 | medium | Item 2 clears only derived data; the generated framework under `shared/build/` persists and can mask whether this checkout produced the linked framework. | **PARTIAL** | The stale-output mechanism is real and the fix is cheap, so item 2 now clears both. Declined the "run everything from an extracted clean clone" half: a full cold Kotlin/Native build locally is disproportionate when CI *is* a clean checkout — §5.2 now says so explicitly and points at §5.4's log requirement as the authoritative clean-environment evidence. |
+| 4 | medium | §5.6's "the two command tables carry the same rows" is unsatisfiable — the tables already differ on `main`. | **AGREE** | Verified and correct; this was a defect in my own check, not a judgement call. `README.md` has "Install Android app"/"Build shared module only"; `.claude/CLAUDE.md` has the CI-aggregate and contract-parity rows. The assertion is now scoped to the newly added row, with the divergence recorded so a later reader does not re-file it. |
