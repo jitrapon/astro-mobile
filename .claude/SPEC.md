@@ -137,7 +137,12 @@ is verified; what is missing is protection for *future* changes.
       here while silently dropping the iOS tests, the Swift gates, or the release-framework link.
       Make that concrete rather than judgemental: extract the job's step list from
       `git show main:.github/workflows/ci.yml` and from the branch, and require the two to be equal
-      **but for exactly one insertion**. That explicitly covers `brew install swiftlint`, whose loss
+      **but for exactly one insertion at a pinned position** — the inserted step's immediate
+      predecessor must be `./gradlew verifyIos` and its immediate successor
+      `:shared:linkReleaseFrameworkIosArm64`. Counting the insertion without pinning where it landed
+      would accept the step before `verifyIos` or after the release link, which is precisely the
+      placement item 4 rejects: the adjacency *is* the cache-reuse decision, so an unpinned check
+      would leave the cost objective unmet while every other assertion stayed green. That explicitly covers `brew install swiftlint`, whose loss
       would be invisible — `swiftLintCheck` is built to warn-and-skip when its binary is missing, so
       removing the install step turns a gate into a silent no-op under a green build. Confirm from
       the PR log that the Swift gates actually executed rather than emitting their skip message. The authoritative check is the

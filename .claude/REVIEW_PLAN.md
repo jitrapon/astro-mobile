@@ -1,4 +1,4 @@
-Status: blocking
+Status: clear
 
 # Plan Review — `116-ci-xcodebuild-step-verify-ios`
 
@@ -59,3 +59,28 @@ Adversarial review of `.claude/SPEC.md` §§4–5 (plan only; the diff is doc-on
 | --- | --- | --- | --- | --- |
 | 1 | high | §5.4's "assert the full run-step sequence" names no expected sequence and no comparator. Dropping `brew install swiftlint` would keep every named step and still pass, while `swiftLintCheck` self-skips. | **AGREE** | The hazard is real and specific to this repo: the Swift gates are deliberately built to warn-and-skip when their binary is absent, so losing the install step converts a gate into a no-op under a green build. §5.4 now compares the branch's step list against `main`'s and requires equality but for exactly one insertion, plus log evidence the Swift gates ran rather than skipped. |
 | 2 | medium | The macOS cost constraint is recorded but not enforced — no baseline, no delta bound, no proof Kotlin compilation was reused. | **PARTIAL** | Accepted the half that has real signal: a duration with no comparator was a fair hit, so §5.4 now compares against the same job on `main` and requires Gradle output showing the framework *link* ran while `verifyIos`'s Kotlin compilation was reused. Declined the hard acceptance budget — hosted-runner variance would make a fixed threshold a flake source, and §3 asks for cost-awareness, not a cost SLO. The plan says to escalate a disproportionate delta rather than auto-fail on a number. |
+
+## Round 4 — verdict `needs-attention`
+
+> Needs one more validation constraint: the plan requires adjacency for cost control but its test
+> accepts the new step anywhere in the job.
+
+| # | Sev | Finding | Disposition | Rationale |
+| --- | --- | --- | --- | --- |
+| 1 | medium | §5.4 required main's step list plus one insertion but never pinned *where* the insertion landed, so placing the build before `verifyIos` or after the release link would still pass. | **AGREE** | Correct, and it defeats the exact property item 4 chose the placement for — the adjacency *is* the cache-reuse decision, so an unpinned count leaves the cost objective unmet with everything else green. §5.4 now requires the inserted step's immediate predecessor to be `./gradlew verifyIos` and its immediate successor `:shared:linkReleaseFrameworkIosArm64`. |
+
+## Round 5 — verdict `approve`
+
+> The plan is now sufficient for implementation. No new substantive defect is supported by the
+> provided context; §5.4 pins the insertion between verifyIos and the release-framework link and
+> validates the critical steps and logs.
+
+No material findings. Loop terminated: cleared.
+
+## Override justification
+
+None required — the loop reached `approve` on iteration 5 rather than terminating on an override.
+Two findings were dispositioned **PARTIAL** on proportionality grounds rather than accepted whole
+(round 2 #3, declining a full cold-clone rebuild in favour of clearing generated output and naming
+CI as the clean-checkout evidence; round 3 #2, declining a hard numeric duration budget as a
+hosted-runner flake source). Both rationales are recorded above and neither was re-raised.
