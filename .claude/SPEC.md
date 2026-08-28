@@ -121,7 +121,7 @@ is verified; what is missing is protection for *future* changes.
 
       **`iosApp/build/DerivedData` is already ignored** by `.gitignore`'s `**/build/` rule
       (`git check-ignore -v` confirms), so no ignore-rule change is needed.
-- [ ] **3. Prove the gate actually catches a Kotlin-facade break.** The mutation must be one only
+- [x] **3. Prove the gate actually catches a Kotlin-facade break.** The mutation must be one only
       the *generated framework header* can reject, or the test proves nothing beyond "Swift
       compiles": misspell a member on a Kotlin-declared type at an existing call site — e.g.
       `DependencyGraph.shared.calendarScreenRepository()` or `repository.fetchCalendarScreen(...)`
@@ -130,6 +130,20 @@ is verified; what is missing is protection for *future* changes.
       while leaving the Kotlin-to-Swift binding completely untested — which is the exact regression
       class this branch exists to catch. Confirm the item-2 command fails, then revert and confirm
       it passes again.
+
+      **Result.** The mutation was `repository.fetchCalendarScreen(request:)` →
+      `fetchCalendarScreenAbsent(request:)` in `ContentView.swift`, the one call that crosses into
+      the repository the shared graph vends. The item-2 command exited **65** with
+      `** BUILD FAILED **` and the diagnostic
+      `value of type 'CalendarScreenRepository' has no member 'fetchCalendarScreenAbsent'` — the
+      Kotlin-declared type named in the message is the evidence that Swift resolved the generated
+      framework header and member-checked against it, not merely that Swift ran. The failing
+      frontend command corroborates it: its framework search path includes
+      `shared/build/xcode-frameworks/Debug/iphonesimulator27.0`, the Gradle-produced framework, so
+      there is no other `shared` module the compiler could have satisfied the call from. After
+      `git checkout` reverted the file, the same command exited **0** with `** BUILD SUCCEEDED **`,
+      emitted no `CodeSign` build phase and no development-team diagnostic, and `git status` was
+      clean.
 - [ ] **4. Add the build step to the `verify-ios` job.** Wire the item-2 command into
       `.github/workflows/ci.yml` **immediately after `verifyIos`**, ahead of the release-framework
       link. Placement is not a dependency: no existing step produces the artifact this build needs.
@@ -178,7 +192,7 @@ is verified; what is missing is protection for *future* changes.
       team" diagnostic. Re-run to confirm repeatability. A local run can only approximate a fresh
       checkout; the CI job on the PR is the authoritative clean-environment evidence, which is why
       §5.4 requires reading its log rather than trusting a local pass.
-- [ ] **3.** With the injected error the command exits non-zero **and the diagnostic names the
+- [x] **3.** With the injected error the command exits non-zero **and the diagnostic names the
       Kotlin-declared symbol** (`DependencyGraph`, `CalendarScreenRepository`, or whichever was
       mutated) — a non-zero exit alone does not distinguish a facade break from any other Swift
       error, so the symbol in the message is the evidence. After reverting, the command succeeds and
