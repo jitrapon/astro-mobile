@@ -225,7 +225,7 @@ is verified; what is missing is protection for *future* changes.
       (`67e9386db33f34b18cacb4e9f5d04b4fd90d705c1bcd8325fc98ee0ca404d44f`) once each is stripped of
       whitespace-only lines — the YAML block scalar and the Markdown fence differ only in their
       trailing newline.
-- [ ] **4b. Clean-environment evidence from the PR run.** Local verification cannot cover the runner
+- [x] **4b. Clean-environment evidence from the PR run.** Local verification cannot cover the runner
       image, so the authoritative check is the `verify-ios` job on the PR — and "green" is not
       sufficient evidence. This item cannot close before the branch is pushed and a PR exists; do
       not claim CI coverage until that log does. Read the job's log and confirm: the new step ran
@@ -239,6 +239,36 @@ is verified; what is missing is protection for *future* changes.
       than repeated. Deliberately **no** hard pass/fail threshold: hosted-runner variance would make
       a fixed budget a flake source, and §3 asks for cost-awareness, not a cost SLO. If the delta is
       disproportionate, say so and revisit item 4's placement rather than silently accepting it.
+
+      **Result.** PR #122, run `33261738641`, `verify-ios` on `macos-latest` — green, and green for
+      the right reasons. The new step emitted `** BUILD SUCCEEDED **`; `./gradlew verifyIos` and
+      `:shared:linkReleaseFrameworkIosArm64` both reported `BUILD SUCCESSFUL` in the same job. The
+      runner's step sequence resolved as item 4 specified: `xcodebuild` at index 7, immediately
+      after `verifyIos` (6) and before the release link (8), with `brew install swiftlint` intact at
+      5. `swiftlint 0.65.0` installed and **`:swiftFormatCheck` and `:swiftLintCheck` both appear as
+      executed Gradle tasks** — neither `SKIPPED`, `NO-SOURCE`, nor a self-skip message — so the
+      gates enforced rather than silently no-opping, which is the failure mode a green build cannot
+      otherwise distinguish. No `CodeSign` build phase ran and no development-team diagnostic
+      appeared; the only `codesign`-shaped strings in the log are Xcode's routine
+      `CODESIGNING_FOLDER_PATH` / `CODE_SIGN_CONTEXT_CLASS` environment exports, which are not
+      phases. The Xcode beta this branch was developed against and the runner's stable Xcode both
+      accept the invocation, which was the residual risk local verification could not reach.
+
+      **The cache-reuse rationale holds on the runner, not just locally.** Inside the `xcodebuild`
+      step the Gradle output shows `:shared:compileKotlinIosSimulatorArm64` **UP-TO-DATE** while
+      `:shared:linkDebugFrameworkIosSimulatorArm64` **ran** — the compilation was reused from
+      `verifyIos` and the added work really is a link, exactly as the placement predicts. **Zero**
+      `IosX64` tasks appear in the step, so the `ARCHS=arm64` pin held on a runner as it does
+      locally and no second Kotlin/Native target compile was provoked.
+
+      **Cost: the step measures 45s**; `verifyIos` took 1m57s and the release link 1m29s beside it,
+      for a 4m36s job. The three most recent `verify-ios` runs on `main` took 4m34s / 4m46s / 4m53s
+      (mean 4m44s, 19s spread). Note the job-total delta is **−8s**, i.e. this run was *faster* than
+      main's mean despite adding a step — that comparison is noise-dominated and should not be read
+      as the step being free: `verifyIos` happened to run 33s quicker here than in the `main` sample.
+      The direct 45s measurement is the honest figure, ~16% of the job. That is proportionate for
+      the only gate in the repository that type-checks Kotlin-declared symbols at their Swift call
+      sites, so item 4's placement stands unrevisited.
 - [x] **5.** `git diff main...HEAD --name-only` lists no `*.gradle.kts` and no `*.kt` / `*.swift`
       path — run this *after* item 3's injected error is reverted, so the deliberate break cannot
       hide in it. With the diff so bounded, `./gradlew verifyCheckPartition` passing and

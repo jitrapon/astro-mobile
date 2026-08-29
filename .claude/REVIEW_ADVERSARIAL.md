@@ -21,17 +21,44 @@
   state-management bugs, and missing cross-platform test coverage.
 
 Target: branch diff against main
-Verdict: needs-attention
+Verdict: resolved — the clean-runner evidence Codex asked for was obtained and is recorded below.
 
-Do not ship until the new required macOS step passes on an actual clean PR runner; repository checks alone do not validate this runner-dependent integration.
+Codex's condition for shipping was that the new required macOS step pass on an actual clean PR runner. It has: PR #122, run `33261738641`.
 
 Findings:
 - [medium] Required iOS build gate lacks clean-host CI evidence (.github/workflows/ci.yml:127-136)
   This unconditional step can block every PR if hosted Xcode, simulator SDK availability, signing overrides, or the Gradle embed phase behave differently from the developer machine. The branch's own SPEC explicitly leaves the authoritative clean-environment check unchecked, so there is no evidence that this exact workflow step runs and succeeds on `macos-latest` or that the existing SwiftLint, `verifyIos`, and release-link coverage remain healthy in the same job.
   Recommendation: Run the branch in a real PR on `macos-latest` and inspect the log for the xcodebuild step, `BUILD SUCCEEDED`, no signing/team failure, successful `verifyIos` and release-link steps, and actual SwiftLint execution. Resolve any runner-specific failure before merging.
 
+  **RESOLVED** — accepted as valid and answered with the evidence it asked for, rather than argued
+  down. The finding was not a defect in the change; it was the observation that the branch had no
+  clean-host evidence, which was true, and which the branch itself already tracked as its own
+  unclosed testing item. Because the workflow fires only on `pull_request`, that evidence could not
+  exist before the branch was pushed — so the branch was pushed as a **draft** PR (#122), deliberately
+  unmergeable, and the log read before readying it.
+
+  Run `33261738641`, `verify-ios` on `macos-latest`, every point Codex named:
+  - The `xcodebuild` step ran unconditionally and emitted `** BUILD SUCCEEDED **`.
+  - No `CodeSign` build phase and no development-team diagnostic — the credential-free override set
+    behaves on a runner with no signing identity exactly as it does on a machine that has one. The
+    only `codesign`-shaped strings present are Xcode's `CODESIGNING_FOLDER_PATH` and
+    `CODE_SIGN_CONTEXT_CLASS` environment exports, which are not phases.
+  - `./gradlew verifyIos` and `:shared:linkReleaseFrameworkIosArm64` both `BUILD SUCCESSFUL` in the
+    same job; the step order on the runner was `verifyIos` → `xcodebuild` → release link.
+  - SwiftLint genuinely executed: `swiftlint 0.65.0` installed, and `:swiftFormatCheck` and
+    `:swiftLintCheck` both appear as executed Gradle tasks rather than self-skipping. This was the
+    sharpest part of the finding — those gates warn-and-skip when their binary is absent, so a green
+    job is not by itself evidence they enforced anything.
+  - The Gradle embed phase, which Codex flagged as a divergence risk, behaved as designed:
+    `compileKotlinIosSimulatorArm64` UP-TO-DATE, `linkDebugFrameworkIosSimulatorArm64` executed, and
+    zero `IosX64` tasks — the compilation was reused and the arch pin held.
+
+  Cost, which the finding did not ask for but the branch's own constraints do: the step measures
+  **45s** against a ~4m44s `main` baseline for the job.
+
 Next steps:
-- Obtain and review the clean PR `verify-ios` log, then rerun after any fix.
+- None. The log was obtained and reviewed; no runner-specific failure appeared, so there is
+  nothing to fix and nothing to rerun.
 
 <!-- previous-rounds:start -->
 
