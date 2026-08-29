@@ -160,7 +160,7 @@ is verified; what is missing is protection for *future* changes.
       nest one build inside another and contend for the same project locks. The step must be
       unconditionally blocking — no `if:`, no `continue-on-error:` — and keep default output (no
       log-formatter dependency) so a failure stays diagnosable.
-- [ ] **5. Confirm the CI partition is undisturbed, and bound the branch's blast radius.** The new
+- [x] **5. Confirm the CI partition is undisturbed, and bound the branch's blast radius.** The new
       step adds no task to `check`, so the drift guard and both aggregates must be unaffected in what
       they run. Two constraints make that provable cheaply rather than by re-deriving `main`'s task
       closure: this branch must touch **no** `*.gradle.kts` (the partition list is the only thing
@@ -239,11 +239,22 @@ is verified; what is missing is protection for *future* changes.
       than repeated. Deliberately **no** hard pass/fail threshold: hosted-runner variance would make
       a fixed budget a flake source, and §3 asks for cost-awareness, not a cost SLO. If the delta is
       disproportionate, say so and revisit item 4's placement rather than silently accepting it.
-- [ ] **5.** `git diff main...HEAD --name-only` lists no `*.gradle.kts` and no `*.kt` / `*.swift`
+- [x] **5.** `git diff main...HEAD --name-only` lists no `*.gradle.kts` and no `*.kt` / `*.swift`
       path — run this *after* item 3's injected error is reverted, so the deliberate break cannot
       hide in it. With the diff so bounded, `./gradlew verifyCheckPartition` passing and
       `./gradlew check` completing green is sufficient evidence the partition is unchanged: no edit
       capable of moving a task between the two halves is present in the branch.
+
+      **Result.** `git status` was clean before the diff was taken, so item 3's mutation is
+      provably reverted rather than merely absent from the listing. The branch diff is four paths —
+      `.claude/REVIEW_PLAN.md`, `.claude/SPEC.md`, `.github/workflows/ci.yml`, and
+      `iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` — with no `*.gradle.kts` and
+      no `*.kt` / `*.swift` among them, so neither the partition list nor the Kotlin-to-Swift facade
+      can have moved. `./gradlew verifyCheckPartition` passed, reporting that
+      `verifyAndroidCommon` ∪ `verifyIos` covers exactly the 45 action-bearing tasks `check` runs,
+      and `./gradlew check` completed `BUILD SUCCESSFUL` (83 actionable tasks;
+      `:shared:iosX64Test` SKIPPED, as it is on any Apple-Silicon host — the target's own
+      architecture guard disables it, not anything this branch did).
 - [ ] **6.** Re-read the edited sections against the final YAML for accuracy. Copy the documented
       command out of each table and run it — a doc command that has drifted from item 2's is worse
       than none. Scope the cross-table assertion to the **newly added row only** — the two tables
