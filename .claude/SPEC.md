@@ -167,7 +167,7 @@ is verified; what is missing is protection for *future* changes.
       that could move a task between halves) and **no** `.kt` / `.swift` source (§3 forbids changing
       the framework's public surface — an implementation must not be able to make the app compile by
       editing the facade). Assert both from the branch diff, then run the guard.
-- [ ] **6. Update the docs named in §7.** `.claude/CLAUDE.md` enumerates exactly what the
+- [x] **6. Update the docs named in §7.** `.claude/CLAUDE.md` enumerates exactly what the
       `verify-ios` job runs and which steps are deliberately outside the guard — both statements
       become stale with item 4. Update that bullet and the outside-the-guard sentence, and add a
       command-table row for the local simulator app build so the invocation is discoverable without
@@ -255,13 +255,26 @@ is verified; what is missing is protection for *future* changes.
       and `./gradlew check` completed `BUILD SUCCESSFUL` (83 actionable tasks;
       `:shared:iosX64Test` SKIPPED, as it is on any Apple-Silicon host — the target's own
       architecture guard disables it, not anything this branch did).
-- [ ] **6.** Re-read the edited sections against the final YAML for accuracy. Copy the documented
+- [x] **6.** Re-read the edited sections against the final YAML for accuracy. Copy the documented
       command out of each table and run it — a doc command that has drifted from item 2's is worse
       than none. Scope the cross-table assertion to the **newly added row only** — the two tables
       already diverge on `main` (`README.md` carries "Install Android app" and "Build shared module
       only"; `.claude/CLAUDE.md` carries the CI-aggregate and contract-parity rows), so requiring
       them to match would either fail unsatisfiably or drag an unrelated reconciliation into this
       branch. Confirm no doc file outside §7's list was touched.
+
+      **Result.** The new `iOS app build (simulator)` row is byte-identical between
+      `.claude/CLAUDE.md` and `README.md`, and joining the CI step's backslash continuations
+      reproduces it exactly — string-equal and token-equal under `shlex`, so a quoting difference
+      could not hide (sha256 `f2d619f9a2c942973975827686e7fd5348bbd48e06bbda75f4f72e950f17aa06`).
+      Copied out of the table and run verbatim against a removed derived-data directory it exited
+      **0** with `** BUILD SUCCEEDED **`, zero `CodeSign` phases, no development-team diagnostic,
+      and no `IosX64` task in the Gradle output — confirming the documented arch pin still holds the
+      build to the single KMP target. The prose claims were re-read against the final YAML: the
+      `verify-ios` bullet now names the `xcodebuild` step and its cache-reuse placement, and the
+      outside-the-guard sentence now lists all three build steps. Only `.claude/CLAUDE.md` and
+      `README.md` changed; `CONTRIBUTING.md` is untouched, its prerequisite line already naming
+      Xcode as required for the iOS app, which is what supplies `xcodebuild`.
 
 ## 6. Deployment
 
