@@ -246,11 +246,11 @@ is verified; what is missing is protection for *future* changes.
       capable of moving a task between the two halves is present in the branch.
 
       **Result.** `git status` was clean before the diff was taken, so item 3's mutation is
-      provably reverted rather than merely absent from the listing. The branch diff is four paths —
-      `.claude/REVIEW_PLAN.md`, `.claude/SPEC.md`, `.github/workflows/ci.yml`, and
-      `iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme` — with no `*.gradle.kts` and
-      no `*.kt` / `*.swift` among them, so neither the partition list nor the Kotlin-to-Swift facade
-      can have moved. `./gradlew verifyCheckPartition` passed, reporting that
+      provably reverted rather than merely absent from the listing. At the time of the run the
+      branch diff was `.claude/REVIEW_PLAN.md`, `.claude/SPEC.md`, `.github/workflows/ci.yml`, and
+      `iosApp/iosApp.xcodeproj/xcshareddata/xcschemes/iosApp.xcscheme`; item 6 later added
+      `.claude/CLAUDE.md` and `README.md`. No `*.gradle.kts` and no `*.kt` / `*.swift` appears in
+      either set, so neither the partition list nor the Kotlin-to-Swift facade can have moved. `./gradlew verifyCheckPartition` passed, reporting that
       `verifyAndroidCommon` ∪ `verifyIos` covers exactly the 45 action-bearing tasks `check` runs,
       and `./gradlew check` completed `BUILD SUCCESSFUL` (83 actionable tasks;
       `:shared:iosX64Test` SKIPPED, as it is on any Apple-Silicon host — the target's own
