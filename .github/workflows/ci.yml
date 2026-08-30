@@ -96,6 +96,45 @@ jobs:
 
       - run: ./gradlew verifyIos
 
+      # Compile coverage beyond `check`: build the Swift app target against the shared framework.
+      # This is the only gate that type-checks Kotlin-declared symbols at their Swift call sites —
+      # swiftFormatCheck and swiftLintCheck parse Swift without resolving the generated framework
+      # header, so a renamed or removed Kotlin declaration passes both of them and still breaks the
+      # app. Outside the verifyCheckPartition guard for the same reason as the Android assemble and
+      # the release link below: it is build coverage, not a `check` task.
+      #
+      # Placement immediately after verifyIos is about cost, not order — no earlier step produces
+      # the artifact this needs. linkReleaseFrameworkIosArm64 links the *device release* framework,
+      # while the app target's own first build phase resolves $(CONFIGURATION)/$(SDK_NAME) and
+      # invokes Gradle for the *debug simulator* one. Running here reuses the iosSimulatorArm64
+      # klibs verifyIos just compiled, so the added work on this runner is a framework link rather
+      # than a second Kotlin/Native compile.
+      #
+      # Invoked as xcodebuild rather than wrapped in a Gradle task because that same build phase
+      # already shells out to ./gradlew: nesting would put one Gradle build inside another,
+      # contending for the same project locks.
+      #
+      # ARCHS=arm64 keeps the destination generic — no booted device, no pinned runtime version, so
+      # a runner-image bump cannot break it — while holding the build to the one KMP target CI
+      # already compiles. A generic simulator destination otherwise resolves ARCHS = arm64 x86_64
+      # and drags in a complete second Kotlin/Native target compile (iosX64) that nothing else here
+      # builds; ONLY_ACTIVE_ARCH cannot substitute, as Xcode force-resets it to NO for generic
+      # destinations. CODE_SIGNING_ALLOWED=NO is what lets a credential-less runner through: the
+      # iphonesimulator SDK already forces an ad-hoc identity, and this drops the CodeSign phases
+      # entirely. DEVELOPMENT_TEAM="" blanks the one setting the project pins to a real team, so
+      # nothing credential-shaped is left in the invocation. Output is left unformatted — no log
+      # formatter to install, and a raw xcodebuild failure stays diagnosable.
+      - run: |
+          xcodebuild build \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath iosApp/build/DerivedData \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
+
       # Build coverage beyond `check`: link the shipping iOS device framework with release codegen.
       # Outside the verifyCheckPartition guard for the same reason as the Android assemble — it's an
       # artifact-link assurance, not a `check` task. The iOS Kotlin already compiled for the tests
