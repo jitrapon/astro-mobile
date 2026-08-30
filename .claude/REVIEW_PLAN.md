@@ -1,4 +1,4 @@
-Status: blocking
+Status: clear
 
 # Plan Review — PR-blocking SBOM-based Gradle SCA gate
 
@@ -33,3 +33,19 @@ Status: blocking
 **6 — AGREE.** The strongest finding. The real dependency graph is clean, so every permanent check passes even if a later edit stops invoking the scanner. Added §4.6: a committed vulnerable-SBOM fixture scanned through the identical command and assertion path, expecting a non-zero exit — the same posture as the repo's `semgrep --test` fixture pinning `.semgrep/coroutines.kt`. The one-time vulnerable pin is retained as supplemental evidence, since it exercises the real generator the fixture bypasses.
 
 **Net effect:** §4 grew from 10 items to 13, §5 likewise. Three of the additions (fixture self-test, severity guard, retention assertions) convert reviewer discipline into mechanical enforcement, which is the convention this repo already applies to every other gate.
+
+### Round 2 — 2026-08-30 (verdict: needs-attention, 2 high + 1 medium)
+
+| # | Finding | Disposition |
+| --- | --- | --- |
+| 1 | The §5.3 discriminators are not graph-unique, so they cannot prove per-configuration coverage | **AGREE** |
+| 2 | A red `sca` job does not make a PR unmergeable — that needs a required check | **PARTIAL** |
+| 3 | §7 is still a placeholder while item 13 promises documentation work | **PARTIAL — user prose** |
+
+**1 — AGREE (defect accepted, heavier remedy declined).** Verified in `shared/build.gradle.kts`: `ktor-client-darwin` is declared once in `iosMain:912` and so reaches the BOM via any one of the three iOS targets; `ktor-client-mock` is declared in `commonTest:923` and feeds every test graph; the Compose libraries are `implementation` dependencies present in both debug and release graphs. Name-presence therefore cannot distinguish "all graphs contributed" from "one did". §4.3 / §5.3 now resolve each selected configuration's coordinate list independently and assert the BOM is a superset of the union, which detects a dropped graph by construction. Codex's alternative — emitting a separate BOM per configuration — was declined: it changes the artifact CI scans to satisfy a check that a set-comparison already satisfies at lower cost.
+
+**2 — PARTIAL (real risk, wrong premise).** The premise that the check is unrequired is false: `sca` is already listed as a required status check in the active `main` branch ruleset (id `18257823`), alongside `verify-android-common`, `verify-ios`, `semgrep`, `betterleaks`, and `actions-pin`. No ruleset change is needed and none is in scope. The residual risk Codex surfaced is real, though, and sharper than the finding states: because the requirement is keyed to the **check name**, an implementation that renames `sca` or moves the scan into a new job would leave the new check unrequired and non-blocking while every red/green observation in this plan still looked correct. §4.8 now pins the job name as a constraint and §5.8 verifies the ruleset still lists `sca`.
+
+**3 — PARTIAL (the rest is user prose, escalated).** The verifiable half is folded into territory this skill owns: §5.13 now names the exact statements `.claude/CLAUDE.md` must carry and greps for them, rather than asking vaguely for a doc edit. The remaining half — populating §7 itself — is user-authored prose the skill may not ghost-edit. It is not blocking: §7 is a scaffold placeholder because the issue called out no documentation obligation, and the repo's own convention (CLAUDE.md's "Documented config files") already supplies the requirement that item 13 implements.
+
+**Termination:** `Status: clear`. Both high findings are closed in the plan; the one open item is a user-prose decision that does not block implementation.
