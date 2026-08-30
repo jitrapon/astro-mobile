@@ -562,6 +562,18 @@ tasks.register("peripheryScan") {
 // `detekt*` / `ktfmt*` (versions this repository pins in the version catalog and can bump on its
 // own), and the Kotlin compiler classpaths (remediable by a Kotlin upgrade). The dividing line is
 // remediability from this repository, not whether a dependency is "tooling".
+//
+// Traversing every resolvable configuration means traversing three that cannot resolve their own
+// declared dependencies: `appleMainCInterop`, `iosMainCInterop`, and `nativeMainCInterop`. Those
+// are
+// the commonized-cinterop configurations Kotlin creates for shared native source sets, and the
+// libraries this project depends on publish no variant matching them, so each dependency resolves
+// FAILED. The generator tolerates that and keeps going, which is the only reason an empty
+// `includeConfigs` is safe here; every coordinate those three declare reaches the BOM anyway
+// through the per-target `ios<Target>CInterop` and `ios<Target>CompileKlibraries` configurations,
+// which resolve the full native graph down to the target-specific artifacts. If a generator upgrade
+// ever makes an unresolvable configuration fatal, this is the shape of the failure and the skip
+// list is where those three would have to be named.
 allprojects {
     tasks.withType<CyclonedxDirectTask>().configureEach {
         includeConfigs.set(emptyList<String>())
