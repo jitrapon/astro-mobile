@@ -1,5 +1,6 @@
 import java.io.File
 import javax.inject.Inject
+import org.cyclonedx.gradle.CyclonedxDirectTask
 import org.gradle.process.ExecOperations
 
 buildscript {
@@ -523,6 +524,52 @@ tasks.register("peripheryScan") {
 // fail the build until it were also classified into a CI half; that failure is the intended signal
 // that this decision is being reversed, not an obstacle to route around.
 // ----------------------------------------------------------------------------------------------
+
+// The scope of the graph the BOM covers, pinned explicitly rather than inherited from the plugin's
+// conventions: a plugin upgrade that narrowed a default would otherwise shrink what the gate can
+// see, silently, and while still passing.
+//
+// Every resolvable configuration of every project is in scope by default. An empty `includeConfigs`
+// means "no allow-list", so a new KMP target, a new source set, or a new module widens the BOM
+// automatically. An allow-list of configuration names would instead have to be edited in lockstep
+// with the build, and a stale or misspelled entry there narrows coverage without failing anything.
+//
+// TEST GRAPHS ARE IN SCOPE, AND A VULNERABLE TEST-ONLY DEPENDENCY BLOCKS A PULL REQUEST. That is
+// the plain reading of what this gate promises — a Gradle dependency carrying a high-or-worse
+// advisory fails the pull request — and it matches the coverage of the inventory channel the gate
+// sits alongside. `testConfigs` is emptied so that no component is stamped
+// `cdx:maven:package:test`, which keeps the document from carrying an annotation a downstream
+// scanner could use to filter those components back out. Narrowing the gate to shipping
+// dependencies only would be a deliberate change to what it promises, not a filter detail.
+//
+// The exclusions are the one class of dependency this repository cannot act on: build-time tooling
+// whose version the Android Gradle Plugin pins, which ships inside no artifact, and which therefore
+// has no remediation available here short of a whole-toolchain upgrade. Left in, the tooling alone
+// contributes a critical and dozens of high advisories that no source change can clear — and since
+// the severity policy forbids waving a high-or-worse advisory through the ignore list, the gate
+// would be permanently red and so permanently uninformative. Each pattern is a full-string regex:
+//
+//   ^classpath$              — the buildscript classpath, the same exclusion the dependency-graph
+//                              inventory job applies for the same reason. `includeBuildEnvironment`
+//                              already keeps buildscript configurations out of the traversal
+//                              entirely; this is the second layer that holds if it is flipped back.
+//   ^androidLintTool$        — the Android lint tool's own runtime (`:shared` and `:androidApp`);
+//                              carries the Bouncy Castle stack AGP pins.
+//   ^unified-test-platform-  — AGP's Unified Test Platform harness; carries a gRPC/Netty stack
+//     .*$                      several minor versions behind, pinned by AGP.
+//
+// Deliberately still IN scope: `coreLibraryDesugaring` (its artifact is bundled into the APK),
+// `detekt*` / `ktfmt*` (versions this repository pins in the version catalog and can bump on its
+// own), and the Kotlin compiler classpaths (remediable by a Kotlin upgrade). The dividing line is
+// remediability from this repository, not whether a dependency is "tooling".
+allprojects {
+    tasks.withType<CyclonedxDirectTask>().configureEach {
+        includeConfigs.set(emptyList<String>())
+        skipConfigs.set(listOf("^classpath$", "^androidLintTool$", "^unified-test-platform-.*$"))
+        testConfigs.set(emptyList<String>())
+        includeBuildEnvironment.set(false)
+    }
+}
 
 // ----------------------------------------------------------------------------------------------
 // Reproducible CI partition — verifyAndroidCommon (host-portable) + verifyIos (macOS-only)
