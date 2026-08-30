@@ -43,8 +43,26 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
    - **Section 5 — Testing & Validation (for agent)**: how each section-4 item will be verified. Pair 1:1 with section 4 items where possible (unit tests, integration tests, manual checks, CI gates, lint/build commands).
    - **Section 6 — Deployment**: only fill if section 6 does not already say "Not applicable…". If it does, leave it alone.
 
+   **Settle the plan anchor (section 0).** You own it from here: section 0's `completes` and
+   `spec-objective` are placeholders until this point because only now — with §§4–5 drafted and the
+   code re-explored — is the branch's delivered scope actually known.
+
+   - `spec-objective` — section 2, collapsed to one line. It reaches a human only in the sync PR
+     body; it is never written into the plan.
+   - `completes` — `yes` only if merging this branch finishes the **whole** task row in
+     `current-plan.md`, not just this branch's slice of it. A branch that is one layer of a stack is
+     `completes: no`. Getting this wrong in the `yes` direction clears the lane's Status while most
+     of the task is still open, and `sync-plan` acts on it unattended.
+   - Leave `lane` and `task` exactly as `scaffold-issue` recorded them. They were validated against
+     the live plan with the user present; you are not in a position to second-guess them, and
+     changing one here silently redirects which lane moves later.
+
+   Edit section 0 in place; it is part of the same commit as §§4–5. The draft PR's body stays stale
+   until `finish-branch` rewrites it — that is fine, since `sync-plan` reads only `lane`/`task`/
+   `completes` for in-flight Status and `completes` is still `no`.
+
 3. Use GitHub-style checkboxes: `- [ ] item`. Keep items imperative and specific ("Add the rate-limit middleware to the `/auth/token` route and config key" — not "add rate limiting").
-4. Write the checklists back via the Edit tool. Replace the placeholder lines ("To-be-updated as you make changes…") but **preserve every other section verbatim** — including user-authored text in sections 1–3 and 7.
+4. Write the checklists back via the Edit tool (and section 0 per step 2). Replace the placeholder lines ("To-be-updated as you make changes…") but **preserve every other section verbatim** — including user-authored text in sections 1–3 and 7.
 5. **Adversarially review the plan before presenting it.** Invoke `/codex:adversarial-review` via the Skill tool to critique the just-written §§4–5 (and §6 if filled). This is a plan review, not a code review — the diff is doc-only.
 
    ```
@@ -77,6 +95,25 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
    - **User-prose blocker:** the only path to closure requires editing §§1–3 / §7 / §8 (user prose). Pause, name the specific sentences the user needs to change, and hand back. Don't ghost-edit user prose to make Codex happy.
 
    The user can interrupt the loop at any point with a corrective instruction — autonomous does not mean exclusive. Treat any interjection as a steering signal and route accordingly.
+
+10. **Ensure the lane shows in flight** (plan mode only, once, after termination).
+
+    ```bash
+    gh pr list --head "$(git branch --show-current)" --state open --json number,url
+    ```
+
+    - **A PR already exists** (the normal case — `scaffold-issue` opened a draft): do nothing. Do
+      **not** rewrite its body. `completes` is still `no` and stays `no` until the task row is
+      actually finished, so refreshing the block changes nothing in the plan, and `finish-branch`
+      updates it at wrap-up.
+    - **No PR exists**: the branch was hand-authored rather than scaffolded. Nothing has told the
+      plan this lane started work, and nothing will until wrap-up. Push and open the draft, copying
+      the `## Plan Update` block shape from `scaffold-issue` step 8 with the values now in SPEC
+      section 0.
+
+    Once, at termination — never per review iteration and never in resume or review-loop mode. If
+    the push or `gh` call fails, say so and stop there: the plan not showing this lane is a
+    reporting gap, not a reason to fail a settled plan.
 
 ## Review-loop mode — "run the review" / "resume the review"
 
@@ -184,6 +221,7 @@ The rationale must cite the signal: e.g. "Two consecutive DEFER → #973 rounds 
 - Never invent requirements beyond what sections 1–3 and 7 actually say. If something is ambiguous, ask before baking it into the plan.
 - Never tick an item without evidence it works (passing tests, successful build, confirmed manual check with output shown).
 - Commit after each resume-mode tick (step 7) so plan progress and the code it represents land together as one reviewable unit. Never push or open PRs from this skill — the user drives those.
+- **The only push this skill may make is plan mode step 10**, and only to open a *draft* PR when the branch has none. Never push from resume or review-loop mode, never open a ready PR, never push to `main`, and never rewrite an existing PR’s body — `finish-branch` owns all of that.
 - SPEC.md is per-branch. Don't copy checklists between branches or assume another branch's plan applies.
 - If resume-mode work reveals the plan itself is wrong (not just incomplete), stop and ask whether to re-plan before editing further.
 - Keep the user's prose in sections 1, 2, 3, 7, 8 untouched — you only own the checklists. This rule applies inside the autonomous review loop too: if a Codex finding can only be addressed by editing user prose, escalate rather than self-edit.

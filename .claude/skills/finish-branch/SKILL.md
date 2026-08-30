@@ -79,6 +79,19 @@ List the concrete candidates in the surrounding prose so the choice is informed,
 
 ## Steps
 
+### Step 0 — Capture the plan anchor (before anything resets it)
+
+Read `.claude/SPEC.md` section 0 (**Plan anchor**) and hold `lane`, `task`, `issues`, `completes`,
+and `spec-objective` in memory now. Step 1 checks SPEC.md back out from main's skeleton, so after it
+runs the anchor is gone — and re-deriving lane and task from the branch name at step 6 would be
+inference feeding an unattended writer. Capture it in the same pass that reads SPEC §§1–2 for the
+title.
+
+If section 0 is missing or still holds skeleton placeholders, do not guess. Use `lane: -`,
+`task: -`, `completes: no` in the Plan Update block and say so in the final summary; `sync-plan`
+treats that as non-plan work and leaves Status and Next action alone, which is the correct outcome
+for a branch that never claimed a task row.
+
 ### Step 1 — Reset agent working files to main's skeleton
 
 ```bash
@@ -109,6 +122,53 @@ After the checkout, run `git status --porcelain -- .claude/REVIEW_ADVERSARIAL.md
 
 `git push`. If the upstream isn't set, `git push -u origin <branch>`. Report the commit range pushed.
 
+### The PR title and body convention (steps 5 and 6 both apply it)
+
+**Title — imperative, verb-first, and true of the whole branch.** A squash merge uses the PR title as
+the squashed commit subject, so the title has to read the way a commit message does: phrase it so
+that **"Applying this commit will <title>"** is a correct sentence. Lead with a verb, imperative
+mood, no trailing period.
+
+The title must describe the branch's *work*, not the branch's *setup*, and it must cover **all** of
+that work. Three failure modes to check for by name, because each produces a title that is
+grammatical and still wrong:
+
+- **A stale title on a pre-existing PR.** A draft opened at scaffolding time is usually titled after
+  the scaffolding commit ("Scaffold SPEC for X"). Squashed, that records an entire branch in `main`'s
+  history as the act of creating a spec file.
+- **The most recent commit subject.** By the time this skill runs, the newest commit is usually the
+  skeleton reset or a one-line review fix — neither summarizes anything. Derive the title from what
+  the branch *delivers*: read SPEC §§1–2 **before step 1 resets them**, or read `git log <base>..HEAD`
+  as a whole. Never from a single commit.
+- **A title that was true when it was written and now covers only part of the branch.** The quietest
+  of the three, because it passes both checks above: it is imperative, verb-first, and about real
+  work — but if the branch has since grown two more capabilities, squashing it records a third of the
+  change. A title is only correct if it is true of the branch's *complete* delivered work, so check
+  it against `git log <base>..HEAD` as a whole rather than against its own plausibility.
+
+**Body — written for the human who has to review it**, and carrying at least these sections:
+
+- `## Description` — what this branch delivers and why, in a few sentences. If the PR already had
+  user-authored prose, fold it in here rather than discarding it.
+- `## What changed` — the summary of the work, organized by the thing changed rather than by commit.
+  Name the types/files a reviewer should open first.
+- `## Gotchas` — the highest-value section, and the one worth spending effort on. Pin the numbers a
+  reviewer would otherwise have to derive (a bounded knob and its ceiling; a real window that differs
+  from the nominal one), and name the decisions that *look* like oversights but are deliberate,
+  each with its reason.
+- `## Plan Update` — the machine-read section. Copy the anchor captured in step 0 verbatim and add
+  `deferred` (the same issue numbers the `## Adversarial review` section reports as DEFERRED). It is
+  parsed unattended by `sync-plan` in astro-docs, so it is a fenced YAML block with fixed keys and
+  nothing else — format and field semantics live in `plan-update-contract.md` in astro-docs. A
+  malformed block is dropped and the plan silently does not move, so keep the fence intact.
+  When the PR already carries a `## Plan Update` block (the draft opened at scaffold time does),
+  **replace it in place** — two blocks in one body is a parse failure, and the scaffold-time block
+  is stale by definition: it was written before the branch had a `deferred` list or a settled
+  `completes`.
+
+Preserve any trailers (`Co-Authored-By`, session links) and stack-tooling footers already present in
+the body — those are attribution and tooling state, not prose.
+
 ### Step 3 — Detect existing PR
 
 Run `gh pr view --json number,state,isDraft,url` (in the current branch's context).
@@ -131,9 +191,33 @@ gh pr ready
 
 Then proceed to step 5.
 
-### Step 5 — Post audit-trail comment on existing PR
+### Step 5 — Bring the existing PR up to convention, then post the audit-trail comment
 
-Post a brief summary as a PR comment (not a new description — don't overwrite what the user wrote). Body:
+An existing PR is the case where a stale title is most likely, because the PR was usually opened as a
+draft before the work existed. **Read its current title and body** (`gh pr view --json title,body`)
+and check both against **The PR title and body convention** above.
+
+- Rewrite the title (`gh pr edit <n> --title "<new title>"`) if **any** of the convention's three
+  failure modes applies: it fails the "Applying this commit will <title>" test, it describes the
+  branch's setup rather than its work, or it no longer summarizes the branch's *complete* delivered
+  work. Judge the last one against `git log <base>..HEAD` as a whole — a title that only ever covered
+  the branch's first commit stays grammatical and stays about real work, so nothing but the full log
+  exposes it.
+- Rewrite the body (`gh pr edit <n> --body-file <file>`) if the Description / What changed / Gotchas
+  sections are missing **or their content no longer describes the completed branch**. Headings
+  present is not conformance: a body written at scaffolding time can carry all three and still
+  describe only the scaffolding, or a design the branch has since abandoned. Read the *content*
+  against the branch's actual diff, not just its structure. When rewriting, fold any user-authored
+  prose into Description and keep every trailer and footer verbatim. This is the one place the skill
+  edits a description the user may have written, so *fold in and restructure* — never discard.
+- **Always refresh `## Plan Update`**, even when the rest of the body conforms. The block a draft
+  carries was written at scaffold time, before the branch had a `deferred` list or a settled
+  `completes` — and `completes` is the field that tells `sync-plan` the task row is finished. Leaving
+  the scaffold-time block in place is how a completed task never clears from the plan's Status.
+  Replace the existing block in place; never append a second one.
+- If title and body already conform — in content, not just in shape — change nothing else and say so.
+
+Then post a brief summary as a PR **comment** (the audit trail is a comment, never the description):
 
 ```
 🤖 finish-branch wrap-up
@@ -148,19 +232,39 @@ Then stop. Tell the user the PR URL.
 
 ### Step 6 — Create a fresh PR
 
-Build the title from the most recent commit subject on the branch (or the branch name if commits are fix-by-fix and don't summarize the whole work).
+Build the title per **The PR title and body convention** above — imperative and verb-first, derived
+from what the branch delivers rather than from its newest commit.
 
-Build the body in this exact shape (keep it tight — Approach below should be 1–3 short bullets, not paragraphs):
+Build the body in this shape:
 
-```markdown
-## Summary
+````markdown
+## Description
 
-<1-line restatement of the SPEC §1 Overview, paraphrased for PR-readers>
+<What this branch delivers and why — a few sentences, from SPEC §§1–2 paraphrased for PR-readers.>
 
-## Approach
+## What changed
 
-- <bullet from SPEC §2 Objective, paraphrased>
-- <bullet from the most-load-bearing SPEC §4 items that were ticked>
+<The work, grouped by the thing changed rather than by commit. Name the types/files a reviewer
+should open first, and for anything security- or correctness-critical, state the property it holds.>
+
+## Gotchas
+
+- <A number a reviewer would otherwise derive — a bounded knob and its ceiling, a real window that
+  differs from the nominal one.>
+- <A decision that looks like an oversight but is deliberate, with its reason.>
+- <Anything whose blast radius is larger than its diff — a frozen encoding, an ordering contract, a
+  configuration value two services must agree on.>
+
+## Plan Update
+
+```yaml
+lane: <backend | mobile | web | docs | infra | ->
+task: <task ID from current-plan.md, or ->
+completes: <yes if merging finishes the whole task row, else no>
+issues: [<issue numbers in this repo closed by this PR>]
+deferred: [<issue numbers this branch deferred rather than fixed>]
+spec-objective: <SPEC section 2, collapsed to one line>
+```
 
 ## Adversarial review
 
@@ -179,7 +283,7 @@ Latest round verdict: <copy from REVIEW_ADVERSARIAL.md latest-round verdict line
 - [ ] <any manual / E2E checks called out in SPEC §5>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-```
+````
 
 Default to `--ready` (omit `--draft`); if the user passed `--draft`, use `gh pr create --draft`.
 
@@ -203,6 +307,17 @@ Tell the user, in ≤ 80 words:
 ## Rules
 
 - Never push to `main`. The skill operates on the current feature branch.
+- The `## Plan Update` block is read by an unattended skill that writes to astro-docs `main`. Copy it
+  from the step 0 anchor; never author its values at wrap-up time from what the branch looks like.
+- `completes: yes` only when merging this PR finishes the **whole** task row. A branch that is one
+  layer of a stack is `completes: no` — marking it `yes` clears the lane's Status while the rest of
+  the task is still open.
+- Never omit the `## Plan Update` section. If the anchor is absent, emit it with `-` values rather
+  than dropping it; a missing section and a null section mean different things to `sync-plan`.
+- **A PR title is a commit subject.** It is squashed into `main` verbatim, so it is held to the same
+  standard as a commit message — imperative, verb-first, true of the whole branch. Apply the check to
+  an existing PR's title too, not only to one this skill creates; a title inherited from a scaffolding
+  draft is the common case and the easiest to miss.
 - Never `git add -A` / `git add .`. Stage by explicit file name only.
 - Never `--amend`. If the pre-commit hook fails, create a NEW commit.
 - Never push with `--force` / `--force-with-lease` from this skill.

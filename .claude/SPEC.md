@@ -4,6 +4,22 @@
 > overwrites the section bodies; this file in `main` is a skeleton that
 > documents the canonical structure so every branch follows the same shape.
 
+## 0. Plan anchor
+
+Where this branch sits in `current-plan.md` (astro-docs). Written by `scaffold-issue` and validated
+against the live plan; `completes` and `spec-objective` are settled by `spec-development`. Read by
+`finish-branch` **before** it resets this file, and copied into the PR body's `## Plan Update`
+section, which `sync-plan` parses unattended. Field semantics: `plan-update-contract.md` in
+astro-docs.
+
+```yaml
+lane: -                # backend | mobile | web | docs | infra | -
+task: -                # task ID from current-plan.md (M-2, M-3), or - if not plan work
+issues: []             # issue numbers in THIS repo that merging this branch closes
+completes: no          # does merging this branch finish the whole task row?
+spec-objective: -      # section 2, collapsed to one line
+```
+
 ## 1. Overview
 
 <One short paragraph: what this branch changes and why. Author this before invoking the `spec-development` skill.>
