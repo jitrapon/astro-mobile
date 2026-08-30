@@ -516,6 +516,25 @@ tasks.register("peripheryScan") {
 // rather than quietly emitting a short document — which is the property that makes a
 // single-artifact scan trustworthy.
 //
+// Output path: `build/reports/cyclonedx/bom.json`, the plugin's default destination and default
+// name. BOTH parts are load-bearing for the scanner and neither is free to change casually.
+//
+//   * The DIRECTORY is inside the gitignored `**/build/` tree, because an SBOM is a generated
+//     artifact and is never committed. osv-scanner honours `.gitignore` when it walks a directory,
+//     so a repo-root source scan cannot see this file at all — it walks zero inodes, extracts
+//     nothing, and reports "no package sources found". The scan therefore names this path
+//     explicitly rather than relying on discovery from the repository root.
+//   * The FILE NAME must be one the CycloneDX extractor recognises — `bom.json`, or a
+//     `*.cdx.json` suffix. Names outside that set (`sbom.json`, `astro-bom.json`) are not
+//     recognised even when handed to the scanner as an explicit target: it finds no package source
+//     rather than reporting a parse error. Renaming this output means renaming it to another name
+//     on that list.
+//   * The scan targets the FILE, not its directory. There is no output-format switch on the task —
+//     `jsonOutput` and `xmlOutput` are separate file properties and both are always written — so
+//     `bom.xml` always sits beside `bom.json` carrying identical content. A directory target
+//     extracts both and counts every component twice, which would corrupt any assertion made on the
+//     parsed package count.
+//
 // DELIBERATELY NOT wired into `check`, and so deliberately outside the `verifyCheckPartition` drift
 // guard below. Generating an SBOM produces a build artifact, and artifact production is coverage
 // BEYOND `check` — the same classification this repo already gives `:androidApp:assemble` and
