@@ -13,11 +13,11 @@ section, which `sync-plan` parses unattended. Field semantics: `plan-update-cont
 astro-docs.
 
 ```yaml
-lane: -                # backend | mobile | web | docs | infra | -
-task: -                # task ID from current-plan.md (M-2, M-3), or - if not plan work
-issues: []             # issue numbers in THIS repo that merging this branch closes
-completes: no          # does merging this branch finish the whole task row?
-spec-objective: -      # section 2, collapsed to one line
+lane: -
+task: -
+issues: [100]
+completes: no
+spec-objective: A PR that adds or upgrades a Gradle dependency carrying a high-or-worse advisory fails CI before merge, with the post-merge dependency-inventory job retained as the Dependency Graph / Renovate channel.
 ```
 
 ## 1. Overview
