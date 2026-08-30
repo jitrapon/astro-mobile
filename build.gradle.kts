@@ -28,6 +28,10 @@ plugins {
     // plugin here registers `ktfmtCheckScripts` over the root `*.gradle.kts`; it is wired into the
     // gate and the CI partition below.
     alias(libs.plugins.ktfmt)
+    // CycloneDX SBOM generation. Applied ONLY here, on the root project — see the SBOM section
+    // further down for why one root application already covers every subproject, and why the
+    // resulting task is deliberately outside `check`.
+    alias(libs.plugins.cyclonedx)
 }
 
 // Match the subprojects' formatter: ktfmt's Kotlin-official-style preset, per kotlin.code.style.
@@ -492,6 +496,33 @@ tasks.register("peripheryScan") {
         }
     }
 }
+
+// ----------------------------------------------------------------------------------------------
+// CycloneDX SBOM generation — the artifact the PR-blocking software-composition-analysis gate reads
+//
+// Software-composition analysis on the Gradle graph used to be post-merge only: the job feeding
+// GitHub's Dependency Graph runs on push, so a vulnerable dependency was reported after it had
+// already landed. This plugin produces a machine-readable bill of materials from the RESOLVED
+// graph — post conflict-resolution, substitution, and transitive selection — so the scanner has
+// something to read at PR time.
+//
+// Aggregation wiring, stated concretely rather than assumed. Plugin 3.x registers
+// `cyclonedxDirectBom` on the project it is applied to AND on that project's subprojects, but
+// registers the aggregating `cyclonedxBom` only on the applying project. Applying it once at the
+// root therefore covers `:shared` and `:androidApp` with no per-module `apply` and no hand-rolled
+// merge step. `:cyclonedxBom` is THE task CI invokes and its output is THE single artifact the
+// scanner consumes; it composes the per-project Direct SBOMs and FAILS when one of them is missing
+// rather than quietly emitting a short document — which is the property that makes a
+// single-artifact scan trustworthy.
+//
+// DELIBERATELY NOT wired into `check`, and so deliberately outside the `verifyCheckPartition` drift
+// guard below. Generating an SBOM produces a build artifact, and artifact production is coverage
+// BEYOND `check` — the same classification this repo already gives `:androidApp:assemble` and
+// `:shared:linkReleaseFrameworkIosArm64`, both of which CI runs as job steps rather than through an
+// aggregate. Wiring a `dependsOn` from any `check` would pull the task into the guard's closure and
+// fail the build until it were also classified into a CI half; that failure is the intended signal
+// that this decision is being reversed, not an obstacle to route around.
+// ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
 // Reproducible CI partition — verifyAndroidCommon (host-portable) + verifyIos (macOS-only)
