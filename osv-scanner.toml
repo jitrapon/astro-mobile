@@ -24,7 +24,15 @@
 # dependency coordinate and the reason it's routed to the Renovate OSV baseline.
 # An entry naming a `high` or `critical` advisory is a policy violation, not a
 # judgement call — that is the threshold this gate exists to enforce, and it is
-# checked mechanically rather than left to review.
+# checked mechanically rather than left to review: scripts/check-ignore-severity.sh
+# resolves every id below against the OSV API and fails the build on a `high` or
+# `critical` rating, and on any id whose rating it cannot establish.
+#
+# `[[PackageOverrides]]` with `ignore = true` is forbidden here and rejected by that
+# same check. It suppresses every advisory on a package — at any severity, now and
+# in future — and osv-scanner reports the result as a clean exit 0 with the package
+# filtered out, so it dissolves the threshold with nothing left to rate. Suppress a
+# specific sub-`high` advisory by id below instead.
 
 # io.opentelemetry:opentelemetry-api@1.41.0 — unbounded memory allocation in W3C
 # baggage propagation. MODERATE, CVSS 5.3, so below this gate's `high` threshold.
