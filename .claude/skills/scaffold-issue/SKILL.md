@@ -69,11 +69,16 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
      issue link in the row, or by the issue naming the ID outright, e.g. “M-2” in the title or body).
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
-     row, option 3 `"Not plan work"`. Never auto-accept a match; a wrong ID here moves the wrong lane
-     later, with nobody watching.
+     row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the
+     branch still lands in the `mobile` lane"*. Never auto-accept a match; a wrong ID here moves the
+     wrong lane later, with nobody watching.
+   - **Option 3 names a fact about the plan, not a verdict on the branch.** It used to read
+     `"Not plan work"`, which answers the `lane` question as well as the `task` one — and that
+     reading is how in-flight branches ended up anchored out of their lane, invisible to the plan.
+     The label a user picks under time pressure has to mean only the narrow thing it records.
    - **A `task:` that resolves to no row is a hard stop**, not a new task. Ask again or take
-     `"Not plan work"`.
-   - **`"Not plan work"` is a normal answer**, not a failure. Most PRs in this repo are bug fixes,
+     `"No task row"`.
+   - **`"No task row"` is a normal answer**, not a failure. Most PRs in this repo are bug fixes,
      `deferred-review` cleanups, and dependency bumps. It sets **`task: -` only** — keep `lane` at
      the lane the branch actually lands in (`mobile` here). The two fields are independent, and
      `plan-update-contract.md` §2 in astro-docs is the source of truth for both: `lane` is "which
