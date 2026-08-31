@@ -13,7 +13,7 @@ section, which `sync-plan` parses unattended. Field semantics: `plan-update-cont
 astro-docs.
 
 ```yaml
-lane: -
+lane: mobile
 task: -
 issues: [100]
 completes: no
