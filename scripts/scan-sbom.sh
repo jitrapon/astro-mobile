@@ -111,10 +111,16 @@ package_count="$(jq '[(.results // [])[].packages[]] | length' "$report")"
 echo "[scan-sbom] $sbom: 1 source, $package_count packages"
 
 if [ "$scanner_exit" -eq "$EXIT_ADVISORY_FOUND" ]; then
+  # The `[scan-sbom] advisory ` prefix is a contract, not decoration. osv-scanner
+  # announces a suppression by printing the suppressed ID in prose ("GHSA-x has
+  # been filtered out because: ..."), so any check that greps this stream for a
+  # bare advisory ID matches the notice saying the advisory was IGNORED just as
+  # readily as a real match. Anchoring on a prefix only this script emits is what
+  # lets check-sbom-fixture.sh tell those two apart.
   jq -r '
     (.results // [])[].packages[]
     | select((.vulnerabilities // []) | length > 0)
-    | "  \(.package.name)@\(.package.version) -> \([.vulnerabilities[].id] | join(", "))"
+    | "[scan-sbom] advisory \(.package.name)@\(.package.version) -> \([.vulnerabilities[].id] | join(", "))"
   ' "$report" >&2
   echo "::error::[scan-sbom] advisories matched in $sbom" >&2
   exit "$EXIT_ADVISORY_FOUND"

@@ -19,7 +19,28 @@
 # `osvVulnerabilityAlerts` baseline, no lockfile required. The ignore list below
 # applies only if a lockfile/SBOM source is ever committed and osv-scanner activates.
 #
-# No active ignores. Add a new [[IgnoredVulns]] block here only when a sub-`high`
-# advisory with no patched parent would otherwise fail the osv-scanner gate;
-# document the affected dependency coordinate and the reason it's routed to the
-# Renovate OSV baseline.
+# Add a new [[IgnoredVulns]] block here only when a sub-`high` advisory with no
+# patched parent would otherwise fail the osv-scanner gate; document the affected
+# dependency coordinate and the reason it's routed to the Renovate OSV baseline.
+# An entry naming a `high` or `critical` advisory is a policy violation, not a
+# judgement call — that is the threshold this gate exists to enforce, and it is
+# checked mechanically rather than left to review.
+
+# io.opentelemetry:opentelemetry-api@1.41.0 — unbounded memory allocation in W3C
+# baggage propagation. MODERATE, CVSS 5.3, so below this gate's `high` threshold.
+#
+# It reaches the resolved graph transitively through
+# org.jetbrains.kotlin:swift-export-embeddable, a Kotlin compiler-side artifact
+# pinned by the Kotlin version itself — there is no patched parent to bump to, and
+# nothing in this repo declares opentelemetry directly. The Kotlin compiler
+# classpaths are deliberately IN the SBOM's scope (they are remediable here, by a
+# Kotlin upgrade, unlike the AGP build tooling that is filtered out), so this
+# advisory is genuinely visible to the gate rather than something the scope should
+# have excluded.
+#
+# Remove this entry when a Kotlin upgrade drops it from the resolved graph, or the
+# moment its severity is reclassified to `high`+ — at which point it must be
+# remediated, not re-ignored.
+[[IgnoredVulns]]
+id = "GHSA-rcgg-9c38-7xpx"
+reason = "MODERATE (CVSS 5.3), below the gate's high threshold; transitive via org.jetbrains.kotlin:swift-export-embeddable with no patched parent — routed to the Renovate osvVulnerabilityAlerts baseline."
