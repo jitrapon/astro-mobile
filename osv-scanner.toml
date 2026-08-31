@@ -9,15 +9,20 @@
 # the baseline. Remove an entry the moment a parent bump drops the advisory from the
 # resolved dependency graph, or the moment its severity is reclassified to `high`+.
 
-# Scope note: this file governs the osv-scanner `sca` job, which scans committed
-# lockfiles/SBOMs. The Gradle ecosystem does not commit lockfiles the way npm/pnpm
-# do (this repo pins exact versions in the catalog/build files instead), so that
-# job stays dormant (--allow-no-lockfiles). The LIVE SCA coverage for the Gradle
-# dependency graph — including the :androidApp Compose/AndroidX transitive tree —
-# is the `dependency-submission` job in security.yml: it submits the resolved graph
-# to GitHub's Dependency Graph, powering Dependabot/OSV alerts and the renovate.json
-# `osvVulnerabilityAlerts` baseline, no lockfile required. The ignore list below
-# applies only if a lockfile/SBOM source is ever committed and osv-scanner activates.
+# Scope note: this file governs the osv-scanner `sca` job, which is live and
+# blocks pull requests. The Gradle ecosystem commits no lockfile the way npm/pnpm
+# do (this repo pins exact versions in the catalog/build files instead), so the
+# job builds its own scan source rather than going without one: `./gradlew
+# :cyclonedxBom` renders the resolved Gradle dependency graph — including the
+# :androidApp Compose/AndroidX transitive tree — into a CycloneDX SBOM, and
+# osv-scanner scans that artifact by path. Every entry below therefore takes
+# effect on every pull request.
+#
+# The `dependency-submission` job in security.yml is the complementary POST-MERGE
+# channel, retained alongside this gate: it submits the same resolved graph to
+# GitHub's Dependency Graph, powering Dependabot/OSV alerts and the renovate.json
+# `osvVulnerabilityAlerts` baseline that the sub-`high` entries below are routed
+# to. It reports an inventory; it does not gate, and it does not read this file.
 #
 # Add a new [[IgnoredVulns]] block here only when a sub-`high` advisory with no
 # patched parent would otherwise fail the osv-scanner gate; document the affected

@@ -175,14 +175,31 @@ jobs:
             --config .betterleaks.toml \
             --redact --no-banner
 
-  # SCA blocking gate over the Gradle/Kotlin dependency graph. osv-scanner is the
-  # single cross-ecosystem SCA tool here — there is no Gradle-native lockfile-audit
-  # analog to web's `pnpm audit`, so (unlike astro-web's two-scanner job) this job
-  # runs osv-scanner alone. Findings fail the job (never SARIF; this private repo
-  # has no GitHub Advanced Security). osv-scanner has no severity threshold — it
-  # fails on ANY matched advisory — so sub-`high` advisories are routed to the
-  # Renovate `osvVulnerabilityAlerts` baseline via the ignore list in
-  # osv-scanner.toml, keeping this gate at parity with a `high` threshold.
+  # PR-blocking SCA gate over the Gradle/Kotlin dependency graph. The Gradle
+  # ecosystem commits no lockfile the way npm/pnpm do (this repo pins exact
+  # versions in the version catalog instead), so rather than having nothing to
+  # read, this job manufactures its own scan source: `:cyclonedxBom` renders the
+  # resolved Gradle dependency graph into a CycloneDX SBOM and osv-scanner scans
+  # that artifact by path. That is what makes a vulnerable dependency fail the
+  # pull request introducing it instead of surfacing as an alert once it is
+  # already on `main`.
+  #
+  # osv-scanner is the single cross-ecosystem SCA tool here — there is no
+  # Gradle-native lockfile-audit analog to web's `pnpm audit`, so (unlike
+  # astro-web's two-scanner job) this job runs osv-scanner alone. Findings fail
+  # the job (never SARIF; this private repo has no GitHub Advanced Security).
+  # osv-scanner has no severity threshold — it fails on ANY matched advisory —
+  # so sub-`high` advisories are routed to the Renovate `osvVulnerabilityAlerts`
+  # baseline via the ignore list in osv-scanner.toml, keeping this gate at parity
+  # with a `high` threshold. That list is itself guarded: an entry naming a
+  # `high`-or-worse advisory fails this job (scripts/check-ignore-severity.sh).
+  #
+  # This gate and the `dependency-submission` job below are complementary, not
+  # alternatives — see that job's comment for the division of labour.
+  #
+  # The job name `sca` is load-bearing: it is a required status check in the
+  # `main` branch ruleset. Renaming it, or moving the SBOM steps into a new job,
+  # would leave the new check unrequired and therefore non-blocking on merge.
   sca:
     name: sca
     runs-on: ubuntu-latest
@@ -266,15 +283,19 @@ jobs:
       - name: SBOM vulnerability scan (fail on findings)
         run: ./scripts/scan-sbom.sh build/reports/cyclonedx/bom.json
 
-  # LIVE SCA channel for the Gradle dependency graph. The Gradle ecosystem does
-  # not commit lockfiles the way npm/pnpm do (this repo pins exact versions in the
-  # catalog/build files instead), so osv-scanner's source scan has nothing to read
-  # — it stays dormant above. Instead, this job resolves the full build dependency
-  # graph and submits it to GitHub's Dependency Graph, which powers Dependabot/OSV
-  # alerts AND activates the `osvVulnerabilityAlerts: true` baseline already set in
-  # renovate.json — no lockfile required. This is the idiomatic Gradle path to real
-  # SCA coverage, so the `:androidApp` Compose/AndroidX transitive graph is audited
-  # today rather than "once a lockfile lands".
+  # POST-MERGE inventory channel for the Gradle dependency graph — a reporting
+  # feed, not a gate. It resolves the full build dependency graph and submits it
+  # to GitHub's Dependency Graph, which powers Dependabot/OSV alerts AND activates
+  # the `osvVulnerabilityAlerts: true` baseline already set in renovate.json. That
+  # is what keeps sub-`high` advisories — the ones the `sca` gate above routes
+  # past its `high` threshold via osv-scanner.toml — visible and actionable.
+  #
+  # It is deliberately RETAINED alongside that gate rather than replaced by it,
+  # because the two answer different questions. `sca` asks "does this pull request
+  # introduce a `high`-or-worse advisory?" and withholds the merge; this job asks
+  # "what is on `main` right now?" and reports it. An SBOM scanned at PR time
+  # feeds neither Dependabot nor Renovate, and a graph submitted after merge
+  # cannot block a merge. Neither job is the other's fallback.
   #
   # Runs only on push to the default branch: the Dependency Graph snapshot is taken
   # from `main`, and fork PRs lack the `contents: write` token needed to submit. It
