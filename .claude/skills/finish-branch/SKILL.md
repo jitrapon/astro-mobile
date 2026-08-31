@@ -87,10 +87,14 @@ runs the anchor is gone — and re-deriving lane and task from the branch name a
 inference feeding an unattended writer. Capture it in the same pass that reads SPEC §§1–2 for the
 title.
 
-If section 0 is missing or still holds skeleton placeholders, do not guess. Use `lane: -`,
-`task: -`, `completes: no` in the Plan Update block and say so in the final summary; `sync-plan`
-treats that as non-plan work and leaves Status and Next action alone, which is the correct outcome
-for a branch that never claimed a task row.
+If section 0 is missing or still holds skeleton placeholders, recover it before falling back: an
+open PR for this branch carries its own `## Plan Update` block (the draft opened at scaffold time
+does), and those values are recorded fact rather than inference. Only when there is none, use
+`lane: -`, `task: -`, `completes: no` in the Plan Update block and say so in the final summary.
+That fallback is a degraded outcome, not a clean one — `lane: -` means "no lane at all"
+(`plan-update-contract.md` §2 in astro-docs), so `sync-plan` reports nothing for this branch and
+the lane reads `*(idle)*` while it is in flight. A null `task` on its own is harmless: it suppresses
+only the **Next action** move, and the lane's **Status** line still shows the PR.
 
 ### Step 1 — Reset agent working files to main's skeleton
 

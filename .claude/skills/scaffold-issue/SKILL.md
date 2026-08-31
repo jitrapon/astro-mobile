@@ -69,15 +69,30 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
      issue link in the row, or by the issue naming the ID outright, e.g. “M-2” in the title or body).
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
-     row, option 3 `"Not plan work"`. Never auto-accept a match; a wrong ID here moves the wrong lane
-     later, with nobody watching.
+     row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the
+     branch still lands in the `mobile` lane"*. Never auto-accept a match; a wrong ID here moves the
+     wrong lane later, with nobody watching.
+   - **Option 3 names a fact about the plan, not a verdict on the branch.** It used to read
+     `"Not plan work"`, which answers the `lane` question as well as the `task` one — and that
+     reading is how in-flight branches ended up anchored out of their lane, invisible to the plan.
+     The label a user picks under time pressure has to mean only the narrow thing it records.
    - **A `task:` that resolves to no row is a hard stop**, not a new task. Ask again or take
-     `"Not plan work"`.
-   - **`"Not plan work"` is a normal answer**, not a failure. Most PRs in this repo are bug fixes,
-     `deferred-review` cleanups, and dependency bumps. Record `lane: -` and `task: -`; `sync-plan`
-     then leaves Status and Next action alone, which is correct.
+     `"No task row"`.
+   - **`"No task row"` is a normal answer**, not a failure. Most PRs in this repo are bug fixes,
+     `deferred-review` cleanups, and dependency bumps. It sets **`task: -` only** — keep `lane` at
+     the lane the branch actually lands in (`mobile` here). The two fields are independent, and
+     `plan-update-contract.md` §2 in astro-docs is the source of truth for both: `lane` is "which
+     Status/Next action line this PR may touch", `task` is the plan row. A null `task` suppresses
+     the **Next action** move, not the in-flight signal — `sync-plan` still writes that lane's
+     **Status** line, without a task ID, because a fix or a CI change is where the lane is.
+   - **`lane: -` means "no lane at all"** and is rarer than it looks. Reserve it for work that
+     belongs to no lane line in `current-plan.md`. It fails silently when guessed: a `-` lane parses
+     fine and means "touch nothing", so the branch is invisible to the plan and its lane reads
+     `*(idle)*` the whole time it is in flight.
    - **Derive `lane` from the task row's table**, not from the repo name: `C-*`/`A-*`/`B-*` →
-     `backend`, `M-*` → `mobile`, `W-*` → `web`, `I-*` → `infra`, docs issues → `docs`.
+     `backend`, `M-*` → `mobile`, `W-*` → `web`, `I-*` → `infra`, docs issues → `docs`. With
+     `task: -` there is no row to read: use `mobile`, the lane this repo's work lands in, unless the
+     branch is one of the rare cross-lane cases the mapping above covers.
 
    Write section 0 of SPEC.md:
 
