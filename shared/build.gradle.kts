@@ -960,3 +960,9 @@ val isAppleSiliconHost =
 if (isAppleSiliconHost) {
     tasks.named("iosX64Test") { enabled = false }
 }
+
+// TEMPORARY — reverted in the commit that follows this one. Forces the Android HTTP engine's
+// OkHttp down to 4.9.0, which carries GHSA-3cqm-mf7h-prrj (HIGH). This exercises the real
+// CycloneDX generator end-to-end, proving the `sca` gate blocks a genuinely vulnerable resolved
+// dependency rather than only the committed fixture the gate's regression guard scans.
+configurations.configureEach { resolutionStrategy.force("com.squareup.okhttp3:okhttp:4.9.0") }
