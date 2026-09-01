@@ -93,8 +93,9 @@ command -v python3 >/dev/null 2>&1 || {
 # entry that is not a table, an `id` that is not a string — is emitted as its own
 # record and handled as a violation below, never skipped. A guard that quietly
 # ignores what it could not understand is exactly the guard this one must not be.
+parser_status=0
 entries="$(
-  python3 - "$config" <<'PY' || echo "PARSE	the TOML parser itself failed"
+  python3 - "$config" <<'PY'
 import sys
 import tomllib
 
@@ -149,7 +150,20 @@ for block in blocks("PackageOverrides"):
     for switch in suppressing_switches(block):
         emit("OVERRIDE", label, switch)
 PY
-)"
+)" || parser_status=$?
+
+# The parser's own exit status is checked rather than inferred from its output. It
+# reports a config it could read but disliked as a PARSE record; a non-zero status
+# means it did not run at all, and the overwhelmingly likely cause is a python3
+# older than 3.11, which has no `tomllib`. Reading "no records" as "nothing is
+# suppressed" would turn exactly that into a silent pass.
+if [ "$parser_status" -ne 0 ]; then
+  echo "::error::[check-ignore-severity] the TOML parser did not run (python3 exited" \
+    "${parser_status}). This check needs python3 3.11 or newer, which is where \`tomllib\`" \
+    "was added. Failing closed: a config whose suppressions were never read is not a config" \
+    "known to be free of high-or-critical ignores." >&2
+  exit 1
+fi
 
 if [ -z "$entries" ]; then
   echo "[check-ignore-severity] osv-scanner.toml suppresses nothing — threshold intact."
@@ -166,8 +180,26 @@ osv_severity() {
   jq -re '.database_specific.severity // empty' <<<"$body" 2>/dev/null | tr '[:lower:]' '[:upper:]'
 }
 
-while IFS=$'\t' read -r kind value detail; do
-  [ -n "$kind" ] || continue
+# Consume the records with parameter expansion rather than `while read` fed by a
+# here-string. That idiom is backed by a temporary file, so on a host where the
+# temporary file cannot be created the loop body simply never runs — `violations`
+# stays at zero and this check prints success having rated nothing. Splitting on
+# newlines and slicing the fields needs no temporary file and no subshell, so the
+# records cannot be dropped between the parser and the policy below.
+records_seen=0
+records_rated=0
+saved_ifs=$IFS
+IFS=$'\n'
+for record in $entries; do
+  IFS=$saved_ifs
+  records_seen=$((records_seen + 1))
+  kind=${record%%$'\t'*}
+  rest=${record#*$'\t'}
+  value=${rest%%$'\t'*}
+  detail=${rest#*$'\t'}
+  [ "$detail" = "$value" ] && detail=""
+  if [ -z "$kind" ]; then IFS=$'\n'; continue; fi
+  records_rated=$((records_rated + 1))
   case "$kind" in
     PARSE)
       fail "osv-scanner.toml could not be parsed as TOML (${value}). Failing closed: a config" \
@@ -203,7 +235,20 @@ while IFS=$'\t' read -r kind value detail; do
       fi
       ;;
   esac
-done <<<"$entries"
+  IFS=$'\n'
+done
+IFS=$saved_ifs
+
+# The backstop for the whole class: every record the parser emitted must have
+# reached the policy above. This holds whatever caused a shortfall — a skipped
+# loop, a counter lost to a subshell, a record the field split could not classify —
+# rather than guarding the one mechanism known to cause it today.
+if [ "$records_rated" -ne "$records_seen" ] || [ "$records_seen" -eq 0 ]; then
+  echo "::error::[check-ignore-severity] parsed records were not all rated" \
+    "(${records_rated} of ${records_seen}). Failing closed: this check cannot claim the" \
+    "ignore list is below the threshold when it did not read every suppression in it." >&2
+  exit 1
+fi
 
 if [ "$violations" -gt 0 ]; then
   echo "::error::[check-ignore-severity] ${violations} severity-policy violation(s) in" \

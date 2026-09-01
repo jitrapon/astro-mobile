@@ -7,6 +7,33 @@
 
 ## Latest round — 2026-09-01
 - Base ref: main
+- Focus sent to Codex: This is review round 2 of this branch. Round 1's findings and their disposition, so you can confirm closure rather than re-raise: (a) the severity guard's line-scanning TOML parser had three MEASURED bypasses — `[PackageOverrides.vulnerability] ignore = true` took a critical Log4Shell fixture scan from exit 1 to exit 0, and `id = 'GHSA-…'` / `"id" = "GHSA-…"` let a critical id go unrated — now FIXED by replacing the awk scanner in `scripts/check-ignore-severity.sh` with a `python3` + `tomllib` parser that walks for `ignore = true` at any depth (exempting only `license.ignore`) and emits PARSE/MALFORMED records so unreadable TOML fails closed; (b) "the required `sca` check is defined by the PR it gates" — DEFERRED to issue #126 as a pre-existing repo-wide property with no CODEOWNERS to extend, remedy is governance outside this branch's scope; (c) "no completeness guard for the unresolvable KMP CInterop configurations" — DEFERRED, since those three are commonizer-derived from per-target configurations that do resolve. Please concentrate this round on the NEW parsing code in `scripts/check-ignore-severity.sh`, which is unreviewed and guards the gate's severity threshold: whether any osv-scanner-honoured suppression spelling still escapes it, whether the `license.ignore` exemption is correct, whether the bash/python record protocol (tab-separated, `read -r kind value detail`) can lose or misattribute a record, and whether the added `python3` dependency or its failure modes can turn a real violation into a pass. Branch context: converts the dormant osv-scanner `sca` job into a PR-blocking gate — `:cyclonedxBom` renders the resolved Gradle graph into a CycloneDX SBOM that fail-closed `scripts/scan-sbom.sh` scans by path, with `scripts/check-sbom-fixture.sh` as a committed-vulnerable-SBOM regression guard. Build/CI tooling and docs only, no product code, so weigh shell-script robustness and quoting, exit-code and fail-closed semantics, and any way the gate could silently stop blocking above app-level concerns.
+
+# Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: needs-attention (as issued by Codex)
+Round status after evaluation: 1 resolved, 0 deferred, 0 open.
+
+No-ship: the new fail-closed path can return success while silently skipping every parsed record when Bash cannot create its temporary redirection files.
+
+Findings:
+- [high] Bash redirection failure makes the severity guard pass (scripts/check-ignore-severity.sh:96-206) — **RESOLVED**
+  Codex's specific reproduction did not reproduce here: on macOS bash 3.2 the guard ran normally with `TMPDIR` set to a nonexistent directory, a read-only directory, and `/dev/null`. Its architectural claim held regardless — nothing distinguished "every record was rated and all were clean" from "the loop body never ran", since `violations` stays 0 and the success message prints either way.
+  Auditing the same path turned up a second fragility Codex did not name, and a more reachable one: the parser-failure fallback `|| echo "PARSE<TAB>…"` worked only because the file happened to contain a real tab byte (confirmed with `od -c`). Written the obvious way — `\t` inside a double-quoted string — bash emits two literal characters, `kind` becomes the whole line, no `case` arm matches, and the guard exits 0 with its parser dead. Reproduced in a probe script. The most likely trigger is a `python3` older than 3.11, which has no `tomllib` — stock macOS ships 3.9.
+  Fixed in three parts. (1) `python3`'s exit status is captured explicitly and failure exits 1 with a message naming the 3.11+/`tomllib` requirement, replacing the sentinel record smuggled through the output channel — so no invisible whitespace is load-bearing. (2) Records are consumed by splitting on newlines and slicing fields with parameter expansion instead of a here-string-fed `while read`, so no temporary file and no subshell sit between the parser and the policy. (3) A processed-vs-parsed tally fails closed when any record went unrated, which covers the whole class — a skipped loop, a counter lost to a subshell, an unclassifiable record — rather than only the mechanism known today.
+  Verified: all 11 round-1 matrix cases still behave correctly; a `python3` without `tomllib` now exits 1 naming the requirement; and, the decisive case, a `[[IgnoredVulns]]` entry naming a CRITICAL advisory is caught under all three hostile `TMPDIR` conditions rather than passing. `shellcheck -x` clean, fixture guard still exits 0 on its required non-zero scan, real SBOM scan still 1 source / 431 packages clean, `./gradlew check` green.
+
+Next steps:
+- Fix the redirection/error-propagation path before shipping the gate.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-01 — base main
+- Status when archived: 1 resolved (commit 26772e6, TOML-parser hardening), 2 deferred (#126 and one deliberate no-issue deferral, commit 255b1fb); 0 open.
+- Base ref: main
 - Focus sent to Codex: This branch converts the repo's dormant osv-scanner `sca` job into a PR-blocking software-composition gate: a pinned CycloneDX Gradle plugin renders the resolved dependency graph (`:shared` + `:androidApp`, empty `includeConfigs` so test graphs are in scope, only AGP-pinned build tooling skipped via `^classpath$`/`^androidLintTool$`/`^unified-test-platform-.*$`) into an SBOM at `build/reports/cyclonedx/bom.json`, which a fail-closed `scripts/scan-sbom.sh` scans by file path, backed by `scripts/check-sbom-fixture.sh` (a committed vulnerable SBOM that must exit 1) and `scripts/check-ignore-severity.sh` (rates every `osv-scanner.toml` `[[IgnoredVulns]]` id against the OSV API, rejects high/critical and `[[PackageOverrides]] ignore = true`). The SBOM task is deliberately outside `check` and the `verifyCheckPartition` drift guard, and the post-merge `dependency-submission` job is retained unchanged as the Dependency Graph / Renovate inventory channel. Context: Kotlin Multiplatform Mobile app (shared Kotlin logic, Jetpack Compose on Android, SwiftUI on iOS) — but this diff is build/CI tooling and docs only, no product code, so weigh shell-script robustness and quoting, Gradle configuration correctness across the KMP target set, exit-code and fail-closed semantics, and any way the gate could silently stop blocking (wrong artifact, dropped step, suppressed advisory, renamed required check) above app-level concerns.
 
 # Codex Adversarial Review
@@ -32,8 +59,5 @@ Next steps:
 - Protect the PR-blocking workflow and its enforcement inputs.
 - Add an automated guard for unresolved KMP configuration coverage.
 
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 <!-- previous-rounds:end -->
