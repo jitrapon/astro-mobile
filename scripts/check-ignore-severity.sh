@@ -170,14 +170,64 @@ if [ -z "$entries" ]; then
   exit 0
 fi
 
-# Ask OSV for one advisory's qualitative rating. Prints the rating on stdout, or
-# nothing when it cannot be established — every such case is handled as a failure
-# by the caller rather than skipped.
-osv_severity() {
+# Fetch one advisory from OSV and flatten the two facts this check needs into
+# lines: `RATING <severity>` (zero or one) and `ALIAS <id>` (zero or more). One
+# request yields both, so rating an entry and rating its aliases does not fetch the
+# same record twice. Output is piped rather than passed through a here-string:
+# here-strings are backed by a temporary file, which is the redirection this script
+# deliberately avoids everywhere a missing record could be read as a clean result.
+osv_record() {
   local id="$1" body
   body="$(curl -fsS --max-time 20 --retry 3 --retry-delay 2 \
     "https://api.osv.dev/v1/vulns/${id}" 2>/dev/null)" || return 1
-  jq -re '.database_specific.severity // empty' <<<"$body" 2>/dev/null | tr '[:lower:]' '[:upper:]'
+  printf '%s' "$body" | jq -r '
+    (.database_specific.severity // empty | ascii_upcase | "RATING " + .),
+    (.aliases // [] | .[] | "ALIAS " + .)
+  ' 2>/dev/null
+}
+
+# Read the first `RATING` line out of an osv_record body, or nothing.
+rating_of() {
+  local line
+  line="$(printf '%s\n' "$1" | sed -n 's/^RATING //p' | head -1)" || line=""
+  printf '%s' "$line"
+}
+
+# osv-scanner suppresses an ignored advisory's ALIASES along with the id named in
+# the entry — it says so in its own output ("<id> and N alias(es) have been
+# filtered out"). Rating only the named id would therefore let the lower-rated half
+# of an alias pair stand in for the higher-rated half: ignore the MODERATE id, and
+# the HIGH advisory it aliases is suppressed too, with nothing here objecting.
+#
+# An alias is rated where OSV gives it a qualitative rating and skipped where it
+# does not. That is deliberately asymmetric with the named id, whose missing rating
+# fails closed, and the asymmetry is load-bearing rather than lax:
+# `database_specific.severity` is a GitHub field, so a GHSA carries one and the CVE
+# records GHSAs alias generally do not. Failing closed on an unrated alias would
+# reject ordinary correct entries — measured against the committed entry, whose CVE
+# alias is unrated — while catching nothing a rated alias would not already catch.
+# The residual gap is an alias whose only rating is a CVSS vector; closing that
+# needs base-score arithmetic this check deliberately does not carry.
+rate_aliases() {
+  local id="$1" body="$2" alias alias_severity saved
+  saved=$IFS
+  IFS=$'\n'
+  for alias in $(printf '%s\n' "$body" | sed -n 's/^ALIAS //p'); do
+    IFS=$saved
+    # Advisory ids are alphanumerics, dots, dashes and underscores. Anything else
+    # is not an id this check can look up, and leaving it unquoted would expose it
+    # to pathname expansion.
+    case "$alias" in ''|*[!A-Za-z0-9._-]*) IFS=$'\n'; continue ;; esac
+    alias_severity="$(rating_of "$(osv_record "$alias" || true)")" || alias_severity=""
+    if [ -n "$alias_severity" ] && [[ " $BLOCKED_SEVERITIES " == *" $alias_severity "* ]]; then
+      fail "ignored advisory ${id} aliases ${alias}, which OSV rates ${alias_severity}." \
+        "osv-scanner suppresses an ignored advisory's aliases too, so this entry would hide a" \
+        "high-or-worse advisory behind a lower-rated id. Remediate the dependency — bump the" \
+        "parent, or drop it — rather than ignoring it."
+    fi
+    IFS=$'\n'
+  done
+  IFS=$saved
 }
 
 # Consume the records with parameter expansion rather than `while read` fed by a
@@ -217,7 +267,8 @@ for record in $entries; do
         "here — ignore a specific sub-high advisory by id under [[IgnoredVulns]] instead."
       ;;
     IGNORE)
-      severity="$(osv_severity "$value")" || severity=""
+      osv_body="$(osv_record "$value")" || osv_body=""
+      severity="$(rating_of "$osv_body")" || severity=""
       if [ -z "$severity" ]; then
         fail "could not establish a severity for ignored advisory ${value} — OSV returned no" \
           "rating for it, or was unreachable. Failing closed: an advisory whose severity cannot" \
@@ -227,6 +278,7 @@ for record in $entries; do
           "pull request on a high-or-worse advisory; ignoring one dissolves that threshold." \
           "Remediate the dependency — bump the parent, or drop it — rather than ignoring it."
       elif [[ " $ALLOWED_SEVERITIES " == *" $severity "* ]]; then
+        rate_aliases "$value" "$osv_body"
         echo "[check-ignore-severity] ${value}: ${severity} — below the high threshold, allowed."
       else
         fail "ignored advisory ${value} carries an unrecognised severity rating '${severity}'." \

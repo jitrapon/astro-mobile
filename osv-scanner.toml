@@ -31,7 +31,10 @@
 # judgement call — that is the threshold this gate exists to enforce, and it is
 # checked mechanically rather than left to review: scripts/check-ignore-severity.sh
 # resolves every id below against the OSV API and fails the build on a `high` or
-# `critical` rating, and on any id whose rating it cannot establish.
+# `critical` rating, and on any id whose rating it cannot establish. It rates the
+# aliases OSV lists for an id too, because osv-scanner suppresses an ignored
+# advisory's aliases along with the id itself — so a `high` advisory cannot be
+# hidden here behind a lower-rated id that happens to alias it.
 #
 # `[[PackageOverrides]]` with `ignore = true` is forbidden here and rejected by that
 # same check. It suppresses every advisory on a package — at any severity, now and

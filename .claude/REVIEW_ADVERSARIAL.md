@@ -5,7 +5,34 @@
 > skeleton. The newest round lives directly under this header; prior rounds are
 > demoted into the `Previous rounds` section between the markers below.
 
-## Latest round — 2026-09-01
+## Latest round — 2026-09-01 (round 3)
+- Base ref: main
+- Focus sent to Codex: This is review round 3. Prior rounds, so you can confirm closure rather than re-raise: R1 found three MEASURED bypasses in the severity guard's line-scanning TOML parser (`[PackageOverrides.vulnerability] ignore = true` took a critical Log4Shell fixture from exit 1 to exit 0; single-quoted and quoted-key ids went unrated) — FIXED by replacing the awk scanner in `scripts/check-ignore-severity.sh` with a python3+tomllib parser. R1 also deferred two findings: "the required `sca` check is defined by the PR it gates" (issue #126, pre-existing repo-wide property, remedy is governance) and "no completeness guard for the unresolvable KMP CInterop configurations" (those three are commonizer-derived from per-target configurations that do resolve) — both settled, please do not re-raise. R2 found that the guard could print success without rating anything — FIXED by capturing python3's exit status explicitly (failing closed naming the 3.11+/tomllib requirement), replacing the here-string-fed `while read` with newline splitting plus parameter-expansion field slicing, and adding a processed-vs-parsed record tally that fails closed on any shortfall. Concentrate this round on the NEW and still-unreviewed control flow that R2 introduced in `scripts/check-ignore-severity.sh`: the IFS save/restore discipline around the `for record in $entries` loop (including whether IFS is correctly restored on every path, including the `continue` path and after the loop), whether the `${record%%$'\t'*}` / `${rest#*$'\t'}` field slicing can misparse a record — in particular the `[ "$detail" = "$value" ] && detail=""` heuristic used to detect a two-field record, which is wrong if a genuine three-field record ever has detail equal to value — whether word-splitting on `$entries` can drop or merge records containing glob characters (note `set -f` is NOT set, so pathname expansion may apply to unquoted `$entries`), whether the records_seen/records_rated tally can be satisfied while a record is still effectively unhandled, and whether any osv-scanner-honoured suppression spelling still escapes the parser. Branch context: converts the dormant osv-scanner `sca` job into a PR-blocking gate — `:cyclonedxBom` renders the resolved Gradle graph into a CycloneDX SBOM that fail-closed `scripts/scan-sbom.sh` scans by path, with `scripts/check-sbom-fixture.sh` as a committed-vulnerable-SBOM regression guard. Build/CI tooling and docs only, no product code, so weigh shell-script robustness and quoting, exit-code and fail-closed semantics, and any way the gate could silently stop blocking above app-level concerns.
+
+# Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: needs-attention (as issued by Codex)
+Round status after evaluation: 1 resolved in part, remainder deferred to #127; 0 open.
+
+Do not ship yet: the severity guard does not enforce the full suppression semantics used by osv-scanner.
+
+Findings:
+- [high] Alias advisories can bypass the severity threshold (scripts/check-ignore-severity.sh:176-225) — **RESOLVED in part; remainder DEFERRED → #127**
+  Mechanism confirmed: osv-scanner reports it itself ("GHSA-rcgg-9c38-7xpx and 1 alias have been filtered out"), and the guard read only the named id. Fixed by fetching each ignored id's `aliases` in the same OSV request and failing when any alias carries a qualitative rating of HIGH or CRITICAL. Verified against a stubbed OSV endpoint: alias CRITICAL → fail, HIGH → fail, MODERATE → pass, unrated → pass.
+  The recommendation's "fail on **unrated** aliases" clause was measured non-viable and deliberately not adopted: `database_specific.severity` is a GitHub field, so a GHSA carries one and the CVE records GHSAs alias generally do not. The committed entry's alias `CVE-2026-45292` returns no rating, so failing closed on it would reject an ordinary correct entry and leave the gate permanently red. Unrated aliases are therefore skipped — deliberately asymmetric with the named id, whose missing rating still fails closed.
+  The residual gap is narrower than the finding: an alias whose only severity signal is a CVSS vector rather than a qualitative rating. Closing it needs CVSS base-score arithmetic inside the guard, judged disproportionate — deferred to #127. Present exposure when deferred: none measured, since the only alias in the config carries a CVSS vector identical to its GHSA's.
+  Also fixed in passing: `osv_record` now pipes its response to `jq` instead of using a here-string, matching the temp-file-free discipline round 2 established elsewhere in the script.
+
+Next steps:
+- Add an alias-aware regression fixture and rate the complete suppression closure before merging.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-01 — base main (round 2)
+- Status when archived: 1 resolved (commit 55f712e, fail-closed record handling); 0 deferred, 0 open.
 - Base ref: main
 - Focus sent to Codex: This is review round 2 of this branch. Round 1's findings and their disposition, so you can confirm closure rather than re-raise: (a) the severity guard's line-scanning TOML parser had three MEASURED bypasses — `[PackageOverrides.vulnerability] ignore = true` took a critical Log4Shell fixture scan from exit 1 to exit 0, and `id = 'GHSA-…'` / `"id" = "GHSA-…"` let a critical id go unrated — now FIXED by replacing the awk scanner in `scripts/check-ignore-severity.sh` with a `python3` + `tomllib` parser that walks for `ignore = true` at any depth (exempting only `license.ignore`) and emits PARSE/MALFORMED records so unreadable TOML fails closed; (b) "the required `sca` check is defined by the PR it gates" — DEFERRED to issue #126 as a pre-existing repo-wide property with no CODEOWNERS to extend, remedy is governance outside this branch's scope; (c) "no completeness guard for the unresolvable KMP CInterop configurations" — DEFERRED, since those three are commonizer-derived from per-target configurations that do resolve. Please concentrate this round on the NEW parsing code in `scripts/check-ignore-severity.sh`, which is unreviewed and guards the gate's severity threshold: whether any osv-scanner-honoured suppression spelling still escapes it, whether the `license.ignore` exemption is correct, whether the bash/python record protocol (tab-separated, `read -r kind value detail`) can lose or misattribute a record, and whether the added `python3` dependency or its failure modes can turn a real violation into a pass. Branch context: converts the dormant osv-scanner `sca` job into a PR-blocking gate — `:cyclonedxBom` renders the resolved Gradle graph into a CycloneDX SBOM that fail-closed `scripts/scan-sbom.sh` scans by path, with `scripts/check-sbom-fixture.sh` as a committed-vulnerable-SBOM regression guard. Build/CI tooling and docs only, no product code, so weigh shell-script robustness and quoting, exit-code and fail-closed semantics, and any way the gate could silently stop blocking above app-level concerns.
 
@@ -27,9 +54,6 @@ Findings:
 Next steps:
 - Fix the redirection/error-propagation path before shipping the gate.
 
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 ### 2026-09-01 — base main
 - Status when archived: 1 resolved (commit 26772e6, TOML-parser hardening), 2 deferred (#126 and one deliberate no-issue deferral, commit 255b1fb); 0 open.
