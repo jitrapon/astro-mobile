@@ -37,7 +37,11 @@
 # same check. It suppresses every advisory on a package — at any severity, now and
 # in future — and osv-scanner reports the result as a clean exit 0 with the package
 # filtered out, so it dissolves the threshold with nothing left to rate. Suppress a
-# specific sub-`high` advisory by id below instead.
+# specific sub-`high` advisory by id below instead. The nested
+# `[PackageOverrides.vulnerability]` spelling is the same switch and is rejected the
+# same way. That check parses this file as TOML rather than scanning its lines,
+# because osv-scanner honours every spelling TOML allows — a single-quoted id, a
+# quoted key — and a pattern written for one spelling silently misses the rest.
 
 # io.opentelemetry:opentelemetry-api@1.41.0 — unbounded memory allocation in W3C
 # baggage propagation. MODERATE, CVSS 5.3, so below this gate's `high` threshold.

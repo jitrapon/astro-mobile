@@ -22,7 +22,20 @@
 #     package on a clean exit 0. There is no advisory id to rate, so there is
 #     nothing to hold to the threshold: it is rejected outright. Measured against
 #     the committed fixture, one such block drops a CRITICAL match and takes the
-#     scan from exit 1 to exit 0.
+#     scan from exit 1 to exit 0. The nested `[PackageOverrides.vulnerability]`
+#     spelling of that same switch suppresses just as completely and is rejected
+#     identically; only `license.ignore` is exempt, since it governs license
+#     findings and cannot hide an advisory.
+#
+# The config is parsed with a real TOML parser rather than scanned line by line,
+# and that is a correctness requirement rather than a tidiness preference. A line
+# scanner recognises one spelling of each construct; osv-scanner accepts every
+# spelling TOML does. `id = 'GHSA-...'`, `"id" = "GHSA-..."`, and a nested
+# `[PackageOverrides.vulnerability]` table are all read normally by the scanner
+# but are invisible to patterns written for `id = "..."` and a bare
+# `[[PackageOverrides]]` header — each was measured suppressing an advisory while
+# an earlier line-scanning version of this check reported the file clean. Parsing
+# the document means a new spelling cannot reopen that hole.
 #
 # FAIL CLOSED. Every way this check can fail to establish a severity — the API is
 # unreachable, the id is unknown to OSV, the entry carries no qualitative rating —
@@ -66,40 +79,76 @@ command -v jq >/dev/null 2>&1 || {
   echo "::error::[check-ignore-severity] jq is not on PATH" >&2
   exit 1
 }
+command -v python3 >/dev/null 2>&1 || {
+  echo "::error::[check-ignore-severity] python3 is not on PATH (needed to parse TOML)" >&2
+  exit 1
+}
 
-# Minimal TOML walk: track the current table header and emit one tagged record per
-# suppression found. A `grep` for `^id = ` instead would also match an id declared
-# under some other table, and would miss a PackageOverrides block entirely.
-# PackageOverrides fields are buffered and flushed at the next header so `ignore`
-# and `name` are reported together whichever order they appear in.
+# Extract one tagged record per suppression the config declares. Reading the
+# parsed document rather than the file's lines is what makes the set of records
+# complete: every TOML spelling of a construct collapses to the same structure
+# here, so there is no syntax left for a suppression to hide in.
+#
+# Anything that prevents a confident reading — a document that will not parse, an
+# entry that is not a table, an `id` that is not a string — is emitted as its own
+# record and handled as a violation below, never skipped. A guard that quietly
+# ignores what it could not understand is exactly the guard this one must not be.
 entries="$(
-  awk '
-    function flush() {
-      if (table == "[[PackageOverrides]]" && po_ignore)
-        printf "OVERRIDE\t%s\n", (po_name == "" ? "(unnamed block)" : po_name)
-      po_ignore = 0; po_name = ""
-    }
-    {
-      line = $0
-      gsub(/^[ \t]+|[ \t]+$/, "", line)
-      if (line == "" || line ~ /^#/) next
-      if (line ~ /^\[/) {
-        flush()
-        match(line, /^\[\[?[A-Za-z_][A-Za-z_0-9]*\]\]?/)
-        table = substr(line, RSTART, RLENGTH)
-        next
-      }
-      if (table == "[[IgnoredVulns]]" && line ~ /^id[ \t]*=/) {
-        if (match(line, /"[^"]*"/)) printf "IGNORE\t%s\n", substr(line, RSTART + 1, RLENGTH - 2)
-      }
-      if (table == "[[PackageOverrides]]") {
-        if (line ~ /^name[ \t]*=/ && match(line, /"[^"]*"/))
-          po_name = substr(line, RSTART + 1, RLENGTH - 2)
-        if (line ~ /^ignore[ \t]*=[ \t]*true([ \t]|#|$)/) po_ignore = 1
-      }
-    }
-    END { flush() }
-  ' "$config"
+  python3 - "$config" <<'PY' || echo "PARSE	the TOML parser itself failed"
+import sys
+import tomllib
+
+def emit(kind, *fields):
+    print("\t".join((kind,) + fields))
+
+try:
+    with open(sys.argv[1], "rb") as handle:
+        document = tomllib.load(handle)
+except (OSError, tomllib.TOMLDecodeError) as exc:
+    emit("PARSE", str(exc).replace("\t", " "))
+    raise SystemExit(0)
+
+def blocks(key):
+    """The array-of-tables under `key`, tolerating a lone table written directly."""
+    value = document.get(key, [])
+    return value if isinstance(value, list) else [value]
+
+for block in blocks("IgnoredVulns"):
+    if not isinstance(block, dict):
+        emit("MALFORMED", "an IgnoredVulns entry is not a table")
+        continue
+    advisory = block.get("id")
+    if isinstance(advisory, str) and advisory.strip():
+        emit("IGNORE", advisory.strip())
+    else:
+        emit("MALFORMED", "an IgnoredVulns entry carries no string `id` to rate")
+
+def suppressing_switches(table, trail=()):
+    """Every `ignore = true` at any depth, except the license-only one.
+
+    osv-scanner spells this switch both at the top of a PackageOverrides block and
+    inside its `vulnerability` sub-table, and nothing stops a future release from
+    adding a third place. Walking for the switch instead of looking in the two
+    known spots keeps that from becoming a silent bypass. `license.ignore` is the
+    one deliberate exemption: it filters license findings, not advisories.
+    """
+    for key, value in table.items():
+        path = trail + (key,)
+        if key == "ignore" and value is True:
+            if trail[:1] != ("license",):
+                yield ".".join(path)
+        elif isinstance(value, dict):
+            yield from suppressing_switches(value, path)
+
+for block in blocks("PackageOverrides"):
+    if not isinstance(block, dict):
+        emit("MALFORMED", "a PackageOverrides entry is not a table")
+        continue
+    name = block.get("name")
+    label = name if isinstance(name, str) and name else "(unnamed block)"
+    for switch in suppressing_switches(block):
+        emit("OVERRIDE", label, switch)
+PY
 )"
 
 if [ -z "$entries" ]; then
@@ -117,14 +166,23 @@ osv_severity() {
   jq -re '.database_specific.severity // empty' <<<"$body" 2>/dev/null | tr '[:lower:]' '[:upper:]'
 }
 
-while IFS=$'\t' read -r kind value; do
+while IFS=$'\t' read -r kind value detail; do
   [ -n "$kind" ] || continue
   case "$kind" in
+    PARSE)
+      fail "osv-scanner.toml could not be parsed as TOML (${value}). Failing closed: a config" \
+        "this check cannot read is a config whose suppressions it cannot rate — and osv-scanner" \
+        "would reject it too, so the gate is broken either way."
+      ;;
+    MALFORMED)
+      fail "osv-scanner.toml has a suppression this check cannot rate — ${value}. Failing closed:" \
+        "an entry whose advisory id cannot be read is not known to be below the high threshold."
+      ;;
     OVERRIDE)
-      fail "[[PackageOverrides]] with ignore = true on '${value}' suppresses every advisory" \
-        "on that package, at any severity, now and in future. There is no advisory id to hold" \
-        "to the gate's high threshold, so this form of suppression is not permitted here —" \
-        "ignore a specific sub-high advisory by id under [[IgnoredVulns]] instead."
+      fail "[[PackageOverrides]] on '${value}' sets ${detail} = true, which suppresses every" \
+        "advisory on that package, at any severity, now and in future. There is no advisory id" \
+        "to hold to the gate's high threshold, so this form of suppression is not permitted" \
+        "here — ignore a specific sub-high advisory by id under [[IgnoredVulns]] instead."
       ;;
     IGNORE)
       severity="$(osv_severity "$value")" || severity=""
