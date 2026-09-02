@@ -199,17 +199,25 @@ rating_of() {
 # of an alias pair stand in for the higher-rated half: ignore the MODERATE id, and
 # the HIGH advisory it aliases is suppressed too, with nothing here objecting.
 #
-# An alias is rated where OSV gives it a qualitative rating and skipped where it
-# does not. That is deliberately asymmetric with the named id, whose missing rating
-# fails closed, and the asymmetry is load-bearing rather than lax:
-# `database_specific.severity` is a GitHub field, so a GHSA carries one and the CVE
-# records GHSAs alias generally do not. Failing closed on an unrated alias would
-# reject ordinary correct entries — measured against the committed entry, whose CVE
-# alias is unrated — while catching nothing a rated alias would not already catch.
-# The residual gap is an alias whose only rating is a CVSS vector; closing that
-# needs base-score arithmetic this check deliberately does not carry.
+# An alias whose record OSV serves WITHOUT a qualitative rating is skipped. That is
+# deliberately asymmetric with the named id, whose missing rating fails closed, and
+# the asymmetry is load-bearing rather than lax: `database_specific.severity` is a
+# GitHub field, so a GHSA carries one and the CVE records GHSAs alias generally do
+# not. Failing closed on an unrated alias would reject ordinary correct entries —
+# measured against the committed entry, whose CVE alias is unrated — while catching
+# nothing a rated alias would not already catch. The residual gap is an alias whose
+# only rating is a CVSS vector; closing that needs base-score arithmetic this check
+# deliberately does not carry.
+#
+# That allowance extends only to a record this check actually READ. An alias whose
+# record could not be fetched or parsed — the API unreachable, an id OSV does not
+# serve, a body jq cannot read — is a rating not established rather than a rating
+# absent, and fails closed like every other such case here. Collapsing the two
+# would leave the gate a weather-dependent bypass: osv-scanner suppresses the alias
+# whether or not this check reached it, so one failed request against a HIGH alias
+# would take the entry green.
 rate_aliases() {
-  local id="$1" body="$2" alias alias_severity saved
+  local id="$1" body="$2" alias alias_severity alias_body alias_status saved
   saved=$IFS
   IFS=$'\n'
   for alias in $(printf '%s\n' "$body" | sed -n 's/^ALIAS //p'); do
@@ -218,7 +226,19 @@ rate_aliases() {
     # is not an id this check can look up, and leaving it unquoted would expose it
     # to pathname expansion.
     case "$alias" in ''|*[!A-Za-z0-9._-]*) IFS=$'\n'; continue ;; esac
-    alias_severity="$(rating_of "$(osv_record "$alias" || true)")" || alias_severity=""
+    # Assigned on its own line, not as `local alias_body=...`: `local` supplies the
+    # statement's exit status and would swallow the one being captured here.
+    alias_status=0
+    alias_body="$(osv_record "$alias")" || alias_status=$?
+    if [ "$alias_status" -ne 0 ]; then
+      fail "could not establish a severity for ${alias}, an alias of ignored advisory ${id} —" \
+        "OSV was unreachable, or served a record this check could not read. Failing closed:" \
+        "osv-scanner suppresses an ignored advisory's aliases along with the id itself, so an" \
+        "alias whose severity cannot be checked is not known to be below the high threshold."
+      IFS=$'\n'
+      continue
+    fi
+    alias_severity="$(rating_of "$alias_body")" || alias_severity=""
     if [ -n "$alias_severity" ] && [[ " $BLOCKED_SEVERITIES " == *" $alias_severity "* ]]; then
       fail "ignored advisory ${id} aliases ${alias}, which OSV rates ${alias_severity}." \
         "osv-scanner suppresses an ignored advisory's aliases too, so this entry would hide a" \
