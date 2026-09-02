@@ -32,7 +32,7 @@ detekt = "1.23.8"
 # runs Kotlin 2.4.10) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
 # in the pre-commit hook — bump both in lockstep. An upstream port is needed when Detekt 2.0 renames
 # the RuleSetProvider package to `dev.detekt`.
-structured-coroutines = "1.1.0"
+structured-coroutines = "1.1.1"
 # skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
 # version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.4.10; the analyzer's
 # version→Kotlin map has no 2.4.10 build, so 0.12.0 (built against Kotlin 2.4.0 — the nearest
