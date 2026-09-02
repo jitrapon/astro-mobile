@@ -9,17 +9,58 @@
 # the baseline. Remove an entry the moment a parent bump drops the advisory from the
 # resolved dependency graph, or the moment its severity is reclassified to `high`+.
 
-# Scope note: this file governs the osv-scanner `sca` job, which scans committed
-# lockfiles/SBOMs. The Gradle ecosystem does not commit lockfiles the way npm/pnpm
-# do (this repo pins exact versions in the catalog/build files instead), so that
-# job stays dormant (--allow-no-lockfiles). The LIVE SCA coverage for the Gradle
-# dependency graph — including the :androidApp Compose/AndroidX transitive tree —
-# is the `dependency-submission` job in security.yml: it submits the resolved graph
-# to GitHub's Dependency Graph, powering Dependabot/OSV alerts and the renovate.json
-# `osvVulnerabilityAlerts` baseline, no lockfile required. The ignore list below
-# applies only if a lockfile/SBOM source is ever committed and osv-scanner activates.
+# Scope note: this file governs the osv-scanner `sca` job, which is live and
+# blocks pull requests. The Gradle ecosystem commits no lockfile the way npm/pnpm
+# do (this repo pins exact versions in the catalog/build files instead), so the
+# job builds its own scan source rather than going without one: `./gradlew
+# :cyclonedxBom` renders the resolved Gradle dependency graph — including the
+# :androidApp Compose/AndroidX transitive tree — into a CycloneDX SBOM, and
+# osv-scanner scans that artifact by path. Every entry below therefore takes
+# effect on every pull request.
 #
-# No active ignores. Add a new [[IgnoredVulns]] block here only when a sub-`high`
-# advisory with no patched parent would otherwise fail the osv-scanner gate;
-# document the affected dependency coordinate and the reason it's routed to the
-# Renovate OSV baseline.
+# The `dependency-submission` job in security.yml is the complementary POST-MERGE
+# channel, retained alongside this gate: it submits the same resolved graph to
+# GitHub's Dependency Graph, powering Dependabot/OSV alerts and the renovate.json
+# `osvVulnerabilityAlerts` baseline that the sub-`high` entries below are routed
+# to. It reports an inventory; it does not gate, and it does not read this file.
+#
+# Add a new [[IgnoredVulns]] block here only when a sub-`high` advisory with no
+# patched parent would otherwise fail the osv-scanner gate; document the affected
+# dependency coordinate and the reason it's routed to the Renovate OSV baseline.
+# An entry naming a `high` or `critical` advisory is a policy violation, not a
+# judgement call — that is the threshold this gate exists to enforce, and it is
+# checked mechanically rather than left to review: scripts/check-ignore-severity.sh
+# resolves every id below against the OSV API and fails the build on a `high` or
+# `critical` rating, and on any id whose rating it cannot establish. It rates the
+# aliases OSV lists for an id too, because osv-scanner suppresses an ignored
+# advisory's aliases along with the id itself — so a `high` advisory cannot be
+# hidden here behind a lower-rated id that happens to alias it.
+#
+# `[[PackageOverrides]]` with `ignore = true` is forbidden here and rejected by that
+# same check. It suppresses every advisory on a package — at any severity, now and
+# in future — and osv-scanner reports the result as a clean exit 0 with the package
+# filtered out, so it dissolves the threshold with nothing left to rate. Suppress a
+# specific sub-`high` advisory by id below instead. The nested
+# `[PackageOverrides.vulnerability]` spelling is the same switch and is rejected the
+# same way. That check parses this file as TOML rather than scanning its lines,
+# because osv-scanner honours every spelling TOML allows — a single-quoted id, a
+# quoted key — and a pattern written for one spelling silently misses the rest.
+
+# io.opentelemetry:opentelemetry-api@1.41.0 — unbounded memory allocation in W3C
+# baggage propagation. MODERATE, CVSS 5.3, so below this gate's `high` threshold.
+#
+# It reaches the resolved graph transitively through
+# org.jetbrains.kotlin:swift-export-embeddable, a Kotlin compiler-side artifact
+# pinned by the Kotlin version itself — there is no patched parent to bump to, and
+# nothing in this repo declares opentelemetry directly. The Kotlin compiler
+# classpaths are deliberately IN the SBOM's scope (they are remediable here, by a
+# Kotlin upgrade, unlike the AGP build tooling that is filtered out), so this
+# advisory is genuinely visible to the gate rather than something the scope should
+# have excluded.
+#
+# Remove this entry when a Kotlin upgrade drops it from the resolved graph, or the
+# moment its severity is reclassified to `high`+ — at which point it must be
+# remediated, not re-ignored.
+[[IgnoredVulns]]
+id = "GHSA-rcgg-9c38-7xpx"
+reason = "MODERATE (CVSS 5.3), below the gate's high threshold; transitive via org.jetbrains.kotlin:swift-export-embeddable with no patched parent — routed to the Renovate osvVulnerabilityAlerts baseline."

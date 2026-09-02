@@ -1,5 +1,6 @@
 import java.io.File
 import javax.inject.Inject
+import org.cyclonedx.gradle.CyclonedxDirectTask
 import org.gradle.process.ExecOperations
 
 buildscript {
@@ -28,6 +29,10 @@ plugins {
     // plugin here registers `ktfmtCheckScripts` over the root `*.gradle.kts`; it is wired into the
     // gate and the CI partition below.
     alias(libs.plugins.ktfmt)
+    // CycloneDX SBOM generation. Applied ONLY here, on the root project — see the SBOM section
+    // further down for why one root application already covers every subproject, and why the
+    // resulting task is deliberately outside `check`.
+    alias(libs.plugins.cyclonedx)
 }
 
 // Match the subprojects' formatter: ktfmt's Kotlin-official-style preset, per kotlin.code.style.
@@ -490,6 +495,110 @@ tasks.register("peripheryScan") {
             workingDir = iosDir
             commandLine(periphery.path, "scan")
         }
+    }
+}
+
+// ----------------------------------------------------------------------------------------------
+// CycloneDX SBOM generation — the artifact the PR-blocking software-composition-analysis gate reads
+//
+// Software-composition analysis on the Gradle graph used to be post-merge only: the job feeding
+// GitHub's Dependency Graph runs on push, so a vulnerable dependency was reported after it had
+// already landed. This plugin produces a machine-readable bill of materials from the RESOLVED
+// graph — post conflict-resolution, substitution, and transitive selection — so the scanner has
+// something to read at PR time.
+//
+// Aggregation wiring, stated concretely rather than assumed. Plugin 3.x registers
+// `cyclonedxDirectBom` on the project it is applied to AND on that project's subprojects, but
+// registers the aggregating `cyclonedxBom` only on the applying project. Applying it once at the
+// root therefore covers `:shared` and `:androidApp` with no per-module `apply` and no hand-rolled
+// merge step. `:cyclonedxBom` is THE task CI invokes and its output is THE single artifact the
+// scanner consumes; it composes the per-project Direct SBOMs and FAILS when one of them is missing
+// rather than quietly emitting a short document — which is the property that makes a
+// single-artifact scan trustworthy.
+//
+// Output path: `build/reports/cyclonedx/bom.json`, the plugin's default destination and default
+// name. BOTH parts are load-bearing for the scanner and neither is free to change casually.
+//
+//   * The DIRECTORY is inside the gitignored `**/build/` tree, because an SBOM is a generated
+//     artifact and is never committed. osv-scanner honours `.gitignore` when it walks a directory,
+//     so a repo-root source scan cannot see this file at all — it walks zero inodes, extracts
+//     nothing, and reports "no package sources found". The scan therefore names this path
+//     explicitly rather than relying on discovery from the repository root.
+//   * The FILE NAME must be one the CycloneDX extractor recognises — `bom.json`, or a
+//     `*.cdx.json` suffix. Names outside that set (`sbom.json`, `astro-bom.json`) are not
+//     recognised even when handed to the scanner as an explicit target: it finds no package source
+//     rather than reporting a parse error. Renaming this output means renaming it to another name
+//     on that list.
+//   * The scan targets the FILE, not its directory. There is no output-format switch on the task —
+//     `jsonOutput` and `xmlOutput` are separate file properties and both are always written — so
+//     `bom.xml` always sits beside `bom.json` carrying identical content. A directory target
+//     extracts both and counts every component twice, which would corrupt any assertion made on the
+//     parsed package count.
+//
+// DELIBERATELY NOT wired into `check`, and so deliberately outside the `verifyCheckPartition` drift
+// guard below. Generating an SBOM produces a build artifact, and artifact production is coverage
+// BEYOND `check` — the same classification this repo already gives `:androidApp:assemble` and
+// `:shared:linkReleaseFrameworkIosArm64`, both of which CI runs as job steps rather than through an
+// aggregate. Wiring a `dependsOn` from any `check` would pull the task into the guard's closure and
+// fail the build until it were also classified into a CI half; that failure is the intended signal
+// that this decision is being reversed, not an obstacle to route around.
+// ----------------------------------------------------------------------------------------------
+
+// The scope of the graph the BOM covers, pinned explicitly rather than inherited from the plugin's
+// conventions: a plugin upgrade that narrowed a default would otherwise shrink what the gate can
+// see, silently, and while still passing.
+//
+// Every resolvable configuration of every project is in scope by default. An empty `includeConfigs`
+// means "no allow-list", so a new KMP target, a new source set, or a new module widens the BOM
+// automatically. An allow-list of configuration names would instead have to be edited in lockstep
+// with the build, and a stale or misspelled entry there narrows coverage without failing anything.
+//
+// TEST GRAPHS ARE IN SCOPE, AND A VULNERABLE TEST-ONLY DEPENDENCY BLOCKS A PULL REQUEST. That is
+// the plain reading of what this gate promises — a Gradle dependency carrying a high-or-worse
+// advisory fails the pull request — and it matches the coverage of the inventory channel the gate
+// sits alongside. `testConfigs` is emptied so that no component is stamped
+// `cdx:maven:package:test`, which keeps the document from carrying an annotation a downstream
+// scanner could use to filter those components back out. Narrowing the gate to shipping
+// dependencies only would be a deliberate change to what it promises, not a filter detail.
+//
+// The exclusions are the one class of dependency this repository cannot act on: build-time tooling
+// whose version the Android Gradle Plugin pins, which ships inside no artifact, and which therefore
+// has no remediation available here short of a whole-toolchain upgrade. Left in, the tooling alone
+// contributes a critical and dozens of high advisories that no source change can clear — and since
+// the severity policy forbids waving a high-or-worse advisory through the ignore list, the gate
+// would be permanently red and so permanently uninformative. Each pattern is a full-string regex:
+//
+//   ^classpath$              — the buildscript classpath, the same exclusion the dependency-graph
+//                              inventory job applies for the same reason. `includeBuildEnvironment`
+//                              already keeps buildscript configurations out of the traversal
+//                              entirely; this is the second layer that holds if it is flipped back.
+//   ^androidLintTool$        — the Android lint tool's own runtime (`:shared` and `:androidApp`);
+//                              carries the Bouncy Castle stack AGP pins.
+//   ^unified-test-platform-  — AGP's Unified Test Platform harness; carries a gRPC/Netty stack
+//     .*$                      several minor versions behind, pinned by AGP.
+//
+// Deliberately still IN scope: `coreLibraryDesugaring` (its artifact is bundled into the APK),
+// `detekt*` / `ktfmt*` (versions this repository pins in the version catalog and can bump on its
+// own), and the Kotlin compiler classpaths (remediable by a Kotlin upgrade). The dividing line is
+// remediability from this repository, not whether a dependency is "tooling".
+//
+// Traversing every resolvable configuration means traversing three that cannot resolve their own
+// declared dependencies: `appleMainCInterop`, `iosMainCInterop`, and `nativeMainCInterop`. Those
+// are
+// the commonized-cinterop configurations Kotlin creates for shared native source sets, and the
+// libraries this project depends on publish no variant matching them, so each dependency resolves
+// FAILED. The generator tolerates that and keeps going, which is the only reason an empty
+// `includeConfigs` is safe here; every coordinate those three declare reaches the BOM anyway
+// through the per-target `ios<Target>CInterop` and `ios<Target>CompileKlibraries` configurations,
+// which resolve the full native graph down to the target-specific artifacts. If a generator upgrade
+// ever makes an unresolvable configuration fatal, this is the shape of the failure and the skip
+// list is where those three would have to be named.
+allprojects {
+    tasks.withType<CyclonedxDirectTask>().configureEach {
+        includeConfigs.set(emptyList<String>())
+        skipConfigs.set(listOf("^classpath$", "^androidLintTool$", "^unified-test-platform-.*$"))
+        testConfigs.set(emptyList<String>())
+        includeBuildEnvironment.set(false)
     }
 }
 
