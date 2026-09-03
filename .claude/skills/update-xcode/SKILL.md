@@ -44,16 +44,32 @@ xcodes install --latest-prerelease --select     # or: xcodes install "27.0 Beta 
 ```
 
 - First run may prompt for an **Apple ID login and/or sudo password —
-  interactive**, which this harness can't answer. If the command stalls or asks
-  for input, have the user run it themselves via the `!` prefix:
+  interactive**, which this harness can't answer. If the command *genuinely*
+  stalls, have the user run it themselves via the `!` prefix:
   `! xcodes install --latest-prerelease --select`
+- **Silence is not a stall — never judge progress from the log.** `xcodes` prints
+  progress with a plain `print`, and Swift's stdout is line-buffered on a TTY but
+  **fully buffered on a pipe**. Backgrounding the command, or piping it to `tee`
+  or a file, flips it to full buffering — so the whole download and unarchive sit
+  in the buffer and flush only at exit, and a log still 0 bytes after several
+  minutes is the *normal* appearance of a healthy 40 GB download. Judge progress
+  from the **artifact on disk** (`ls -d /Applications/Xcode-*.app`), not from the
+  log, and not from whether `aria2c` shows up in `pgrep` — `xcodes` only shells
+  out to it for some transfers, so its absence proves nothing. Killing a
+  "stalled" install throws away a download that was nearly finished.
+- **A sudo failure at the end does not undo the download.** With no password
+  available, `xcodes` still completes steps 1–5 — download, unarchive, move to
+  `/Applications`, trash the `.xip`, verify code signing — and fails only at
+  `(6/6) Finishing installation` with "xcodes requires superuser privileges".
+  The app is already in place and correct at that point: do **not** re-run the
+  install, just finish it with the sudo commands below.
 - `aria2` (if on PATH) is auto-used and downloads 3–5x faster; the download is
   ~40 GB either way — run it in the background and continue only when done.
 - `--select` makes the new version active (`xcode-select`) after install.
 - The app lands at `/Applications/Xcode-<version>.app` (call it `$NEW_APP`,
   and `$DEV = $NEW_APP/Contents/Developer`).
 
-**Accept the license** — needs sudo, so the user runs it in-session:
+**Finish the install and accept the license** — all need sudo, so the user runs them in-session:
 
 **`sudo` cannot run through the `!` prefix** — it needs a controlling TTY and
 fails with "a terminal is required to read the password". Have the user run
@@ -64,7 +80,12 @@ it stick:
 ```
 sudo xcode-select -s $NEW_APP/Contents/Developer
 sudo xcodebuild -license accept
+sudo xcodebuild -runFirstLaunch
 ```
+
+`-runFirstLaunch` is the additional-component install that `xcodes`' own
+`(6/6) Finishing installation` step performs; when that step died on the missing
+password, this is what completes it.
 
 If `-license accept` still refuses, `sudo xcodebuild -license` opens the
 interactive agreement (page to the end, type `agree`).
@@ -201,10 +222,23 @@ pgrep -fl "$(basename $NEW_APP)" || open -a "$NEW_APP"
   time — see `ios-device-debug/SKILL.md` → Common build failures). Surfaces on
   the first `BuildProject` / `verifyIos`; run `./gradlew verifyIos` if you want
   the full macOS-side gate now.
-- **Old version cleanup:** each Xcode is ~40 GB on disk. `xcodes uninstall
-  "<old version>"` — **ask the user first**; never auto-delete. (If the old
-  app was already removed by hand, the dead MCP registration from Phase 3 was
-  the symptom that led here.)
+- **Old version cleanup:** an installed Xcode 27 bundle measures ~3.6 GB
+  (`du -sh /Applications/Xcode-*.app`) — far less than its ~40 GB download,
+  since simulator runtimes live outside the bundle and are shared across
+  versions. `xcodes uninstall "<old version>"` — **ask the user first**; never
+  auto-delete. (If the old app was already removed by hand, the dead MCP
+  registration from Phase 3 was the symptom that led here.) Note `uninstall`
+  **moves the app to the Trash rather than deleting it**, so the space is not
+  reclaimed until the Trash is emptied. Quit the old version's leftover helper
+  processes first (`XcodeService`, `DeviceHub`, `mcpbridge`) or they keep files
+  open — but scope the `pkill` pattern to the old app path, since an
+  unscoped `mcpbridge` match kills the bridge the *current* session is attached
+  to and drops the `mcp__xcode__*` toolset until the session restarts.
+  Emptying the Trash from this harness is usually blocked: macOS TCC denies
+  listing `~/.Trash` ("Operation not permitted") while still allowing `stat` on
+  a known path inside it, so a wildcard delete cannot be reviewed first —
+  delete the old bundle by its exact name, or let the user empty the Trash in
+  Finder.
 
 ## Phase 6 — branch & commit
 
