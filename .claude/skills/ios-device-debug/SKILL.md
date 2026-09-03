@@ -39,7 +39,7 @@ deployment-target floor — see Common build failures).
    timeout). **On Beta 5+ the permission gate in step 2 produces that identical
    string** — so a failed fetch does *not* by itself mean the project is closed;
    check both. Open it if needed:
-   `open -a "/Applications/Xcode-27.0.0-Beta.5.app" iosApp/iosApp.xcodeproj`
+   `open -a "/Applications/Xcode-27.0.0-Beta.6.app" iosApp/iosApp.xcodeproj`
    (adjust the Xcode path to yours). Confirm with `XcodeListWindows` → note the
    returned **`tabIdentifier`** (e.g. `windowtab1`); every `mcp__xcode__*` call
    needs it.
@@ -53,7 +53,7 @@ deployment-target floor — see Common build failures).
    intentionally *not* in the committed `.mcp.json`). If `mcp__xcode__*` tools
    are absent, register it once:
    ```bash
-   DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust to your Xcode
+   DEV=/Applications/Xcode-27.0.0-Beta.6.app/Contents/Developer   # adjust to your Xcode
    claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
    ```
    (Full rationale in `.claude/CLAUDE.md` → "Apple Xcode Agent Skills".)
@@ -120,7 +120,7 @@ A cold simulator makes the first `InstallAndRun` time out
 ("Session initialization timed out" / "device simulator cannot be connected").
 Boot and settle it deterministically first:
 ```bash
-export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer  # adjust
+export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.6.app/Contents/Developer  # adjust
 UUID=<sim-uuid>
 xcrun simctl boot "$UUID" 2>/dev/null || true      # idempotent; "already booted" is fine
 xcrun simctl bootstatus "$UUID" -b                  # blocks until boot completes
@@ -217,7 +217,7 @@ active run destination changed (that's local IDE state, not a repo change).
   `!` prefix:
 
   ```bash
-  DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust
+  DEV=/Applications/Xcode-27.0.0-Beta.6.app/Contents/Developer   # adjust
   sudo $DEV/usr/bin/mcp-server enable
   sudo $DEV/usr/bin/mcp-server allow-folder /Users/<you>/Developer/Projects/Astro --always
   ```
@@ -247,7 +247,7 @@ a real screenshot. What is lost is the **UI hierarchy** and any *interaction*
 reporting, and prefer the bridge whenever it works.
 
 ```bash
-export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer  # adjust
+export DEVELOPER_DIR=/Applications/Xcode-27.0.0-Beta.6.app/Contents/Developer  # adjust
 UUID=$(xcrun simctl list devices available | awk '/-- iOS 27/{f=1;next} f&&/iPhone/{gsub(/[()]/,"",$4); print $4; exit}')
 
 xcrun simctl boot "$UUID" 2>/dev/null || true      # idempotent

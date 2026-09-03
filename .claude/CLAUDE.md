@@ -183,7 +183,7 @@ The repo carries skills from several families with **mostly non-overlapping doma
   **Setup (per machine, one-time):** register the bridge as a **local-scope** MCP server (machine-specific — it pins an absolute Xcode-beta path, so it must NOT go in the committed `.mcp.json`):
 
   ```bash
-  DEV=/Applications/Xcode-27.0.0-Beta.5.app/Contents/Developer   # adjust to your Xcode
+  DEV=/Applications/Xcode-27.0.0-Beta.6.app/Contents/Developer   # adjust to your Xcode
   claude mcp add xcode -s local -e DEVELOPER_DIR=$DEV -- $DEV/usr/bin/mcpbridge
   ```
 
