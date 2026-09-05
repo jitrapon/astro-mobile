@@ -199,7 +199,7 @@ android {
         applicationId = "io.jitrapon.astro"
         minSdk = 23
         targetSdk = 37
-        versionCode = 2
+        versionCode = 3
         versionName = "0.1.1"
         vectorDrawables { useSupportLibrary = true }
     }
