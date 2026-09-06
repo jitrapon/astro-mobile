@@ -103,3 +103,5 @@ fastlane/test_output
 # After new code Injection tools there's a generated folder /iOSInjectionProject
 # https://github.com/johnno1962/injectionforxcode
 iOSInjectionProject/
+# Release signing credentials — points at a keystore outside the repo. Never committed.
+keystore.properties

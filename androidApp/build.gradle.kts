@@ -3,6 +3,7 @@ import com.ncorti.ktfmt.gradle.FormattingOptionsBean
 import com.ncorti.ktfmt.gradle.KtfmtExtension
 import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -161,6 +162,36 @@ afterEvaluate {
     }
 }
 
+// Release signing credentials. Read from a gitignored `keystore.properties` at the repo root, or
+// from the matching environment variables when that file is absent (CI, a fresh clone). The
+// keystore itself lives outside the repo — `storeFile` is an absolute path into it — so no secret
+// and no key material is ever tracked by git.
+//
+// Resolution is deliberately all-or-nothing: unless every one of the four values is present the
+// release build stays unsigned, exactly as it was before signing existed. That is what keeps
+// CI green — the `verify-android-common` job runs `:androidApp:assemble`, which builds the release
+// variant on a runner that has no keystore, and a half-configured signingConfig would fail it at
+// configuration time rather than skip.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.exists()) {
+            keystorePropertiesFile.inputStream().use(::load)
+        }
+    }
+
+fun resolveSigningCredential(propertyKey: String, environmentKey: String): String? =
+    keystoreProperties.getProperty(propertyKey) ?: System.getenv(environmentKey)
+
+val releaseStoreFile = resolveSigningCredential("storeFile", "ASTRO_KEYSTORE_FILE")
+val releaseStorePassword = resolveSigningCredential("storePassword", "ASTRO_KEYSTORE_PASSWORD")
+val releaseKeyAlias = resolveSigningCredential("keyAlias", "ASTRO_KEY_ALIAS")
+val releaseKeyPassword = resolveSigningCredential("keyPassword", "ASTRO_KEY_PASSWORD")
+val hasReleaseSigningCredentials =
+    listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).none {
+        it.isNullOrBlank()
+    }
+
 android {
     compileSdk = 37
 
@@ -168,12 +199,30 @@ android {
         applicationId = "io.jitrapon.astro"
         minSdk = 23
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 4
+        versionName = "0.1.2"
         vectorDrawables { useSupportLibrary = true }
     }
 
-    buildTypes { getByName("release") { isMinifyEnabled = true } }
+    signingConfigs {
+        if (hasReleaseSigningCredentials) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            // Null when no credentials resolved, which leaves the variant unsigned rather than
+            // failing the build — see the all-or-nothing note above `keystorePropertiesFile`.
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
