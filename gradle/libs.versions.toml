@@ -22,7 +22,7 @@
 # Kotlin Gradle plugin, the Compose compiler plugin, and the kotlinx.serialization plugin all embed
 # compiler internals, so a mismatch against the Kotlin the build runs is a hard failure, not a
 # warning. Bumping Kotlin means bumping this one ref and re-checking compose-stability-analyzer.
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
 detekt = "1.23.8"
