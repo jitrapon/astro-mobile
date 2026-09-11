@@ -1,4 +1,4 @@
-Status: blocking
+Status: clear
 
 # Plan review — `.claude/SPEC.md` §§4–5
 
@@ -29,3 +29,17 @@ Verdict: **needs-attention** — 3 high, 1 medium.
 | 4 | **PARTIAL** | The scope concern is fair, but deleting the Swift call site is worse than keeping it: CLAUDE.md records the `xcodebuild` app build as the *only* gate that type-checks Kotlin-declared symbols at Swift call sites, so an adapter with no Swift caller is unverified at precisely the boundary D-24 exists to settle. Kept as the smallest compiling call site, explicitly labelled boundary verification with the shell deferred to #136; the behavioural coverage Codex asked for moved into §5.11 (`iosTest`, runs on the simulator) rather than resting on the compile gate. §§1–3 are user prose and were not edited. |
 
 All four findings were checked against the repo before disposition: `MockCalendarBackend.respondTo` is already suspending, so every interleaving case above is constructible with the existing harness and needs no new test infrastructure.
+
+## Round 2 — 2026-09-11
+
+Verdict: **approve** — no material findings.
+
+> The revised plan closes the prior invalidation, deduplication, and live-subscriber findings. The minimal Swift call site plus simulator adapter tests adequately addresses the boundary-verification concern. No remaining material blocker is supported by this doc-only review.
+
+### Resolution log — round 2
+
+All four round-1 findings confirmed closed. Findings 1–3 were folded into §§4.4, 4.7, 5.4, 5.7 as
+accepted; finding 4's PARTIAL disposition — keeping the smallest Swift call site while moving
+behavioural coverage into §5.11 — was accepted rather than re-raised.
+
+No §§1–3 / §7 prose was edited in either round, so no user-prose escalation was needed.
