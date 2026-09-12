@@ -1,13 +1,24 @@
 package io.jitrapon.astro.di
 
+import io.jitrapon.astro.data.Result
 import io.jitrapon.astro.data.calendar.CalendarScreenApi
+import io.jitrapon.astro.data.calendar.CalendarScreenExchangeKey
+import io.jitrapon.astro.data.calendar.CalendarScreenQuery
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
+import io.jitrapon.astro.data.calendar.CalendarScreenRequest
+import io.jitrapon.astro.data.calendar.CalendarScreenResponse
+import io.jitrapon.astro.data.query.ScreenCache
+import io.jitrapon.astro.data.query.ScreenCachePolicy
+import io.jitrapon.astro.data.query.SingleFlightRunner
+import io.jitrapon.astro.data.query.Ticker
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 import org.koin.core.context.stopKoin
@@ -43,7 +54,47 @@ class DependencyGraphResolutionTest {
         assertSame(graph.get<Json>(), graph.get<Json>())
         assertSame(graph.get<HttpClient>(), graph.get<HttpClient>())
         assertSame(graph.get<CalendarScreenApi>(), graph.get<CalendarScreenApi>())
+        assertSame(graph.get<CoroutineDispatcher>(), graph.get<CoroutineDispatcher>())
+        assertSame(graph.get<CoroutineScope>(), graph.get<CoroutineScope>())
+        assertSame(graph.get<Ticker>(), graph.get<Ticker>())
+        // Singletons here are not a cost decision but a correctness one: a second cache, in-flight
+        // table or observation map would remember screens nothing else can read and deduplicate
+        // exchanges against a table no other caller shares.
+        assertSame(
+            graph.get<ScreenCache<CalendarScreenRequest, CalendarScreenResponse>>(),
+            graph.get<ScreenCache<CalendarScreenRequest, CalendarScreenResponse>>(),
+        )
+        assertSame(graph.get<ScreenCachePolicy>(), graph.get<ScreenCachePolicy>())
+        assertSame(
+            graph.get<
+                SingleFlightRunner<CalendarScreenExchangeKey, Result<CalendarScreenResponse>>
+            >(),
+            graph.get<
+                SingleFlightRunner<CalendarScreenExchangeKey, Result<CalendarScreenResponse>>
+            >(),
+        )
+        assertSame(graph.get<CalendarScreenQuery>(), graph.get<CalendarScreenQuery>())
         assertSame(graph.get<CalendarScreenRepository>(), graph.get<CalendarScreenRepository>())
+    }
+
+    /**
+     * A graph that is torn down must stop the scope its exchanges run on.
+     *
+     * Nothing else can. An exchange is hosted on the data layer's own scope precisely so it
+     * outlives the collector that triggered it — a collector going away abandons its wait and
+     * cancels nothing — which leaves the scope's own cancellation as the only thing that ever stops
+     * one. A graph that dropped its scope without cancelling it would leak a live `SupervisorJob`,
+     * and with it any exchange still in flight, per start/stop cycle.
+     */
+    @Test
+    fun cancelsTheDataLayerScopeWhenTheGraphIsTornDown() {
+        initKoin(baseUrl = UNREACHABLE_BASE_URL)
+        val graph = KoinPlatformTools.defaultContext().get()
+        val scope = graph.get<CoroutineScope>()
+
+        stopKoin()
+
+        assertFalse(scope.isActive, "the graph left its data-layer scope running after teardown")
     }
 
     /**

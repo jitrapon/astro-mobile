@@ -78,6 +78,18 @@ internal class CalendarScreenQueryFixture(
             scope = scope,
         )
 
+    /**
+     * The repository fronting [query], assembled the way the graph assembles it.
+     *
+     * It lives here rather than beside the stubbed backend because a repository is only complete
+     * once there is a query beneath it, and a query needs the scope and clock this fixture owns.
+     */
+    val calendarScreenRepository: CalendarScreenRepository =
+        CalendarScreenRepository(
+            calendarScreenApi = backend.calendarScreenApi,
+            calendarScreenQuery = query,
+        )
+
     private companion object {
         /** Comfortably more than any case observes, so capacity eviction never confounds one. */
         const val MAX_REMEMBERED_SCREENS = 8

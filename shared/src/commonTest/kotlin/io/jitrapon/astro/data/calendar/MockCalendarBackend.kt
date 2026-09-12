@@ -71,9 +71,6 @@ internal class MockCalendarBackend(
             httpClient = createBackendHttpClient(engine, createLenientBackendJson(), deadlines),
             baseUrl = baseUrl,
         )
-
-    val calendarScreenRepository: CalendarScreenRepository =
-        CalendarScreenRepository(calendarScreenApi)
 }
 
 /** Answers with [body] as JSON, so content negotiation decodes it rather than refusing the type. */
