@@ -96,9 +96,25 @@ internal class StalledExchange {
 
     private val gate = CompletableDeferred<Unit>()
 
+    private val reached = CompletableDeferred<Unit>()
+
     /** Suspends the backend's answer until [release]; returns immediately once released. */
     suspend fun hold() {
+        reached.complete(Unit)
         gate.await()
+    }
+
+    /**
+     * Suspends until the backend has reached [hold] on an exchange, so a case can act while one is
+     * provably in flight.
+     *
+     * What this buys is ordering the exchanges themselves, which no amount of draining the test
+     * scheduler can: an exchange travels to the stub on a real dispatcher, so a case that acts
+     * without waiting for this has not established that the exchange it means to overtake has even
+     * started.
+     */
+    suspend fun awaitHeld() {
+        reached.await()
     }
 
     /** Lets every held answer through, and every later one through without holding. */
@@ -162,6 +178,20 @@ internal fun CoroutineScope.recordStates(states: Flow<CalendarScreenQueryState>)
     return StateRecording(recorded, collector)
 }
 
+/** The zone [monthScreenRequest] asks for, and so the one its screen must come back in. */
+internal const val BANGKOK_TIME_ZONE: String = "Asia/Bangkok"
+
+/**
+ * A second zone, which makes a second request identity that must never share the first's screen.
+ */
+internal const val ZURICH_TIME_ZONE: String = "Europe/Zurich"
+
+/**
+ * A distinct server clock per exchange, so a case can name which exchange's screen it is looking at
+ * rather than only that a screen arrived.
+ */
+internal fun serverTimeOfExchange(nth: Int): String = "2026-04-15T0$nth:00:00Z"
+
 /**
  * Answers with the month-screen fixture, with [serverTime] substituted so responses are telling
  * apart.
@@ -169,6 +199,25 @@ internal fun CoroutineScope.recordStates(states: Flow<CalendarScreenQueryState>)
 internal fun MockRequestHandleScope.respondWithServerTime(serverTime: String): HttpResponseData =
     respondJson(
         monthScreenFixtureJson().replacing("serverTime", JsonPrimitive(serverTime)).toString()
+    )
+
+/**
+ * Answers with the month-screen fixture, echoing [zone] back into the envelope alongside
+ * [serverTime].
+ *
+ * Both substitutions are needed together whenever a case runs more than one request: the zone says
+ * which request a published screen belongs to, the clock says which exchange produced it, and
+ * neither answers the other's question.
+ */
+internal fun MockRequestHandleScope.respondWithZoneAndServerTime(
+    zone: String,
+    serverTime: String,
+): HttpResponseData =
+    respondJson(
+        monthScreenFixtureJson()
+            .replacing("timeZone", JsonPrimitive(zone))
+            .replacing("serverTime", JsonPrimitive(serverTime))
+            .toString()
     )
 
 /**

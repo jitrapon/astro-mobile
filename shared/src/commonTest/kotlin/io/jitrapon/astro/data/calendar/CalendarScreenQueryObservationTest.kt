@@ -281,14 +281,3 @@ class CalendarScreenQueryObservationTest {
 
 /** Long enough that a case which never advances the clock cannot cross it by accident. */
 private val STALENESS_WINDOW = 5.minutes
-
-/**
- * A distinct server clock per exchange, so a case can name which exchange's screen it is looking at
- * rather than only that a screen arrived.
- */
-private fun serverTimeOfExchange(nth: Int): String = "2026-04-15T0$nth:00:00Z"
-
-/** The zone [monthScreenRequest] asks for, and so the one its screen must come back in. */
-private const val BANGKOK_TIME_ZONE = "Asia/Bangkok"
-
-private const val ZURICH_TIME_ZONE = "Europe/Zurich"

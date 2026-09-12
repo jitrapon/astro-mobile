@@ -9,6 +9,8 @@ import io.jitrapon.astro.data.query.Ticker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onSubscription
@@ -49,14 +51,20 @@ internal class CalendarScreenQuery(
     private val screenCache: ScreenCache<CalendarScreenRequest, CalendarScreenResponse>,
     private val screenCachePolicy: ScreenCachePolicy,
     private val singleFlightRunner:
-        SingleFlightRunner<CalendarScreenRequest, Result<CalendarScreenResponse>>,
+        SingleFlightRunner<CalendarScreenExchangeKey, Result<CalendarScreenResponse>>,
     private val ticker: Ticker,
     private val scope: CoroutineScope,
 ) {
 
     /**
-     * Guards [observations] across find-or-create, so two observers arriving together cannot each
-     * conclude they are the first and walk away holding two different states for one request.
+     * Guards [observations] and every generation inside it, across find-or-create so two observers
+     * arriving together cannot each conclude they are the first and walk away holding two different
+     * states for one request, and across the generation reads and writes so an exchange and an
+     * invalidation cannot disagree about which era the exchange belongs to.
+     *
+     * One mutex over one table, held only for bookkeeping and never across an exchange. A
+     * reader/writer split would buy nothing: every section under it is a few map operations, while
+     * holding it across a round trip would serialise the whole layer onto one request at a time.
      */
     private val guard = Mutex()
 
@@ -71,7 +79,7 @@ internal class CalendarScreenQuery(
      * screen an idle entry references is the same one the cache already holds until capacity
      * pressure drops it.
      */
-    private val observations = mutableMapOf<CalendarScreenRequest, ObservedScreenState>()
+    private val observations = mutableMapOf<CalendarScreenRequest, ObservedScreen>()
 
     /**
      * Observes the screen matching [request]: the current state immediately, then every state that
@@ -86,12 +94,73 @@ internal class CalendarScreenQuery(
      * that differ in any field share nothing, because the request is the screen's whole identity.
      */
     fun observeScreen(request: CalendarScreenRequest): Flow<CalendarScreenQueryState> = flow {
-        val state = guard.withLock { observations.getOrPut(request, ::newObservation) }
+        val observed = guard.withLock { observations.getOrPut(request, ::ObservedScreen) }
         // The load is started from `onSubscription` rather than before `emitAll` so that it cannot
         // begin until this collector is registered with the state. Started any earlier, a load that
         // reached its first publication before registration would have that state conflated away,
         // and a collector would silently miss the transition it was attached to see.
-        emitAll(state.onSubscription { scope.launch { serveAndRefresh(request, state) } })
+        emitAll(
+            observed.states.onSubscription { scope.launch { serveAndRefresh(request, observed) } }
+        )
+    }
+
+    /**
+     * Exchanges for a newer screen matching [request] and publishes what comes back, whether or not
+     * the remembered screen still stands.
+     *
+     * This is the pull-to-refresh path, and the only difference from what a fresh observation does
+     * is that it consults no staleness window: a caller asking explicitly for new data is not
+     * answered with the copy it is already looking at. What it keeps is everything else — the
+     * screen already showing stays showing under a raised in-flight flag, and a concurrent refresh
+     * of the same request joins the one exchange rather than starting a second.
+     *
+     * Suspends until the exchange it joined has been dealt with, so a caller can sequence work
+     * behind a completed refresh. It reports nothing: the outcome reaches callers through the
+     * observed state, which is the one place a refresh's result is ever read from.
+     */
+    suspend fun refetchScreen(request: CalendarScreenRequest) {
+        val observed = guard.withLock { observations.getOrPut(request, ::ObservedScreen) }
+        observed.markFetching()
+        exchangeAndPublish(request, observed)
+    }
+
+    /**
+     * Declares every remembered screen whose request satisfies [matches] to be wrong, and brings
+     * whoever is watching one back up to date.
+     *
+     * Three things happen, and dropping any one of them leaves a screen that is known to be wrong
+     * still on display:
+     * - the matching entries are dropped, so the next observation cannot be served one;
+     * - every matching request moves to a new generation, which is what stops an exchange that was
+     *   already in flight from writing its now-obsolete answer back in behind this call — see
+     *   [CalendarScreenExchangeKey];
+     * - every matching request that someone is *currently collecting* is refreshed, because
+     *   eviction alone would leave an already-open screen painting stale content until its
+     *   collector happened to re-observe it, which for a screen left open is never.
+     *
+     * Only requests with a live collector are refreshed. Observations are retained for the life of
+     * this layer, so refreshing them all would turn one invalidation into a round trip per screen
+     * the session has ever opened. A collector that arrives *during* this call is not missed: it
+     * cannot be served the entry this call has already dropped, so its own load exchanges against
+     * the generation this call installed.
+     *
+     * A predicate rather than a request so a caller can invalidate a family — every screen for a
+     * calendar, a time zone, a date range — without knowing which requests were ever observed.
+     */
+    suspend fun invalidateScreens(matches: (CalendarScreenRequest) -> Boolean) {
+        val refreshing = guard.withLock {
+            screenCache.evict(matches)
+            // Collected before touching anything: the generation bump must cover every matching
+            // request, while only the ones being collected are worth a round trip.
+            val invalidated = observations.filterKeys(matches)
+            invalidated.values.forEach { it.startNewGeneration() }
+            invalidated.filterValues { it.isBeingCollected }.toList()
+        }
+        // Launched outside the critical section so an exchange can never be started while the table
+        // that decides whether its answer may publish is locked.
+        refreshing.forEach { (request, observed) ->
+            scope.launch { serveAndRefresh(request, observed) }
+        }
     }
 
     /**
@@ -107,10 +176,7 @@ internal class CalendarScreenQuery(
      * nothing else, because an entry this build cannot read says nothing about the screen a
      * previous exchange already delivered.
      */
-    private suspend fun serveAndRefresh(
-        request: CalendarScreenRequest,
-        state: ObservedScreenState,
-    ) {
+    private suspend fun serveAndRefresh(request: CalendarScreenRequest, observed: ObservedScreen) {
         val remembered = screenCache.read(request)
         val verdict = remembered?.let {
             screenCachePolicy.classifyCachedScreen(it, ticker.readTickNanos())
@@ -118,23 +184,19 @@ internal class CalendarScreenQuery(
         val exchangeNeeded = verdict != ScreenCacheVerdict.FRESH
         val showable = remembered?.takeIf { verdict != ScreenCacheVerdict.UNUSABLE }
         if (showable != null) {
-            state.value =
-                CalendarScreenQueryState.Loaded(
-                    response = showable.screen,
-                    servedFromCache = true,
-                    isFetching = exchangeNeeded,
-                )
+            observed.publishRemembered(showable.screen, isFetching = exchangeNeeded)
         } else {
             // Nothing showable means nothing was remembered, or what was is unreadable to this
             // build — either way an exchange is coming, so the flag goes up over whatever is
             // already there rather than replacing it.
-            state.update { it.withFetching(isFetching = true) }
+            observed.markFetching()
         }
-        if (exchangeNeeded) exchangeAndPublish(request, state)
+        if (exchangeNeeded) exchangeAndPublish(request, observed)
     }
 
     /**
-     * Runs one exchange for [request] through [singleFlightRunner] and publishes what it produced.
+     * Runs one exchange for [request] through [singleFlightRunner] and publishes what it produced,
+     * unless an invalidation has since ruled that answer out.
      *
      * Concurrent observers of one request reach this together and share the single execution the
      * runner starts, so they cause one round trip and publish one screen between them.
@@ -143,32 +205,31 @@ internal class CalendarScreenQuery(
      * landed, so a failed refresh reports itself without discarding a screen that loaded perfectly
      * well. Cancellation reaches neither branch: it propagates out of the API client untouched
      * rather than arriving as an error, so a superseded exchange publishes nothing at all.
+     *
+     * An answer from a superseded generation is discarded rather than published, and the in-flight
+     * flag is deliberately left raised when that happens: the refresh the invalidation started is
+     * still running, and lowering the flag on its behalf would report the screen as settled while a
+     * newer answer is still on its way. That refresh is what lowers it — an invalidation with a
+     * live collector always starts one, and a request with no live collector reaches its next
+     * collector through [serveAndRefresh], which sets the flag from what it finds rather than from
+     * what was left behind.
      */
     private suspend fun exchangeAndPublish(
         request: CalendarScreenRequest,
-        state: ObservedScreenState,
+        observed: ObservedScreen,
     ) {
-        when (val outcome = singleFlightRunner.runOnce(request) { fetchAndRemember(request) }) {
-            is Result.Success ->
-                state.value =
-                    CalendarScreenQueryState.Loaded(
-                        response = outcome.data,
-                        servedFromCache = false,
-                        isFetching = false,
-                    )
-            is Result.Error ->
-                state.update {
-                    CalendarScreenQueryState.Failed(
-                        error = outcome.exception,
-                        lastLoadedResponse = it.responseStillShowing(),
-                        isFetching = false,
-                    )
-                }
+        val key = guard.withLock { observed.currentExchangeKey(request) }
+        val outcome = singleFlightRunner.runOnce(key) { fetchAndRemember(key) }
+        if (!guard.withLock { observed.isCurrent(key) }) return
+        when (outcome) {
+            is Result.Success -> observed.publishDelivered(outcome.data)
+            is Result.Error -> observed.publishFailure(outcome.exception)
         }
     }
 
     /**
-     * Fetches the screen matching [request] and remembers a delivered one.
+     * Fetches the screen matching [key] and remembers a delivered one, unless an invalidation has
+     * ruled that answer out while it was in flight.
      *
      * The write lives here — inside the work one exchange runs — rather than beside the publication
      * above it, so a screen is remembered exactly once per round trip and stamped with the tick at
@@ -179,50 +240,154 @@ internal class CalendarScreenQuery(
      * It does not live in [CalendarScreenApi] either: that client's job ends at turning an exchange
      * into a [Result], and a client that wrote to a cache could not be used for an exchange whose
      * answer should not be remembered.
+     *
+     * The generation check and the write happen in one critical section, and invalidation takes the
+     * same lock across its own eviction and bump. Checking outside the lock would leave the two
+     * interleavings that defeat the check entirely: a bump landing between a passing check and the
+     * write, and an eviction landing between the write and the bump — either of which re-files a
+     * screen the server has already said is wrong.
      */
     private suspend fun fetchAndRemember(
-        request: CalendarScreenRequest
+        key: CalendarScreenExchangeKey
     ): Result<CalendarScreenResponse> {
-        val outcome = calendarScreenApi.fetchCalendarScreen(request)
-        if (outcome is Result.Success) screenCache.write(request, outcome.data)
+        val outcome = calendarScreenApi.fetchCalendarScreen(key.request)
+        if (outcome is Result.Success) {
+            guard.withLock {
+                if (observations[key.request]?.isCurrent(key) == true) {
+                    screenCache.write(key.request, outcome.data)
+                }
+            }
+        }
         return outcome
     }
-
-    private fun newObservation(): ObservedScreenState =
-        MutableStateFlow(CalendarScreenQueryState.Pending(isFetching = false))
 }
 
 /**
- * The live state of one observed request.
+ * What one exchange for a calendar screen is deduplicated under: the request being exchanged for,
+ * and the generation of that request it was started in.
  *
- * An alias rather than the type spelled out at each use: the three-parameter spelling appears in
- * every signature in this file and says nothing more than the name does.
+ * The generation is in the key rather than checked alongside it because the two invariants an
+ * invalidation has to establish are otherwise separate problems. Carrying it here settles both with
+ * one comparison:
+ * - a caller arriving after an invalidation computes a different key, so it starts its own exchange
+ *   instead of joining one whose answer is already known to be obsolete;
+ * - an exchange started before an invalidation can be recognised as obsolete when it returns, by
+ *   comparing the generation it was started in against the one its request is on now.
+ *
+ * Ordering alone answers neither. A lock establishes which of an invalidation and a write happened
+ * first; it cannot establish that a response which left the server before the invalidation is still
+ * the right answer, because it never was.
  */
-private typealias ObservedScreenState = MutableStateFlow<CalendarScreenQueryState>
+internal data class CalendarScreenExchangeKey(
+    val request: CalendarScreenRequest,
+    /**
+     * How many times [request] has been invalidated. Only ever compared for equality against the
+     * request's current generation — the number itself means nothing outside this layer.
+     */
+    val generation: Int,
+)
 
 /**
- * Returns this state with its in-flight flag set to [isFetching] and everything else untouched.
+ * The live state of one observed request, the generation it is currently on, and the only code that
+ * decides how the two axes of that state combine.
  *
- * The point is what it does *not* do: a state that is already showing a screen keeps showing it
- * while the flag is raised. Replacing it with a fresh [CalendarScreenQueryState.Pending] instead is
- * the collapse-to-skeleton this type's two axes exist to make impossible.
+ * The state and the generation live together because they are read and written together under one
+ * lock: whether an answer may be published is a question about both, and splitting them across two
+ * tables would make that decision two lookups that can disagree.
+ *
+ * The flow itself is not handed out. Every change goes through one of the operations below, each of
+ * which names an event rather than a value, so the rule that a refresh must never blank a screen
+ * that has already loaded is stated once here instead of at every call site that publishes.
  */
-private fun CalendarScreenQueryState.withFetching(isFetching: Boolean): CalendarScreenQueryState =
-    when (this) {
-        is CalendarScreenQueryState.Pending -> copy(isFetching = isFetching)
-        is CalendarScreenQueryState.Loaded -> copy(isFetching = isFetching)
-        is CalendarScreenQueryState.Failed -> copy(isFetching = isFetching)
+private class ObservedScreen {
+
+    private val published =
+        MutableStateFlow<CalendarScreenQueryState>(
+            CalendarScreenQueryState.Pending(isFetching = false)
+        )
+
+    /** Everything published for this request, starting from whatever it is showing now. */
+    val states: StateFlow<CalendarScreenQueryState> = published.asStateFlow()
+
+    /**
+     * Only ever read or written under the query's guard, which is what makes a plain `var` safe
+     * here on Kotlin/Native as well as the JVM.
+     */
+    private var generation: Int = 0
+
+    /** Whether anyone is collecting [states] right now. */
+    val isBeingCollected: Boolean
+        get() = published.subscriptionCount.value > 0
+
+    /** The key an exchange for [request] started now belongs to. */
+    fun currentExchangeKey(request: CalendarScreenRequest): CalendarScreenExchangeKey =
+        CalendarScreenExchangeKey(request, generation)
+
+    /** Whether an exchange started under [key] is still the answer this request is waiting for. */
+    fun isCurrent(key: CalendarScreenExchangeKey): Boolean = key.generation == generation
+
+    /** Rules out every exchange already in flight for this request. */
+    fun startNewGeneration() {
+        generation++
     }
 
-/**
- * The response a collector of this state is currently painting, or `null` when there is none.
- *
- * A failure carries it forward rather than starting over: two failures in a row must not lose the
- * screen the first one was still showing.
- */
-private fun CalendarScreenQueryState.responseStillShowing(): CalendarScreenResponse? =
-    when (this) {
-        is CalendarScreenQueryState.Pending -> null
-        is CalendarScreenQueryState.Loaded -> response
-        is CalendarScreenQueryState.Failed -> lastLoadedResponse
+    /** Publishes [response] as a screen that was remembered rather than exchanged for. */
+    fun publishRemembered(response: CalendarScreenResponse, isFetching: Boolean) {
+        published.value =
+            CalendarScreenQueryState.Loaded(
+                response = response,
+                servedFromCache = true,
+                isFetching = isFetching,
+            )
     }
+
+    /** Publishes [response] as a screen an exchange just delivered, and calls the network idle. */
+    fun publishDelivered(response: CalendarScreenResponse) {
+        published.value =
+            CalendarScreenQueryState.Loaded(
+                response = response,
+                servedFromCache = false,
+                isFetching = false,
+            )
+    }
+
+    /**
+     * Publishes [error] against whatever screen is currently showing, which stays showing.
+     *
+     * The screen is carried forward rather than started over, so two failures in a row do not lose
+     * the screen the first one was still displaying.
+     */
+    fun publishFailure(error: Exception) {
+        published.update {
+            CalendarScreenQueryState.Failed(
+                error = error,
+                lastLoadedResponse = it.responseStillShowing(),
+                isFetching = false,
+            )
+        }
+    }
+
+    /**
+     * Raises the in-flight flag over whatever is currently showing, and changes nothing else.
+     *
+     * The point is what it does *not* do: a state already showing a screen keeps showing it while
+     * the flag is up. Replacing it with a fresh [CalendarScreenQueryState.Pending] instead is the
+     * collapse-to-skeleton the state's two independent axes exist to make impossible.
+     */
+    fun markFetching() {
+        published.update {
+            when (it) {
+                is CalendarScreenQueryState.Pending -> it.copy(isFetching = true)
+                is CalendarScreenQueryState.Loaded -> it.copy(isFetching = true)
+                is CalendarScreenQueryState.Failed -> it.copy(isFetching = true)
+            }
+        }
+    }
+
+    private fun CalendarScreenQueryState.responseStillShowing(): CalendarScreenResponse? =
+        when (this) {
+            is CalendarScreenQueryState.Pending -> null
+            is CalendarScreenQueryState.Loaded -> response
+            is CalendarScreenQueryState.Failed -> lastLoadedResponse
+        }
+}

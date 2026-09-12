@@ -70,8 +70,3 @@ class CalendarScreenRepositoryTest {
         assertEquals(2, backend.requests.size, "A second request was answered without being sent.")
     }
 }
-
-/** The zone [monthScreenRequest] asks for, and so the one the first response must come back in. */
-private const val BANGKOK_TIME_ZONE = "Asia/Bangkok"
-
-private const val ZURICH_TIME_ZONE = "Europe/Zurich"
