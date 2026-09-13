@@ -119,11 +119,21 @@ internal class CalendarScreenQuery(
      * Suspends until the exchange it joined has been dealt with, so a caller can sequence work
      * behind a completed refresh. It reports nothing: the outcome reaches callers through the
      * observed state, which is the one place a refresh's result is ever read from.
+     *
+     * The refresh runs on [scope] and the caller only waits for it, so cancelling the caller
+     * abandons the wait and nothing else. Run in the caller's own coroutine instead, a cancelled
+     * caller would leave the exchange to finish inside the runner with no one left to publish its
+     * answer — and every other observer of [request] stuck under the in-flight flag this call
+     * raised, since nothing else would ever lower it.
      */
     suspend fun refetchScreen(request: CalendarScreenRequest) {
-        val observed = guard.withLock { observations.getOrPut(request, ::ObservedScreen) }
-        observed.markFetching()
-        exchangeAndPublish(request, observed)
+        scope
+            .launch {
+                val observed = guard.withLock { observations.getOrPut(request, ::ObservedScreen) }
+                observed.markFetching()
+                exchangeAndPublish(request, observed)
+            }
+            .join()
     }
 
     /**

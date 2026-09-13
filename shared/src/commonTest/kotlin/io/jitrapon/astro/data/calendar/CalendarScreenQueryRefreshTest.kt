@@ -62,6 +62,40 @@ class CalendarScreenQueryRefreshTest {
     }
 
     @Test
+    fun aRefreshWhoseCallerIsCancelledStillSettlesTheScreenForItsObservers() = runTest {
+        val stalled = StalledExchange()
+        var exchanges = 0
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) {
+                val nth = ++exchanges
+                if (nth == 2) stalled.hold()
+                respondWithServerTime(serverTimeOfExchange(nth))
+            }
+        val request = monthScreenRequest()
+        val observation = backgroundScope.recordStates(fixture.query.observeScreen(request))
+        observation.awaitLatest { it is CalendarScreenQueryState.Loaded }
+
+        // The caller that asked for the refresh goes away while its exchange is in flight — a
+        // pull-to-refresh whose screen was dismissed. The observer that stays behind is the one
+        // whose in-flight flag that refresh raised, so it is the one left waiting on the outcome.
+        val abandonedRefresh = backgroundScope.launch { fixture.query.refetchScreen(request) }
+        stalled.awaitHeld()
+        abandonedRefresh.cancel()
+        stalled.release()
+
+        // A regression reports as a case that stops making progress: nothing publishes the
+        // answer, so the observer keeps the first screen under a flag that never comes down.
+        assertEquals(
+            CalendarScreenQueryState.Loaded(
+                response = decodeMonthScreenFixture().copy(serverTime = serverTimeOfExchange(2)),
+                servedFromCache = false,
+                isFetching = false,
+            ),
+            observation.awaitLatest { screenShowing(it)?.serverTime == serverTimeOfExchange(2) },
+        )
+    }
+
+    @Test
     fun invalidatingDropsTheMatchingRememberedScreensAndLeavesTheRestRemembered() = runTest {
         var exchanges = 0
         val fixture =
