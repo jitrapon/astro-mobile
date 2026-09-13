@@ -10,6 +10,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
@@ -277,6 +278,57 @@ class CalendarScreenQueryObservationTest {
             "Cancellation was reported as a failure: ${abandoning.states}",
         )
         assertEquals(1, fixture.exchanges, "The second collector did not join the held exchange.")
+    }
+
+    @Test
+    fun anObservationNoOneIsCollectingLetsGoOfItsScreenOnceTheCacheHasDroppedIt() = runTest {
+        val stalled = StalledExchange()
+        var exchanges = 0
+        val otherScreens = CalendarScreenQueryFixture.MAX_REMEMBERED_SCREENS
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) {
+                // Only the returning observation's exchange is held, so what it is shown *before*
+                // the network answers can be read.
+                if (++exchanges > 1 + otherScreens) stalled.hold()
+                respondWithMonthScreenFixture()
+            }
+        val returning = monthScreenRequest()
+        observeUntilLoadedAndLeave(fixture, returning)
+        // Enough other screens, each observed and left, to push the returning one out of the cache
+        // by capacity alone. Nothing invalidates it; the cache's bound is the only thing at work.
+        (1..otherScreens).forEach { nth ->
+            val month = returning.start.month + nth
+            observeUntilLoadedAndLeave(
+                fixture,
+                returning.copy(
+                    start = CalendarDate(year = 2026, month = month, dayOfMonth = 1),
+                    end = CalendarDate(year = 2026, month = month, dayOfMonth = 28),
+                ),
+            )
+        }
+
+        val back = backgroundScope.recordStates(fixture.query.observeScreen(returning))
+        stalled.awaitHeld()
+        runCurrent()
+
+        // An observation that kept its screen after its last collector left would replay it here,
+        // outliving the cache that was supposed to bound how many screens are held.
+        assertEquals(
+            listOf<CalendarScreenQueryState>(CalendarScreenQueryState.Pending(isFetching = true)),
+            back.states,
+            "An idle observation still held a screen the cache had already dropped.",
+        )
+        stalled.release()
+    }
+
+    private suspend fun TestScope.observeUntilLoadedAndLeave(
+        fixture: CalendarScreenQueryFixture,
+        request: CalendarScreenRequest,
+    ) {
+        val observation = backgroundScope.recordStates(fixture.query.observeScreen(request))
+        observation.awaitLatest { it is CalendarScreenQueryState.Loaded }
+        observation.stopCollecting()
+        runCurrent()
     }
 }
 

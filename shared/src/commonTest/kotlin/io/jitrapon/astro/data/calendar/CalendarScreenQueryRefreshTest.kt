@@ -1,9 +1,11 @@
 package io.jitrapon.astro.data.calendar
 
 import io.jitrapon.astro.recordStates
+import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -210,6 +212,51 @@ class CalendarScreenQueryRefreshTest {
             "An answer the invalidation had ruled out was written back into the cache.",
         )
         assertEquals(EXCHANGE_AFTER_INVALIDATION, fixture.exchanges)
+    }
+
+    @Test
+    fun anInvalidatedScreenStaysPaintedWhileItRefreshesButIsDroppedWhenTheRefreshFails() = runTest {
+        val stalled = StalledExchange()
+        var exchanges = 0
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) {
+                if (++exchanges == 1) {
+                    respondWithMonthScreenFixture()
+                } else {
+                    stalled.hold()
+                    respondJson("{}", status = HttpStatusCode.NotFound)
+                }
+            }
+        val request = monthScreenRequest()
+        val observation = backgroundScope.recordStates(fixture.query.observeScreen(request))
+        observation.awaitLatest { it is CalendarScreenQueryState.Loaded }
+
+        fixture.query.invalidateScreens { it == request }
+        stalled.awaitHeld()
+
+        // While the refresh is out, the disowned screen is still painted under the flag: blanking
+        // every open screen for a round trip is the collapse-to-skeleton the state exists to avoid.
+        assertEquals(
+            CalendarScreenQueryState.Loaded(
+                response = decodeMonthScreenFixture(),
+                servedFromCache = false,
+                isFetching = true,
+            ),
+            observation.awaitLatest { it.isFetching },
+        )
+
+        stalled.release()
+        val failure =
+            reportedObservationFailure(
+                observation.awaitLatest { it is CalendarScreenQueryState.Failed }
+            )
+        // A failed refresh ordinarily keeps the screen behind it. This one must not: the server
+        // said that screen is wrong, and carrying it forward would paint it indefinitely.
+        assertNull(
+            failure.lastLoadedResponse,
+            "A screen an invalidation disowned was carried forward behind a failed refresh.",
+        )
+        assertEquals(false, failure.isFetching)
     }
 
     @Test

@@ -82,8 +82,11 @@ internal class CalendarScreenQueryFixture(
             calendarScreenQuery = query,
         )
 
-    private companion object {
-        /** Comfortably more than any case observes, so capacity eviction never confounds one. */
+    companion object {
+        /**
+         * Comfortably more than any case observes by accident, so capacity eviction never confounds
+         * one — and small enough that a case which *means* to evict by capacity can.
+         */
         const val MAX_REMEMBERED_SCREENS = 8
     }
 }
