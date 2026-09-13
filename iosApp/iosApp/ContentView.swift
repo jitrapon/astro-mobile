@@ -1,58 +1,61 @@
 import SwiftUI
 import shared
 
-/// The whole iOS UI for now: it asks the shared graph for a calendar screen and shows what came
-/// back.
+/// The whole iOS UI for now: it watches a calendar screen through the shared graph and shows the
+/// state it is in.
 ///
-/// This is not product UI — M-2 replaces it. It exists so that launching the app exercises the
-/// framework boundary end to end: resolving `CalendarScreenRepository` from the graph, building a
-/// request in Kotlin, running it over the Darwin engine, and reading the `Result` back in Swift.
-/// A screen that rendered a fixed string would prove only that the app did not crash.
+/// This is not product UI — the app shell replaces it. It exists so that launching the app
+/// exercises the framework boundary end to end: resolving `CalendarScreenObserver` from the graph,
+/// building a request in Kotlin, subscribing to its state over the Darwin engine, and reading each
+/// `CalendarUiState` back in Swift. A screen that rendered a fixed string would prove only that the
+/// app did not crash.
 struct ContentView: View {
-    @State private var outcome: CalendarScreenFetchOutcome = .fetching
+    @State private var state: CalendarUiState?
 
     var body: some View {
         VStack(spacing: 12.0) {
             Text("Calendar screen")
                 .font(.headline)
-            Text(outcome.summary)
+            Text(CalendarScreenObservation.summary(of: state))
                 .font(.system(.footnote, design: .monospaced))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(outcome.isFailure ? .red : .primary)
+                .foregroundStyle(state?.failure != nil ? .red : .primary)
         }
         .padding(.all)
         .task {
-            // A cancelled fetch settles nothing, so it leaves the last state standing rather than
-            // overwriting it with a failure the user never caused.
-            if let settled = await CalendarScreenFetchOutcome.forCurrentMonth() {
-                outcome = settled
+            // Ending the view's task finishes the stream, which cancels the subscription. A
+            // cancelled subscription delivers nothing further, so the last state stays standing
+            // rather than being overwritten with a failure the user never caused.
+            for await delivered in CalendarScreenObservation.statesForCurrentMonth() {
+                state = delivered
             }
         }
     }
 }
 
-/// What the repository answered, reduced to the little this screen shows.
-enum CalendarScreenFetchOutcome {
-    case fetching
-    case delivered(schemaVersion: String, theme: String, title: String)
-    case failed(reason: String)
+/// The current month's calendar screen as a stream of the states it passes through, reduced to the
+/// little this screen shows.
+enum CalendarScreenObservation {
 
-    var isFailure: Bool {
-        if case .failed = self { return true }
-        return false
-    }
-
-    var summary: String {
-        switch self {
-        case .fetching:
-            return "Fetching…"
-        case let .delivered(schemaVersion, theme, title):
-            return "\(title)\nschema \(schemaVersion) · theme \(theme)"
-        case let .failed(reason):
-            // Expected until a backend is running — the fetch reaching a real failure still proves
-            // the repository resolved and the request went out over the platform's HTTP stack.
-            return "No screen: \(reason)"
+    /// One line per field `CalendarUiState` carries, read directly — the shared view model has
+    /// already flattened the observation's cases, so nothing here downcasts to learn whether there
+    /// is content or whether the network is busy.
+    static func summary(of state: CalendarUiState?) -> String {
+        guard let state else { return "Subscribing…" }
+        var lines: [String] = []
+        if let response = state.content {
+            lines.append(response.screen.title)
+            lines.append("schema \(response.schemaVersion) · theme \(response.theme.id)")
         }
+        if let failure = state.failure {
+            // Expected until a backend is running — reaching a real failure still proves the
+            // observer resolved and the request went out over the platform's HTTP stack.
+            lines.append("No screen: \(failure.message ?? "\(failure)")")
+        }
+        if state.isLoading {
+            lines.append("Fetching…")
+        }
+        return lines.isEmpty ? "Nothing to show" : lines.joined(separator: "\n")
     }
 
     /// The device's locale as the BCP-47 tag the contract asks for.
@@ -89,15 +92,33 @@ enum CalendarScreenFetchOutcome {
         return calendar
     }
 
-    /// Fetches this month's screen through the graph and reduces the answer to a case above, or to
-    /// `nil` when the fetch was cancelled.
+    /// Subscribes to this month's screen through the graph and yields every state it passes
+    /// through, for as long as the stream is iterated.
     ///
-    /// Cancellation is not an outcome. The shared client deliberately lets `CancellationException`
-    /// propagate instead of turning it into a `Result`, precisely so a superseded request cannot
-    /// report a failure to a caller that has moved on; reducing it to `.failed` here would undo
-    /// that at the last step and leave a cancelled view showing an error it never earned.
-    static func forCurrentMonth() async -> CalendarScreenFetchOutcome? {
-        let repository = DependencyGraph.shared.calendarScreenRepository()
+    /// The Kotlin subscription is a callback plus a handle, because a `Flow` does not cross the
+    /// framework boundary. The stream owns that handle: whichever way iteration ends — the view's
+    /// task cancelled, or the loop abandoned — its termination cancels the subscription, so no
+    /// Kotlin coroutine outlives the screen that asked for it.
+    static func statesForCurrentMonth() -> AsyncStream<CalendarUiState> {
+        AsyncStream { continuation in
+            guard let request = currentMonthRequest() else {
+                continuation.finish()
+                return
+            }
+            let subscription = DependencyGraph.shared.calendarScreenObserver().observe(
+                request: request
+            ) { state in
+                continuation.yield(state)
+            }
+            continuation.onTermination = { _ in
+                subscription.cancel()
+            }
+        }
+    }
+
+    /// The request for the current month, or `nil` when the device's calendar cannot say which
+    /// month that is.
+    private static func currentMonthRequest() -> CalendarScreenRequest? {
         let now = Date()
         let calendar = Self.gregorianDeviceCalendar
         let today = calendar.dateComponents([.year, .month], from: now)
@@ -107,10 +128,10 @@ enum CalendarScreenFetchOutcome {
         guard let year = today.year, let month = today.month,
             let lastDayOfMonth = calendar.range(of: .day, in: .month, for: now)?.count
         else {
-            return .failed(reason: "the current month is unreadable")
+            return nil
         }
 
-        let request = CalendarScreenRequest(
+        return CalendarScreenRequest(
             view: RequestedCalendarViewMonth.shared,
             start: CalendarDate(year: Int32(year), month: Int32(month), dayOfMonth: 1),
             end: CalendarDate(
@@ -118,29 +139,5 @@ enum CalendarScreenFetchOutcome {
             timeZone: TimeZone.current.identifier,
             locale: Self.currentLanguageTag,
             knownTheme: nil)
-
-        do {
-            let result = try await repository.fetchCalendarScreen(request: request)
-            if let success = result as? ResultSuccess<CalendarScreenResponse> {
-                let response = success.data
-                return .delivered(
-                    schemaVersion: response.schemaVersion,
-                    theme: response.theme.id,
-                    title: response.screen.title)
-            }
-            if let failure = result as? ResultError {
-                return .failed(reason: failure.exception.message ?? "\(failure.exception)")
-            }
-            return .failed(reason: "unrecognized result \(result)")
-        } catch is CancellationError {
-            return nil
-        } catch {
-            // Only cancellation and non-Exception throwables reach here — everything a caller can
-            // act on already arrived as `Result.Error` above. Kotlin's `CancellationException` does
-            // not always surface as a Swift `CancellationError` across the framework boundary, so
-            // the task's own state is what settles whether this throw was a cancellation.
-            if Task.isCancelled { return nil }
-            return .failed(reason: error.localizedDescription)
-        }
     }
 }
