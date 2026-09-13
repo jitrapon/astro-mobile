@@ -7,6 +7,31 @@
 
 ## Latest round — 2026-09-13
 - Base ref: main
+- Focus sent to Codex: This branch replaces the shared data layer's one-shot calendar-screen fetch with a hand-rolled stale-while-revalidate observation seam (Ticker, ScreenCache, ScreenCachePolicy, SingleFlightRunner, two-axis CalendarScreenQueryState, CalendarScreenQuery with per-key generation invalidation, repository observe/refetch/invalidate), plus CalendarViewModel (stateIn WhileSubscribed on an injected scope), the iOS CalendarScreenObserver adapter with an idempotent-cancel subscription delivering on a main-thread scope, Koin wiring, and a framework-header guard task keeping Koin/Ktor/coroutines/query-layer types off shared.h. Scrutinize races between invalidation, refetch and in-flight exchanges, cache-key correctness, and the Swift adapter's delivery/cancel semantics. Kotlin Multiplatform Mobile app (shared business logic + Jetpack Compose on Android, SwiftUI on iOS); watch for expect/actual correctness, platform behavior divergence, coroutine/concurrency and main-thread-safety issues, null handling, state-management bugs, and missing cross-platform test coverage. Additional focus: this is round 3. Round 1 put remembered-screen read+publish and exchange publication under CalendarScreenQuery's guard mutex and hosted refetchScreen on the query scope with join(). Round 2 moved the generation-checked cache write and publication into the single-flight work itself (fetchRememberAndPublish), so each exchange publishes once before SingleFlightRunner releases its key and waiters no longer publish. Check that move for regressions: the observed instance captured by whichever caller starts the exchange, cancellation of the runner's async work mid-publication, guard held across the suspending ScreenCache write inside the runner's work, and interaction with the runner's NonCancellable key release. Known and deferred (#139, do not re-raise): a subscriber arriving during an in-flight refetch publishes a FRESH remembered screen with isFetching=false.
+
+# Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: needs-attention
+
+**Round status (2026-09-13):** 1 finding — DEFERRED → #139. No open findings.
+
+Do not ship yet: the publication move introduces a race that can leave loading permanently enabled. Read-only review; tests were not run.
+
+Findings:
+- [medium] Let the exchange own the fetching transition too (shared/src/commonMain/kotlin/io/jitrapon/astro/data/calendar/CalendarScreenQuery.kt:131-133)
+  **DEFERRED → #139** — valid, and introduced by the previous round's move of publication into `fetchRememberAndPublish`: a caller that raises `isFetching` and joins an exchange in the window between its publication and `SingleFlightRunner`'s key removal finds nobody left to lower the flag. A second path Codex did not name reaches the same state — a failed exchange (nothing cached) followed by a new subscriber through `serveAndRefresh` → `markFetching()` — so the recommended narrow fix (moving only refetch's `markFetching` into the work) would leave it open. Deferred rather than patched: the window is an uncontended mutex acquire in the runner's `finally`, content is never wrong, `refetchCalendarScreen` has no production caller, and this is the third round finding edges in the prior round's fix. Folded into #139 (retitled; body now requires per-`ObservedScreen` **waiter** counting that derives every published `isFetching`), which is attached to plan task M-8 (astro-docs#21, updated in the same pass).
+
+Next steps:
+- Fix fetching-transition ownership and run the regression on Android host and iOS simulator targets.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-13 — base main
+- Status when archived: resolved in 0a0bb7e
+- Base ref: main
 - Focus sent to Codex: This branch replaces the shared data layer's one-shot calendar-screen fetch with a hand-rolled stale-while-revalidate observation seam (Ticker, ScreenCache, ScreenCachePolicy, SingleFlightRunner, two-axis CalendarScreenQueryState, CalendarScreenQuery with per-key generation invalidation, repository observe/refetch/invalidate), plus CalendarViewModel (stateIn WhileSubscribed on an injected scope), the iOS CalendarScreenObserver adapter with an idempotent-cancel subscription delivering on a main-thread scope, Koin wiring, and a framework-header guard task keeping Koin/Ktor/coroutines/query-layer types off shared.h. Scrutinize races between invalidation, refetch and in-flight exchanges, cache-key correctness, and the Swift adapter's delivery/cancel semantics. Kotlin Multiplatform Mobile app (shared business logic + Jetpack Compose on Android, SwiftUI on iOS); watch for expect/actual correctness, platform behavior divergence, coroutine/concurrency and main-thread-safety issues, null handling, state-management bugs, and missing cross-platform test coverage. Additional focus: this is round 2 — round 1's fixes moved exchange publication and remembered-screen read+publish inside CalendarScreenQuery's guard mutex, and hosted refetchScreen on the query scope with join(); check those changes for lock-ordering/deadlock risk (guard -> ScreenCache mutex, guard held across suspending cache calls), newly introduced races, and cancellation behaviour. Known and deferred (#139, do not re-raise): a subscriber arriving during an in-flight refetch publishes a FRESH remembered screen with isFetching=false.
 
 # Codex Adversarial Review
@@ -24,10 +49,6 @@ Findings:
 
 Next steps:
 - Fix exchange publication ownership and run the ordering and cancellation regressions on both targets.
-
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 ### 2026-09-13 — base main
 - Status when archived: 2 resolved in 7fb5b94, 08f912f; one split finding resolved in 00952ae with its isFetching half deferred → #139; round recorded in dd18593
