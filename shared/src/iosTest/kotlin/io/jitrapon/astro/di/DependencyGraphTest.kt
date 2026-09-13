@@ -2,7 +2,11 @@ package io.jitrapon.astro.di
 
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import org.koin.mp.KoinPlatformTools
 
 /**
  * Drives the facade Swift calls, on the target Swift calls it from.
@@ -29,6 +33,32 @@ class DependencyGraphTest {
         // that owns a connection pool, so a second construction here would mean every caller on iOS
         // silently gets a pool of its own.
         assertSame(repository, DependencyGraph.calendarScreenRepository())
+    }
+
+    @Test
+    fun handsEveryScreenTheSameCalendarScreenObserver() {
+        DependencyGraph.start(baseUrl = UNREACHABLE_BASE_URL)
+
+        // One observer for the whole app: it holds the delivery scope every subscription is a child
+        // of, so a second instance would be a second set of subscriptions teardown could not reach.
+        assertSame(
+            DependencyGraph.calendarScreenObserver(),
+            DependencyGraph.calendarScreenObserver(),
+        )
+    }
+
+    @Test
+    fun stoppingTheGraphEndsEverySubscriptionsDeliveryScope() {
+        DependencyGraph.start(baseUrl = UNREACHABLE_BASE_URL)
+        DependencyGraph.calendarScreenObserver()
+        val deliveryScope =
+            KoinPlatformTools.defaultContext().get().get<CoroutineScope>(MAIN_THREAD_DELIVERY_SCOPE)
+
+        DependencyGraph.stop()
+
+        // A subscription Swift forgot to cancel must still stop when the graph that served it goes
+        // away; left running, it would keep delivering screens from a data layer that is closed.
+        assertFalse(deliveryScope.isActive, "The delivery scope outlived the graph.")
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.jitrapon.astro.di
 
 import org.koin.core.context.startKoin
+import org.koin.core.module.Module
 
 /**
  * Starts the shared dependency graph against the backend at [baseUrl]. Each platform calls this
@@ -12,5 +13,19 @@ import org.koin.core.context.startKoin
  * Swift initializes and resolves through this module's own facade, never through Koin itself.
  */
 fun initKoin(baseUrl: String) {
-    startKoin { modules(platformHttpEngineModule, dataLayerModule(baseUrl)) }
+    startDependencyGraph(baseUrl)
+}
+
+/**
+ * Starts the graph [initKoin] starts, plus [platformModules] — the bindings only one platform's app
+ * consumes.
+ *
+ * Loaded in the same start rather than added afterwards, so there is no instant at which the graph
+ * is running without them and a teardown closes them alongside everything else. Internal because
+ * [Module] is Koin's type and must not reach the framework surface.
+ */
+internal fun startDependencyGraph(baseUrl: String, platformModules: List<Module> = emptyList()) {
+    startKoin {
+        modules(listOf(platformHttpEngineModule, dataLayerModule(baseUrl)) + platformModules)
+    }
 }

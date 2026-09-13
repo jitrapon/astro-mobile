@@ -1,6 +1,7 @@
 package io.jitrapon.astro.di
 
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
+import io.jitrapon.astro.presentation.calendar.CalendarScreenObserver
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
 
@@ -23,11 +24,18 @@ object DependencyGraph {
      * resolves from it.
      */
     fun start(baseUrl: String) {
-        initKoin(baseUrl)
+        startDependencyGraph(baseUrl, platformModules = listOf(iosPresentationModule))
     }
 
     /** Resolves the calendar screen's data boundary from the running graph. */
     fun calendarScreenRepository(): CalendarScreenRepository =
+        KoinPlatformTools.defaultContext().get().get()
+
+    /**
+     * Resolves what a SwiftUI screen subscribes to a calendar screen through — the one instance,
+     * shared by every screen, delivering on the main thread.
+     */
+    fun calendarScreenObserver(): CalendarScreenObserver =
         KoinPlatformTools.defaultContext().get().get()
 
     /**
