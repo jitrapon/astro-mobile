@@ -121,10 +121,9 @@ internal class CalendarScreenQuery(
      * observed state, which is the one place a refresh's result is ever read from.
      *
      * The refresh runs on [scope] and the caller only waits for it, so cancelling the caller
-     * abandons the wait and nothing else. Run in the caller's own coroutine instead, a cancelled
-     * caller would leave the exchange to finish inside the runner with no one left to publish its
-     * answer — and every other observer of [request] stuck under the in-flight flag this call
-     * raised, since nothing else would ever lower it.
+     * abandons the wait and nothing else. Run in the caller's own coroutine instead, a caller
+     * cancelled after raising the in-flight flag but before its exchange had started would leave
+     * every other observer of [request] under a flag no exchange was ever going to lower.
      */
     suspend fun refetchScreen(request: CalendarScreenRequest) {
         scope
@@ -217,16 +216,48 @@ internal class CalendarScreenQuery(
     }
 
     /**
-     * Runs one exchange for [request] through [singleFlightRunner] and publishes what it produced,
-     * unless an invalidation has since ruled that answer out.
+     * Joins the one exchange for [request] in its current generation — starting it through
+     * [singleFlightRunner] if none is running — and returns once that exchange has published what
+     * it produced, or been ruled out by an invalidation.
      *
      * Concurrent observers of one request reach this together and share the single execution the
-     * runner starts, so they cause one round trip and publish one screen between them.
+     * runner starts, so they cause one round trip between them. None of them publishes: the
+     * exchange does, once, in [fetchRememberAndPublish].
+     */
+    private suspend fun exchangeAndPublish(
+        request: CalendarScreenRequest,
+        observed: ObservedScreen,
+    ) {
+        val key = guard.withLock { observed.currentExchangeKey(request) }
+        singleFlightRunner.runOnce(key) { fetchRememberAndPublish(key, observed) }
+    }
+
+    /**
+     * Fetches the screen matching [key], then remembers and publishes a delivered one — or
+     * publishes the failure — unless an invalidation has ruled that answer out while it was in
+     * flight.
+     *
+     * Publication lives here, inside the work one exchange runs, rather than with the callers
+     * waiting on it. The runner releases a key only after this work returns, so an exchange's
+     * answer is published before a later exchange under the same key can even start. Published by
+     * each waiter instead, a waiter resumed late could publish after a later refresh — one in the
+     * same generation, which the generation check cannot tell apart — and put an older screen back
+     * on display while the cache holds the newer one. The same placement is why a screen is
+     * remembered exactly once per round trip, stamped with the tick at which it actually arrived.
+     *
+     * The cache write does not live in [CalendarScreenApi] either: that client's job ends at
+     * turning an exchange into a [Result], and a client that wrote to a cache could not be used for
+     * an exchange whose answer should not be remembered.
+     *
+     * The generation check, the write and the publication happen in one critical section, and
+     * invalidation takes the same lock across its own eviction and bump. Checking outside the lock
+     * would let a bump land between a passing check and the write or publication, re-filing or
+     * re-displaying a screen the server has already said is wrong.
      *
      * A failure publishes [CalendarScreenQueryState.Failed] carrying whatever was showing when it
      * landed, so a failed refresh reports itself without discarding a screen that loaded perfectly
      * well. Cancellation reaches neither branch: it propagates out of the API client untouched
-     * rather than arriving as an error, so a superseded exchange publishes nothing at all.
+     * rather than arriving as an error, so a cancelled exchange publishes nothing at all.
      *
      * An answer from a superseded generation is discarded rather than published, and the in-flight
      * flag is deliberately left raised when that happens: the refresh the invalidation started is
@@ -236,55 +267,23 @@ internal class CalendarScreenQuery(
      * collector through [serveAndRefresh], which sets the flag from what it finds rather than from
      * what was left behind.
      *
-     * The generation check and the publication happen in one critical section, for the same reason
-     * [fetchAndRemember] checks and writes in one: an invalidation landing between a passing check
-     * and the publication would let this obsolete answer overwrite whatever the invalidation's own
-     * refresh has published by then, leaving observers on a screen the cache no longer holds.
+     * @param observed the state of [key]'s request. Whichever caller starts the exchange supplies
+     *   it, and every joining caller holds the same instance, since [observations] never replaces
+     *   an entry.
      */
-    private suspend fun exchangeAndPublish(
-        request: CalendarScreenRequest,
+    private suspend fun fetchRememberAndPublish(
+        key: CalendarScreenExchangeKey,
         observed: ObservedScreen,
-    ) {
-        val key = guard.withLock { observed.currentExchangeKey(request) }
-        val outcome = singleFlightRunner.runOnce(key) { fetchAndRemember(key) }
-        guard.withLock {
-            if (!observed.isCurrent(key)) return
-            when (outcome) {
-                is Result.Success -> observed.publishDelivered(outcome.data)
-                is Result.Error -> observed.publishFailure(outcome.exception)
-            }
-        }
-    }
-
-    /**
-     * Fetches the screen matching [key] and remembers a delivered one, unless an invalidation has
-     * ruled that answer out while it was in flight.
-     *
-     * The write lives here — inside the work one exchange runs — rather than beside the publication
-     * above it, so a screen is remembered exactly once per round trip and stamped with the tick at
-     * which it actually arrived. Publishing is per-observer and would otherwise re-file the same
-     * response once per collector, each write making the entry look newer than the exchange that
-     * produced it.
-     *
-     * It does not live in [CalendarScreenApi] either: that client's job ends at turning an exchange
-     * into a [Result], and a client that wrote to a cache could not be used for an exchange whose
-     * answer should not be remembered.
-     *
-     * The generation check and the write happen in one critical section, and invalidation takes the
-     * same lock across its own eviction and bump. Checking outside the lock would leave the two
-     * interleavings that defeat the check entirely: a bump landing between a passing check and the
-     * write, and an eviction landing between the write and the bump — either of which re-files a
-     * screen the server has already said is wrong.
-     */
-    private suspend fun fetchAndRemember(
-        key: CalendarScreenExchangeKey
     ): Result<CalendarScreenResponse> {
         val outcome = calendarScreenApi.fetchCalendarScreen(key.request)
-        if (outcome is Result.Success) {
-            guard.withLock {
-                if (observations[key.request]?.isCurrent(key) == true) {
+        guard.withLock {
+            if (!observed.isCurrent(key)) return outcome
+            when (outcome) {
+                is Result.Success -> {
                     screenCache.write(key.request, outcome.data)
+                    observed.publishDelivered(outcome.data)
                 }
+                is Result.Error -> observed.publishFailure(outcome.exception)
             }
         }
         return outcome
