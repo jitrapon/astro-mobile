@@ -60,9 +60,9 @@ internal class CalendarScreenQuery(
      * Guards [observations] and every generation inside it, across find-or-create so two observers
      * arriving together cannot each conclude they are the first and walk away holding two different
      * states for one request, and across the generation reads and writes so an exchange and an
-     * invalidation cannot disagree about which era the exchange belongs to, and across an
-     * exchange's publication so an invalidation cannot land between deciding an answer is current
-     * and publishing it.
+     * invalidation cannot disagree about which era the exchange belongs to, and across every
+     * publication — an exchange's answer and a remembered screen alike — so an invalidation cannot
+     * land between deciding what may be shown and showing it.
      *
      * One mutex over one table, held only for bookkeeping and never across an exchange. A
      * reader/writer split would buy nothing: every section under it is a few map operations, while
@@ -177,21 +177,31 @@ internal class CalendarScreenQuery(
      * blank whatever is already showing — the in-flight flag is raised over the current state and
      * nothing else, because an entry this build cannot read says nothing about the screen a
      * previous exchange already delivered.
+     *
+     * Reading the remembered screen and publishing it happen in one critical section, the one
+     * invalidation takes across its eviction. Read outside it, a snapshot taken just before an
+     * invalidation could be published after that invalidation's refresh had already delivered the
+     * replacement — and, having been rated fresh, would start no exchange to correct itself.
      */
     private suspend fun serveAndRefresh(request: CalendarScreenRequest, observed: ObservedScreen) {
-        val remembered = screenCache.read(request)
-        val verdict = remembered?.let {
-            screenCachePolicy.classifyCachedScreen(it, ticker.readTickNanos())
-        }
-        val exchangeNeeded = verdict != ScreenCacheVerdict.FRESH
-        val showable = remembered?.takeIf { verdict != ScreenCacheVerdict.UNUSABLE }
-        if (showable != null) {
-            observed.publishRemembered(showable.screen, isFetching = exchangeNeeded)
-        } else {
-            // Nothing showable means nothing was remembered, or what was is unreadable to this
-            // build — either way an exchange is coming, so the flag goes up over whatever is
-            // already there rather than replacing it.
-            observed.markFetching()
+        val exchangeNeeded = guard.withLock {
+            val remembered = screenCache.read(request)
+            val verdict = remembered?.let {
+                screenCachePolicy.classifyCachedScreen(it, ticker.readTickNanos())
+            }
+            val showable = remembered?.takeIf { verdict != ScreenCacheVerdict.UNUSABLE }
+            if (showable != null) {
+                observed.publishRemembered(
+                    showable.screen,
+                    isFetching = verdict != ScreenCacheVerdict.FRESH,
+                )
+            } else {
+                // Nothing showable means nothing was remembered, or what was is unreadable to this
+                // build — either way an exchange is coming, so the flag goes up over whatever is
+                // already there rather than replacing it.
+                observed.markFetching()
+            }
+            verdict != ScreenCacheVerdict.FRESH
         }
         if (exchangeNeeded) exchangeAndPublish(request, observed)
     }
