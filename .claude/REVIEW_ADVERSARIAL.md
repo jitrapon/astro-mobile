@@ -14,6 +14,8 @@
 Target: branch diff against main
 Verdict: needs-attention
 
+**Round status (2026-09-13):** 3 findings — 2 RESOLVED (#1 `7fb5b94`, #3 `08f912f`), 1 split: snapshot overwrite RESOLVED (`00952ae`), isFetching-during-refresh DEFERRED → #139. No open findings.
+
 Do not ship yet: publication races can restore obsolete screens, and cancelling a refresh can leave observers loading indefinitely. Findings are from read-only diff inspection; tests were not run.
 
 Findings:
@@ -21,7 +23,7 @@ Findings:
   **RESOLVED** — `exchangeAndPublish` now checks `observed.isCurrent(key)` and publishes the delivered screen / failure inside one `guard.withLock`, the same lock `invalidateScreens` holds across eviction and the generation bump, so an invalidation can no longer land between a passing check and the publication. No deterministic regression is possible (nothing suspends between the check and the publish, so a single-threaded test dispatcher cannot interleave them); the fix is structural and the existing refresh/invalidation suite passes on both targets.
 - [high] Prevent cached snapshots from overwriting newer publications (shared/src/commonMain/kotlin/io/jitrapon/astro/data/calendar/CalendarScreenQuery.kt:180-187)
   **RESOLVED (snapshot overwrite)** — `serveAndRefresh` now reads, classifies and publishes the remembered screen inside `guard.withLock`, the lock `invalidateScreens` holds across eviction and the generation bump, so a snapshot read before an invalidation is published before that invalidation's refresh can publish its replacement (lock order guard → cache matches the existing `fetchAndRemember` write). Structural fix; no regression test, since reproducing the window needs a suspending cache double the fixture deliberately does not use.
-  **DEFERRED (isFetching lowered by a subscriber during refresh)** — pending tracking issue.
+  **DEFERRED → #139 (isFetching lowered by a subscriber during refresh)** — valid: `serveAndRefresh` publishes a FRESH remembered screen with `isFetching = false` while a `refetchScreen` exchange for the same request is still in flight. Deferred on impact and v1 necessity: content stays correct and the indicator hides early only until `publishDelivered` lands, and `refetchCalendarScreen` has no production caller yet. The proper fix (a per-`ObservedScreen` in-flight exchange count deriving `isFetching`) is attached to plan task M-8, the first task that both calls refetch and paints from the flag (astro-docs#21).
 - [high] Keep refresh publication alive when its caller cancels (shared/src/commonMain/kotlin/io/jitrapon/astro/data/calendar/CalendarScreenQuery.kt:121-124)
   **RESOLVED** — `refetchScreen` now hosts find-or-create, `markFetching` and `exchangeAndPublish` on the query's own `scope` and only `join()`s it, so cancelling the caller abandons the wait and the answer is still published to every remaining observer. Regression `CalendarScreenQueryRefreshTest.aRefreshWhoseCallerIsCancelledStillSettlesTheScreenForItsObservers` holds the refresh's exchange, cancels its sole caller, releases, and asserts the observer settles on exchange 2 with `isFetching = false`; it failed before the fix (`UncompletedCoroutinesError` after 1m) and passes on `testAndroidHostTest` and `iosSimulatorArm64Test`.
 
