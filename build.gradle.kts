@@ -637,6 +637,9 @@ val iosVerification =
         // listed so a genuine Intel runner still covers it; iosArm64 is a device target (no test).
         ":shared" to "iosSimulatorArm64Test",
         ":shared" to "iosX64Test",
+        // Scans the linked framework's generated Objective-C header, and only a macOS host can
+        // link one.
+        ":shared" to "verifyFrameworkHeaderSurface",
         ":" to "swiftFormatCheck",
         ":" to "swiftLintCheck",
     )

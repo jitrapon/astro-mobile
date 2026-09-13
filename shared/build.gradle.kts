@@ -933,6 +933,253 @@ kotlin {
     }
 }
 
+/**
+ * Fails when the linked iOS framework's generated Objective-C header names a type no Swift call
+ * site may bind to: a Koin, Ktor or kotlinx.coroutines type (a `Flow` above all), or one of the
+ * calendar-screen query layer's implementation types.
+ *
+ * Keeping `implementation` dependencies unexported does not keep their types out of the header. A
+ * public member that mentions one still emits it, under a mangled name such as
+ * `SharedKotlinx_serialization_coreKSerializer`, and the Swift compiler binds to that name like any
+ * other. Visibility modifiers are the only real guard, and without this task nothing but a reviewer
+ * would notice one going missing — the xcodebuild app build compiles happily against a public
+ * `Flow`-returning member.
+ *
+ * The query layer's names are read from its source files rather than listed here, and they are
+ * selected by *where* a type is declared, never by its visibility. The compiler already keeps every
+ * `internal` declaration off the header, so a list built from visibility could only ever fire on a
+ * compiler bug, and it would stop covering a type at the exact moment its `internal` was deleted —
+ * the regression this check exists for. A list built from location keeps covering that type, and
+ * covers a new file in the layer the moment it exists.
+ *
+ * Three things make the check fail closed rather than pass vacuously:
+ * - comments are stripped before matching, since KDoc copied into the header legitimately *names*
+ *   `Flow` and query-layer types in prose, and a check that flagged prose would get worked around;
+ * - the matcher is run first over a synthetic header holding one instance of every forbidden shape
+ *   beside a comment-only mention and a project symbol that merely contains a library's name, and
+ *   must flag exactly the forbidden ones, so a regex edit that stopped matching — or started
+ *   matching too much — turns the task red instead of green;
+ * - the header must declare the `DependencyGraph` facade Swift enters through, so a wrong or empty
+ *   file cannot pass for a clean one.
+ */
+abstract class VerifyFrameworkHeaderSurface : DefaultTask() {
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val frameworkHeader: RegularFileProperty
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val queryLayerSources: ConfigurableFileCollection
+
+    @get:OutputFile abstract val verdictFile: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        val queryLayerNames = collectDeclaredTypeNames()
+        check(queryLayerNames.isNotEmpty()) {
+            "Found no class, interface or object declared in ${queryLayerSources.files} — the " +
+                "declaration matcher or the source paths are wrong, so the header check would " +
+                "have no query-layer type to forbid."
+        }
+        verifyMatcherFlagsEveryForbiddenShape(queryLayerNames.first())
+
+        val headerFile = frameworkHeader.get().asFile
+        val header = headerFile.readText()
+        check(Regex("""\b$FRAMEWORK_PREFIX$FACADE_NAME\b""").containsMatchIn(header)) {
+            "$headerFile does not declare $FRAMEWORK_PREFIX$FACADE_NAME — this is not the " +
+                "shared framework's header, so a clean scan of it proves nothing."
+        }
+
+        val violations = findViolations(header, queryLayerNames)
+        check(violations.isEmpty()) {
+            buildString {
+                append("The iOS framework header exposes types Swift must not bind to ")
+                append("($headerFile):\n")
+                violations.forEach { append("  - $it\n") }
+                append(
+                    "Fix: make the declaration or the member that mentions it `internal` (or " +
+                        "`@HiddenFromObjC` where another module needs it), and reach Swift " +
+                        "through a facade that takes and returns only shared-module types."
+                )
+            }
+        }
+        verdictFile.get().asFile.writeText("Clean: no library type and none of $queryLayerNames.\n")
+        logger.lifecycle(
+            "Framework header surface OK: no Koin, Ktor or coroutines type, and none of the " +
+                "${queryLayerNames.size} query-layer types."
+        )
+    }
+
+    /** Every class, interface and object declared in [queryLayerSources], at any visibility. */
+    private fun collectDeclaredTypeNames(): Set<String> {
+        val names = sortedSetOf<String>()
+        queryLayerSources.asFileTree
+            .matching { include("**/*.kt") }
+            .forEach { source ->
+                source.forEachLine { line ->
+                    DECLARATION.find(line.trim())?.let { names += it.groupValues[1] }
+                }
+            }
+        return names
+    }
+
+    private fun verifyMatcherFlagsEveryForbiddenShape(queryLayerName: String) {
+        // The first two lines must pass: a library type named only in a comment, and a project
+        // symbol that merely contains a library's name, the way the public `initKoin` entry point
+        // does. Every line after them carries one forbidden shape and must be flagged.
+        val allowedLines =
+            listOf(
+                "/** Returns a ${FRAMEWORK_PREFIX}Kotlinx_coroutines_coreFlow, in prose only. */",
+                "+ (void)doInitKoinBaseUrl:(NSString *)baseUrl;",
+            )
+        val forbiddenLines =
+            listOf(
+                "- (${FRAMEWORK_PREFIX}Koin_coreKoin *)koin;",
+                "- (id)client:(${FRAMEWORK_PREFIX}Ktor_client_coreHttpClient *)client;",
+                "- (id<${FRAMEWORK_PREFIX}Kotlinx_coroutines_coreStateFlow>)state;",
+                "@interface $FRAMEWORK_PREFIX$queryLayerName : ${FRAMEWORK_PREFIX}Base",
+                "__attribute__((swift_name(\"Outer.$queryLayerName\")))",
+            )
+        val syntheticHeader = (allowedLines + forbiddenLines).joinToString("\n")
+        val flaggedLines =
+            findViolations(syntheticHeader, setOf(queryLayerName)).map { it.lineNumber }.toSet()
+        val expectedLines = (allowedLines.size + 1..allowedLines.size + forbiddenLines.size).toSet()
+        check(flaggedLines == expectedLines) {
+            "The header matcher failed its self-test: expected it to flag exactly lines " +
+                "$expectedLines of the synthetic header, but it flagged $flaggedLines. Fix the " +
+                "matcher before trusting a clean scan."
+        }
+    }
+
+    private data class HeaderViolation(val lineNumber: Int, val description: String) {
+        override fun toString() = "line $lineNumber: $description"
+    }
+
+    /** One entry per forbidden identifier, with comments excluded from the scan. */
+    private fun findViolations(
+        header: String,
+        queryLayerNames: Set<String>,
+    ): List<HeaderViolation> {
+        val violations = mutableListOf<HeaderViolation>()
+        stripComments(header).lines().forEachIndexed { index, line ->
+            val lineNumber = index + 1
+            IDENTIFIER.findAll(line)
+                .map { it.value }
+                .distinct()
+                .forEach { identifier ->
+                    val library = libraryFamilyOf(identifier)
+                    val isQueryLayerType =
+                        identifier.startsWith(FRAMEWORK_PREFIX) &&
+                            identifier.removePrefix(FRAMEWORK_PREFIX) in queryLayerNames
+                    when {
+                        library != null ->
+                            violations +=
+                                HeaderViolation(lineNumber, "`$identifier` is a $library type")
+                        isQueryLayerType ->
+                            violations +=
+                                HeaderViolation(lineNumber, "`$identifier` is a query-layer type")
+                    }
+                }
+            // A nested declaration is emitted as `SharedOuterInner`, which the exact match above
+            // cannot attribute to `Inner`; its Swift name keeps the dotted path, so match that.
+            SWIFT_NAME.findAll(line)
+                .map { it.groupValues[1] }
+                .filter { '.' in it && it.substringAfterLast('.') in queryLayerNames }
+                .forEach { swiftName ->
+                    violations +=
+                        HeaderViolation(lineNumber, "Swift name `$swiftName` is a query-layer type")
+                }
+        }
+        return violations
+    }
+
+    /**
+     * The library [identifier] belongs to, read from the prefix Kotlin/Native gives a non-exported
+     * dependency's types — `Shared` plus the klib name with its separators turned to underscores,
+     * as in `SharedKoin_coreKoin`, `SharedKtor_client_coreHttpClient` and
+     * `SharedKotlinx_coroutines_coreFlow`. Keying on that prefix rather than on the bare word keeps
+     * a project symbol such as `initKoin` from reading as a Koin type, and still catches every Ktor
+     * module (`Ktor_http`, `Ktor_utils`, …) and every coroutines type, `Flow` included.
+     */
+    private fun libraryFamilyOf(identifier: String): String? =
+        LIBRARY_TYPE.find(identifier)?.groupValues?.get(1)?.let { LIBRARY_FAMILIES.getValue(it) }
+
+    /** Blanks every comment while keeping its newlines, so reported line numbers stay true. */
+    private fun stripComments(header: String) =
+        BLOCK_COMMENT.replace(header) { match -> "\n".repeat(match.value.count { it == '\n' }) }
+            .lines()
+            .joinToString("\n") { it.replace(LINE_COMMENT, "") }
+
+    private companion object {
+        const val FRAMEWORK_PREFIX = "Shared"
+        const val FACADE_NAME = "DependencyGraph"
+
+        val IDENTIFIER = Regex("""[A-Za-z_][A-Za-z0-9_]*""")
+        val SWIFT_NAME = Regex("""swift_name\("([^"]*)"\)""")
+        val BLOCK_COMMENT = Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL)
+        val LINE_COMMENT = Regex("""//.*$""")
+
+        val LIBRARY_FAMILIES =
+            mapOf(
+                "Koin" to "Koin",
+                "Ktor" to "Ktor",
+                "Kotlinx_coroutines" to "kotlinx.coroutines",
+            )
+        val LIBRARY_TYPE =
+            Regex("""^$FRAMEWORK_PREFIX(${LIBRARY_FAMILIES.keys.joinToString("|")})_""")
+
+        // A declaration line, after any annotations and modifiers. Anchored at the start of the
+        // trimmed line, so a KDoc line (`* class …`) or a string literal never reads as one.
+        val DECLARATION =
+            Regex(
+                """^(?:@\S+\s+|(?:internal|private|public|protected|data|sealed|enum|value|""" +
+                    """fun|abstract|open|inner|annotation|expect|actual)\s+)*""" +
+                    """(?:class|interface|object)\s+([A-Z][A-Za-z0-9_]*)"""
+            )
+    }
+}
+
+// ----------------------------------------------------------------------------------------------
+// iOS framework header surface guard
+//
+// Links the debug simulator framework — the one CI's xcodebuild app build consumes — and scans its
+// generated header. Every iOS target emits the same header, since it is derived from the Kotlin
+// declarations rather than the architecture, so one link covers them all, and it reuses the
+// iosSimulatorArm64 klibs the simulator tests already compiled.
+//
+// The query layer is `data/query/` plus the orchestrator above it. `CalendarScreenQueryState`,
+// which sits beside that orchestrator, is deliberately not part of it: it is the one type of the
+// layer that is meant to reach Swift.
+//
+// Kotlin/Native links Apple frameworks only on a macOS host, so the task skips elsewhere and is
+// classified into `verifyIos` in the root build's CI partition.
+// ----------------------------------------------------------------------------------------------
+val verifyFrameworkHeaderSurface =
+    tasks.register<VerifyFrameworkHeaderSurface>("verifyFrameworkHeaderSurface") {
+        group = "verification"
+        description =
+            "Fail if the iOS framework header exposes a Koin, Ktor or coroutines type, or a " +
+                "calendar-screen query-layer type."
+        val framework =
+            kotlin
+                .iosSimulatorArm64()
+                .binaries
+                .getFramework(org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType.DEBUG)
+        dependsOn(framework.linkTaskProvider)
+        frameworkHeader.set(framework.outputFile.resolve("Headers/${framework.baseName}.h"))
+        val commonSources = "src/commonMain/kotlin/io/jitrapon/astro"
+        queryLayerSources.from(
+            "$commonSources/data/query",
+            "$commonSources/data/calendar/CalendarScreenQuery.kt",
+        )
+        verdictFile.set(layout.buildDirectory.file("verification/framework-header-surface.txt"))
+        val hostIsMac = System.getProperty("os.name").startsWith("Mac")
+        onlyIf("Kotlin/Native links Apple frameworks only on a macOS host") { hostIsMac }
+    }
+
+tasks.named("check") { dependsOn(verifyFrameworkHeaderSurface) }
+
 // Detect Apple Silicon *hardware*. `System.getProperty("os.arch")` is unreliable here: a Rosetta-
 // translated Gradle daemon reports `x86_64` even on an arm64 Mac, so it would misclassify the host.
 // `sysctl -n hw.optional.arm64` queries the hardware (not the process), returning "1" on every
