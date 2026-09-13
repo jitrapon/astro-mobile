@@ -60,7 +60,9 @@ internal class CalendarScreenQuery(
      * Guards [observations] and every generation inside it, across find-or-create so two observers
      * arriving together cannot each conclude they are the first and walk away holding two different
      * states for one request, and across the generation reads and writes so an exchange and an
-     * invalidation cannot disagree about which era the exchange belongs to.
+     * invalidation cannot disagree about which era the exchange belongs to, and across an
+     * exchange's publication so an invalidation cannot land between deciding an answer is current
+     * and publishing it.
      *
      * One mutex over one table, held only for bookkeeping and never across an exchange. A
      * reader/writer split would buy nothing: every section under it is a few map operations, while
@@ -213,6 +215,11 @@ internal class CalendarScreenQuery(
      * live collector always starts one, and a request with no live collector reaches its next
      * collector through [serveAndRefresh], which sets the flag from what it finds rather than from
      * what was left behind.
+     *
+     * The generation check and the publication happen in one critical section, for the same reason
+     * [fetchAndRemember] checks and writes in one: an invalidation landing between a passing check
+     * and the publication would let this obsolete answer overwrite whatever the invalidation's own
+     * refresh has published by then, leaving observers on a screen the cache no longer holds.
      */
     private suspend fun exchangeAndPublish(
         request: CalendarScreenRequest,
@@ -220,10 +227,12 @@ internal class CalendarScreenQuery(
     ) {
         val key = guard.withLock { observed.currentExchangeKey(request) }
         val outcome = singleFlightRunner.runOnce(key) { fetchAndRemember(key) }
-        if (!guard.withLock { observed.isCurrent(key) }) return
-        when (outcome) {
-            is Result.Success -> observed.publishDelivered(outcome.data)
-            is Result.Error -> observed.publishFailure(outcome.exception)
+        guard.withLock {
+            if (!observed.isCurrent(key)) return
+            when (outcome) {
+                is Result.Success -> observed.publishDelivered(outcome.data)
+                is Result.Error -> observed.publishFailure(outcome.exception)
+            }
         }
     }
 
