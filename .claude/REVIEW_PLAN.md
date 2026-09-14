@@ -1,4 +1,4 @@
-Status: blocking
+Status: clear
 
 # Plan Review
 
@@ -21,7 +21,33 @@ Findings:
 Next steps:
 - Pair the new fixture-delivery implementation step with explicit Android and iOS runtime acceptance checks.
 
+## Iteration 2 — 2026-09-14
+- Base ref: main
+- Focus sent to Codex: same scope as iteration 1, plus a summary of iteration 1's PARTIAL disposition and an instruction not to re-raise the declined fixture backend.
+
+### Codex output
+
+Target: branch diff against main
+Verdict: needs-attention
+
+Iteration 1 is addressed within the accepted testing boundary. One navigation identity defect remains in the plan.
+
+Findings:
+- [medium] Key Android navigation by destination identity (.claude/SPEC.md:123-125)
+  §4.4 keys the back stack by target screen id, although §4.1 explicitly identifies destinations by destination id. The vendored contract permits distinct destinations targeting the same screen. Following this plan could alias their navigation entries and display the wrong destination's placeholder. §5.4 only tests fixture-shaped tabs whose screen ids differ, so it cannot detect this failure.
+  Recommendation: Use destination id as the navigation key and retain target screen id as route data. Extend §5.4 with two differently labeled destinations sharing a target screen; selecting each must show its own placeholder and selected-tab state.
+
+Next steps:
+- Align Android route identity with §4.1 and add the shared-target regression case.
+
 ## Resolution log
+
+### Iteration 1 dispositions
+- **[high] Exercise successful fixture delivery through both apps' real wiring — PARTIAL.** Valid that no check exercised observation → shell wiring. Not adopted: a fixture-backed repository inside the apps, which is the debug fixture backend the user declined when the planning decisions were confirmed. Addressed instead by moving the whole `CalendarUiState` → shell-state projection into `:shared` (§4.1) with a wiring case driving a real `CalendarViewModel` over the stubbed fixture backend (commonTest, both targets) and one through `CalendarScreenObserver`, the Swift entry point (iosTest) (§5.1); the Android view model is reduced to mapping `CalendarViewModel.state` through that projection (§4.3/§5.3); the Android route test now drives a loading → tabs transition and selects every tab (§4.4/§5.4); iOS previews cover loading, failure and each selected tab (§4.6/§5.6). Remaining unverified glue — the one-line Swift/Kotlin map calls — is compile-checked, consistent with the no-fixture-backend decision.
+
+### Iteration 2 dispositions
+- **Iteration 1 [high] — confirmed closed** by Codex ("addressed within the accepted testing boundary").
+- **[medium] Key Android navigation by destination identity — AGREE.** Valid: the contract lets two destinations target one screen, and keying by screen id would alias them. §4.4 now keys the Navigation 3 back stack by destination id with the screen id as route data, §4.6 keys iOS tab selection the same way, and §5.4 adds two differently labelled destinations sharing a target screen. No high/critical finding remains, so the gate is clear.
 
 ## Override justification
 

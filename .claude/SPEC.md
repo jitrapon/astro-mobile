@@ -93,13 +93,18 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 
 **Plan:**
 
-- [ ] **1. Shared shell-destination projection.** In `shared/src/commonMain/.../presentation/shell/`,
-  add a public, UI-agnostic tab model (destination id, label, icon token, target screen id) and a pure
-  function projecting a `CalendarScreenResponse`'s `screen.navigation.destinations` into the ordered
-  tab list. Rules, each stated in KDoc: contract order is preserved; only destinations whose action is
-  `NavigateAction` become tabs (a tab must route to a screen; other action kinds belong to the action
-  model in #137); a repeated destination id keeps its first occurrence, since tab identity keys
-  navigation state. Plain data in, plain data out — callable from Swift, no `Flow` or Koin type.
+- [ ] **1. Shared shell state projection.** In `shared/src/commonMain/.../presentation/shell/`, add
+  public, UI-agnostic types — a tab model (destination id, label, icon token, target screen id) and a
+  shell state with three cases: loading (nothing to show yet), failure (no screen could load), and
+  tabs — plus one pure function projecting a `CalendarUiState` into that shell state. It is the single
+  place both apps turn an observed screen into a shell, so neither platform re-derives it. Rules, each
+  stated in KDoc: content with at least one tab wins over the loading flag and any failure (a refresh
+  or failed refresh over a loaded screen keeps its tabs); contract order is preserved; only
+  destinations whose action is `NavigateAction` become tabs (a tab must route to a screen; other action
+  kinds belong to the action model in #137); a repeated destination id keeps its first occurrence,
+  since tab identity keys navigation state; content that yields no tabs projects to failure if one is
+  reported, otherwise loading. Plain data in, plain data out — callable from Swift, no `Flow` or Koin
+  type.
 - [ ] **2. Android dependencies in the version catalog.** Fetch the on-demand `navigation-3` skill
   (`android skills add navigation-3 --agent=claude-code --project .`, not committed — the `android/*`
   skills are deliberately not vendored) and use it to pick the stable Navigation 3 runtime/UI
@@ -110,23 +115,28 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 - [ ] **3. Android shell state holder.** Add an androidx `ViewModel` in `androidApp` that builds the
   current-month `CalendarScreenRequest` from the device's zone and locale (mirroring the iOS app's
   current-month request), resolves `CalendarScreenRepository` from the running Koin graph, constructs
-  `CalendarViewModel` on `viewModelScope`, and exposes one `StateFlow` of shell state: loading,
-  failure, or the tab list from item 1.
-- [ ] **4. Android shell UI.** Add a stateless `AppShell` composable in `androidApp`: a bottom bar with
+  `CalendarViewModel` on `viewModelScope`, and exposes `CalendarViewModel.state` mapped through item
+  1's projection as its one `StateFlow` of shell state — no derivation of its own.
+- [ ] **4. Android shell UI.** Add a route composable taking a `StateFlow` of item 1's shell state (so a
+  test can drive it without a view model) that collects it and delegates to a stateless `AppShell`
+  composable in `androidApp`: a bottom bar with
   one item per tab (label; icon from an icon-token lookup with a generic fallback for unknown tokens),
-  a Navigation 3 back stack keyed by the selected tab's screen id, one placeholder screen per
+  a Navigation 3 back stack keyed by the selected tab's **destination id** (its target screen id carried as route data, since two destinations may target the same screen), one placeholder screen per
   destination showing its label, and a loading/failure placeholder with no bottom bar when there are
   no tabs. Include `@Preview`s fed with fixture-shaped tabs. Follow the `chrisbanes-skills:compose-*`
   skills for state hoisting and the holder/UI split.
 - [ ] **5. Wire the Android shell into `MainActivity`.** Replace the `MessageCard` placeholder with
   `AppShell` collecting the item-3 view model's state (lifecycle-aware collection) inside `AstroTheme`.
-- [ ] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking the tab list: a `TabView` with
+- [ ] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking item 1's shell state: a `TabView` with
   one tab per destination (label; SF Symbol from an icon-token lookup with a generic fallback), each
-  hosting a placeholder view showing its label inside a `NavigationStack`, and a loading/failure
-  placeholder with no tab bar when there are no tabs. Include `#Preview`s fed with fixture-shaped tabs.
+  hosting a placeholder view showing its label inside a `NavigationStack`, with tab selection and
+  identity keyed by destination id rather than target screen id, and a loading/failure
+  placeholder with no tab bar when there are no tabs. Selection is an optional initial parameter so a
+  preview can open on any tab. Include `#Preview`s for the loading and failure states and one per
+  selected tab over fixture-shaped tabs.
   Follow the vendored `swiftui-specialist` guidance (tab identity, `ForEach` identity).
 - [ ] **7. Wire the iOS shell to the observation.** Replace `ContentView`'s diagnostic summary with the
-  shell view, projecting each delivered `CalendarUiState`'s content through item 1's function; keep the
+  shell view, projecting each delivered `CalendarUiState` through item 1's function; keep the
   existing subscription lifecycle (subscribe in `.task`, cancel on termination).
 - [ ] **8. Document the shell seams.** Update `.claude/CLAUDE.md`: the shared `presentation/shell/`
   projection in the architecture/package notes, Navigation 3 on Android and `TabView` on iOS, the
@@ -137,29 +147,41 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **1.** New `commonTest` suite for the projection, run by `./gradlew :shared:testAndroidHostTest
-  :shared:iosSimulatorArm64Test`: the contract fixture projects to `[calendar, expense]` with their
-  labels, icon tokens and screen ids in order; a non-`navigate` destination is dropped; a repeated id
-  keeps the first; an empty destination list projects to no tabs. `./gradlew :shared:verifyFrameworkHeaderSurface`
+- [ ] **1.** New `commonTest` suite, run by `./gradlew :shared:testAndroidHostTest
+  :shared:iosSimulatorArm64Test`. Pure cases: the contract fixture projects to tabs `[calendar,
+  expense]` with their labels, icon tokens and screen ids in order; a non-`navigate` destination is
+  dropped; a repeated id keeps the first; loading with no content projects to loading; failure with no
+  content projects to failure; content with tabs under a raised loading flag or a failure still
+  projects to tabs; content yielding no tabs projects to failure or loading. **Wiring case:** a real
+  `CalendarViewModel` over the stubbed backend serving the contract fixture, collected under virtual
+  time and mapped through the projection, emits loading and then tabs `[calendar, expense]` — the
+  observation-to-shell path both apps rely on, exercised end to end below the UI. A new `iosTest` case
+  does the same through `CalendarScreenObserver` — the exact entry point the Swift shell subscribes
+  through — asserting the delivered states project to loading then the fixture's tabs. `./gradlew :shared:verifyFrameworkHeaderSurface`
   still passes (the new public types add no library type to `shared.h`).
 - [ ] **2.** `./gradlew :androidApp:assembleDebug` resolves and compiles with the new aliases;
   `./gradlew :androidApp:dependencies --configuration debugRuntimeClasspath` shows the Navigation 3
   artifacts at the catalog version; `grep` confirms no Navigation 3 or Koin coordinate is declared
   inline in `androidApp/build.gradle.kts`.
-- [ ] **3.** `./gradlew :androidApp:assembleDebug :androidApp:detekt :androidApp:ktfmtCheck` pass. The
-  state derivation itself is item 1's tested function; this item is glue, verified at runtime in 5.
+- [ ] **3.** `./gradlew :androidApp:assembleDebug :androidApp:detekt :androidApp:ktfmtCheck` pass, and a
+  review of the view model confirms its state is exactly `CalendarViewModel.state` mapped through item
+  1's projection — the path item 1's wiring case exercises — with no derivation of its own.
 - [ ] **4.** Instrumented Compose UI test in `androidApp/src/androidTest`, run locally with
   `./gradlew :androidApp:connectedDebugAndroidTest` on an emulator (CI does not run instrumented
-  tests — record the local output): given fixture-shaped tabs the bottom bar shows their labels in
-  order; selecting the second tab shows its placeholder; given no tabs there is no bottom bar and the
-  loading/failure placeholder shows. Plus `./gradlew :androidApp:detekt :androidApp:ktfmtCheck`.
+  tests — record the local output), driving the route composable through a `MutableStateFlow`:
+  starting from loading there is no bottom bar and the loading placeholder shows; after the state
+  moves to fixture-shaped tabs the bottom bar appears with their labels in order; selecting **each**
+  tab in turn shows that destination's placeholder; two differently labelled destinations targeting
+  the same screen each show their own placeholder and selected state; a failure state shows the
+  failure placeholder with no bottom bar. Plus `./gradlew :androidApp:detekt :androidApp:ktfmtCheck`.
 - [ ] **5.** `./gradlew :androidApp:assembleDebug`, then an on-device run via the `android-device-debug`
   skill: the app launches without crashing and, with no backend reachable, shows the failure
   placeholder with no bottom bar (screenshot recorded).
 - [ ] **6.** The CLAUDE.md `iosApp` simulator `xcodebuild` succeeds; `./gradlew swiftFormatCheck
-  swiftLintCheck` pass; the previews render tabs for fixture-shaped destinations and the no-tabs
-  placeholder (rendered via Xcode's `RenderPreview`, or the `ios-device-debug` skill if the Xcode MCP
-  bridge is unavailable).
+  swiftLintCheck` pass; every preview renders — loading and failure with no tab bar, and each
+  selected-tab preview showing the tab bar in fixture order with that destination's placeholder —
+  rendered via Xcode's `RenderPreview` (or the `ios-device-debug` skill if the Xcode MCP bridge is
+  unavailable), screenshots recorded.
 - [ ] **7.** The simulator `xcodebuild` succeeds; `swiftFormatCheck` / `swiftLintCheck` pass; an
   `ios-device-debug` simulator run launches without crashing and, with no backend reachable, shows
   the failure placeholder with no tab bar (screenshot recorded).
