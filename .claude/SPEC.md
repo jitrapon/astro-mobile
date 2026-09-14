@@ -93,7 +93,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 
 **Plan:**
 
-- [ ] **1. Shared shell state projection.** In `shared/src/commonMain/.../presentation/shell/`, add
+- [x] **1. Shared shell state projection.** In `shared/src/commonMain/.../presentation/shell/`, add
   public, UI-agnostic types — a tab model (destination id, label, icon token, target screen id) and a
   shell state with three cases: loading (nothing to show yet), failure (no screen could load), and
   tabs — plus one pure function projecting a `CalendarUiState` into that shell state. It is the single
@@ -147,7 +147,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **1.** New `commonTest` suite, run by `./gradlew :shared:testAndroidHostTest
+- [x] **1.** New `commonTest` suite, run by `./gradlew :shared:testAndroidHostTest
   :shared:iosSimulatorArm64Test`. Pure cases: the contract fixture projects to tabs `[calendar,
   expense]` with their labels, icon tokens and screen ids in order; a non-`navigate` destination is
   dropped; a repeated id keeps the first; loading with no content projects to loading; failure with no
