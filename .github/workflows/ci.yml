@@ -107,8 +107,9 @@ jobs:
       # the artifact this needs. linkReleaseFrameworkIosArm64 links the *device release* framework,
       # while the app target's own first build phase resolves $(CONFIGURATION)/$(SDK_NAME) and
       # invokes Gradle for the *debug simulator* one. Running here reuses the iosSimulatorArm64
-      # klibs verifyIos just compiled, so the added work on this runner is a framework link rather
-      # than a second Kotlin/Native compile.
+      # klibs verifyIos just compiled, and the debug simulator framework its header-surface guard
+      # (verifyFrameworkHeaderSurface) just linked, so this step adds no second Kotlin/Native
+      # compile.
       #
       # Invoked as xcodebuild rather than wrapped in a Gradle task because that same build phase
       # already shells out to ./gradlew: nesting would put one Gradle build inside another,
