@@ -69,17 +69,11 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
      index: a row carries a one-line summary and the issues the task gates, and when its **Detail**
      column links `[[tasks/<ID>]]` the full scope lives in that file — which may be the only place
      an issue the task carries is named. So search the index and every detail file for this issue
-     first, with `<N>` the issue number. Fetch astro-docs with a shallow clone over SSH, falling
-     back to the `gh api` download (SSH first; `BatchMode=yes` makes a key that is not loaded in
-     `ssh-agent` fail in seconds instead of hanging on a passphrase prompt nobody can answer, and
-     the `gh api` download covers that case):
+     first, from a shallow clone of astro-docs, with `<N>` the issue number:
 
      ```bash
      docs=$(mktemp -d)
-     GIT_SSH_COMMAND="ssh -o BatchMode=yes" GIT_TERMINAL_PROMPT=0 \
-       git clone --depth 1 --quiet git@github.com:jitrapon/astro-docs.git "$docs" 2>/dev/null ||
-       { gh api repos/jitrapon/astro-docs/tarball/main > "$docs.tgz" &&
-         tar -xzf "$docs.tgz" -C "$docs" --strip-components=1; rm -f "$docs.tgz"; }
+     gh repo clone jitrapon/astro-docs "$docs" -- --depth 1 --quiet
      grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
        "$docs/current-plan.md" "$docs"/tasks/*.md
      grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
@@ -90,7 +84,7 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
      detail file counts exactly like a link in the row; a bare `#<N>` in one of this repo's detail
      files, which is weaker because bare numbers are ambiguous across repos; then rows whose title
      or summary matches the issue's subject. Read the detail file of each candidate you offer.
-     If both fetches fail, fall back to the `current-plan.md` fetched above and say the detail files
+     If the clone fails, fall back to the `current-plan.md` fetched above and say the detail files
      were not searched. Remove `$docs` once section 0 is written.
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible

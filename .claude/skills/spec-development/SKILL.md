@@ -56,18 +56,14 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
 
      ```bash
      docs=$(mktemp -d)
-     GIT_SSH_COMMAND="ssh -o BatchMode=yes" GIT_TERMINAL_PROMPT=0 \
-       git clone --depth 1 --quiet git@github.com:jitrapon/astro-docs.git "$docs" 2>/dev/null ||
-       { gh api repos/jitrapon/astro-docs/tarball/main > "$docs.tgz" &&
-         tar -xzf "$docs.tgz" -C "$docs" --strip-components=1; rm -f "$docs.tgz"; }
+     gh repo clone jitrapon/astro-docs "$docs" -- --depth 1 --quiet
      ```
 
      Read the task's row in `$docs/current-plan.md` and, when its **Detail** column links
      `[[tasks/<ID>]]`, `$docs/tasks/<ID>.md`; a row with no detail file carries its whole goal
-     inline. SSH is tried first; `BatchMode=yes` makes an unloaded key fail in seconds rather than
-     hang on a passphrase prompt, and the `gh api` download covers that case. **If both fetches
-     fail, set `completes: no`** and say so when presenting the plan — `no` is the safe direction,
-     and it can be raised once the scope is readable. Remove `$docs` afterwards.
+     inline. **If the clone fails, set `completes: no`** and say so when presenting the plan —
+     `no` is the safe direction, and it can be raised once the scope is readable. Remove
+     `$docs` afterwards.
      A branch that is one layer of a stack is `completes: no`.
      Getting this wrong in the `yes` direction clears the lane's Status while most
      of the task is still open, and `sync-plan` acts on it unattended.
