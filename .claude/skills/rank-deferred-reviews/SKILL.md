@@ -53,35 +53,48 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
    - **Plan task** — which plan task, if any, the issue belongs to, and that task's full scope.
      The plan's task tables are an index of one-line summaries, and an issue is often named only
      in a task's detail file, so map issues to tasks here, before scoring, rather than deciding
-     relevance from the index first. Download astro-docs once per run over the HTTPS API (no git,
-     so no SSH credential prompt), then search per issue with `<N>` its number:
+     relevance from the index first. Download astro-docs **once per run**, before the per-issue loop,
+     over the HTTPS API (no git, so no SSH credential prompt):
 
      ```bash
-     docs=$(mktemp -d)
+     docs=$(mktemp -d) && echo "$docs"
      gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz" &&
        tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     ```
+
+     Shell variables do not survive from one Bash call to the next, so note the printed path and
+     write it literally wherever `<docs>` appears below, including the cleanup. Then, for each
+     issue, search with `<N>` its number:
+
+     ```bash
      # grep exits 1 when nothing matches, a normal answer here; only 2 is an error
      grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
-       "$docs/current-plan.md" "$docs"/tasks/*.md || [ $? -eq 1 ]
-     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/*.md || [ $? -eq 1 ]   # bare refs: weaker
+       "<docs>/current-plan.md" "<docs>"/tasks/*.md || [ $? -eq 1 ]
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' \
+       "<docs>/current-plan.md" "<docs>"/tasks/*.md || [ $? -eq 1 ]   # bare refs: weaker
      ```
 
      A hit on a task row in `current-plan.md` or in `tasks/<ID>.md` maps the issue to `<ID>`; a bare
      `#<N>` hit is weaker: keep it only when the surrounding text names this repo or its service.
-     Read `tasks/<ID>.md` for every mapped task, and for any task ID named in `$ARGUMENTS` (step
+     Not every link means the task owns the issue. A passage that hands the issue on (`→ <ID>`,
+     "deferred to", "parked", "not <ID>'s to close") is evidence for the task it points to, not for
+     the row it sits in, and a row whose summary starts with ✅ is finished. Read
+     `<docs>/tasks/<ID>.md` for every mapped task, and for any task ID named in `$ARGUMENTS` (step
      1.a); a row with no detail file carries its whole goal inline. An issue can map to several
-     tasks — the one that carries it and others that mention it — so keep every mapped ID, strongest
-     evidence first (a link in an index row, then a link in a detail file, then a bare reference),
-     and treat the first as the owning task. Record `none` when nothing maps.
+     tasks, so keep every mapped ID with the owning task first: a task that carries the issue (an
+     open row, or wording like "carries", "in scope", "prereq") before one that only mentions it or
+     hands it on, finished rows last, and within each group a link in an index row before a link in
+     a detail file before a bare reference. Record `none` when nothing maps.
 
      **Milestone scope, once per run.** Also read the detail files that give the milestone its full
-     scope, which step 4 uses for every issue, not only issues that map to a task: the tasks named in
-     `$ARGUMENTS` when it names task IDs, or, when the milestone is the fallback plan (step 1.b), the
-     tasks the plan's **Status** and **Next action** blocks name — the work in flight and next. Do
-     not read every detail file; the rest reach scoring only through an issue that maps to them.
+     scope, which step 4 uses for every issue, not only issues that map to a task: the tasks named
+     in `$ARGUMENTS` when it names task IDs, or, when the milestone is the fallback plan (step 1.b),
+     the tasks the plan's **Status** and **Next action** blocks name — the work in flight and next.
+     Do not read every detail file; the rest reach scoring only through an issue that maps to them.
 
      If the download fails, score from the milestone text alone and add
-     `- **Task scope:** unavailable` to the output header. Remove `$docs` after writing the output.
+     `- **Task scope:** unavailable` to the output header. After writing the output, remove the
+     directory with `rm -rf <docs>`.
 
 4. **Score each issue on two axes.**
 
