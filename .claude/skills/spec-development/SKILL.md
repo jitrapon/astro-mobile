@@ -50,7 +50,8 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
    - `spec-objective` — section 2, collapsed to one line. It reaches a human only in the sync PR
      body; it is never written into the plan.
    - `completes` — `yes` only if merging this branch finishes the **whole** task row in
-     `current-plan.md`, not just this branch's slice of it. A branch that is one layer of a stack is
+     `current-plan.md` (judge "whole" against the task's full scope in astro-docs `tasks/<ID>.md`
+     when the row links one — the row itself is a one-line summary), not just this branch's slice of it. A branch that is one layer of a stack is
      `completes: no`. Getting this wrong in the `yes` direction clears the lane's Status while most
      of the task is still open, and `sync-plan` acts on it unattended.
    - Leave `lane` and `task` exactly as `scaffold-issue` recorded them. They were validated against

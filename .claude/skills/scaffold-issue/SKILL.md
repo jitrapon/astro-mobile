@@ -67,6 +67,10 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
 
    - **Find the task row.** Look for a task table row whose text matches the issue (by title, by an
      issue link in the row, or by the issue naming the ID outright, e.g. “M-2” in the title or body).
+     The task tables are an index: a row carries a one-line summary and the issues the task
+     gates, and when its **Detail** column links `[[tasks/<ID>]]` the full scope lives there.
+     For the candidate rows, fetch that file too (`gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"`) —
+     an issue a task carries in prose may be named only in it.
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
      row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the

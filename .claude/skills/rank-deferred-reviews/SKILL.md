@@ -20,7 +20,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
         -H "Accept: application/vnd.github.raw"
       ```
 
-      Use the full raw markdown body as the milestone context for urgency scoring. For the `**Milestone:**` header line in the output file, do NOT paste the whole document — extract a short label:
+      Use the full raw markdown body as the milestone context for urgency scoring. Its task tables are an index — one-line summaries, with full scope in `tasks/<ID>.md` where a row's **Detail** column links one. When judging an issue against a specific task, fetch that task's file (`gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"`) rather than inferring scope from the summary. For the `**Milestone:**` header line in the output file, do NOT paste the whole document — extract a short label:
       - Prefer the first `# H1` heading.
       - If the doc has a clearly labeled section like `## Current milestone`, `## Current goal`, or `## Now`, use its body's first sentence.
       - Otherwise, take the document's first non-heading sentence.
