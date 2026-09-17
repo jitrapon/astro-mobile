@@ -58,19 +58,30 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
 
      ```bash
      docs=$(mktemp -d)
-     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz"
-     tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz" &&
+       tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     # grep exits 1 when nothing matches, a normal answer here; only 2 is an error
      grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
-       "$docs/current-plan.md" "$docs"/tasks/*.md
-     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
+       "$docs/current-plan.md" "$docs"/tasks/*.md || [ $? -eq 1 ]
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/*.md || [ $? -eq 1 ]   # bare refs: weaker
      ```
 
      A hit on a task row in `current-plan.md` or in `tasks/<ID>.md` maps the issue to `<ID>`; a bare
-     `#<N>` hit is weaker and needs the file's context to agree. Read `tasks/<ID>.md` for every
-     mapped task, and for any task ID named in `$ARGUMENTS` (step 1.a); a row with no detail file
-     carries its whole goal inline. Record `none` when nothing maps. If the download fails, score
-     from the milestone text alone and add `- **Task scope:** unavailable` to the output header.
-     Remove `$docs` after writing the output.
+     `#<N>` hit is weaker: keep it only when the surrounding text names this repo or its service.
+     Read `tasks/<ID>.md` for every mapped task, and for any task ID named in `$ARGUMENTS` (step
+     1.a); a row with no detail file carries its whole goal inline. An issue can map to several
+     tasks — the one that carries it and others that mention it — so keep every mapped ID, strongest
+     evidence first (a link in an index row, then a link in a detail file, then a bare reference),
+     and treat the first as the owning task. Record `none` when nothing maps.
+
+     **Milestone scope, once per run.** Also read the detail files that give the milestone its full
+     scope, which step 4 uses for every issue, not only issues that map to a task: the tasks named in
+     `$ARGUMENTS` when it names task IDs, or, when the milestone is the fallback plan (step 1.b), the
+     tasks the plan's **Status** and **Next action** blocks name — the work in flight and next. Do
+     not read every detail file; the rest reach scoring only through an issue that maps to them.
+
+     If the download fails, score from the milestone text alone and add
+     `- **Task scope:** unavailable` to the output header. Remove `$docs` after writing the output.
 
 4. **Score each issue on two axes.**
 
@@ -85,7 +96,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
      - **Medium** — adjacent to the milestone area (same subsystem) but not on the critical path.
      - **Low** — orthogonal to the milestone.
 
-   Both axes must include a 1-line rationale grounded in the issue body and the milestone text (plus, for urgency, the full scope of the plan task step 3 mapped the issue to, if any) — no generic language like "looks important".
+   Both axes must include a 1-line rationale grounded in the issue body and the milestone text (for urgency: the milestone scope step 3 read, for every issue, plus the full scope of the owning task the issue itself maps to, if any) — no generic language like "looks important".
 
 5. **Rank.** Primary order: combine severity × urgency, prioritizing items that are High/High and Critical/anything. Then apply tie-breaks in this exact order:
 
@@ -121,7 +132,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
    - **Urgency to milestone:** <High|Medium|Low> — <1-line rationale tying to milestone text>
    - **Suggested action:** <fix-now|batch-with-related|defer-again|close>
    - **Cross-refs:** <#NNN (relation), #MMM (relation)> | none
-   - **Plan task:** <ID, from step 3> | none
+   - **Plan tasks:** <owning ID first, then any other mapped IDs, from step 3> | none
    - **Files / areas:** <comma-separated, or "n/a">
    - **Opened:** <YYYY-MM-DD> on branch `<branch>` (PR #<NNN> if any)
    - **Link:** <issue URL>

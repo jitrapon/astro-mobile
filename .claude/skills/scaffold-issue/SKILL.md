@@ -74,20 +74,21 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
 
      ```bash
      docs=$(mktemp -d)
-     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz"
-     tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz" &&
+       tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     # grep exits 1 when nothing matches, a normal answer here; only 2 is an error
      grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
-       "$docs/current-plan.md" "$docs"/tasks/*.md
-     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
+       "$docs/current-plan.md" "$docs"/tasks/*.md || [ $? -eq 1 ]
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/*.md || [ $? -eq 1 ]   # bare refs: weaker
      ```
 
-     Candidates, strongest first: a row the issue names outright (e.g. “M-2” in the title or
-     body); a row in `current-plan.md` or a `tasks/<ID>.md` that links this issue — a hit in a
-     detail file counts exactly like a link in the row; a bare `#<N>` in one of this repo's detail
-     files, which is weaker because bare numbers are ambiguous across repos; then rows whose title
-     or summary matches the issue's subject. Read the detail file of each candidate you offer.
-     If the fetch fails, fall back to the `current-plan.md` fetched above and say the detail files
-     were not searched. Remove `$docs` once section 0 is written.
+     Candidates, strongest first: a row the issue names outright (e.g. “M-2” in the title or body);
+     a row in `current-plan.md` or a `tasks/<ID>.md` that links this issue — a hit in a detail file
+     counts exactly like a link in the row; a bare `#<N>` in any detail file, weaker because bare
+     numbers are ambiguous across repos — keep it only when the surrounding text names this repo or
+     its service; then rows whose title or summary matches the issue's subject. Read the detail file
+     of each candidate you offer. If the fetch fails, fall back to the `current-plan.md` fetched
+     above and say the detail files were not searched. Remove `$docs` once section 0 is written.
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
      row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the
