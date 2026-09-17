@@ -55,15 +55,13 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
      deciding (skip when `task: -`, which is always `completes: no`):
 
      ```bash
-     docs=$(mktemp -d)
-     gh repo clone jitrapon/astro-docs "$docs" -- --depth 1 --quiet
+     gh api repos/jitrapon/astro-docs/contents/current-plan.md -H "Accept: application/vnd.github.raw"
+     gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"
      ```
 
-     Read the task's row in `$docs/current-plan.md` and, when its **Detail** column links
-     `[[tasks/<ID>]]`, `$docs/tasks/<ID>.md`; a row with no detail file carries its whole goal
-     inline. **If the clone fails, set `completes: no`** and say so when presenting the plan —
-     `no` is the safe direction, and it can be raised once the scope is readable. Remove
-     `$docs` afterwards.
+     The second call applies when the row's **Detail** column links `[[tasks/<ID>]]`; a row with no
+     detail file carries its whole goal inline. **If either fetch fails, set `completes: no`** and
+     say so when presenting the plan — `no` is the safe direction, and it can be raised once the scope is readable.
      A branch that is one layer of a stack is `completes: no`.
      Getting this wrong in the `yes` direction clears the lane's Status while most
      of the task is still open, and `sync-plan` acts on it unattended.

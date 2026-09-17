@@ -53,12 +53,13 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
    - **Plan task** — which plan task, if any, the issue belongs to, and that task's full scope.
      The plan's task tables are an index of one-line summaries, and an issue is often named only
      in a task's detail file, so map issues to tasks here, before scoring, rather than deciding
-     relevance from the index first. Clone astro-docs once per run, then search per issue with
-     `<N>` its number:
+     relevance from the index first. Download astro-docs once per run over the HTTPS API (no git,
+     so no SSH credential prompt), then search per issue with `<N>` its number:
 
      ```bash
      docs=$(mktemp -d)
-     gh repo clone jitrapon/astro-docs "$docs" -- --depth 1 --quiet
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz"
+     tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
      grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
        "$docs/current-plan.md" "$docs"/tasks/*.md
      grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
@@ -67,7 +68,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
      A hit on a task row in `current-plan.md` or in `tasks/<ID>.md` maps the issue to `<ID>`; a bare
      `#<N>` hit is weaker and needs the file's context to agree. Read `tasks/<ID>.md` for every
      mapped task, and for any task ID named in `$ARGUMENTS` (step 1.a); a row with no detail file
-     carries its whole goal inline. Record `none` when nothing maps. If the clone fails, score
+     carries its whole goal inline. Record `none` when nothing maps. If the download fails, score
      from the milestone text alone and add `- **Task scope:** unavailable` to the output header.
      Remove `$docs` after writing the output.
 
