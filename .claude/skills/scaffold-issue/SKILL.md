@@ -65,12 +65,29 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
    gh api repos/jitrapon/astro-docs/contents/current-plan.md -H "Accept: application/vnd.github.raw"
    ```
 
-   - **Find the task row.** Look for a task table row whose text matches the issue (by title, by an
-     issue link in the row, or by the issue naming the ID outright, e.g. “M-2” in the title or body).
-     The task tables are an index: a row carries a one-line summary and the issues the task
-     gates, and when its **Detail** column links `[[tasks/<ID>]]` the full scope lives there.
-     For the candidate rows, fetch that file too (`gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"`) —
-     an issue a task carries in prose may be named only in it.
+   - **Find the candidate rows — search the whole plan before narrowing.** The task tables are an
+     index: a row carries a one-line summary and the issues the task gates, and when its **Detail**
+     column links `[[tasks/<ID>]]` the full scope lives in that file — which may be the only place
+     an issue the task carries is named. So search the index and every detail file for this issue
+     first, over the HTTPS API rather than a git clone (no SSH credential prompt), with `<N>` the
+     issue number:
+
+     ```bash
+     docs=$(mktemp -d)
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz"
+     tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
+       "$docs/current-plan.md" "$docs"/tasks/*.md
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
+     ```
+
+     Candidates, strongest first: a row the issue names outright (e.g. “M-2” in the title or
+     body); a row in `current-plan.md` or a `tasks/<ID>.md` that links this issue — a hit in a
+     detail file counts exactly like a link in the row; a bare `#<N>` in one of this repo's detail
+     files, which is weaker because bare numbers are ambiguous across repos; then rows whose title
+     or summary matches the issue's subject. Read the detail file of each candidate you offer.
+     If the fetch fails, fall back to the `current-plan.md` fetched above and say the detail files
+     were not searched. Remove `$docs` once section 0 is written.
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
      row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the

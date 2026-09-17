@@ -11,7 +11,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
 
 1. **Resolve the milestone goal.**
 
-   a. **Primary source — `$ARGUMENTS`.** If non-empty, treat the entire string as the milestone goal verbatim (e.g. "ship the auth-service split", "harden read path for prod load", "stabilize Google sync"). It is NOT a GitHub Milestone object — do not try to look it up via `gh`.
+   a. **Primary source — `$ARGUMENTS`.** If non-empty, treat the entire string as the milestone goal verbatim (e.g. "ship the auth-service split", "harden read path for prod load", "stabilize Google sync"). It is NOT a GitHub Milestone object — do not try to look it up via `gh`. If the string names a plan task ID (`A-5`, `W-4`, …), it is still the goal verbatim, and step 3 also reads that task's full scope from astro-docs.
 
    b. **Fallback — `current-plan.md` from `jitrapon/astro-docs`.** If `$ARGUMENTS` is empty or whitespace, fetch the live plan from the default branch:
 
@@ -20,7 +20,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
         -H "Accept: application/vnd.github.raw"
       ```
 
-      Use the full raw markdown body as the milestone context for urgency scoring. Its task tables are an index — one-line summaries, with full scope in `tasks/<ID>.md` where a row's **Detail** column links one. When judging an issue against a specific task, fetch that task's file (`gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"`) rather than inferring scope from the summary. For the `**Milestone:**` header line in the output file, do NOT paste the whole document — extract a short label:
+      Use the full raw markdown body as the milestone context for urgency scoring. Its task tables are an index of one-line summaries; step 3 resolves the full scope of the tasks each issue maps to. For the `**Milestone:**` header line in the output file, do NOT paste the whole document — extract a short label:
       - Prefer the first `# H1` heading.
       - If the doc has a clearly labeled section like `## Current milestone`, `## Current goal`, or `## Now`, use its body's first sentence.
       - Otherwise, take the document's first non-heading sentence.
@@ -50,6 +50,27 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
    - **Source branch / PR** — branch name, PR # if mentioned.
    - **Files / areas touched** — grep the body for `path/to/file.kt`, `path/to/file.swift`, `path/to/file.kt:NNN`, module names (`shared`, `androidApp`, `iosApp`), and platform source sets (`commonMain`, `androidMain`, `iosMain`). Collect the set.
    - **Cross-references** — `#NNN` mentions to other issues; also scan comments. If another issue in the backlog touches the same file or names the same root cause, flag it as a soft cross-ref even without an explicit `#NNN` link.
+   - **Plan task** — which plan task, if any, the issue belongs to, and that task's full scope.
+     The plan's task tables are an index of one-line summaries, and an issue is often named only
+     in a task's detail file, so map issues to tasks here, before scoring, rather than deciding
+     relevance from the index first. Download astro-docs once per run over the HTTPS API (no git,
+     so no SSH credential prompt), then search per issue with `<N>` its number:
+
+     ```bash
+     docs=$(mktemp -d)
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz"
+     tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
+       "$docs/current-plan.md" "$docs"/tasks/*.md
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' "$docs"/tasks/M-*.md   # bare refs: weaker
+     ```
+
+     A hit on a task row in `current-plan.md` or in `tasks/<ID>.md` maps the issue to `<ID>`; a bare
+     `#<N>` hit is weaker and needs the file's context to agree. Read `tasks/<ID>.md` for every
+     mapped task, and for any task ID named in `$ARGUMENTS` (step 1.a); a row with no detail file
+     carries its whole goal inline. Record `none` when nothing maps. If the download fails, score
+     from the milestone text alone and add `- **Task scope:** unavailable` to the output header.
+     Remove `$docs` after writing the output.
 
 4. **Score each issue on two axes.**
 
@@ -64,7 +85,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
      - **Medium** — adjacent to the milestone area (same subsystem) but not on the critical path.
      - **Low** — orthogonal to the milestone.
 
-   Both axes must include a 1-line rationale grounded in the issue body and the milestone text — no generic language like "looks important".
+   Both axes must include a 1-line rationale grounded in the issue body and the milestone text (plus, for urgency, the full scope of the plan task step 3 mapped the issue to, if any) — no generic language like "looks important".
 
 5. **Rank.** Primary order: combine severity × urgency, prioritizing items that are High/High and Critical/anything. Then apply tie-breaks in this exact order:
 
@@ -100,6 +121,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
    - **Urgency to milestone:** <High|Medium|Low> — <1-line rationale tying to milestone text>
    - **Suggested action:** <fix-now|batch-with-related|defer-again|close>
    - **Cross-refs:** <#NNN (relation), #MMM (relation)> | none
+   - **Plan task:** <ID, from step 3> | none
    - **Files / areas:** <comma-separated, or "n/a">
    - **Opened:** <YYYY-MM-DD> on branch `<branch>` (PR #<NNN> if any)
    - **Link:** <issue URL>
@@ -120,7 +142,7 @@ Rank the open `deferred-review` backlog against a milestone goal. Read-only — 
 
 - **Read-only.** Never call `gh issue edit`, `gh issue close`, `gh issue comment`, or any write-side `gh` subcommand. Never modify source code, never `git commit`, never `git push`.
 - **Never proceed without a milestone goal.** A blank milestone produces generic rankings. Fall back to `astro-docs/current-plan.md` first; only ask if that fetch fails.
-- **Do not edit `current-plan.md`.** The fetch is read-only — never push to `jitrapon/astro-docs` from this skill.
+- **Do not edit `current-plan.md` or `tasks/`.** The fetch is read-only — never push to `jitrapon/astro-docs` from this skill.
 - **Never invent fields.** If the issue body lacks deferral rationale or source branch, write `unknown`, not a plausible-sounding guess.
 - **Quote, don't paraphrase, the original finding.** When the rationale lines reference the finding, quote the issue verbatim — softened paraphrases dilute the signal.
 - **Overwrite the output file.** Do not accumulate prior rankings inside it. The file is a current-snapshot artifact; older snapshots live in `git log` if the user wants them.
