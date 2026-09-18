@@ -242,6 +242,13 @@ dependencies {
     detektPlugins(libs.structured.coroutines.detekt.rules)
 
     implementation(project(":shared"))
+    // The app resolves the shared data layer from the Koin graph `:shared` starts; the version is
+    // the catalog's, so the app and `:shared` can never run two Koin runtimes.
+    implementation(libs.koin.core)
+
+    // Navigation 3 — catalog-declared; see gradle/libs.versions.toml.
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     // Jetpack Compose
     implementation("androidx.activity:activity-compose:1.13.0")

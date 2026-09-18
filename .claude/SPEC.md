@@ -105,7 +105,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   since tab identity keys navigation state; content that yields no tabs projects to failure if one is
   reported, otherwise loading. Plain data in, plain data out — callable from Swift, no `Flow` or Koin
   type.
-- [ ] **2. Android dependencies in the version catalog.** Fetch the on-demand `navigation-3` skill
+- [x] **2. Android dependencies in the version catalog.** Fetch the on-demand `navigation-3` skill
   (`android skills add navigation-3 --agent=claude-code --project .`, not committed — the `android/*`
   skills are deliberately not vendored) and use it to pick the stable Navigation 3 runtime/UI
   artifacts. Declare them in `gradle/libs.versions.toml` and reference them from
@@ -159,7 +159,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   does the same through `CalendarScreenObserver` — the exact entry point the Swift shell subscribes
   through — asserting the delivered states project to loading then the fixture's tabs. `./gradlew :shared:verifyFrameworkHeaderSurface`
   still passes (the new public types add no library type to `shared.h`).
-- [ ] **2.** `./gradlew :androidApp:assembleDebug` resolves and compiles with the new aliases;
+- [x] **2.** `./gradlew :androidApp:assembleDebug` resolves and compiles with the new aliases;
   `./gradlew :androidApp:dependencies --configuration debugRuntimeClasspath` shows the Navigation 3
   artifacts at the catalog version; `grep` confirms no Navigation 3 or Koin coordinate is declared
   inline in `androidApp/build.gradle.kts`.
