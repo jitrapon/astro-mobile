@@ -112,7 +112,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   `androidApp/build.gradle.kts` by alias, alongside `implementation(libs.koin.core)` (the catalog's
   existing Koin alias, so no new Koin version). Existing inline Compose/lifecycle declarations are left
   as they are.
-- [ ] **3. Android shell state holder.** Add an androidx `ViewModel` in `androidApp` that builds the
+- [x] **3. Android shell state holder.** Add an androidx `ViewModel` in `androidApp` that builds the
   current-month `CalendarScreenRequest` from the device's zone and locale (mirroring the iOS app's
   current-month request), resolves `CalendarScreenRepository` from the running Koin graph, constructs
   `CalendarViewModel` on `viewModelScope`, and exposes `CalendarViewModel.state` mapped through item
@@ -163,7 +163,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   `./gradlew :androidApp:dependencies --configuration debugRuntimeClasspath` shows the Navigation 3
   artifacts at the catalog version; `grep` confirms no Navigation 3 or Koin coordinate is declared
   inline in `androidApp/build.gradle.kts`.
-- [ ] **3.** `./gradlew :androidApp:assembleDebug :androidApp:detekt :androidApp:ktfmtCheck` pass, and a
+- [x] **3.** `./gradlew :androidApp:assembleDebug :androidApp:detekt :androidApp:ktfmtCheck` pass, and a
   review of the view model confirms its state is exactly `CalendarViewModel.state` mapped through item
   1's projection — the path item 1's wiring case exercises — with no derivation of its own.
 - [ ] **4.** Instrumented Compose UI test in `androidApp/src/androidTest`, run locally with
