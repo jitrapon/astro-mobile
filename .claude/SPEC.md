@@ -144,7 +144,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 - [x] **7. Wire the iOS shell to the observation.** Replace `ContentView`'s diagnostic summary with the
   shell view, projecting each delivered `CalendarUiState` through item 1's function; keep the
   existing subscription lifecycle (subscribe in `.task`, cancel on termination).
-- [ ] **8. Document the shell seams.** Update `.claude/CLAUDE.md`: the shared `presentation/shell/`
+- [x] **8. Document the shell seams.** Update `.claude/CLAUDE.md`: the shared `presentation/shell/`
   projection in the architecture/package notes, Navigation 3 on Android and `TabView` on iOS, the
   rule that tabs come from delivered destinations (Agenda being a view, not a destination), and
   `:androidApp` resolving the repository through Koin.
@@ -191,7 +191,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 - [x] **7.** The simulator `xcodebuild` succeeds; `swiftFormatCheck` / `swiftLintCheck` pass; an
   `ios-device-debug` simulator run launches without crashing and, with no backend reachable, shows
   the failure placeholder with no tab bar (screenshot recorded).
-- [ ] **8.** Re-read the edited CLAUDE.md sections against the diff; every symbol it names in backticks
+- [x] **8.** Re-read the edited CLAUDE.md sections against the diff; every symbol it names in backticks
   exists (`grep`).
 - [ ] **9.** `./gradlew check` exits 0 (including `verifyCheckPartition` and the header-surface guard)
   and the simulator `xcodebuild` exits 0.
