@@ -141,7 +141,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   *(Landed with the app's deployment target raised from iOS 15 to 18, confirmed with the user:
   `NavigationStack` needs 16, and the vendored guidance marks `TabView(selection:content:)` and
   `NavigationView` soft-deprecated in favour of the `Tab`-based `TabView`, which needs 18.)*
-- [ ] **7. Wire the iOS shell to the observation.** Replace `ContentView`'s diagnostic summary with the
+- [x] **7. Wire the iOS shell to the observation.** Replace `ContentView`'s diagnostic summary with the
   shell view, projecting each delivered `CalendarUiState` through item 1's function; keep the
   existing subscription lifecycle (subscribe in `.task`, cancel on termination).
 - [ ] **8. Document the shell seams.** Update `.claude/CLAUDE.md`: the shared `presentation/shell/`
@@ -188,7 +188,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   selected-tab preview showing the tab bar in fixture order with that destination's placeholder —
   rendered via Xcode's `RenderPreview` (or the `ios-device-debug` skill if the Xcode MCP bridge is
   unavailable), screenshots recorded.
-- [ ] **7.** The simulator `xcodebuild` succeeds; `swiftFormatCheck` / `swiftLintCheck` pass; an
+- [x] **7.** The simulator `xcodebuild` succeeds; `swiftFormatCheck` / `swiftLintCheck` pass; an
   `ios-device-debug` simulator run launches without crashing and, with no backend reachable, shows
   the failure placeholder with no tab bar (screenshot recorded).
 - [ ] **8.** Re-read the edited CLAUDE.md sections against the diff; every symbol it names in backticks
