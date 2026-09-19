@@ -148,7 +148,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   projection in the architecture/package notes, Navigation 3 on Android and `TabView` on iOS, the
   rule that tabs come from delivered destinations (Agenda being a view, not a destination), and
   `:androidApp` resolving the repository through Koin.
-- [ ] **9. Full gate.** Run `./gradlew check` and the `iosApp` simulator `xcodebuild` from CLAUDE.md
+- [x] **9. Full gate.** Run `./gradlew check` and the `iosApp` simulator `xcodebuild` from CLAUDE.md
   on the finished branch.
 
 ## 5. Testing & Validation (for agent)
@@ -193,7 +193,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   the failure placeholder with no tab bar (screenshot recorded).
 - [x] **8.** Re-read the edited CLAUDE.md sections against the diff; every symbol it names in backticks
   exists (`grep`).
-- [ ] **9.** `./gradlew check` exits 0 (including `verifyCheckPartition` and the header-surface guard)
+- [x] **9.** `./gradlew check` exits 0 (including `verifyCheckPartition` and the header-surface guard)
   and the simulator `xcodebuild` exits 0.
 
 ## 6. Deployment
