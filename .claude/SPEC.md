@@ -128,7 +128,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   icons need `material-icons-core` on the compile classpath — `material` carries it only at runtime —
   so it is declared in the version catalog; and `:androidApp`'s ktfmt/Detekt sources now include
   `src/androidTest/java`, so the instrumented test is linted like the app code.)*
-- [ ] **5. Wire the Android shell into `MainActivity`.** Replace the `MessageCard` placeholder with
+- [x] **5. Wire the Android shell into `MainActivity`.** Replace the `MessageCard` placeholder with
   `AppShell` collecting the item-3 view model's state (lifecycle-aware collection) inside `AstroTheme`.
 - [ ] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking item 1's shell state: a `TabView` with
   one tab per destination (label; SF Symbol from an icon-token lookup with a generic fallback), each
@@ -177,7 +177,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   tab in turn shows that destination's placeholder; two differently labelled destinations targeting
   the same screen each show their own placeholder and selected state; a failure state shows the
   failure placeholder with no bottom bar. Plus `./gradlew :androidApp:detekt :androidApp:ktfmtCheck`.
-- [ ] **5.** `./gradlew :androidApp:assembleDebug`, then an on-device run via the `android-device-debug`
+- [x] **5.** `./gradlew :androidApp:assembleDebug`, then an on-device run via the `android-device-debug`
   skill: the app launches without crashing and, with no backend reachable, shows the failure
   placeholder with no bottom bar (screenshot recorded).
 - [ ] **6.** The CLAUDE.md `iosApp` simulator `xcodebuild` succeeds; `./gradlew swiftFormatCheck
