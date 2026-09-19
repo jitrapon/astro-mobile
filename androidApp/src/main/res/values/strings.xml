@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Astro</string>
+    <string name="app_shell_loading">Loading…</string>
+    <string name="app_shell_failure">Couldn\'t load your calendar.</string>
 </resources>

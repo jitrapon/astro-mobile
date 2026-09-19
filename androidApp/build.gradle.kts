@@ -27,14 +27,16 @@ ktfmt { kotlinLangStyle() }
 // discovery is wrapped in a swallowed `runCatching`, so on AGP 9 it silently creates no
 // source-set tasks for this module — the aggregate `ktfmtCheck`/`ktfmtFormat` end up covering only
 // build scripts, leaving the app's Kotlin under src/main/java unformatted and unchecked. Re-create
-// the per-source check/format tasks explicitly over src/main/java using the plugin's public task
+// the per-source check/format tasks explicitly over src/main/java (and the instrumented tests under
+// src/androidTest/java) using the plugin's public task
 // API, deriving the formatting options from the configured `ktfmt { kotlinLangStyle() }` extension
 // so the app module formats identically to `:shared`. (The KMP `:shared` module is unaffected — the
 // plugin's multiplatform path does not use the removed AGP API.)
 run {
     val ktfmtExtension = the<KtfmtExtension>()
     val ktfmtClasspathConfig = configurations.named("ktfmt")
-    val androidKotlinSources = fileTree("src/main/java") { include("**/*.kt") }
+    val androidKotlinSources =
+        files("src/main/java", "src/androidTest/java").asFileTree.matching { include("**/*.kt") }
     val formattingOptions = provider {
         FormattingOptionsBean(
             ktfmtExtension.maxWidth.get(),
@@ -115,12 +117,13 @@ tasks.named("check") {
 // Compose-aware overrides in config/detekt/detekt.yml (buildUponDefaultConfig layers them on top).
 // No baseline file and no custom complexity thresholds — findings are fixed by refactoring, never
 // suppressed. Formatting is owned by ktfmt, so the `formatting` ruleset stays off. This module
-// keeps its Kotlin sources under src/main/java, so point `source` there explicitly.
+// keeps its Kotlin sources under src/main/java and its instrumented tests under
+// src/androidTest/java, so point `source` at both explicitly.
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     parallel = true
-    source.setFrom(files("src/main/java"))
+    source.setFrom(files("src/main/java", "src/androidTest/java"))
 }
 
 // Compose Stability Analyzer — deliberately inert. Its on-demand `stabilityDump` task (variant form
@@ -202,6 +205,7 @@ android {
         versionCode = 4
         versionName = "0.1.2"
         vectorDrawables { useSupportLibrary = true }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -249,6 +253,8 @@ dependencies {
     // Navigation 3 — catalog-declared; see gradle/libs.versions.toml.
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    // The shell's tab icons — catalog-declared; see gradle/libs.versions.toml.
+    implementation(libs.androidx.compose.material.icons.core)
 
     // Jetpack Compose
     implementation("androidx.activity:activity-compose:1.13.0")

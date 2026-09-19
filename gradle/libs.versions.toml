@@ -65,6 +65,10 @@ koin = "4.2.2"
 # Jetpack Navigation 3 — the Android app's navigation framework (a Compose-state back stack
 # rendered by `NavDisplay`). `runtime` and `ui` release together and are bumped off this one ref.
 navigation3 = "1.1.7"
+# Material icons (core set) — the app shell's tab icons. `material` pulls it in only as a runtime
+# dependency, so the app declares it to compile against it. The icon artifacts stopped releasing at
+# 1.7.8; this is its final version, not one to track alongside the Compose UI libraries.
+compose-material-icons = "1.7.8"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`
@@ -95,6 +99,7 @@ koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 # Product dependencies — Android app.
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "compose-material-icons" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }

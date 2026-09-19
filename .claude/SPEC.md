@@ -117,14 +117,17 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   current-month request), resolves `CalendarScreenRepository` from the running Koin graph, constructs
   `CalendarViewModel` on `viewModelScope`, and exposes `CalendarViewModel.state` mapped through item
   1's projection as its one `StateFlow` of shell state — no derivation of its own.
-- [ ] **4. Android shell UI.** Add a route composable taking a `StateFlow` of item 1's shell state (so a
+- [x] **4. Android shell UI.** Add a route composable taking a `StateFlow` of item 1's shell state (so a
   test can drive it without a view model) that collects it and delegates to a stateless `AppShell`
   composable in `androidApp`: a bottom bar with
   one item per tab (label; icon from an icon-token lookup with a generic fallback for unknown tokens),
   a Navigation 3 back stack keyed by the selected tab's **destination id** (its target screen id carried as route data, since two destinations may target the same screen), one placeholder screen per
   destination showing its label, and a loading/failure placeholder with no bottom bar when there are
   no tabs. Include `@Preview`s fed with fixture-shaped tabs. Follow the `chrisbanes-skills:compose-*`
-  skills for state hoisting and the holder/UI split.
+  skills for state hoisting and the holder/UI split. *(Landed with two supporting changes: the tab
+  icons need `material-icons-core` on the compile classpath — `material` carries it only at runtime —
+  so it is declared in the version catalog; and `:androidApp`'s ktfmt/Detekt sources now include
+  `src/androidTest/java`, so the instrumented test is linted like the app code.)*
 - [ ] **5. Wire the Android shell into `MainActivity`.** Replace the `MessageCard` placeholder with
   `AppShell` collecting the item-3 view model's state (lifecycle-aware collection) inside `AstroTheme`.
 - [ ] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking item 1's shell state: a `TabView` with
@@ -166,7 +169,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 - [x] **3.** `./gradlew :androidApp:assembleDebug :androidApp:detekt :androidApp:ktfmtCheck` pass, and a
   review of the view model confirms its state is exactly `CalendarViewModel.state` mapped through item
   1's projection — the path item 1's wiring case exercises — with no derivation of its own.
-- [ ] **4.** Instrumented Compose UI test in `androidApp/src/androidTest`, run locally with
+- [x] **4.** Instrumented Compose UI test in `androidApp/src/androidTest`, run locally with
   `./gradlew :androidApp:connectedDebugAndroidTest` on an emulator (CI does not run instrumented
   tests — record the local output), driving the route composable through a `MutableStateFlow`:
   starting from loading there is no bottom bar and the loading placeholder shows; after the state
