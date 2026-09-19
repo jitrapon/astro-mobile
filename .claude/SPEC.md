@@ -130,7 +130,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   `src/androidTest/java`, so the instrumented test is linted like the app code.)*
 - [x] **5. Wire the Android shell into `MainActivity`.** Replace the `MessageCard` placeholder with
   `AppShell` collecting the item-3 view model's state (lifecycle-aware collection) inside `AstroTheme`.
-- [ ] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking item 1's shell state: a `TabView` with
+- [x] **6. iOS shell UI.** In `iosApp`, add a SwiftUI shell view taking item 1's shell state: a `TabView` with
   one tab per destination (label; SF Symbol from an icon-token lookup with a generic fallback), each
   hosting a placeholder view showing its label inside a `NavigationStack`, with tab selection and
   identity keyed by destination id rather than target screen id, and a loading/failure
@@ -138,6 +138,9 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
   preview can open on any tab. Include `#Preview`s for the loading and failure states and one per
   selected tab over fixture-shaped tabs.
   Follow the vendored `swiftui-specialist` guidance (tab identity, `ForEach` identity).
+  *(Landed with the app's deployment target raised from iOS 15 to 18, confirmed with the user:
+  `NavigationStack` needs 16, and the vendored guidance marks `TabView(selection:content:)` and
+  `NavigationView` soft-deprecated in favour of the `Tab`-based `TabView`, which needs 18.)*
 - [ ] **7. Wire the iOS shell to the observation.** Replace `ContentView`'s diagnostic summary with the
   shell view, projecting each delivered `CalendarUiState` through item 1's function; keep the
   existing subscription lifecycle (subscribe in `.task`, cancel on termination).
@@ -180,7 +183,7 @@ This branch does not complete the M-2 plan row; only the registry branch (#137) 
 - [x] **5.** `./gradlew :androidApp:assembleDebug`, then an on-device run via the `android-device-debug`
   skill: the app launches without crashing and, with no backend reachable, shows the failure
   placeholder with no bottom bar (screenshot recorded).
-- [ ] **6.** The CLAUDE.md `iosApp` simulator `xcodebuild` succeeds; `./gradlew swiftFormatCheck
+- [x] **6.** The CLAUDE.md `iosApp` simulator `xcodebuild` succeeds; `./gradlew swiftFormatCheck
   swiftLintCheck` pass; every preview renders — loading and failure with no tab bar, and each
   selected-tab preview showing the tab bar in fixture order with that destination's placeholder —
   rendered via Xcode's `RenderPreview` (or the `ios-device-debug` skill if the Xcode MCP bridge is
