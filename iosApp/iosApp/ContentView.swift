@@ -1,69 +1,38 @@
 import SwiftUI
 import shared
 
-/// The whole iOS UI for now: it watches a calendar screen through the shared graph and shows the
-/// state it is in.
+/// The app's root: it watches the current month's calendar screen through the shared graph and
+/// draws the app shell that screen's destinations describe.
 ///
-/// This is not product UI — the app shell replaces it. It exists so that launching the app
-/// exercises the framework boundary end to end: resolving `CalendarScreenObserver` from the graph,
-/// building a request in Kotlin, subscribing to its state over the Darwin engine, and reading each
-/// `CalendarUiState` back in Swift. A screen that rendered a fixed string would prove only that the
-/// app did not crash.
+/// Each delivered `CalendarUiState` goes through the shared `toAppShellState()` projection, so which
+/// destinations become tabs — and whether a tab bar shows at all — is decided in Kotlin exactly as
+/// it is for the Android shell. Until the first state arrives the shell is loading.
 struct ContentView: View {
-    @State private var state: CalendarUiState?
+    @State private var shellState: any AppShellState = AppShellStateLoading.shared
 
     var body: some View {
-        VStack(spacing: 12.0) {
-            Text("Calendar screen")
-                .font(.headline)
-            Text(CalendarScreenObservation.summary(of: state))
-                .font(.system(.footnote, design: .monospaced))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(state?.failure != nil ? .red : .primary)
-        }
-        .padding(.all)
-        .task {
-            // Ending the view's task finishes the stream, which cancels the subscription. A
-            // cancelled subscription delivers nothing further, so the last state stays standing
-            // rather than being overwritten with a failure the user never caused.
-            for await delivered in CalendarScreenObservation.statesForCurrentMonth() {
-                state = delivered
+        AppShellView(state: shellState)
+            .task {
+                // Ending the view's task finishes the stream, which cancels the subscription. A
+                // cancelled subscription delivers nothing further, so the last shell stays standing
+                // rather than being overwritten with a failure the user never caused.
+                for await delivered in CalendarScreenObservation.statesForCurrentMonth() {
+                    shellState = delivered.toAppShellState()
+                }
             }
-        }
     }
 }
 
-/// The current month's calendar screen as a stream of the states it passes through, reduced to the
-/// little this screen shows.
+/// The current month's calendar screen as a stream of the states it passes through.
 enum CalendarScreenObservation {
-
-    /// One line per field `CalendarUiState` carries, read directly — the shared view model has
-    /// already flattened the observation's cases, so nothing here downcasts to learn whether there
-    /// is content or whether the network is busy.
-    static func summary(of state: CalendarUiState?) -> String {
-        guard let state else { return "Subscribing…" }
-        var lines: [String] = []
-        if let response = state.content {
-            lines.append(response.screen.title)
-            lines.append("schema \(response.schemaVersion) · theme \(response.theme.id)")
-        }
-        if let failure = state.failure {
-            // Expected until a backend is running — reaching a real failure still proves the
-            // observer resolved and the request went out over the platform's HTTP stack.
-            lines.append("No screen: \(failure.message ?? "\(failure)")")
-        }
-        if state.isLoading {
-            lines.append("Fetching…")
-        }
-        return lines.isEmpty ? "Nothing to show" : lines.joined(separator: "\n")
-    }
 
     /// The device's locale as the BCP-47 tag the contract asks for.
     ///
     /// `Locale.current.identifier` is an ICU identifier, not a language tag: it separates with
     /// underscores and carries keyword extensions (`en_TH@calendar=gregorian`). Canonicalizing
-    /// hyphenates it but keeps the keywords, so the suffix is dropped here. `identifier(.bcp47)`
-    /// would say all of this in one call, but it needs iOS 16 and this app deploys to 15.
+    /// hyphenates it but keeps the keywords, so the suffix is dropped here. `identifier(.bcp47)` is
+    /// not a substitute: it re-encodes those keywords as a `-u-` extension rather than dropping
+    /// them.
     private static var currentLanguageTag: String {
         let canonical = Locale.canonicalLanguageIdentifier(from: Locale.current.identifier)
         return String(canonical.prefix { $0 != "@" })

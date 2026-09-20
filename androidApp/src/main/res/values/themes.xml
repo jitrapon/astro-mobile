@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app's platform theme. It carries no action bar on purpose: the shell draws its own
+  navigation, and the legacy action-bar decor *consumes* the window insets before the Compose
+  content is laid out, which silently zeroes `WindowInsets.systemBars` and leaves the bottom bar
+  drawing under the system navigation however carefully the bar asks for its insets.
+
+  Split day/night rather than a `DayNight` parent, which the platform only offers from API 29
+  while this app supports API 23. The colours themselves come from `AstroTheme`; this theme only
+  decides the window background behind them.
+-->
+<resources>
+    <style name="Theme.Astro" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+</resources>

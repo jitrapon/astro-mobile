@@ -8,6 +8,8 @@ import io.jitrapon.astro.data.calendar.monthScreenRequest
 import io.jitrapon.astro.data.calendar.respondWithMonthScreenFixture
 import io.jitrapon.astro.data.calendar.respondWithServerTime
 import io.jitrapon.astro.data.calendar.serverTimeOfExchange
+import io.jitrapon.astro.presentation.shell.AppShellState
+import io.jitrapon.astro.presentation.shell.toAppShellState
 import io.jitrapon.astro.recordStates
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,6 +75,37 @@ class CalendarScreenObserverTest {
             heard.states.indexOfFirst { it.isLoading } < heard.states.indexOf(screen),
             "The screen reached the callback without the load before it: ${heard.states}",
         )
+    }
+
+    @Test
+    fun theDeliveredStatesProjectToALoadingShellAndThenTheContractTabs() = runTest {
+        val stalled = StalledExchange()
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) {
+                stalled.hold()
+                respondWithMonthScreenFixture()
+            }
+        val observer = CalendarScreenObserver(fixture.calendarScreenRepository, deliveryScope())
+        val heard = HeardStates()
+
+        observer.observe(monthScreenRequest(), heard::record)
+
+        heard.awaitLatest { it.isLoading }
+        stalled.release()
+        heard.awaitLatest { it.content != null }
+
+        val shell = heard.states.map { it.toAppShellState() }.distinct()
+        assertEquals(
+            AppShellState.Loading,
+            shell.first(),
+            "The shell did not start loading: $shell",
+        )
+        assertEquals(
+            listOf("calendar", "expense"),
+            (shell.last() as AppShellState.Tabs).tabs.map { it.destinationId },
+            "The last delivered state did not project to the contract's tabs: $shell",
+        )
+        assertEquals(2, shell.size, "The shell passed through a state other than loading: $shell")
     }
 
     @Test

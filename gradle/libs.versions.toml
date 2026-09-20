@@ -5,7 +5,9 @@
 #   * The Kotlin lint/format toolchain, so the Gradle plugin, the pre-commit hook's standalone CLI
 #     jars, and `verifyKtfmtAlignment` all read the same versions and can never drift.
 #   * The product dependencies the shared module ships (kotlinx.serialization, kotlinx.coroutines,
-#     Ktor, Koin) together with the Kotlin version their compiler plugins are locked to.
+#     Ktor, Koin) together with the Kotlin version their compiler plugins are locked to, plus the
+#     Android app's own additions (Navigation 3). The app's older inline Compose/lifecycle
+#     declarations predate this rule and have not been migrated yet.
 #   * The build tooling the security gates drive — the CycloneDX SBOM generator whose output the
 #     PR-blocking `sca` job scans. It ships nothing, but a bump changes what that gate can see.
 #
@@ -60,6 +62,13 @@ ktor = "3.5.2"
 # validation, so `koin-test`'s graph-resolution check is the only thing that catches a missing
 # binding; keep the test artifact on the same version as the runtime.
 koin = "4.2.2"
+# Jetpack Navigation 3 — the Android app's navigation framework (a Compose-state back stack
+# rendered by `NavDisplay`). `runtime` and `ui` release together and are bumped off this one ref.
+navigation3 = "1.1.7"
+# Material icons (core set) — the app shell's tab icons. `material` pulls it in only as a runtime
+# dependency, so the app declares it to compile against it. The icon artifacts stopped releasing at
+# 1.7.8; this is its final version, not one to track alongside the Compose UI libraries.
+compose-material-icons = "1.7.8"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`
@@ -86,6 +95,11 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+
+# Product dependencies — Android app.
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "compose-material-icons" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
