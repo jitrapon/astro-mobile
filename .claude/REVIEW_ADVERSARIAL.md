@@ -53,6 +53,21 @@ Findings:
   `Scaffold` passes `ScaffoldDefaults.contentWindowInsets`; `Scaffold` excludes what the bar
   consumes, so the content is not double-padded. `MainActivity` now calls `enableEdgeToEdge()` so
   layout is identical below API 35 rather than varying by release.
+
+  **Amended after on-device verification** — the above was necessary but *not sufficient*, and
+  measurement on an emulator (API 36, gesture navigation, 420dpi) caught it. With the insets
+  requested but nothing else changed, the tab labels still occupied y=2335–2378 against a
+  navigation bar frame of `[0,2337][1080,2400]` — byte-identical bounds to a control build with the
+  inset arguments removed, i.e. the fix was doing nothing. A second control with a hard-coded
+  `WindowInsets(bottom = 24.dp)` moved the labels to 2272–2315, proving `windowInsetsPadding`
+  worked and that `BottomNavigationDefaults.windowInsets` (`systemBars.union(displayCutout)`) was
+  resolving to **zero**. Cause: the app declared no `android:theme`, so it inherited the platform
+  default *with an action bar*, and the legacy action-bar decor consumes the window insets before
+  the Compose content is laid out. Added `res/values/themes.xml` + `values-night/themes.xml`
+  (`Theme.Astro`, a no-action-bar platform theme, split day/night because `DayNight` needs API 29
+  and this app supports 23), applied via `android:theme` on `<application>`. With both halves in
+  place the labels sit at 2272–2315, clear of the navigation bar; the stray action bar is gone; and
+  the bar's background still extends behind the gesture area as edge-to-edge intends.
 - [medium] Distinguish completed empty navigation from loading (shared/src/commonMain/kotlin/io/jitrapon/astro/presentation/shell/AppShellState.kt:79-82)
   A successful response with no destinations, or only non-NavigateAction destinations, maps to Loading even when isLoading is false. Both apps then show an indefinite spinner with no navigation or recovery action. These responses are permitted by the vendored contract: destinations has no minimum length and accepts other action types. CalendarScreenQuery does not automatically schedule another exchange after a completed response, so waiting cannot resolve this state.
   Recommendation: Represent completed content with no routable destinations as an explicit empty or unsupported-navigation state, render a terminal message on both platforms, and test empty and non-navigating-only responses with isLoading=false.

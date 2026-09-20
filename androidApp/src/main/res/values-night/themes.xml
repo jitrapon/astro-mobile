@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dark counterpart of `Theme.Astro`; see the note in `values/themes.xml`. -->
+<resources>
+    <style name="Theme.Astro" parent="@android:style/Theme.DeviceDefault.NoActionBar" />
+</resources>
