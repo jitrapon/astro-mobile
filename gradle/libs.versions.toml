@@ -23,7 +23,8 @@
 # The Kotlin version every Kotlin *compiler* plugin on the buildscript classpath is locked to. The
 # Kotlin Gradle plugin, the Compose compiler plugin, and the kotlinx.serialization plugin all embed
 # compiler internals, so a mismatch against the Kotlin the build runs is a hard failure, not a
-# warning. Bumping Kotlin means bumping this one ref and re-checking compose-stability-analyzer.
+# warning. Bumping Kotlin means bumping this ref and compose-stability-analyzer together — that one
+# is a compiler plugin with an exact-match Kotlin build, not a range.
 kotlin = "2.4.20"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
@@ -31,18 +32,19 @@ detekt = "1.23.8"
 # santimattius structured-coroutines Detekt ruleset — 40 syntactic coroutine rules. Being syntactic
 # (no type resolution) they run on the plain `detekt` task, unlike Detekt's own coroutine rules,
 # which need type resolution the Kotlin-version wall (detekt 1.23.8 bundles Kotlin 2.0.21, this repo
-# runs Kotlin 2.4.10) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
+# runs Kotlin 2.4.20) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
 # in the pre-commit hook — bump both in lockstep. An upstream port is needed when Detekt 2.0 renames
 # the RuleSetProvider package to `dev.detekt`.
 structured-coroutines = "1.1.1"
 # skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
-# version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.4.10; the analyzer's
-# version→Kotlin map has no 2.4.10 build, so 0.12.0 (built against Kotlin 2.4.0 — the nearest
-# version at or below 2.4.10) is used for forward-compatible loading. Bump this in lockstep with any
-# Kotlin upgrade using the analyzer's README "Kotlin Version Mapping" table: a version built against
-# a Kotlin older than the compiler that loads it fails the build with a ClassCastException on
-# FirExtensionRegistrarAdapter as the plugin registers its FIR extensions.
-compose-stability-analyzer = "0.12.0"
+# version (it embeds kotlin-compiler-embeddable) and upstream ships one analyzer release per Kotlin
+# release. This must be the release built against the `kotlin` ref above — 0.14.0 is the 2.4.20
+# build — so bump the two in the same commit, reading the analyzer README's "Kotlin Version Mapping"
+# table. A mismatch is not a warning: a plugin built against a Kotlin older than the compiler
+# loading it fails with a ClassCastException on FirExtensionRegistrarAdapter as the plugin registers
+# its FIR extensions. A Kotlin bump that lands alone — a Renovate security bump, say — leaves this
+# ref behind and is the way that mismatch gets introduced.
+compose-stability-analyzer = "0.14.0"
 # CycloneDX Gradle plugin — produces the SBOM the PR-blocking `sca` job hands to osv-scanner. It
 # ships in no artifact; it exists so software-composition analysis reads the RESOLVED Gradle graph
 # at PR time instead of waiting for the post-merge Dependency Graph inventory. Plugin 3.x needs
