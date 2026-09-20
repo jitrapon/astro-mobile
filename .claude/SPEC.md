@@ -80,7 +80,7 @@ Ordering note: item 1 deliberately bundles registration, `check` wiring, and CI 
 one pass. Splitting them would leave `verifyCheckPartition` failing between commits, and this
 workflow commits per item — the tree must be green at every tick.
 
-- [ ] Register `verifyStabilityAnalyzerKotlinAlignment` in the root build script, wire it into every
+- [x] Register `verifyStabilityAnalyzerKotlinAlignment` in the root build script, wire it into every
       subproject's `check` (mirroring `checkNoDetektBaseline`), and classify it into
       `androidCommonVerification` — all in one commit. The task reads the `kotlin` and
       `compose-stability-analyzer` catalog refs and asserts the analyzer version is the release
@@ -113,13 +113,13 @@ workflow commits per item — the tree must be green at every tick.
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **Guard (item 1) — prove it fails, not just that it passes.** `./gradlew
+- [x] **Guard (item 1) — prove it fails, not just that it passes.** `./gradlew
       verifyStabilityAnalyzerKotlinAlignment` passes on the current refs. Then perturb each side in
       turn — analyzer moved off its recorded release, and `kotlin` moved to a version absent from
       the mapping — and confirm each turns the task red with a message naming both versions. Restore
       and re-run. A guard only verified green is a guard never verified: the analyzer sat mismatched
       for twelve days while every build passed.
-- [ ] **Guard wiring (item 1).** `./gradlew verifyCheckPartition` passes, proving the new task is
+- [x] **Guard wiring (item 1).** `./gradlew verifyCheckPartition` passes, proving the new task is
       classified; `./gradlew verifyAndroidCommon` reaches it. Confirm the partition guard *would*
       have caught an unclassified task by checking it runs the new task in its closure rather than
       by trusting the green result.
