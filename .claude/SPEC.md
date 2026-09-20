@@ -108,7 +108,7 @@ workflow commits per item — the tree must be green at every tick.
 - [x] Add `compose`, `androidx-lifecycle`, and `activity-compose` version refs to the catalog at the
       versions the inline declarations currently pin, plus one library alias per artifact they
       cover. Keep `compose-material-icons` a separate ref; it must not be folded into `compose`.
-- [ ] Replace the inline dependency declarations in the Android app's build script with the new
+- [x] Replace the inline dependency declarations in the Android app's build script with the new
       catalog aliases, preserving each declaration's existing configuration
       (`implementation` / `androidTestImplementation` / `debugImplementation`).
 - [ ] Update the catalog's header and per-ref comments: drop the sentence recording inline
@@ -137,20 +137,20 @@ workflow commits per item — the tree must be green at every tick.
 - [x] **Baselines (item 3).** Confirm the captures exist and are non-empty for every configuration
       named there *before* any catalog edit lands. A missing baseline is discovered too late to
       recreate.
-- [ ] **Catalog refs + inline replacement (items 4–5) — variant scope, not just version.** Diff the
+- [x] **Catalog refs + inline replacement (items 4–5) — variant scope, not just version.** Diff the
       post-migration graphs against every baseline: debug, **release**, and **androidTest**, compile
       and runtime. All diffs must be empty. Diffing only the debug runtime graph cannot detect a
       declaration that changed configuration — moving `ui-test-manifest` from `debugImplementation`
       to `implementation`, or `ui-test-junit4` from `androidTestImplementation`, leaves the debug
       graph byte-identical while adding a test-only artifact to the shipping release APK.
-- [ ] **Configuration preservation (item 5) — assert per coordinate.** Independently of the graph
+- [x] **Configuration preservation (item 5) — assert per coordinate.** Independently of the graph
       diffs, walk the ten migrated declarations and confirm each kept its original configuration
       (`implementation` / `androidTestImplementation` / `debugImplementation`). The graph diff is
       the detector of last resort; this is the direct check, and it is the one that names the
       mistake rather than showing a symptom.
-- [ ] **Icons ref (item 5).** Confirm `androidx.compose.material:material-icons-core` still resolves
+- [x] **Icons ref (item 5).** Confirm `androidx.compose.material:material-icons-core` still resolves
       to its own pinned version and was not dragged onto the Compose release train.
-- [ ] **SBOM (items 4–5).** `./gradlew :cyclonedxBom`, diffed against the baseline. Note its limit
+- [x] **SBOM (items 4–5).** `./gradlew :cyclonedxBom`, diffed against the baseline. Note its limit
       explicitly: the SBOM is a component *inventory*, so an artifact that merely changed variant
       scope still appears once and the diff stays empty. It verifies no component was added,
       removed, or re-versioned — it does **not** verify scope, which is why the per-configuration

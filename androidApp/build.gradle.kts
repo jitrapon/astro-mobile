@@ -256,15 +256,16 @@ dependencies {
     // The shell's tab icons — catalog-declared; see gradle/libs.versions.toml.
     implementation(libs.androidx.compose.material.icons.core)
 
-    // Jetpack Compose
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.compose.material:material:1.12.0")
-    implementation("androidx.compose.animation:animation:1.12.0")
-    implementation("androidx.compose.ui:ui-tooling:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.compose.ui:ui:1.12.0")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.12.0")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.0")
+    // Jetpack Compose — catalog-declared; see gradle/libs.versions.toml.
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    // Test-only artifacts stay off `implementation`: there, either would ship in the release APK.
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
