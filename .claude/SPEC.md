@@ -17,7 +17,7 @@ lane: mobile           # backend | mobile | web | docs | infra | -
 task: -                # task ID from current-plan.md (M-2, M-3), or - if not plan work
 issues: [146]          # issue numbers in THIS repo that merging this branch closes
 completes: no          # does merging this branch finish the whole task row?
-spec-objective: -      # section 2, collapsed to one line
+spec-objective: Enforce the Kotlin/stability-analyzer lockstep with a build gate, and move the Android app's inline dependency declarations into the catalog at identical resolved versions.
 ```
 
 ## 1. Overview
@@ -76,11 +76,81 @@ any of this to the other repositories in the fleet.
 
 ## 4. Implementation Plan and Progress Tracking (for agent)
 
-<Filled by `spec-development` in plan mode. GitHub-style checkboxes (`- [ ]`), one item per concrete task small enough to finish in a single resume pass.>
+Ordering note: item 1 deliberately bundles registration, `check` wiring, and CI classification into
+one pass. Splitting them would leave `verifyCheckPartition` failing between commits, and this
+workflow commits per item — the tree must be green at every tick.
+
+- [ ] Register `verifyStabilityAnalyzerKotlinAlignment` in the root build script, wire it into every
+      subproject's `check` (mirroring `checkNoDetektBaseline`), and classify it into
+      `androidCommonVerification` — all in one commit. The task reads the `kotlin` and
+      `compose-stability-analyzer` catalog refs and asserts the analyzer version is the release
+      recorded for that Kotlin version, in a mapping transcribed from the analyzer's README. It must
+      **fail closed** on a Kotlin version the mapping does not cover, since that is exactly the
+      unattended-bump case; the failure message must name both versions and point at the README
+      table. Host-portable (reads only catalog strings), so it belongs in the Android/common half.
+- [ ] Replace the `com.github.skydoves…` rule's description in `renovate.json` so it names the new
+      guard as the enforcement partner, matching how the `com.facebook:ktfmt` rule reads against
+      `verifyKtfmtAlignment`. Keep `enabled: false` — see §5 for why re-enabling or grouping is
+      rejected rather than deferred.
+- [ ] Capture the pre-migration dependency baselines and commit them to a scratch location outside
+      the repo: resolved graphs for the debug, release, and androidTest compile *and* runtime
+      classpaths, plus a `:cyclonedxBom` run. These must be taken **before** any catalog edit —
+      afterwards the baseline is unrecoverable without stashing, and a migration verified only
+      against the debug graph cannot detect a coordinate that changed variant scope.
+- [ ] Add `compose`, `androidx-lifecycle`, and `activity-compose` version refs to the catalog at the
+      versions the inline declarations currently pin, plus one library alias per artifact they
+      cover. Keep `compose-material-icons` a separate ref; it must not be folded into `compose`.
+- [ ] Replace the inline dependency declarations in the Android app's build script with the new
+      catalog aliases, preserving each declaration's existing configuration
+      (`implementation` / `androidTestImplementation` / `debugImplementation`).
+- [ ] Update the catalog's header and per-ref comments: drop the sentence recording inline
+      declarations as unmigrated debt (no longer true), and rewrite the `kotlin` and
+      `compose-stability-analyzer` comments to name the guard as what enforces the lockstep rather
+      than describing it as a convention to remember.
+- [ ] Update `.claude/CLAUDE.md`: add the guard to the Linting section alongside the existing drift
+      guards, and correct the version-catalog paragraph in Tech stack & versions, which still names
+      the Android Gradle Plugin as the *one* inline exception while the app block also exists.
 
 ## 5. Testing & Validation (for agent)
 
-<Filled by `spec-development` in plan mode. Each item pairs 1:1 with a §4 item: the test/build/lint command that verifies it.>
+- [ ] **Guard (item 1) — prove it fails, not just that it passes.** `./gradlew
+      verifyStabilityAnalyzerKotlinAlignment` passes on the current refs. Then perturb each side in
+      turn — analyzer moved off its recorded release, and `kotlin` moved to a version absent from
+      the mapping — and confirm each turns the task red with a message naming both versions. Restore
+      and re-run. A guard only verified green is a guard never verified: the analyzer sat mismatched
+      for twelve days while every build passed.
+- [ ] **Guard wiring (item 1).** `./gradlew verifyCheckPartition` passes, proving the new task is
+      classified; `./gradlew verifyAndroidCommon` reaches it. Confirm the partition guard *would*
+      have caught an unclassified task by checking it runs the new task in its closure rather than
+      by trusting the green result.
+- [ ] **Renovate (item 2).** `npx --yes renovate-config-validator renovate.json` (or the repo's
+      existing validation path) accepts the edited file. This item changes only a description
+      string, so the check is that nothing else moved: `git diff` touches one `description` value.
+- [ ] **Baselines (item 3).** Confirm the captures exist and are non-empty for every configuration
+      named there *before* any catalog edit lands. A missing baseline is discovered too late to
+      recreate.
+- [ ] **Catalog refs + inline replacement (items 4–5) — variant scope, not just version.** Diff the
+      post-migration graphs against every baseline: debug, **release**, and **androidTest**, compile
+      and runtime. All diffs must be empty. Diffing only the debug runtime graph cannot detect a
+      declaration that changed configuration — moving `ui-test-manifest` from `debugImplementation`
+      to `implementation`, or `ui-test-junit4` from `androidTestImplementation`, leaves the debug
+      graph byte-identical while adding a test-only artifact to the shipping release APK.
+- [ ] **Configuration preservation (item 5) — assert per coordinate.** Independently of the graph
+      diffs, walk the ten migrated declarations and confirm each kept its original configuration
+      (`implementation` / `androidTestImplementation` / `debugImplementation`). The graph diff is
+      the detector of last resort; this is the direct check, and it is the one that names the
+      mistake rather than showing a symptom.
+- [ ] **Icons ref (item 5).** Confirm `androidx.compose.material:material-icons-core` still resolves
+      to its own pinned version and was not dragged onto the Compose release train.
+- [ ] **SBOM (items 4–5).** `./gradlew :cyclonedxBom`, diffed against the baseline. Note its limit
+      explicitly: the SBOM is a component *inventory*, so an artifact that merely changed variant
+      scope still appears once and the diff stays empty. It verifies no component was added,
+      removed, or re-versioned — it does **not** verify scope, which is why the per-configuration
+      diffs above carry that burden.
+- [ ] **Docs (items 6–7).** `./gradlew check` passes end to end, and a read-through confirms no
+      surviving claim that the lockstep is merely a convention or that inline declarations remain.
+- [ ] **Whole gate.** `./gradlew check` green locally, and CI green on the PR — including `sca`,
+      which re-reads the dependency graph this branch touches.
 
 ## 6. Deployment
 
