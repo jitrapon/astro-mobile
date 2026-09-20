@@ -1,16 +1,10 @@
 package io.jitrapon.astro.ui.shell
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationDefaults
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldDefaults
 import androidx.compose.material.Text
@@ -23,16 +17,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
-import io.jitrapon.astro.R
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import kotlinx.coroutines.flow.StateFlow
@@ -141,58 +131,3 @@ private fun String?.toTabIcon(): ImageVector =
         "icon.wallet" -> Icons.Filled.ShoppingCart
         else -> Icons.Filled.Star
     }
-
-/** What stands in for a destination's screen until that screen is built. */
-@Composable
-private fun DestinationPlaceholder(tab: AppShellTab) {
-    CenteredMessage(
-        text = tab.label,
-        modifier = Modifier.testTag(AppShellTestTags.destinationPlaceholder(tab.destinationId)),
-    )
-}
-
-@Composable
-private fun LoadingPlaceholder(modifier: Modifier = Modifier) {
-    CenteredMessage(
-        text = stringResource(R.string.app_shell_loading),
-        modifier = modifier.testTag(AppShellTestTags.LOADING),
-        leading = { CircularProgressIndicator() },
-    )
-}
-
-/**
- * What the shell shows once a screen has arrived carrying nowhere to go. No progress indicator:
- * unlike [LoadingPlaceholder] this state is settled, and nothing further is coming to replace it.
- */
-@Composable
-private fun NoDestinationsPlaceholder(modifier: Modifier = Modifier) {
-    CenteredMessage(
-        text = stringResource(R.string.app_shell_no_destinations),
-        modifier = modifier.testTag(AppShellTestTags.NO_DESTINATIONS),
-    )
-}
-
-@Composable
-private fun FailurePlaceholder(modifier: Modifier = Modifier) {
-    CenteredMessage(
-        text = stringResource(R.string.app_shell_failure),
-        modifier = modifier.testTag(AppShellTestTags.FAILURE),
-    )
-}
-
-@Composable
-private fun CenteredMessage(
-    text: String,
-    modifier: Modifier = Modifier,
-    leading: (@Composable () -> Unit)? = null,
-) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            leading?.invoke()
-            Text(text = text, style = MaterialTheme.typography.h6)
-        }
-    }
-}
