@@ -88,7 +88,7 @@ workflow commits per item — the tree must be green at every tick.
       **fail closed** on a Kotlin version the mapping does not cover, since that is exactly the
       unattended-bump case; the failure message must name both versions and point at the README
       table. Host-portable (reads only catalog strings), so it belongs in the Android/common half.
-- [ ] Replace the `com.github.skydoves…` rule's description in `renovate.json` so it names the new
+- [x] Replace the `com.github.skydoves…` rule's description in `renovate.json` so it names the new
       guard as the enforcement partner, matching how the `com.facebook:ktfmt` rule reads against
       `verifyKtfmtAlignment`. Keep `enabled: false` — see §5 for why re-enabling or grouping is
       rejected rather than deferred.
@@ -123,7 +123,7 @@ workflow commits per item — the tree must be green at every tick.
       classified; `./gradlew verifyAndroidCommon` reaches it. Confirm the partition guard *would*
       have caught an unclassified task by checking it runs the new task in its closure rather than
       by trusting the green result.
-- [ ] **Renovate (item 2).** `npx --yes renovate-config-validator renovate.json` (or the repo's
+- [x] **Renovate (item 2).** `npx --yes renovate-config-validator renovate.json` (or the repo's
       existing validation path) accepts the edited file. This item changes only a description
       string, so the check is that nothing else moved: `git diff` touches one `description` value.
 - [ ] **Baselines (item 3).** Confirm the captures exist and are non-empty for every configuration

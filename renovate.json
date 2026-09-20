@@ -72,7 +72,7 @@
       ],
       "enabled": false,
       "minimumReleaseAge": "7 days",
-      "description": "Pin the Compose Stability Analyzer manually. It is a Kotlin compiler plugin that embeds kotlin-compiler-embeddable, so its version is hard-pinned to a specific Kotlin build (its version numbering — e.g. 0.7.0 — does not track Kotlin's, so Renovate cannot reason about compatibility). Bump it by hand together with any Kotlin upgrade, using the analyzer's README Kotlin-Version-Mapping table — the same manual-lockstep posture as com.facebook:ktfmt above."
+      "description": "Pin the Compose Stability Analyzer manually. It is a Kotlin compiler plugin that embeds kotlin-compiler-embeddable, so each release is built against one exact Kotlin version, and the verifyStabilityAnalyzerKotlinAlignment task asserts the catalog's compose-stability-analyzer ref is a release recorded for its kotlin ref. The analyzer's version numbering (e.g. 0.14.0) does not track Kotlin's, so Renovate cannot reason about the pairing: it would propose the newest analyzer, built against the newest Kotlin, whatever Kotlin this repo pins — a bump the guard can only fail. A Kotlin bump that lands alone fails the same guard, which fails closed on a Kotlin version its table does not cover. Bump this by hand together with kotlin, reading the analyzer README's Kotlin Version Mapping table and recording the new row in the guard — the same guard-enforced lockstep as com.facebook:ktfmt above."
     }
   ]
 }
