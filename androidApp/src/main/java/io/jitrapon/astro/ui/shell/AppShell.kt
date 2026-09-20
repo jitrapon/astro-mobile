@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationDefaults
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.ScaffoldDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -73,6 +75,10 @@ fun AppShell(state: AppShellState, modifier: Modifier = Modifier) {
  * root, and any other selected tab sits above it. Back from another tab therefore returns to the
  * first, and back from the first leaves the app. Entries are keyed by destination id, so two
  * destinations that route to the same screen still get separate entries and separate saved state.
+ *
+ * The window draws edge to edge, so the bar and the content below it take their insets explicitly:
+ * the default [BottomNavigation] and [Scaffold] overloads apply none, which would leave the tabs
+ * under the system navigation bar with their tap targets behind the system's own controls.
  */
 @Composable
 private fun TabbedShell(tabs: List<AppShellTab>, modifier: Modifier = Modifier) {
@@ -82,6 +88,7 @@ private fun TabbedShell(tabs: List<AppShellTab>, modifier: Modifier = Modifier) 
     val backStack = if (selectedTab == startTab) listOf(startTab) else listOf(startTab, selectedTab)
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
         modifier = modifier,
         bottomBar = {
             ShellBottomBar(
@@ -108,7 +115,10 @@ private fun ShellBottomBar(
     selectedTab: AppShellTab,
     onTabSelected: (AppShellTab) -> Unit,
 ) {
-    BottomNavigation(modifier = Modifier.testTag(AppShellTestTags.BOTTOM_BAR)) {
+    BottomNavigation(
+        windowInsets = BottomNavigationDefaults.windowInsets,
+        modifier = Modifier.testTag(AppShellTestTags.BOTTOM_BAR),
+    ) {
         tabs.forEach { tab ->
             BottomNavigationItem(
                 selected = tab.destinationId == selectedTab.destinationId,
