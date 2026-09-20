@@ -92,11 +92,19 @@ workflow commits per item — the tree must be green at every tick.
       guard as the enforcement partner, matching how the `com.facebook:ktfmt` rule reads against
       `verifyKtfmtAlignment`. Keep `enabled: false` — see §5 for why re-enabling or grouping is
       rejected rather than deferred.
-- [ ] Capture the pre-migration dependency baselines and commit them to a scratch location outside
+- [x] Capture the pre-migration dependency baselines and commit them to a scratch location outside
       the repo: resolved graphs for the debug, release, and androidTest compile *and* runtime
       classpaths, plus a `:cyclonedxBom` run. These must be taken **before** any catalog edit —
       afterwards the baseline is unrecoverable without stashing, and a migration verified only
       against the debug graph cannot detect a coordinate that changed variant scope.
+      - Captured at commit `9e8fd5a` into
+        `/private/tmp/claude-501/-Users-jitrapon-Developer-Projects-Astro-astro-mobile/33dbb241-17fd-4f58-b79b-38029f5610dc/scratchpad/146-baselines/`:
+        one `<configuration>.txt` per graph (`:androidApp:dependencies --configuration <name>` for
+        `debug`/`release`/`debugAndroidTest` × `CompileClasspath`/`RuntimeClasspath`), `bom.json`,
+        and `bom-components.txt` (sorted purls — diff this, not the raw BOM, whose serial number
+        and timestamp change every run). The directory is under `/tmp` and does not survive a
+        reboot; if it is gone, recreate it from a `git worktree` at `9e8fd5a` with the same
+        commands rather than from the migrated tree.
 - [ ] Add `compose`, `androidx-lifecycle`, and `activity-compose` version refs to the catalog at the
       versions the inline declarations currently pin, plus one library alias per artifact they
       cover. Keep `compose-material-icons` a separate ref; it must not be folded into `compose`.
@@ -126,7 +134,7 @@ workflow commits per item — the tree must be green at every tick.
 - [x] **Renovate (item 2).** `npx --yes renovate-config-validator renovate.json` (or the repo's
       existing validation path) accepts the edited file. This item changes only a description
       string, so the check is that nothing else moved: `git diff` touches one `description` value.
-- [ ] **Baselines (item 3).** Confirm the captures exist and are non-empty for every configuration
+- [x] **Baselines (item 3).** Confirm the captures exist and are non-empty for every configuration
       named there *before* any catalog edit lands. A missing baseline is discovered too late to
       recreate.
 - [ ] **Catalog refs + inline replacement (items 4–5) — variant scope, not just version.** Diff the
