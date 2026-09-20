@@ -5,7 +5,26 @@
 > skeleton. The newest round lives directly under this header; prior rounds are
 > demoted into the `Previous rounds` section between the markers below.
 
-## Latest round — 2026-09-20
+## Latest round — 2026-09-20 (round 2)
+
+- Base ref: `main`
+- Focus sent to Codex: the same branch summary as round 1, plus: "This is review round 2; round 1 raised two findings, both now fixed, and the fixes themselves are unreviewed and in scope: (a) the Android bottom bar and Scaffold applied zero window insets under enforced edge-to-edge — now they pass `BottomNavigationDefaults.windowInsets` / `ScaffoldDefaults.contentWindowInsets` and `MainActivity` calls `enableEdgeToEdge()`; (b) a loaded screen carrying no routable destinations projected to an indefinite `Loading` — now there is a settled `AppShellState.NoDestinations` case, guarded by `content != null && !isLoading`, rendered as a terminal no-progress message on both platforms. Scrutinise those two changes as hard as the rest." Plus the standard KMP watch-list, extended with inset and edge-to-edge regressions.
+
+# Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: approve
+
+No substantive ship-blocking finding supported by the inspected diff. Both round-one fixes address their reported failures. Review was static and read-only; builds, tests, and device behavior were not independently rerun.
+
+No material findings.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-20 — base `main`
+- Status when archived: both findings addressed on this branch — the high inset finding in commit 60834f2, the medium empty-navigation finding in commit f96f217. Round 2 re-reviewed both fixes and returned `approve` with no material findings.
 
 - Base ref: `main`
 - Focus sent to Codex: This branch gives both mobile apps a bottom-navigation app shell whose tabs render from the calendar screen contract's delivered `navigation.destinations` rather than a hardcoded list, with a placeholder screen reachable behind each destination. It adds a shared UI-agnostic projection in `:shared/commonMain` (`presentation/shell/AppShellState.kt` — `AppShellState`/`AppShellTab` and the pure `toAppShellState` mapping of `CalendarUiState`), an Android `AppShellViewModel` + Navigation 3 `AppShell` composable wired into `MainActivity` (Navigation 3 and material-icons-core declared in the version catalog), and a SwiftUI `AppShellView` wired into `ContentView` through `CalendarScreenObserver` with the deployment target raised to iOS 18. Kotlin Multiplatform Mobile app (shared business logic + Jetpack Compose on Android, SwiftUI on iOS); watch for expect/actual correctness, platform behavior divergence, coroutine/concurrency and main-thread-safety issues, null handling, state-management bugs, tab-identity/back-stack state bugs, and missing cross-platform test coverage.
@@ -56,9 +75,5 @@ Findings:
 Next steps:
 - Fix inset handling and verify the actual Android activity with loaded tabs.
 - Add a completed-empty shell state and cross-platform rendering coverage.
-
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 <!-- previous-rounds:end -->
