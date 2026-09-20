@@ -65,8 +65,42 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
    gh api repos/jitrapon/astro-docs/contents/current-plan.md -H "Accept: application/vnd.github.raw"
    ```
 
-   - **Find the task row.** Look for a task table row whose text matches the issue (by title, by an
-     issue link in the row, or by the issue naming the ID outright, e.g. “M-2” in the title or body).
+   - **Find the candidate rows — search the whole plan before narrowing.** The task tables are an
+     index: a row carries a one-line summary and the issues the task gates, and when its **Detail**
+     column links `[[tasks/<ID>]]` the full scope lives in that file — which may be the only place
+     an issue the task carries is named. So search the index and every detail file for this issue
+     first, over the HTTPS API rather than a git clone (no SSH credential prompt), with `<N>` the
+     issue number:
+
+     ```bash
+     docs=$(mktemp -d) && echo "$docs"
+     gh api repos/jitrapon/astro-docs/tarball/main > "$docs/docs.tgz" &&
+       tar -xzf "$docs/docs.tgz" -C "$docs" --strip-components=1
+     ```
+
+     Shell variables do not survive from one Bash call to the next, so note the printed path and
+     write it literally wherever `<docs>` appears below, including the cleanup.
+
+     ```bash
+     # grep exits 1 when nothing matches, a normal answer here; only 2 is an error
+     grep -nE 'jitrapon/astro-mobile/(issues|pull)/<N>([^0-9]|$)|(astro-mobile|mobile)#<N>([^0-9]|$)' \
+       "<docs>/current-plan.md" "<docs>"/tasks/*.md || [ $? -eq 1 ]
+     grep -nE '(^|[^0-9A-Za-z/])#<N>([^0-9]|$)' \
+       "<docs>/current-plan.md" "<docs>"/tasks/*.md || [ $? -eq 1 ]   # bare refs: weaker
+     ```
+
+     Candidates, strongest first: a row the issue names outright (e.g. “M-2” in the title or body);
+     a row in `current-plan.md` or a `tasks/<ID>.md` that links this issue — a hit in a detail file
+     counts exactly like a link in the row; a bare `#<N>`, weaker because bare numbers are ambiguous
+     across repos — keep it only when the surrounding text names this repo or its service; then rows
+     whose title or summary matches the issue's subject. Not every link means the task owns the
+     issue. A passage that hands the issue on (`→ <ID>`, "deferred to", "parked", "not <ID>'s to
+     close") is evidence for the task it points to, not for the row it sits in, and a row whose
+     summary starts with ✅ is finished. Offer a task that carries the issue before one that only
+     mentions it or hands it on, and put finished rows last. Read the detail file of each candidate
+     you offer. If the download fails, fall back to the `current-plan.md` fetched above and say the
+     detail files were not searched. Once section 0 is written, remove the directory with
+     `rm -rf <docs>`.
    - **Confirm with the user via `AskUserQuestion`** — question `"Which plan task does issue #<N>
      belong to?"`, header `"Plan task"`, option 1 the matched row, option 2 the next-most-plausible
      row, option 3 `"No task row"` — described as *"completes no row in `current-plan.md`; the

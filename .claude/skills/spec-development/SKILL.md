@@ -50,8 +50,27 @@ The Review-loop mode mirrors the Plan/Resume naming convention: `run the review`
    - `spec-objective` — section 2, collapsed to one line. It reaches a human only in the sync PR
      body; it is never written into the plan.
    - `completes` — `yes` only if merging this branch finishes the **whole** task row in
-     `current-plan.md`, not just this branch's slice of it. A branch that is one layer of a stack is
-     `completes: no`. Getting this wrong in the `yes` direction clears the lane's Status while most
+     `current-plan.md`, not just this branch's slice of it. The SPEC carries the task ID but not
+     the task's scope, and the plan's row is only a one-line summary, so fetch the scope before
+     deciding (skip when `task: -`, which is always `completes: no`):
+
+     ```bash
+     gh api repos/jitrapon/astro-docs/contents/current-plan.md -H "Accept: application/vnd.github.raw"
+     ```
+
+     Find the task's row. Only when its **Detail** column links `[[tasks/<ID>]]`, fetch that file as
+     well; a row without a link carries its whole goal inline, and there is no file to fetch:
+
+     ```bash
+     gh api repos/jitrapon/astro-docs/contents/tasks/<ID>.md -H "Accept: application/vnd.github.raw"
+     ```
+
+     **Set `completes: no` if the plan fetch fails, the row is not found, or a detail file the row
+     links cannot be fetched**, and say so when presenting the plan — `no` is the safe direction,
+     and it can be raised once the scope is readable. A row with no detail link is not a failure:
+     skip the second fetch, since that file does not exist.
+     A branch that is one layer of a stack is `completes: no`.
+     Getting this wrong in the `yes` direction clears the lane's Status while most
      of the task is still open, and `sync-plan` acts on it unattended.
    - Leave `lane` and `task` exactly as `scaffold-issue` recorded them. They were validated against
      the live plan with the user present; you are not in a position to second-guess them, and
