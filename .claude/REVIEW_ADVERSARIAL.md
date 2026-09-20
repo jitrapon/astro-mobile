@@ -5,7 +5,49 @@
 > skeleton. The newest round lives directly under this header; prior rounds are
 > demoted into the `Previous rounds` section between the markers below.
 
-## Latest round — 2026-09-20 (round 2)
+## Latest round — 2026-09-20 (round 3)
+
+- Base ref: `main`
+- Focus sent to Codex: scoped to commit 7b21eea, the no-action-bar theme added after round 2's approval. Asked it to challenge the `DeviceDefault` parent family against the Material 2 `AstroTheme`, whether `values-night` engages on API 23–28, window background / status-bar contrast / splash / configuration-change regressions, anything that assumed the action bar, and any remaining path where the bar or the barless placeholders collide with system bars or a cutout in landscape and three-button navigation.
+
+# Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: needs-attention
+
+Block on unreadable dark-mode placeholders. The theme split itself is compatible; the inspected Material inset defaults include display cutouts. Review was static; device behavior was not rerun.
+
+Findings:
+- [medium] Provide a Compose surface for the non-tab states (androidApp/src/main/java/io/jitrapon/astro/ui/shell/AppShell.kt:189-195)
+  The new night theme supplies a dark window background, but Loading, Failed and NoDestinations bypass Scaffold and render this transparent Box directly under AstroTheme. MaterialTheme does not set LocalContentColor; the inspected Material 1.12.0 sources default it to black, which this Text inherits. Consequently, these messages render black against the dark platform background. Failure and empty states can appear blank indefinitely. The existing assertIsDisplayed tests check layout visibility, not text contrast.
+  Recommendation: Wrap the non-tab states in a full-size Surface with MaterialTheme.colors.background and onBackground. Apply safeDrawing insets inside that surface, since these branches also bypass Scaffold's inset handling. Verify all three states in night mode with a screenshot or contrast-sensitive test.
+
+  **RESOLVED** — Reproduced on the emulator before fixing: with `cmd uimode night yes`, the failure
+  message rendered black on near-black and was effectively unreadable, while the instrumented test
+  asserting it `assertIsDisplayed` still passed — the node was laid out, only invisible. Confirms
+  both the finding and its note that the existing tests cannot see contrast. The three barless
+  states now draw on a `ShellBackdrop`: a `Surface` coloured `MaterialTheme.colors.background`,
+  which carries the matching content colour, with `safeDrawing` insets applied inside it since no
+  scaffold is applying any on those branches. Re-verified on device in both modes — legible light
+  text on dark, and the unchanged dark-on-light in day mode. The placeholders moved to
+  `AppShellPlaceholders.kt` because the backdrop pushed `AppShell.kt` past Detekt's
+  `TooManyFunctions` threshold, which this repo forbids silencing with a baseline or `@Suppress`.
+  A night-mode `@Preview` now covers the state that regressed.
+
+Next steps:
+- Fix placeholder foreground/background ownership and verify night-mode failure and empty states.
+- Validate the actual activity in landscape, with a display cutout and three-button navigation, on an older supported API and the target API. The night qualifier is supported since API 8: [Android resource documentation](https://developer.android.com/guide/topics/resources/providing-resources).
+
+**Open from the above next steps:** landscape, display-cutout, three-button-navigation and
+older-API verification have *not* been run — the device work covered gesture navigation in
+portrait on API 36 only.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-20 — base `main` (round 2)
+- Status when archived: approved with no findings. Superseded by round 3, which reviewed the theme fix that landed after this approval and found a dark-mode regression it had introduced.
 
 - Base ref: `main`
 - Focus sent to Codex: the same branch summary as round 1, plus: "This is review round 2; round 1 raised two findings, both now fixed, and the fixes themselves are unreviewed and in scope: (a) the Android bottom bar and Scaffold applied zero window insets under enforced edge-to-edge — now they pass `BottomNavigationDefaults.windowInsets` / `ScaffoldDefaults.contentWindowInsets` and `MainActivity` calls `enableEdgeToEdge()`; (b) a loaded screen carrying no routable destinations projected to an indefinite `Loading` — now there is a settled `AppShellState.NoDestinations` case, guarded by `content != null && !isLoading`, rendered as a terminal no-progress message on both platforms. Scrutinise those two changes as hard as the rest." Plus the standard KMP watch-list, extended with inset and edge-to-edge regressions.
@@ -18,10 +60,6 @@ Verdict: approve
 No substantive ship-blocking finding supported by the inspected diff. Both round-one fixes address their reported failures. Review was static and read-only; builds, tests, and device behavior were not independently rerun.
 
 No material findings.
-
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 ### 2026-09-20 — base `main`
 - Status when archived: both findings addressed on this branch — the high inset finding in commit 60834f2, the medium empty-navigation finding in commit f96f217. Round 2 re-reviewed both fixes and returned `approve` with no material findings.
