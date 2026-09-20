@@ -13,7 +13,9 @@
 # Codex Adversarial Review
 
 Target: branch diff against main
-Verdict: needs-attention
+Verdict: needs-attention — **both findings resolved** (1 high, 1 medium; 0 deferred, 0 dismissed).
+Verified after the fixes: `./gradlew check` exits 0 (including `verifyFrameworkHeaderSurface`) and
+the simulator `xcodebuild` of the `iosApp` scheme succeeds.
 
 Do not ship yet: Android tabs overlap system navigation, and valid empty navigation responses leave both apps loading indefinitely. Review was read-only; tests were not rerun.
 
@@ -35,6 +37,21 @@ Findings:
 - [medium] Distinguish completed empty navigation from loading (shared/src/commonMain/kotlin/io/jitrapon/astro/presentation/shell/AppShellState.kt:79-82)
   A successful response with no destinations, or only non-NavigateAction destinations, maps to Loading even when isLoading is false. Both apps then show an indefinite spinner with no navigation or recovery action. These responses are permitted by the vendored contract: destinations has no minimum length and accepts other action types. CalendarScreenQuery does not automatically schedule another exchange after a completed response, so waiting cannot resolve this state.
   Recommendation: Represent completed content with no routable destinations as an explicit empty or unsupported-navigation state, render a terminal message on both platforms, and test empty and non-navigating-only responses with isLoading=false.
+
+  **RESOLVED** — Confirmed against the vendored contract: `Navigation` declares `destinations` as
+  `required` but sets no `minItems`, and `NavDestination.action` accepts kinds other than
+  `NavigateAction`, so the response is legal and the projection did fall through to `Loading`.
+  Added `AppShellState.NoDestinations`: a screen that has already arrived carrying nothing routable,
+  with no exchange still in flight (`content != null && !isLoading`), is settled rather than
+  pending and now projects to it. A failure still wins over it, and an in-flight refresh over a
+  destination-less screen still shows `Loading`, since that exchange may yet deliver tabs. Both
+  apps render it as a terminal message with no progress indicator — Android
+  `NoDestinationsPlaceholder` behind `R.string.app_shell_no_destinations`, iOS an explicit
+  `AppShellStateNoDestinations` case ahead of the `default:` branch that previously absorbed it.
+  Covered by `aSettledScreenWithNoRoutableDestinationsHasNowhereToGo` (both the non-navigating-only
+  and the empty-array responses at `isLoading = false`) and
+  `aScreenWithNoRoutableDestinationsIsStillFailedOrLoadingWhenEitherApplies`, plus an instrumented
+  case and a preview on each platform.
 
 Next steps:
 - Fix inset handling and verify the actual Android activity with loaded tabs.

@@ -37,6 +37,12 @@ internal fun AppShellLoadingPreview() {
 
 @Preview(showBackground = true)
 @Composable
+internal fun AppShellNoDestinationsPreview() {
+    AstroTheme { AppShell(state = AppShellState.NoDestinations) }
+}
+
+@Preview(showBackground = true)
+@Composable
 internal fun AppShellFailurePreview() {
     AstroTheme {
         AppShell(state = AppShellState.Failed(IllegalStateException("No backend reachable")))

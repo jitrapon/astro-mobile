@@ -5,8 +5,8 @@ import io.jitrapon.astro.data.calendar.NavigateAction
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 
 /**
- * What the app shell around every screen shows: nothing yet, a reason nothing could be shown, or a
- * bottom bar of tabs.
+ * What the app shell around every screen shows: nothing yet, a reason nothing could be shown,
+ * nowhere to go, or a bottom bar of tabs.
  *
  * The tabs come only from the destinations a delivered screen carries — never from a list either
  * app keeps — so the product's information architecture stays a server decision. Destinations
@@ -16,6 +16,18 @@ sealed interface AppShellState {
 
     /** No screen has offered any destinations yet, and nothing has reported why not. */
     data object Loading : AppShellState
+
+    /**
+     * A screen arrived and carried nothing this app can route to, with no exchange still running
+     * behind it.
+     *
+     * Distinct from [Loading] because it is settled rather than pending: nothing further is on its
+     * way, so a shell that showed progress here would show it forever. The contract permits the
+     * response — `destinations` is required but has no minimum length, and a destination may carry
+     * an action that does not navigate — so this is a state to state plainly, not one to treat as
+     * impossible.
+     */
+    data object NoDestinations : AppShellState
 
     /** No screen with destinations could be shown, because the most recent exchange failed. */
     data class Failed(
@@ -70,8 +82,10 @@ data class AppShellTab(
  * - **A repeated destination id keeps its first occurrence.** Tab identity keys navigation state,
  *   so two tabs sharing an id would share — and corrupt — one back stack.
  * - **No tabs means no bar.** When nothing yields a tab, a reported failure projects to
- *   [AppShellState.Failed]; otherwise the shell is still [AppShellState.Loading], including when a
- *   loaded screen offered no routable destinations, since there is nothing to route to yet.
+ *   [AppShellState.Failed]. Otherwise a screen that has already arrived carrying nothing routable,
+ *   with no exchange still running behind it, projects to [AppShellState.NoDestinations] — it is
+ *   settled, and showing progress over it would show progress forever. Everything else, whether
+ *   nothing has been delivered yet or an exchange is still in flight, is [AppShellState.Loading].
  */
 fun CalendarUiState.toAppShellState(): AppShellState {
     val tabs = content?.screen?.navigation?.destinations.orEmpty().toAppShellTabs()
@@ -79,6 +93,7 @@ fun CalendarUiState.toAppShellState(): AppShellState {
     return when {
         tabs.isNotEmpty() -> AppShellState.Tabs(tabs)
         reportedFailure != null -> AppShellState.Failed(reportedFailure)
+        content != null && !isLoading -> AppShellState.NoDestinations
         else -> AppShellState.Loading
     }
 }

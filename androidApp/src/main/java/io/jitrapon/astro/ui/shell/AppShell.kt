@@ -59,6 +59,7 @@ fun AppShellRoute(shellState: StateFlow<AppShellState>, modifier: Modifier = Mod
 fun AppShell(state: AppShellState, modifier: Modifier = Modifier) {
     when (state) {
         AppShellState.Loading -> LoadingPlaceholder(modifier)
+        AppShellState.NoDestinations -> NoDestinationsPlaceholder(modifier)
         is AppShellState.Failed -> FailurePlaceholder(modifier)
         is AppShellState.Tabs -> TabbedShell(tabs = state.tabs, modifier = modifier)
     }
@@ -156,6 +157,18 @@ private fun LoadingPlaceholder(modifier: Modifier = Modifier) {
         text = stringResource(R.string.app_shell_loading),
         modifier = modifier.testTag(AppShellTestTags.LOADING),
         leading = { CircularProgressIndicator() },
+    )
+}
+
+/**
+ * What the shell shows once a screen has arrived carrying nowhere to go. No progress indicator:
+ * unlike [LoadingPlaceholder] this state is settled, and nothing further is coming to replace it.
+ */
+@Composable
+private fun NoDestinationsPlaceholder(modifier: Modifier = Modifier) {
+    CenteredMessage(
+        text = stringResource(R.string.app_shell_no_destinations),
+        modifier = modifier.testTag(AppShellTestTags.NO_DESTINATIONS),
     )
 }
 

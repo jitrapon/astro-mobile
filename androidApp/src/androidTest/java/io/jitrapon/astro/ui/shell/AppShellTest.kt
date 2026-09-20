@@ -94,6 +94,15 @@ class AppShellTest {
         composeRule.onNodeWithTag(AppShellTestTags.BOTTOM_BAR).assertDoesNotExist()
     }
 
+    @Test
+    fun noDestinationsShowsATerminalPlaceholderRatherThanProgress() {
+        showShell(MutableStateFlow(AppShellState.NoDestinations))
+
+        composeRule.onNodeWithTag(AppShellTestTags.NO_DESTINATIONS).assertIsDisplayed()
+        composeRule.onNodeWithTag(AppShellTestTags.LOADING).assertDoesNotExist()
+        composeRule.onNodeWithTag(AppShellTestTags.BOTTOM_BAR).assertDoesNotExist()
+    }
+
     private fun showShell(shellState: MutableStateFlow<AppShellState>) {
         composeRule.setContent { AstroTheme { AppShellRoute(shellState = shellState) } }
     }

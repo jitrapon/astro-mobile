@@ -2,8 +2,8 @@ import SwiftUI
 import shared
 
 /// The shell around every screen: a tab bar with one tab per destination the server delivered, and
-/// the selected destination's screen above it — or, before any destinations have arrived, a
-/// loading or failure placeholder with no tab bar at all.
+/// the selected destination's screen above it — or, when no destination is there to draw, a
+/// loading, failure or nothing-to-show placeholder with no tab bar at all.
 ///
 /// It draws a shell state and nothing more. Which destinations become tabs, and when the bar is
 /// shown, is decided once in the shared `toAppShellState()` projection, so this view and the
@@ -21,6 +21,10 @@ struct AppShellView: View {
             TabbedShellView(tabs: tabbed.tabs, initialSelection: initialSelection)
         case is AppShellStateFailed:
             ShellMessageView(message: "Couldn't load your calendar.")
+        case is AppShellStateNoDestinations:
+            // Settled, unlike the loading case below: no progress, because nothing further is
+            // coming to replace this.
+            ShellMessageView(message: "Nothing to show here yet.")
         default:
             ShellMessageView(message: "Loading…", showsProgress: true)
         }
@@ -130,6 +134,10 @@ private let previewTabs = [
 
 #Preview("Loading") {
     AppShellView(state: AppShellStateLoading.shared)
+}
+
+#Preview("No destinations") {
+    AppShellView(state: AppShellStateNoDestinations.shared)
 }
 
 #Preview("Failure") {

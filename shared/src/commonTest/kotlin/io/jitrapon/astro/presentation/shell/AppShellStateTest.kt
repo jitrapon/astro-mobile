@@ -128,7 +128,25 @@ class AppShellStateTest {
     }
 
     @Test
-    fun aScreenWithNoRoutableDestinationsIsFailedOrLoading() {
+    fun aSettledScreenWithNoRoutableDestinationsHasNowhereToGo() {
+        val nothingRoutable =
+            listOf(
+                withDestinations(destination("help", OpenUrlAction("https://astro.test/help"))),
+                withDestinations(),
+            )
+
+        nothingRoutable.forEach { screen ->
+            assertEquals(
+                AppShellState.NoDestinations,
+                CalendarUiState(content = screen, isLoading = false, failure = null)
+                    .toAppShellState(),
+                "A settled screen offering nothing routable did not project to NoDestinations",
+            )
+        }
+    }
+
+    @Test
+    fun aScreenWithNoRoutableDestinationsIsStillFailedOrLoadingWhenEitherApplies() {
         val screen = withDestinations(destination("help", OpenUrlAction("https://astro.test/help")))
 
         assertEquals(
@@ -138,7 +156,7 @@ class AppShellStateTest {
         )
         assertEquals(
             AppShellState.Loading,
-            CalendarUiState(content = screen, isLoading = false, failure = null).toAppShellState(),
+            CalendarUiState(content = screen, isLoading = true, failure = null).toAppShellState(),
         )
     }
 

@@ -3,4 +3,5 @@
     <string name="app_name">Astro</string>
     <string name="app_shell_loading">Loading…</string>
     <string name="app_shell_failure">Couldn\'t load your calendar.</string>
+    <string name="app_shell_no_destinations">Nothing to show here yet.</string>
 </resources>
