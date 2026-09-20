@@ -38,9 +38,26 @@ Next steps:
 - Fix placeholder foreground/background ownership and verify night-mode failure and empty states.
 - Validate the actual activity in landscape, with a display cutout and three-button navigation, on an older supported API and the target API. The night qualifier is supported since API 8: [Android resource documentation](https://developer.android.com/guide/topics/resources/providing-resources).
 
-**Open from the above next steps:** landscape, display-cutout, three-button-navigation and
-older-API verification have *not* been run — the device work covered gesture navigation in
-portrait on API 36 only.
+**Verified from the above next steps** (emulator, API 36, 1080x2400 @ 420dpi):
+
+- *Three-button navigation, portrait.* The navigation bar doubles to 126px (`[0,2274][1080,2400]`)
+  and the tab labels move up to match, landing at 2209–2252 — clear, with the same 22px margin the
+  gesture configuration leaves. The inset tracks the mode rather than being tuned for one of them.
+- *Landscape, three-button.* The bar rotates to the right edge (`[2274,0][2400,1080]`) and the
+  **horizontal** half of `WindowInsetsSides.Horizontal + Bottom` carries it: the tab row lays out
+  2274px wide, not 2400 — its two labels centre on x≈568.5 and x≈1705.5, the centres of a
+  126px-narrowed row — so nothing reaches the navigation strip. Vertically the labels end at 1058
+  of 1080, there being no bottom inset in this orientation.
+- *Both colour schemes*, via `cmd uimode night yes|no`, after the backdrop fix.
+
+Cosmetic, not fixed: with a horizontal inset the bar's *background* stops at the inset instead of
+extending behind the navigation strip, where against the bottom inset it does extend behind the
+gesture bar. That asymmetry is Material 2's own — `BottomNavigation` applies `windowInsetsPadding`
+to the `Row` inside its `Surface`, so the surface sizes to the padded row — and matching it would
+mean reimplementing the component.
+
+**Still open:** display-cutout and older-API (23–34) verification. No cutout device or older system
+image was available on this machine.
 
 <!-- previous-rounds:start -->
 
