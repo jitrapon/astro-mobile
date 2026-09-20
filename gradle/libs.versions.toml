@@ -67,6 +67,17 @@ koin = "4.2.2"
 # Jetpack Navigation 3 — the Android app's navigation framework (a Compose-state back stack
 # rendered by `NavDisplay`). `runtime` and `ui` release together and are bumped off this one ref.
 navigation3 = "1.1.7"
+# Jetpack Compose UI libraries — `ui` (with its tooling and test artifacts), `animation`, and
+# `material`. AndroidX versions these groups independently, but the app has always held them to one
+# release, and one ref keeps a bump from moving `ui` while leaving `ui-tooling` or the test
+# artifacts a release behind it. Not every `androidx.compose` coordinate belongs here: the icon
+# artifacts stopped releasing earlier and keep their own ref below.
+compose = "1.12.0"
+# AndroidX Lifecycle — `lifecycle-runtime-ktx` and `lifecycle-viewmodel-compose` release together.
+androidx-lifecycle = "2.11.0"
+# `activity-compose` — the `ComponentActivity.setContent` bridge. It belongs to the AndroidX
+# Activity release train, not Compose's, so it is versioned on its own.
+activity-compose = "1.13.0"
 # Material icons (core set) — the app shell's tab icons. `material` pulls it in only as a runtime
 # dependency, so the app declares it to compile against it. The icon artifacts stopped releasing at
 # 1.7.8; this is its final version, not one to track alongside the Compose UI libraries.
@@ -102,6 +113,19 @@ koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "compose-material-icons" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+androidx-compose-material = { module = "androidx.compose.material:material", version.ref = "compose" }
+androidx-compose-animation = { module = "androidx.compose.animation:animation", version.ref = "compose" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
+# Test-only artifacts. `ui-test-junit4` belongs on `androidTestImplementation` and
+# `ui-test-manifest` on `debugImplementation`; on `implementation` either would ship in the release
+# APK.
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }

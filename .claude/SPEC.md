@@ -105,7 +105,7 @@ workflow commits per item — the tree must be green at every tick.
         and timestamp change every run). The directory is under `/tmp` and does not survive a
         reboot; if it is gone, recreate it from a `git worktree` at `9e8fd5a` with the same
         commands rather than from the migrated tree.
-- [ ] Add `compose`, `androidx-lifecycle`, and `activity-compose` version refs to the catalog at the
+- [x] Add `compose`, `androidx-lifecycle`, and `activity-compose` version refs to the catalog at the
       versions the inline declarations currently pin, plus one library alias per artifact they
       cover. Keep `compose-material-icons` a separate ref; it must not be folded into `compose`.
 - [ ] Replace the inline dependency declarations in the Android app's build script with the new
