@@ -884,6 +884,26 @@ kotlin {
         it.binaries.framework { baseName = "shared" }
     }
 
+    // Fail the link on a partial-linkage problem instead of shipping a stub. When a klib calls an
+    // API that the version of a dependency Gradle selected no longer has — two third-party
+    // libraries wanting different versions of a transitive they share is enough — Kotlin/Native
+    // does not fail. It links a stub that throws only when that code runs, and by default it
+    // reports the substitution silently, so the defect is an iOS-only crash on whichever code path
+    // reaches the stub, invisible to every build and to the Android/JVM side entirely. `ERROR`
+    // turns that report into a failed link. This is not a leftover compiler argument: a report is
+    // fixed by aligning versions in gradle/libs.versions.toml, never by lowering this level or
+    // carving a target out. Configured over every Native target rather than the list above so a
+    // target added later inherits it.
+    //
+    // A debug link builds a compiler cache per dependency and reports only "There are linkage
+    // errors reported by the partial linkage engine", swallowing the symbol names. To see which
+    // symbol in which library is unresolved, re-run the failing link with the target's caches off
+    // (`-Pkotlin.native.cacheKind.iosSimulatorArm64=none`) or link the release framework, which
+    // uses none.
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+        compilerOptions { freeCompilerArgs.add("-Xpartial-linkage-loglevel=ERROR") }
+    }
+
     sourceSets {
         // The `iosMain` / `iosTest` intermediate source sets — and their dependsOn edges across
         // iosX64/iosArm64/iosSimulatorArm64 — are created automatically by Kotlin's default
@@ -1179,6 +1199,122 @@ val verifyFrameworkHeaderSurface =
     }
 
 tasks.named("check") { dependsOn(verifyFrameworkHeaderSurface) }
+
+/**
+ * Fails unless every Kotlin/Native link task is configured to turn a partial-linkage problem into a
+ * failed link, and none is configured to undo that.
+ *
+ * The flag is set once, over every Native target's `compilerOptions`, and reaches a link only
+ * because the Kotlin Gradle plugin seeds each link task's free compiler arguments from its
+ * compilation's. Neither half of that shows up in a green build when it breaks: a link that no
+ * longer receives the flag goes back to manufacturing stubs silently, which is the very outcome the
+ * flag exists to prevent. So the two regressions this task guards against are someone removing the
+ * flag, and a plugin upgrade changing how compilation options propagate — leaving the flag in the
+ * build file while no link sees it.
+ *
+ * [freeCompilerArgsByLinkTask] holds each link task's `toolOptions.freeCompilerArgs`, which is the
+ * complete list the link passes on: the `kotlin.native.linkArgs` Gradle property is appended to it,
+ * and a binary's own `freeCompilerArgs` is a view over that same property rather than a second
+ * input. Writing through that view — `+=` included — swaps the list seeded from the compilation for
+ * a fixed one, so an override declared before the flag is added does not sit beside the flag but
+ * drops it, and is reported as the flag missing rather than as a conflict.
+ *
+ * Three rules keep the check from passing vacuously:
+ * - link tasks are enumerated, never listed by name, so a target or build type added later is held
+ *   to the rule without anyone remembering to add it here;
+ * - finding no framework link at all is a failure, since a rule that holds over nothing proves
+ *   nothing — it means the enumeration, not the build, is what changed;
+ * - the expected argument is spelt out here rather than shared with the line that sets it, so a
+ *   typo there cannot agree with itself and pass.
+ */
+abstract class VerifyNativeLinksFailOnPartialLinkage : DefaultTask() {
+
+    @get:Input abstract val freeCompilerArgsByLinkTask: MapProperty<String, List<String>>
+
+    @get:Input abstract val frameworkLinkTaskNames: SetProperty<String>
+
+    @TaskAction
+    fun verify() {
+        val argsByLinkTask = freeCompilerArgsByLinkTask.get().toSortedMap()
+        val frameworkLinks = frameworkLinkTaskNames.get()
+        check(frameworkLinks.isNotEmpty()) {
+            "Found no Kotlin/Native framework link task among ${argsByLinkTask.keys} — the " +
+                "enumeration is wrong, so every link would pass this check without being read."
+        }
+
+        val violations = argsByLinkTask.mapNotNull { (linkTask, args) ->
+            val partialLinkageArgs = args.filter { it.startsWith(PARTIAL_LINKAGE_PREFIX) }
+            val conflicting = partialLinkageArgs.filterNot { it == FAIL_ON_PARTIAL_LINKAGE }
+            when {
+                FAIL_ON_PARTIAL_LINKAGE !in partialLinkageArgs ->
+                    "$linkTask is missing $FAIL_ON_PARTIAL_LINKAGE (has: $partialLinkageArgs)"
+                conflicting.isNotEmpty() ->
+                    "$linkTask also passes $conflicting, which overrides the ERROR level"
+                else -> null
+            }
+        }
+        check(violations.isEmpty()) {
+            buildString {
+                append(
+                    "A Kotlin/Native link would ship a partial-linkage stub instead of failing:\n"
+                )
+                violations.forEach { append("  - $it\n") }
+                append(
+                    "Fix: keep $FAIL_ON_PARTIAL_LINKAGE on every Native target's compilerOptions " +
+                        "and remove any per-binary or kotlin.native.linkArgs override. A linkage " +
+                        "report is resolved by aligning versions in gradle/libs.versions.toml, " +
+                        "never by lowering the level."
+                )
+            }
+        }
+        logger.lifecycle(
+            "Partial-linkage enforcement OK: all ${argsByLinkTask.size} Kotlin/Native link tasks " +
+                "(${frameworkLinks.size} framework links) pass $FAIL_ON_PARTIAL_LINKAGE."
+        )
+    }
+
+    private companion object {
+        const val PARTIAL_LINKAGE_PREFIX = "-Xpartial-linkage"
+        const val FAIL_ON_PARTIAL_LINKAGE = "-Xpartial-linkage-loglevel=ERROR"
+    }
+}
+
+// ----------------------------------------------------------------------------------------------
+// Partial-linkage enforcement guard
+//
+// Reads what each link task is configured to pass and runs no compiler, so it costs nothing
+// measurable. The arguments are handed over as providers of plain strings: they are read only once
+// every binary has finished configuring, and the task action holds no reference to a link task,
+// which keeps it configuration-cache-safe.
+//
+// Whether Kotlin/Native registers Apple link tasks on a non-macOS host is not something this build
+// can establish, and the no-framework-link rule would turn that uncertainty into a failure, so the
+// task skips elsewhere and is classified into `verifyIos` in the root build's CI partition.
+// ----------------------------------------------------------------------------------------------
+val verifyNativeLinksFailOnPartialLinkage =
+    tasks.register<VerifyNativeLinksFailOnPartialLinkage>("verifyNativeLinksFailOnPartialLinkage") {
+        group = "verification"
+        description =
+            "Fail if any Kotlin/Native link task would stub a partial-linkage problem " +
+                "instead of failing the link."
+        val nativeLinkTasks = tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink>()
+        freeCompilerArgsByLinkTask.set(
+            provider {
+                nativeLinkTasks.associate { it.name to it.toolOptions.freeCompilerArgs.get() }
+            }
+        )
+        frameworkLinkTaskNames.set(
+            provider {
+                nativeLinkTasks
+                    .filter { it.binary is org.jetbrains.kotlin.gradle.plugin.mpp.Framework }
+                    .map { it.name }
+            }
+        )
+        val hostIsMac = System.getProperty("os.name").startsWith("Mac")
+        onlyIf("Kotlin/Native links Apple frameworks only on a macOS host") { hostIsMac }
+    }
+
+tasks.named("check") { dependsOn(verifyNativeLinksFailOnPartialLinkage) }
 
 // Detect Apple Silicon *hardware*. `System.getProperty("os.arch")` is unreliable here: a Rosetta-
 // translated Gradle daemon reports `x86_64` even on an arm64 Mac, so it would misclassify the host.

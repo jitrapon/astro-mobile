@@ -715,6 +715,10 @@ val iosVerification =
         // Scans the linked framework's generated Objective-C header, and only a macOS host can
         // link one.
         ":shared" to "verifyFrameworkHeaderSurface",
+        // Reads each Kotlin/Native link task's configured arguments. It compiles nothing, but
+        // whether those link tasks are registered at all off macOS is not established, and the
+        // guard fails on finding none.
+        ":shared" to "verifyNativeLinksFailOnPartialLinkage",
         ":" to "swiftFormatCheck",
         ":" to "swiftLintCheck",
     )
