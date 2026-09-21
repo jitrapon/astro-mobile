@@ -258,13 +258,13 @@ dependencies {
 
     // Jetpack Compose
     implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.compose.material:material:1.12.0")
-    implementation("androidx.compose.animation:animation:1.12.0")
-    implementation("androidx.compose.ui:ui-tooling:1.12.0")
+    implementation("androidx.compose.material:material:1.12.1")
+    implementation("androidx.compose.animation:animation:1.12.1")
+    implementation("androidx.compose.ui:ui-tooling:1.12.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.compose.ui:ui:1.12.0")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.12.0")
+    implementation("androidx.compose.ui:ui:1.12.1")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.12.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.12.0")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.0")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.12.1")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.1")
 }
