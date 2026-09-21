@@ -111,7 +111,7 @@ workflow commits per item — the tree must be green at every tick.
 - [x] Replace the inline dependency declarations in the Android app's build script with the new
       catalog aliases, preserving each declaration's existing configuration
       (`implementation` / `androidTestImplementation` / `debugImplementation`).
-- [ ] Update the catalog's header and per-ref comments: drop the sentence recording inline
+- [x] Update the catalog's header and per-ref comments: drop the sentence recording inline
       declarations as unmigrated debt (no longer true), and rewrite the `kotlin` and
       `compose-stability-analyzer` comments to name the guard as what enforces the lockstep rather
       than describing it as a convention to remember.

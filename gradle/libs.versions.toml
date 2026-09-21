@@ -6,13 +6,21 @@
 #     jars, and `verifyKtfmtAlignment` all read the same versions and can never drift.
 #   * The product dependencies the shared module ships (kotlinx.serialization, kotlinx.coroutines,
 #     Ktor, Koin) together with the Kotlin version their compiler plugins are locked to, plus the
-#     Android app's own additions (Navigation 3). The app's older inline Compose/lifecycle
-#     declarations predate this rule and have not been migrated yet.
+#     Android app's own (Compose, AndroidX Lifecycle and Activity, Navigation 3). No module declares
+#     a dependency version inline.
 #   * The build tooling the security gates drive — the CycloneDX SBOM generator whose output the
 #     PR-blocking `sca` job scans. It ships nothing, but a bump changes what that gate can see.
 #
-# Android Gradle Plugin remains declared inline in the root `buildscript` classpath — it is the one
-# build-plugin version with no catalog consumer and no lockstep partner.
+# Two versions stay outside this file, both deliberately. Android Gradle Plugin remains declared
+# inline in the root `buildscript` classpath — it is the one build-plugin version with no catalog
+# consumer and no lockstep partner. The foojay toolchain resolver is pinned in `settings.gradle.kts`
+# because a settings plugin is resolved before this catalog is loaded, so it cannot be read from it.
+#
+# `kotlin` and `compose-stability-analyzer` MUST move together: the analyzer is a Kotlin compiler
+# plugin built against one exact Kotlin release. Unlike the ktfmt pairing below, the right analyzer
+# version cannot be derived from the Kotlin one — the pairing exists only in the analyzer README —
+# so `verifyStabilityAnalyzerKotlinAlignment` holds a transcribed table and fails the build when
+# the two refs disagree with it, or when `kotlin` moves to a version the table does not cover.
 #
 # `ktfmt` is the ncorti Gradle plugin; `ktfmt-cli` is the `com.facebook:ktfmt` formatter the plugin
 # bundles AND the standalone jar the pre-commit hook invokes. These two MUST stay aligned: ncorti
@@ -23,8 +31,10 @@
 # The Kotlin version every Kotlin *compiler* plugin on the buildscript classpath is locked to. The
 # Kotlin Gradle plugin, the Compose compiler plugin, and the kotlinx.serialization plugin all embed
 # compiler internals, so a mismatch against the Kotlin the build runs is a hard failure, not a
-# warning. Bumping Kotlin means bumping this ref and compose-stability-analyzer together — that one
-# is a compiler plugin with an exact-match Kotlin build, not a range.
+# warning. Those three read this ref and so move with it. compose-stability-analyzer below does not
+# — it is a compiler plugin versioned on its own, with an exact-match Kotlin build rather than a
+# range — so `verifyStabilityAnalyzerKotlinAlignment` fails every `check` when this ref moves
+# without it, including a move to a Kotlin version the guard's table does not cover yet.
 kotlin = "2.4.20"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
@@ -37,13 +47,16 @@ detekt = "1.23.8"
 # the RuleSetProvider package to `dev.detekt`.
 structured-coroutines = "1.1.1"
 # skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
-# version (it embeds kotlin-compiler-embeddable) and upstream ships one analyzer release per Kotlin
-# release. This must be the release built against the `kotlin` ref above — 0.14.0 is the 2.4.20
-# build — so bump the two in the same commit, reading the analyzer README's "Kotlin Version Mapping"
-# table. A mismatch is not a warning: a plugin built against a Kotlin older than the compiler
-# loading it fails with a ClassCastException on FirExtensionRegistrarAdapter as the plugin registers
-# its FIR extensions. A Kotlin bump that lands alone — a Renovate security bump, say — leaves this
-# ref behind and is the way that mismatch gets introduced.
+# version (it embeds kotlin-compiler-embeddable) and upstream builds each analyzer release against
+# one exact Kotlin release. This must be a release built against the `kotlin` ref above — 0.14.0 is
+# the 2.4.20 build. `verifyStabilityAnalyzerKotlinAlignment` in the root build script enforces that
+# in every `check`, against a table transcribed from the analyzer README's "Kotlin Version Mapping",
+# and fails closed on a Kotlin version the table does not cover — so a Kotlin bump edits three
+# places: both refs and that table. What it guards against is not a warning: a plugin built against
+# a Kotlin older than the compiler loading it fails with a ClassCastException on
+# FirExtensionRegistrarAdapter, but only as the plugin registers its FIR extensions, so a Kotlin
+# bump that lands alone — a Renovate security bump, say — would otherwise compile by luck in every
+# build that never reaches that path. Renovate is disabled for this ref for the same reason.
 compose-stability-analyzer = "0.14.0"
 # CycloneDX Gradle plugin — produces the SBOM the PR-blocking `sca` job hands to osv-scanner. It
 # ships in no artifact; it exists so software-composition analysis reads the RESOLVED Gradle graph
