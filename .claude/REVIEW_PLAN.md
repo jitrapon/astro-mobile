@@ -35,3 +35,34 @@ Next steps:
 - Expand verification to every configured iOS framework link.
 - Replace exploratory downgrading with a reproducible negative-test fixture.
 
+
+## Resolution log
+
+### Iteration 1 → dispositions
+
+Verified against the configured build with a read-only init-script probe before deciding: `:shared`
+has nine `KotlinNativeLink` tasks (six framework, three test), each exposing a readable
+`toolOptions.freeCompilerArgs`, all empty today.
+
+- **[high] Enforcement can disappear without any gate failing — AGREE.** Valid and in scope: §3
+  itself warns that a setting which misses the link "would leave the defect in place while looking
+  enforced", and a Kotlin Gradle plugin upgrade changing argument propagation would produce exactly
+  that with the flag still in the file. The probe showed the gate is cheap to build. Added §4 item 2
+  (`verifyNativeLinksFailOnPartialLinkage`: enumerates every link task, requires the flag, rejects
+  any conflicting `-Xpartial-linkage…` argument, fails on zero link tasks, classified into
+  `verifyIos` in the same commit) and two §5 checks (gate-vs-executed-arguments agreement; mutation
+  checks for removal, a non-reaching attachment form, and a per-binary override).
+- **[medium] The link-argument matrix does not cover every framework LINK task — AGREE.** Codex is
+  right on the facts: six framework links exist and the draft named four, omitting both release
+  simulator variants. §5 now executes all six, refuses `UP-TO-DATE` / `FROM-CACHE` / `SKIPPED` as
+  evidence, and names the fallback if `--info` does not print linker arguments. The gate closes the
+  class of error by enumerating tasks instead of listing them.
+- **[medium] The mandatory negative test has no reproducible construction — PARTIAL.** Adopted: the
+  rigor criteria (both runs execute the link, identical inputs but for the flag, a partial-linkage
+  diagnostic rather than an unrelated failure) and a bounded three-rung ladder ending in a
+  throwaway two-version library built outside the repo. Rejected: a *committed* deterministic klib
+  fixture. It would add a module and a publishing step to a build whose entire change is one
+  compiler flag, and the persistent gate — not the negative test — is what guards against
+  regression; the negative test's job is a one-time demonstration that the flag does what the
+  issue claims. "Stop and ask" stays as the terminal rung, since an item that cannot be evidenced
+  must not be ticked.

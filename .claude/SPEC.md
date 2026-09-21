@@ -73,10 +73,14 @@ green.
 
 ## 4. Implementation Plan and Progress Tracking (for agent)
 
-Context the plan rests on: `shared/build.gradle.kts` declares the three iOS targets and their
-`shared` framework binaries but sets **no** compiler arguments anywhere today, so "the build's
-current compiler-options style" means KGP's `compilerOptions` DSL (never the deprecated
-`kotlinOptions`). No new Gradle task is added, so `verifyCheckPartition` has nothing to classify.
+Context the plan rests on, established by a read-only probe of the configured build:
+`shared/build.gradle.kts` declares the three iOS targets and their `shared` framework binaries but
+sets **no** compiler arguments anywhere today, so "the build's current compiler-options style" means
+KGP's `compilerOptions` DSL (never the deprecated `kotlinOptions`). `:shared` has **nine**
+`KotlinNativeLink` tasks — six framework links (debug and release × `IosArm64`, `IosSimulatorArm64`,
+`IosX64`) and three test-binary links — and each exposes its configured
+`toolOptions.freeCompilerArgs` (currently empty on all nine), which is what makes a persistent gate
+buildable rather than aspirational.
 
 - [ ] Raise the partial-linkage log level to `ERROR` for every Kotlin/Native target in
       `shared/build.gradle.kts`, with the explanatory comment beside it. Configure it over
@@ -85,23 +89,39 @@ current compiler-options style" means KGP's `compilerOptions` DSL (never the dep
       attachment point by evidence, not by reading the DSL:** compilation-level `compilerOptions`
       and a binary's own `freeCompilerArgs` are different inputs to a `KotlinNativeLink` task, and
       stubs are manufactured at link. Start from the target/compilation `compilerOptions` form the
-      issue proposes; if §5's link-argument check shows the flag missing from a framework link, add
+      issue proposes; if §5 shows the flag missing from any link task's effective arguments, attach
       it to the binaries as well. The comment must state (a) that the compiler's default is to
       detect these problems silently, (b) that the consequence is an iOS-only crash on the code
       path that reaches the stub, and (c) that a report is fixed by aligning versions in the
       catalog, never by lowering the level — and it must reference no SPEC section or review round.
+- [ ] Add a persistent gate, `verifyNativeLinksFailOnPartialLinkage`, registered in
+      `shared/build.gradle.kts` (the only script with the Kotlin plugin's task types on its
+      classpath), wired into `:shared:check`, and classified into a CI half **in the same commit**
+      so `verifyCheckPartition` never fails between ticks. It enumerates every `KotlinNativeLink`
+      task rather than a hand-written list — a list is how a variant goes unverified — and fails
+      unless each one's effective free compiler arguments (a) contain
+      `-Xpartial-linkage-loglevel=ERROR` and (b) contain **no other** `-Xpartial-linkage…` argument
+      (a second log level, or `-Xpartial-linkage=disable`, from a per-binary override). It must also
+      fail when it finds **zero** framework link tasks: an enumeration over nothing is the vacuous
+      pass. Capture plain strings at configuration time so it stays configuration-cache-safe. It
+      guards against the two regressions no green build reveals: someone removing the flag, and a
+      Kotlin Gradle plugin upgrade changing how compilation options propagate so the flag still
+      sits in the build file but no longer reaches link. Classify into `verifyIos`: whether Native
+      link tasks are even registered on a non-macOS host is unverifiable from this machine, and the
+      zero-task rule would turn that uncertainty into a red Linux job; the gate costs the macOS
+      runner nothing measurable since it executes no compiler.
 - [ ] Resolve anything the enforcement reports by aligning versions in `gradle/libs.versions.toml`
       — never by suppression, a lower level, or a per-target carve-out. **If it reports anything,
       stop and split this item** into one sub-item per conflicting dependency before editing: the
       size of that work is unknowable until the flag is on, and version alignment re-opens the
       behaviour-preservation question (resolved graphs, the SBOM) that a one-line build change does
       not. If it reports nothing, tick this as a no-op and record the evidence under its §5 pair.
-- [ ] Update `.claude/CLAUDE.md` where it describes what the iOS gates catch (the `verify-ios`
-      bullet, and the shared-module patterns if a second mention reads naturally): the framework
-      link now fails on a partial-linkage problem, why the silent default was not acceptable here,
-      and that the remedy is catalog alignment. `shared/build.gradle.kts` is on the documented
-      config-files list, so an undocumented behaviour change there is what `finish-branch`'s drift
-      check would flag anyway. *(Not listed in §7, which the issue left empty — strike this item if
+- [ ] Update `.claude/CLAUDE.md`: the framework link now fails on a partial-linkage problem, why
+      the silent default was not acceptable here, that the remedy is catalog alignment, and the new
+      gate — in the commands table, in the `verify-ios` description of what that half carries, and
+      beside the other enforced-not-asserted guards. `shared/build.gradle.kts` is on the documented
+      config-files list and the gate is a new task inside `check`, both of which the doc already
+      commits to describing. *(§7 is empty because the issue named no docs — strike this item if
       the comment beside the flag is documentation enough.)*
 
 ## 5. Testing & Validation (for agent)
@@ -111,31 +131,47 @@ current compiler-options style" means KGP's `compilerOptions` DSL (never the dep
       vacuous pass this branch exists to remove. Confirm the Kotlin 2.4.20 Native compiler accepts
       `-Xpartial-linkage-loglevel=ERROR`: a forced re-run of a Native compile and a framework link
       emits no unsupported/unknown-argument warning naming it.
-- [ ] **Reaches the link, on every target (item 1).** Force-re-run the framework link for each iOS
-      target with Gradle's `--info` logging — `linkDebugFrameworkIosSimulatorArm64`,
-      `linkDebugFrameworkIosX64`, `linkDebugFrameworkIosArm64` and `linkReleaseFrameworkIosArm64`
-      (the one CI ships) — and find the flag in the argument list of the **link** invocation
-      itself. Seeing it on `compileKotlinIos*` proves nothing: that is klib compilation, where no
-      stub is made. Record which attachment point was needed.
-- [ ] **Prove it fails, not just that it passes (item 1).** On a scratch basis, never committed,
-      force an older version of a transitive dependency the third-party klibs call into (first
-      candidate: the I/O library underneath the HTTP client, whose API moved substantially between
-      releases) so a real unresolved reference exists. Then show both halves: with the flag the
-      framework link **fails** and names the unresolved symbol; with the flag removed the *same*
-      perturbation links **green**. The second half is what demonstrates the silent default and
-      that the flag — not something else — is doing the work. Revert and confirm `git status` shows
-      no trace. If no perturbation yields a linkage problem, do **not** tick this on the strength of
-      the argument check alone — stop and ask.
-- [ ] **Clean on today's graph (item 2).** With the flag on, every framework link above plus
-      `./gradlew verifyIos` is green — which also covers the simulator **test** binary's link and
-      `:shared:verifyFrameworkHeaderSurface`. If item 2 changed any version: re-diff the resolved
+- [ ] **Reaches every link, as executed (item 1).** Force each of the **six** framework links to
+      actually run (`--rerun` on the task, with `--info`) and find the flag in the argument list of
+      the **link** invocation itself — seeing it on `compileKotlinIos*` proves nothing, since that
+      is klib compilation, where no stub is made. A task reported `UP-TO-DATE`, `FROM-CACHE` or
+      `SKIPPED` is not evidence; re-run it. If `--info` does not print the linker arguments on this
+      Kotlin version, say so and substitute the compiler's own argument dump rather than inferring.
+      Record which attachment point was needed.
+- [ ] **The gate's model matches reality (item 2).** The gate reads *configured* arguments; the
+      check above reads *executed* ones. For at least one debug and the release `IosArm64` framework
+      link, confirm the two agree — otherwise the gate can be green while the linker never sees
+      the flag, which is the defect it exists to catch.
+- [ ] **The gate fails when it should (item 2).** Mutation checks, each reverted after: (a) remove
+      the flag → red, naming the link tasks missing it; (b) if any attachment form was found above
+      that does **not** reach link, switch to it → red; (c) add a conflicting per-binary override
+      to one framework (`-Xpartial-linkage-loglevel=WARNING`, then `-Xpartial-linkage=disable`) →
+      red, naming that binary; (d) restore → green. Then `./gradlew verifyCheckPartition` passes
+      and `./gradlew verifyIos` reaches the gate — confirmed from the task graph, not from the
+      green result.
+- [ ] **Prove the enforcement fails a real defect (item 1).** Scratch only, never committed. Work
+      this ladder in order and stop at the first rung that yields a genuine defect: (1) force an
+      older version of the I/O library underneath the HTTP client; (2) force an older version of
+      another transitive the third-party klibs share (atomics, coroutines core); (3) build a
+      throwaway two-version library *outside the repo* — a consumer klib compiled against an API,
+      its provider swapped for a version without it — and link it into a scratch framework. A rung
+      counts only if **all** hold: both runs execute the link rather than reuse it; the inputs are
+      identical except the flag; with the flag the link **fails** on a partial-linkage diagnostic
+      naming the unresolved symbol (a dependency-resolution or klib-compilation error is a
+      different failure and does not count); without the flag the same inputs link **green**. That
+      second half is what demonstrates the silent default and that the flag — not something else
+      — is doing the work. Revert and confirm `git status` shows no trace. If all three rungs fail,
+      do **not** tick this on the strength of the argument checks — stop and ask.
+- [ ] **Clean on today's graph (item 3).** With the flag on, all six framework links plus
+      `./gradlew verifyIos` are green — which also covers the three test-binary links and
+      `:shared:verifyFrameworkHeaderSurface`. If item 3 changed any version: re-diff the resolved
       `:androidApp` and `:shared` graphs and the `:cyclonedxBom` component inventory against
       `origin/main`, and account for every changed line.
-- [ ] **The app still builds against the framework (items 1–2).** Run CI's exact headless
+- [ ] **The app still builds against the framework (items 1–3).** Run CI's exact headless
       `xcodebuild` invocation (the *iOS app build (simulator)* row in `.claude/CLAUDE.md`). It
       links the framework through the Xcode embed path rather than the task `verifyIos` runs, so it
       is a second, independent route to the same enforcement.
-- [ ] **Docs (item 3).** `./gradlew check` green, and a read-through confirms CLAUDE.md claims
+- [ ] **Docs (item 4).** `./gradlew check` green, and a read-through confirms CLAUDE.md claims
       nothing the build does not enforce — in particular, it must not imply the Android/JVM side
       gained a comparable check.
 - [ ] **Whole gate, local.** `./gradlew check` green with every §4 item landed.
