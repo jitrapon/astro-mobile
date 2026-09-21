@@ -118,7 +118,7 @@ buildable rather than aspirational.
       not. If it reports nothing, tick this as a no-op and record the evidence under its §5 pair.
       *Outcome:* **no-op.** The enforcement reports nothing on today's graph, so no version moved
       and `gradle/libs.versions.toml` is untouched.
-- [ ] Update `.claude/CLAUDE.md`: the framework link now fails on a partial-linkage problem, why
+- [x] Update `.claude/CLAUDE.md`: the framework link now fails on a partial-linkage problem, why
       the silent default was not acceptable here, that the remedy is catalog alignment, and the new
       gate — in the commands table, in the `verify-ios` description of what that half carries, and
       beside the other enforced-not-asserted guards. `shared/build.gradle.kts` is on the documented
@@ -242,10 +242,21 @@ buildable rather than aspirational.
       the *same* `linkDebugFrameworkIosSimulatorArm64` that `verifyIos` does, under Xcode's
       environment. It is an independent *entry point* to the enforcement, not an independent link,
       which is why the argument gate covering that one task covers this route as well.
-- [ ] **Docs (item 4).** `./gradlew check` green, and a read-through confirms CLAUDE.md claims
+- [x] **Docs (item 4).** `./gradlew check` green, and a read-through confirms CLAUDE.md claims
       nothing the build does not enforce — in particular, it must not imply the Android/JVM side
       gained a comparable check.
-- [ ] **Whole gate, local.** `./gradlew check` green with every §4 item landed.
+      *Evidence:* `./gradlew check` → `BUILD SUCCESSFUL`. Three edits: a commands-table row, the
+      gate named in the `verify-ios` description, and a Linting entry beside the version-lockstep
+      guards. Read-through against the build file: the `withType<KotlinNativeTarget>()` attachment,
+      the 9 / 6 task counts (the gate's own output), the macOS `onlyIf`, the `verifyIos`
+      classification and the `kotlin.native.linkArgs` conflict path all match. The entry separates
+      what the gate proves (every link *would* fail) from what detects a defect (a link that
+      *executes*), states that CI executes four of the nine — checked against the commands in
+      `ci.yml` — and that Xcode's embed phase drives the same link tasks rather than its own. It
+      says outright that there is **no** Android/JVM counterpart.
+- [x] **Whole gate, local.** `./gradlew check` green with every §4 item landed.
+      *Evidence:* the same run, made with all four §4 items in the tree — `verifyCheckPartition`
+      and `verifyNativeLinksFailOnPartialLinkage` both executed inside it.
 
 CI is deliberately not a checkbox here. `verify-ios` and the release-framework link step only run
 once `finish-branch` pushes the branch to its PR, and the review loop refuses to start while any
