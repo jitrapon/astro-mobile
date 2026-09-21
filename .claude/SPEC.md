@@ -115,7 +115,7 @@ workflow commits per item — the tree must be green at every tick.
       declarations as unmigrated debt (no longer true), and rewrite the `kotlin` and
       `compose-stability-analyzer` comments to name the guard as what enforces the lockstep rather
       than describing it as a convention to remember.
-- [ ] Update `.claude/CLAUDE.md`: add the guard to the Linting section alongside the existing drift
+- [x] Update `.claude/CLAUDE.md`: add the guard to the Linting section alongside the existing drift
       guards, and correct the version-catalog paragraph in Tech stack & versions, which still names
       the Android Gradle Plugin as the *one* inline exception while the app block also exists.
 
@@ -155,10 +155,13 @@ workflow commits per item — the tree must be green at every tick.
       scope still appears once and the diff stays empty. It verifies no component was added,
       removed, or re-versioned — it does **not** verify scope, which is why the per-configuration
       diffs above carry that burden.
-- [ ] **Docs (items 6–7).** `./gradlew check` passes end to end, and a read-through confirms no
+- [x] **Docs (items 6–7).** `./gradlew check` passes end to end, and a read-through confirms no
       surviving claim that the lockstep is merely a convention or that inline declarations remain.
 - [ ] **Whole gate.** `./gradlew check` green locally, and CI green on the PR — including `sca`,
       which re-reads the dependency graph this branch touches.
+      - Local half done: `./gradlew check` green with every §4 item landed (90 tasks, the guard in
+        its graph). The CI half is only observable once `finish-branch` opens the PR, so this stays
+        unticked until those runs — `sca` included — are read green.
 
 ## 6. Deployment
 
