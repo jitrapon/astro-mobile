@@ -57,7 +57,7 @@ kotlinx-coroutines = "1.11.0"
 # Ktor 3.x. One version spans every client artifact — core, the content-negotiation plugin, the
 # kotlinx-json converter, both platform engines, and the MockEngine the tests drive — so they must
 # be bumped together off this single ref.
-ktor = "3.5.2"
+ktor = "3.6.0"
 # Koin — the shared module's DI container. Runtime resolution with no compile-time graph
 # validation, so `koin-test`'s graph-resolution check is the only thing that catches a missing
 # binding; keep the test artifact on the same version as the runtime.
