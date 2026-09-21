@@ -1,4 +1,4 @@
-Status: blocking
+Status: clear
 
 # Plan Review
 
@@ -66,3 +66,26 @@ has nine `KotlinNativeLink` tasks (six framework, three test), each exposing a r
   regression; the negative test's job is a one-time demonstration that the flag does what the
   issue claims. "Stop and ask" stays as the terminal rung, since an item that cannot be evidenced
   must not be ticked.
+
+## Iteration 2 — Codex output (verbatim)
+
+### Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: approve
+
+No remaining material plan blocker. The persistent gate and mutation checks close the enforcement-removal gap; executing all six framework links closes the matrix gap. The scratch two-version klib fallback and strict fail/green criteria adequately address the negative-test construction without requiring a committed fixture. Approval covers the plan; implementation and execution evidence remain outstanding.
+
+No material findings.
+
+Next steps:
+- Implement the gate and enforcement, then complete the specified mutation, executed-argument, and negative-link checks before marking validation complete.
+
+
+### Iteration 2 → outcome
+
+**Cleared.** Verdict `approve`, no findings: Codex confirms the persistent gate plus mutation checks
+close the enforcement-removal gap, executing all six framework links closes the matrix gap, and the
+scratch two-version fallback with strict fail/green criteria is adequate without a committed
+fixture — so the iteration-1 PARTIAL disposition stands unchallenged. Approval covers the plan
+only; every §5 check is still outstanding evidence.
