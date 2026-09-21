@@ -94,7 +94,7 @@ buildable rather than aspirational.
       detect these problems silently, (b) that the consequence is an iOS-only crash on the code
       path that reaches the stub, and (c) that a report is fixed by aligning versions in the
       catalog, never by lowering the level — and it must reference no SPEC section or review round.
-- [ ] Add a persistent gate, `verifyNativeLinksFailOnPartialLinkage`, registered in
+- [x] Add a persistent gate, `verifyNativeLinksFailOnPartialLinkage`, registered in
       `shared/build.gradle.kts` (the only script with the Kotlin plugin's task types on its
       classpath), wired into `:shared:check`, and classified into a CI half **in the same commit**
       so `verifyCheckPartition` never fails between ticks. It enumerates every `KotlinNativeLink`
@@ -147,17 +147,41 @@ buildable rather than aspirational.
       `iosSimulatorArm64`, `iosX64`), every task executed rather than reused, carry the flag and
       exactly one `-Xpartial-linkage…` argument. **Attachment point needed: target-level
       `compilerOptions` alone** — no per-binary `freeCompilerArgs`.
-- [ ] **The gate's model matches reality (item 2).** The gate reads *configured* arguments; the
+- [x] **The gate's model matches reality (item 2).** The gate reads *configured* arguments; the
       check above reads *executed* ones. For at least one debug and the release `IosArm64` framework
       link, confirm the two agree — otherwise the gate can be green while the linker never sees
       the flag, which is the defect it exists to catch.
-- [ ] **The gate fails when it should (item 2).** Mutation checks, each reverted after: (a) remove
+      *Evidence:* the Kotlin Gradle plugin's link task builds its arguments from
+      `toolOptions.freeCompilerArgs` alone — a binary's own `freeCompilerArgs` is a view over that
+      property, not a second input — so that is what the gate reads. For
+      `linkDebugFrameworkIosSimulatorArm64` and `linkReleaseFrameworkIosArm64`, each forced with
+      `--rerun --debug` and confirmed executed: configured (read by a scratch init script,
+      independently of the gate) `[-Xpartial-linkage-loglevel=ERROR]`; executed (`-produce
+      framework` dump, attributed by its `-output`) exactly one `-Xpartial-linkage…` argument, the
+      same one. The gate reports 9 link tasks, 6 of them framework links, matching the probe.
+- [x] **The gate fails when it should (item 2).** Mutation checks, each reverted after: (a) remove
       the flag → red, naming the link tasks missing it; (b) if any attachment form was found above
       that does **not** reach link, switch to it → red; (c) add a conflicting per-binary override
       to one framework (`-Xpartial-linkage-loglevel=WARNING`, then `-Xpartial-linkage=disable`) →
       red, naming that binary; (d) restore → green. Then `./gradlew verifyCheckPartition` passes
       and `./gradlew verifyIos` reaches the gate — confirmed from the task graph, not from the
       green result.
+      *Evidence:* (a) flag removed → red, all nine link tasks named as missing it. (b) **No
+      attachment form that fails to reach link was found.** The candidate — the flag on the
+      `KotlinNativeCompile` tasks only — left the gate green, and an executed debug link under
+      that mutation showed the gate was right: the link received the flag, because a Native
+      compile task's `compilerOptions` is its compilation's, which seeds the link. (c) per-binary
+      `WARNING`, then `-Xpartial-linkage=disable`, on the `iosArm64` frameworks → red each time,
+      naming `linkDebugFrameworkIosArm64` and `linkReleaseFrameworkIosArm64` only. Declared
+      *before* the flag is set, the override reports as the flag **missing**: `+=` on a binary
+      replaces the seeded list rather than appending to it. Declared after it, or passed as
+      `-Pkotlin.native.linkArgs=…`, it reports as a **conflict** — both branches exercised. Also:
+      `freeCompilerArgs = listOf(…)` on a binary → red; the framework filter pointed at a binary
+      type that matches nothing → red on the no-framework-link rule. (d) restored → green, under
+      a stored, a reused, and a disabled configuration cache. `verifyCheckPartition` passes at 48
+      tasks and goes red naming the gate when its `verifyIos` classification is removed;
+      `--dry-run` shows the gate in the `verifyIos` and `:shared:check` graphs and absent from
+      `verifyAndroidCommon`. The gate skips off macOS, as `verifyFrameworkHeaderSurface` does.
 - [x] **Prove the enforcement fails a real defect (item 1).** Scratch only, never committed. Work
       this ladder in order and stop at the first rung that yields a genuine defect: (1) force an
       older version of the I/O library underneath the HTTP client; (2) force an older version of
