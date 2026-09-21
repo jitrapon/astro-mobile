@@ -884,6 +884,26 @@ kotlin {
         it.binaries.framework { baseName = "shared" }
     }
 
+    // Fail the link on a partial-linkage problem instead of shipping a stub. When a klib calls an
+    // API that the version of a dependency Gradle selected no longer has — two third-party
+    // libraries wanting different versions of a transitive they share is enough — Kotlin/Native
+    // does not fail. It links a stub that throws only when that code runs, and by default it
+    // reports the substitution silently, so the defect is an iOS-only crash on whichever code path
+    // reaches the stub, invisible to every build and to the Android/JVM side entirely. `ERROR`
+    // turns that report into a failed link. This is not a leftover compiler argument: a report is
+    // fixed by aligning versions in gradle/libs.versions.toml, never by lowering this level or
+    // carving a target out. Configured over every Native target rather than the list above so a
+    // target added later inherits it.
+    //
+    // A debug link builds a compiler cache per dependency and reports only "There are linkage
+    // errors reported by the partial linkage engine", swallowing the symbol names. To see which
+    // symbol in which library is unresolved, re-run the failing link with the target's caches off
+    // (`-Pkotlin.native.cacheKind.iosSimulatorArm64=none`) or link the release framework, which
+    // uses none.
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+        compilerOptions { freeCompilerArgs.add("-Xpartial-linkage-loglevel=ERROR") }
+    }
+
     sourceSets {
         // The `iosMain` / `iosTest` intermediate source sets — and their dependsOn edges across
         // iosX64/iosArm64/iosSimulatorArm64 — are created automatically by Kotlin's default

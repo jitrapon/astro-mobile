@@ -82,7 +82,7 @@ KGP's `compilerOptions` DSL (never the deprecated `kotlinOptions`). `:shared` ha
 `toolOptions.freeCompilerArgs` (currently empty on all nine), which is what makes a persistent gate
 buildable rather than aspirational.
 
-- [ ] Raise the partial-linkage log level to `ERROR` for every Kotlin/Native target in
+- [x] Raise the partial-linkage log level to `ERROR` for every Kotlin/Native target in
       `shared/build.gradle.kts`, with the explanatory comment beside it. Configure it over
       `targets.withType<KotlinNativeTarget>()` rather than the hand-written three-target list, so a
       Native target added later inherits the enforcement instead of having to opt in. **Choose the
@@ -126,18 +126,27 @@ buildable rather than aspirational.
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **Flag accepted, not ignored (item 1).** Kotlin treats an unknown `-X` argument as a
+- [x] **Flag accepted, not ignored (item 1).** Kotlin treats an unknown `-X` argument as a
       *warning*, so a misspelt or renamed flag builds green while enforcing nothing — the same
       vacuous pass this branch exists to remove. Confirm the Kotlin 2.4.20 Native compiler accepts
       `-Xpartial-linkage-loglevel=ERROR`: a forced re-run of a Native compile and a framework link
       emits no unsupported/unknown-argument warning naming it.
-- [ ] **Reaches every link, as executed (item 1).** Force each of the **six** framework links to
+      *Evidence:* zero `Flag is not supported` lines across the forced six-link run. Control, so
+      the absence means something: misspelt as `-loglevl=`, the compile **and** the link each
+      printed `w: Flag is not supported by this version of the compiler` — and still exited 0.
+- [x] **Reaches every link, as executed (item 1).** Force each of the **six** framework links to
       actually run (`--rerun` on the task, with `--info`) and find the flag in the argument list of
       the **link** invocation itself — seeing it on `compileKotlinIos*` proves nothing, since that
       is klib compilation, where no stub is made. A task reported `UP-TO-DATE`, `FROM-CACHE` or
       `SKIPPED` is not evidence; re-run it. If `--info` does not print the linker arguments on this
       Kotlin version, say so and substitute the compiler's own argument dump rather than inferring.
       Record which attachment point was needed.
+      *Evidence:* `--info` prints **no** link arguments on Kotlin 2.4.20, so the `--debug`
+      `Arguments = [` dump was substituted and each dump attributed by its own `-produce` /
+      `-output`. All six `-produce framework` dumps (debug + release × `iosArm64`,
+      `iosSimulatorArm64`, `iosX64`), every task executed rather than reused, carry the flag and
+      exactly one `-Xpartial-linkage…` argument. **Attachment point needed: target-level
+      `compilerOptions` alone** — no per-binary `freeCompilerArgs`.
 - [ ] **The gate's model matches reality (item 2).** The gate reads *configured* arguments; the
       check above reads *executed* ones. For at least one debug and the release `IosArm64` framework
       link, confirm the two agree — otherwise the gate can be green while the linker never sees
@@ -149,7 +158,7 @@ buildable rather than aspirational.
       red, naming that binary; (d) restore → green. Then `./gradlew verifyCheckPartition` passes
       and `./gradlew verifyIos` reaches the gate — confirmed from the task graph, not from the
       green result.
-- [ ] **Prove the enforcement fails a real defect (item 1).** Scratch only, never committed. Work
+- [x] **Prove the enforcement fails a real defect (item 1).** Scratch only, never committed. Work
       this ladder in order and stop at the first rung that yields a genuine defect: (1) force an
       older version of the I/O library underneath the HTTP client; (2) force an older version of
       another transitive the third-party klibs share (atomics, coroutines core); (3) build a
@@ -162,6 +171,23 @@ buildable rather than aspirational.
       second half is what demonstrates the silent default and that the flag — not something else
       — is doing the work. Revert and confirm `git status` shows no trace. If all three rungs fail,
       do **not** tick this on the strength of the argument checks — stop and ask.
+      *Evidence:* **Rung 1 did not count.** kotlinx-io forced under `ktor-io` 3.6.0 is a cliff:
+      `0.5.4`–`0.8.0` link clean, and `0.4.0`/`0.3.0` fail **with or without** the flag, because
+      the stub for `kotlinx.io.unsafe/UnsafeBufferOperations` lands inside a Ktor inline function
+      and crashes the backend (`Internal error in body lowering`) — a compiler crash, not the
+      silent default. **Rung 2 counts:** `kotlinx-coroutines-core` forced to `1.9.0` (forced
+      version confirmed on the link line). On the shipping `linkReleaseFrameworkIosArm64`, both
+      runs under `--rerun`, inputs identical but for the flag: flag on → the **link** fails (klib
+      compile green) with 9 diagnostics such as `No constructor found for symbol
+      'kotlin/SubclassOptInRequired.<init>|<init>(kotlin.reflect.KClass<out|kotlin.Annotation>)'`;
+      flag off → `BUILD SUCCESSFUL`, not one line about linkage. Same pair on
+      `linkDebugFrameworkIosSimulatorArm64`. atomicfu back to `0.23.2` links clean. Two behaviours
+      found on the way, both now in the comment beside the flag or relevant to item 4: a debug
+      link (per-dependency compiler caches) prints only the engine's summary line and swallows the
+      symbol names, which `-Pkotlin.native.cacheKind.<target>=none` or a release link surfaces;
+      and a cached debug link is *stricter* than a release link — serialization forced to `1.6.3`
+      fails the former only, since a whole-program link never visits a broken declaration nothing
+      reaches. Scratch reverted; the tree held only item 1's edit.
 - [ ] **Clean on today's graph (item 3).** With the flag on, all six framework links plus
       `./gradlew verifyIos` are green — which also covers the three test-binary links and
       `:shared:verifyFrameworkHeaderSurface`. If item 3 changed any version: re-diff the resolved
