@@ -219,6 +219,81 @@ subprojects {
     tasks.matching { it.name == "check" }.configureEach { dependsOn(verifyVendoredContractParity) }
 }
 
+// Kotlin ↔ Compose stability analyzer lockstep guard. The analyzer is a Kotlin compiler plugin
+// built
+// against one exact Kotlin release, so the catalog's `kotlin` and `compose-stability-analyzer` refs
+// must move together. Nothing else notices when they don't: a plugin built against an older Kotlin
+// than the compiler loading it throws a ClassCastException on FirExtensionRegistrarAdapter only
+// when it registers, so a Kotlin bump that lands alone — a dependency bot editing one version line
+// — can compile by luck for as long as no build exercises that path.
+//
+// Unlike `verifyKtfmtAlignment`, which derives the right answer by resolving the artifact the
+// plugin bundles, this pairing cannot be computed from the two refs: they hold unrelated values
+// whose relationship exists only in the analyzer README's "Kotlin Version Mapping" table. So the
+// table is transcribed below and the task FAILS CLOSED — a Kotlin version the table does not cover
+// is an error, never a pass, because an uncovered Kotlin version is exactly what an unattended bump
+// produces. Bumping Kotlin therefore means editing three places (both refs and this table), and
+// forgetting the third fails loudly rather than silently.
+//
+// One Kotlin release can have several analyzer releases built against it, so the table maps each
+// Kotlin version to the SET of analyzer releases recorded for it; any member of the set is aligned.
+//
+// Only catalog strings are captured, so the task is configuration-cache-safe and host-portable.
+val verifyStabilityAnalyzerKotlinAlignment =
+    tasks.register("verifyStabilityAnalyzerKotlinAlignment") {
+        group = "verification"
+        description =
+            "Fail if the compose-stability-analyzer ref is not a release built against the " +
+                "catalog's Kotlin version."
+
+        val kotlinVersion = libs.versions.kotlin.get()
+        val analyzerVersion = libs.versions.compose.stability.analyzer.get()
+        val mappingSource =
+            "https://github.com/skydoves/compose-stability-analyzer#kotlin-version-mapping"
+        // Transcribed from the README table at `mappingSource`. Add a row when bumping Kotlin;
+        // never widen an existing row without the README recording that pairing.
+        val analyzerReleasesByKotlinVersion =
+            mapOf(
+                "2.4.20" to setOf("0.14.0"),
+                "2.4.10" to setOf("0.13.0"),
+                "2.4.0" to setOf("0.9.0", "0.10.0", "0.11.0", "0.11.1", "0.12.0"),
+            )
+
+        doLast {
+            val alignedReleases = analyzerReleasesByKotlinVersion[kotlinVersion]
+            checkNotNull(alignedReleases) {
+                "Cannot verify the stability analyzer: gradle/libs.versions.toml pins " +
+                    "kotlin=$kotlinVersion, which the recorded Kotlin Version Mapping does not " +
+                    "cover (compose-stability-analyzer=$analyzerVersion). An uncovered Kotlin " +
+                    "version is how a Kotlin bump that left the analyzer behind looks, so this " +
+                    "fails rather than passes. Read $mappingSource, move " +
+                    "compose-stability-analyzer to the release built against Kotlin " +
+                    "$kotlinVersion, and record that row in " +
+                    "verifyStabilityAnalyzerKotlinAlignment."
+            }
+            check(analyzerVersion in alignedReleases) {
+                "Stability analyzer / Kotlin drift: gradle/libs.versions.toml pins " +
+                    "compose-stability-analyzer=$analyzerVersion against kotlin=$kotlinVersion, " +
+                    "but the releases recorded as built against Kotlin $kotlinVersion are " +
+                    "${alignedReleases.joinToString()}. The analyzer is a compiler plugin with an " +
+                    "exact-match Kotlin build, so bump the two refs in lockstep per $mappingSource."
+            }
+            logger.lifecycle(
+                "Stability analyzer alignment OK: compose-stability-analyzer $analyzerVersion is " +
+                    "built against Kotlin $kotlinVersion."
+            )
+        }
+    }
+
+// Every module's `check` runs the lockstep guard, mirroring the checkNoDetektBaseline wiring: the
+// catalog is a repo-wide artifact, so a drifted pairing fails `./gradlew check` whichever
+// subproject is being verified — including :shared, which does not apply the analyzer itself.
+subprojects {
+    tasks
+        .matching { it.name == "check" }
+        .configureEach { dependsOn(verifyStabilityAnalyzerKotlinAlignment) }
+}
+
 // Git-hook tooling. The pre-commit hook invokes ktfmt and detekt as standalone CLI jars rather than
 // through the Gradle daemon — the daemon path is ~15–20 s, the direct-jar path is ~1–2 s, which is
 // the difference between a hook that runs on every commit and one that gets `--no-verify`'d away.
@@ -661,6 +736,9 @@ val androidCommonVerification =
         // no Mac. It sits in this half because the astro-docs submodule is fetched on the Linux
         // job.
         ":" to "verifyVendoredContractParity",
+        // Host-portable: the guard compares two version-catalog strings against a recorded table,
+        // so it needs neither a Mac nor a compiled module.
+        ":" to "verifyStabilityAnalyzerKotlinAlignment",
     )
 
 val verifyIos =

@@ -6,13 +6,21 @@
 #     jars, and `verifyKtfmtAlignment` all read the same versions and can never drift.
 #   * The product dependencies the shared module ships (kotlinx.serialization, kotlinx.coroutines,
 #     Ktor, Koin) together with the Kotlin version their compiler plugins are locked to, plus the
-#     Android app's own additions (Navigation 3). The app's older inline Compose/lifecycle
-#     declarations predate this rule and have not been migrated yet.
+#     Android app's own (Compose, AndroidX Lifecycle and Activity, Navigation 3). No module declares
+#     a dependency version inline.
 #   * The build tooling the security gates drive — the CycloneDX SBOM generator whose output the
 #     PR-blocking `sca` job scans. It ships nothing, but a bump changes what that gate can see.
 #
-# Android Gradle Plugin remains declared inline in the root `buildscript` classpath — it is the one
-# build-plugin version with no catalog consumer and no lockstep partner.
+# Two versions stay outside this file, both deliberately. Android Gradle Plugin remains declared
+# inline in the root `buildscript` classpath — it is the one build-plugin version with no catalog
+# consumer and no lockstep partner. The foojay toolchain resolver is pinned in `settings.gradle.kts`
+# because a settings plugin is resolved before this catalog is loaded, so it cannot be read from it.
+#
+# `kotlin` and `compose-stability-analyzer` MUST move together: the analyzer is a Kotlin compiler
+# plugin built against one exact Kotlin release. Unlike the ktfmt pairing below, the right analyzer
+# version cannot be derived from the Kotlin one — the pairing exists only in the analyzer README —
+# so `verifyStabilityAnalyzerKotlinAlignment` holds a transcribed table and fails the build when
+# the two refs disagree with it, or when `kotlin` moves to a version the table does not cover.
 #
 # `ktfmt` is the ncorti Gradle plugin; `ktfmt-cli` is the `com.facebook:ktfmt` formatter the plugin
 # bundles AND the standalone jar the pre-commit hook invokes. These two MUST stay aligned: ncorti
@@ -23,7 +31,10 @@
 # The Kotlin version every Kotlin *compiler* plugin on the buildscript classpath is locked to. The
 # Kotlin Gradle plugin, the Compose compiler plugin, and the kotlinx.serialization plugin all embed
 # compiler internals, so a mismatch against the Kotlin the build runs is a hard failure, not a
-# warning. Bumping Kotlin means bumping this one ref and re-checking compose-stability-analyzer.
+# warning. Those three read this ref and so move with it. compose-stability-analyzer below does not
+# — it is a compiler plugin versioned on its own, with an exact-match Kotlin build rather than a
+# range — so `verifyStabilityAnalyzerKotlinAlignment` fails every `check` when this ref moves
+# without it, including a move to a Kotlin version the guard's table does not cover yet.
 kotlin = "2.4.20"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
@@ -31,18 +42,22 @@ detekt = "1.23.8"
 # santimattius structured-coroutines Detekt ruleset — 40 syntactic coroutine rules. Being syntactic
 # (no type resolution) they run on the plain `detekt` task, unlike Detekt's own coroutine rules,
 # which need type resolution the Kotlin-version wall (detekt 1.23.8 bundles Kotlin 2.0.21, this repo
-# runs Kotlin 2.4.10) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
+# runs Kotlin 2.4.20) makes inert here. Consumed via `detektPlugins` in each module and `--plugins`
 # in the pre-commit hook — bump both in lockstep. An upstream port is needed when Detekt 2.0 renames
 # the RuleSetProvider package to `dev.detekt`.
 structured-coroutines = "1.1.1"
 # skydoves Compose Stability Analyzer is a Kotlin compiler plugin, so it is hard-pinned to a Kotlin
-# version (it embeds kotlin-compiler-embeddable). The project runs Kotlin 2.4.10; the analyzer's
-# version→Kotlin map has no 2.4.10 build, so 0.12.0 (built against Kotlin 2.4.0 — the nearest
-# version at or below 2.4.10) is used for forward-compatible loading. Bump this in lockstep with any
-# Kotlin upgrade using the analyzer's README "Kotlin Version Mapping" table: a version built against
-# a Kotlin older than the compiler that loads it fails the build with a ClassCastException on
-# FirExtensionRegistrarAdapter as the plugin registers its FIR extensions.
-compose-stability-analyzer = "0.12.0"
+# version (it embeds kotlin-compiler-embeddable) and upstream builds each analyzer release against
+# one exact Kotlin release. This must be a release built against the `kotlin` ref above — 0.14.0 is
+# the 2.4.20 build. `verifyStabilityAnalyzerKotlinAlignment` in the root build script enforces that
+# in every `check`, against a table transcribed from the analyzer README's "Kotlin Version Mapping",
+# and fails closed on a Kotlin version the table does not cover — so a Kotlin bump edits three
+# places: both refs and that table. What it guards against is not a warning: a plugin built against
+# a Kotlin older than the compiler loading it fails with a ClassCastException on
+# FirExtensionRegistrarAdapter, but only as the plugin registers its FIR extensions, so a Kotlin
+# bump that lands alone — a Renovate security bump, say — would otherwise compile by luck in every
+# build that never reaches that path. Renovate is disabled for this ref for the same reason.
+compose-stability-analyzer = "0.14.0"
 # CycloneDX Gradle plugin — produces the SBOM the PR-blocking `sca` job hands to osv-scanner. It
 # ships in no artifact; it exists so software-composition analysis reads the RESOLVED Gradle graph
 # at PR time instead of waiting for the post-merge Dependency Graph inventory. Plugin 3.x needs
@@ -65,6 +80,17 @@ koin = "4.2.2"
 # Jetpack Navigation 3 — the Android app's navigation framework (a Compose-state back stack
 # rendered by `NavDisplay`). `runtime` and `ui` release together and are bumped off this one ref.
 navigation3 = "1.1.7"
+# Jetpack Compose UI libraries — `ui` (with its tooling and test artifacts), `animation`, and
+# `material`. AndroidX versions these groups independently, but the app has always held them to one
+# release, and one ref keeps a bump from moving `ui` while leaving `ui-tooling` or the test
+# artifacts a release behind it. Not every `androidx.compose` coordinate belongs here: the icon
+# artifacts stopped releasing earlier and keep their own ref below.
+compose = "1.12.1"
+# AndroidX Lifecycle — `lifecycle-runtime-ktx` and `lifecycle-viewmodel-compose` release together.
+androidx-lifecycle = "2.11.0"
+# `activity-compose` — the `ComponentActivity.setContent` bridge. It belongs to the AndroidX
+# Activity release train, not Compose's, so it is versioned on its own.
+activity-compose = "1.13.0"
 # Material icons (core set) — the app shell's tab icons. `material` pulls it in only as a runtime
 # dependency, so the app declares it to compile against it. The icon artifacts stopped releasing at
 # 1.7.8; this is its final version, not one to track alongside the Compose UI libraries.
@@ -100,6 +126,19 @@ koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "compose-material-icons" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+androidx-compose-material = { module = "androidx.compose.material:material", version.ref = "compose" }
+androidx-compose-animation = { module = "androidx.compose.animation:animation", version.ref = "compose" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
+# Test-only artifacts. `ui-test-junit4` belongs on `androidTestImplementation` and
+# `ui-test-manifest` on `debugImplementation`; on `implementation` either would ship in the release
+# APK.
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
