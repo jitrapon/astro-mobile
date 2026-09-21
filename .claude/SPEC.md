@@ -110,12 +110,14 @@ buildable rather than aspirational.
       link tasks are even registered on a non-macOS host is unverifiable from this machine, and the
       zero-task rule would turn that uncertainty into a red Linux job; the gate costs the macOS
       runner nothing measurable since it executes no compiler.
-- [ ] Resolve anything the enforcement reports by aligning versions in `gradle/libs.versions.toml`
+- [x] Resolve anything the enforcement reports by aligning versions in `gradle/libs.versions.toml`
       — never by suppression, a lower level, or a per-target carve-out. **If it reports anything,
       stop and split this item** into one sub-item per conflicting dependency before editing: the
       size of that work is unknowable until the flag is on, and version alignment re-opens the
       behaviour-preservation question (resolved graphs, the SBOM) that a one-line build change does
       not. If it reports nothing, tick this as a no-op and record the evidence under its §5 pair.
+      *Outcome:* **no-op.** The enforcement reports nothing on today's graph, so no version moved
+      and `gradle/libs.versions.toml` is untouched.
 - [ ] Update `.claude/CLAUDE.md`: the framework link now fails on a partial-linkage problem, why
       the silent default was not acceptable here, that the remedy is catalog alignment, and the new
       gate — in the commands table, in the `verify-ios` description of what that half carries, and
@@ -212,15 +214,34 @@ buildable rather than aspirational.
       and a cached debug link is *stricter* than a release link — serialization forced to `1.6.3`
       fails the former only, since a whole-program link never visits a broken declaration nothing
       reaches. Scratch reverted; the tree held only item 1's edit.
-- [ ] **Clean on today's graph (item 3).** With the flag on, all six framework links plus
+- [x] **Clean on today's graph (item 3).** With the flag on, all six framework links plus
       `./gradlew verifyIos` are green — which also covers the three test-binary links and
       `:shared:verifyFrameworkHeaderSurface`. If item 3 changed any version: re-diff the resolved
       `:androidApp` and `:shared` graphs and the `:cyclonedxBom` component inventory against
       `origin/main`, and account for every changed line.
-- [ ] **The app still builds against the framework (items 1–3).** Run CI's exact headless
+      *Evidence:* all six framework links forced with `--rerun` in one invocation — each task line
+      printed bare, none `UP-TO-DATE` / `FROM-CACHE` — `BUILD SUCCESSFUL`, with no partial-linkage
+      diagnostic and no `Flag is not supported` warning in the log. `./gradlew verifyIos` green:
+      the gate reports 9 link tasks (6 framework links), `verifyFrameworkHeaderSurface` and
+      `iosSimulatorArm64Test` both executed. **Correction to the wording above:** `verifyIos`
+      reaches only **two** of the three test-binary links (`linkDebugTestIosSimulatorArm64`,
+      `linkDebugTestIosX64`); nothing runs device tests, so `linkDebugTestIosArm64` is outside its
+      graph. It was forced separately (`--rerun`) and is green too, so all nine Native links were
+      executed clean. No version changed, so there is no graph or SBOM diff to account for.
+- [x] **The app still builds against the framework (items 1–3).** Run CI's exact headless
       `xcodebuild` invocation (the *iOS app build (simulator)* row in `.claude/CLAUDE.md`). It
       links the framework through the Xcode embed path rather than the task `verifyIos` runs, so it
       is a second, independent route to the same enforcement.
+      *Evidence:* `** BUILD SUCCEEDED **`. The first run proved nothing about the link — the embed
+      path reported `linkDebugFrameworkIosSimulatorArm64 UP-TO-DATE`, reusing the framework linked
+      minutes earlier — so the (gitignored) `debugFramework` output was deleted and the invocation
+      repeated: the link then **executed** inside the `xcodebuild` run, followed by
+      `assembleDebugAppleFrameworkForXcodeIosSimulatorArm64` and
+      `embedAndSignAppleFrameworkForXcode`, and the app target built against the result.
+      **Correction to the wording above:** the embed path is not a different link task — it drives
+      the *same* `linkDebugFrameworkIosSimulatorArm64` that `verifyIos` does, under Xcode's
+      environment. It is an independent *entry point* to the enforcement, not an independent link,
+      which is why the argument gate covering that one task covers this route as well.
 - [ ] **Docs (item 4).** `./gradlew check` green, and a read-through confirms CLAUDE.md claims
       nothing the build does not enforce — in particular, it must not imply the Android/JVM side
       gained a comparable check.
