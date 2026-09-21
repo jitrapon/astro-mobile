@@ -1,4 +1,4 @@
-# Specification: <branch-scoped title>
+# Specification: Fail the iOS framework link on partial-linkage errors
 
 > Per-branch working file owned by the `spec-development` skill. Each branch
 > overwrites the section bodies; this file in `main` is a skeleton that
@@ -13,24 +13,63 @@ section, which `sync-plan` parses unattended. Field semantics: `plan-update-cont
 astro-docs.
 
 ```yaml
-lane: -                # backend | mobile | web | docs | infra | -
+lane: mobile           # backend | mobile | web | docs | infra | -
 task: -                # task ID from current-plan.md (M-2, M-3), or - if not plan work
-issues: []             # issue numbers in THIS repo that merging this branch closes
+issues: [151]          # issue numbers in THIS repo that merging this branch closes
 completes: no          # does merging this branch finish the whole task row?
 spec-objective: -      # section 2, collapsed to one line
 ```
 
 ## 1. Overview
 
-<One short paragraph: what this branch changes and why. Author this before invoking the `spec-development` skill.>
+When the iOS framework is linked, Kotlin/Native does not fail on a reference it cannot resolve. It
+substitutes a stub that throws a linkage error only when that code actually runs on a device
+("partial linkage"), and since Kotlin 1.9.20 the compiler detects these problems silently by
+default, so nothing in the build output shows them. This branch makes such problems fail the build
+instead of surfacing as an iOS-only runtime crash on whichever code path reaches the stub.
 
 ## 2. Objective
 
-<The concrete goal — what does "done" look like. One or two sentences.>
+A partial-linkage problem in the shared module fails the framework link on every iOS target rather
+than producing a stub, and the existing local and CI gates pass with that enforcement switched on.
 
 ## 3. Requirements & Context
 
-<Known constraints, affected files, prior art, references to similar PRs. Author this section before invoking the `spec-development` skill — the skill writes the implementation checklist in section 4 below.>
+**Why this repo is exposed.** The shared module compiles against Kotlin libraries published by
+others — its DI container, its HTTP client, and the coroutines and serialization libraries — each
+built against its own versions of the transitive dependencies they have in common. Where two of them
+want different versions, Gradle selects the newest and the framework links against that. If the
+newest version removed or changed an API an older library still calls, the link succeeds anyway. The
+failure then appears only on iOS, only at runtime, and only on the path that hits the stub. The
+exposure grows once the generated backend client and further multiplatform dependencies arrive.
+
+**Existing gates do not catch it.** CI already links the debug simulator framework and builds the
+iOS app against it, but a link containing stubs passes both.
+
+**The proposed mechanism.** The issue proposes raising the compiler's partial-linkage log level to
+`ERROR` (`-Xpartial-linkage-loglevel=ERROR`) on every Native target of the shared module, written in
+the build's current compiler-options style rather than a new one.
+
+**The flag must reach the link, not only compilation.** Stubs are manufactured when the framework is
+linked, so a setting that applies only to library compilation would leave the defect in place while
+looking enforced. Confirming where the flag actually takes effect is part of the work, not an
+assumption to carry.
+
+**Anything it reports is fixed at the source.** If enabling the enforcement surfaces a real
+partial-linkage problem, it is resolved by aligning versions in the version catalog — never by
+suppressing the report or lowering the level again.
+
+**The reason must survive a later cleanup.** A comment beside the setting has to explain why it is
+`ERROR` rather than the silent default, so that a future tidy-up does not read it as a leftover
+compiler argument and remove it.
+
+**Relationship to the catalog work.** Making the version catalog authoritative closed version drift
+at its source. This closes the drift that arrives through transitive dependencies, which no catalog
+rule reaches; the two are complementary rather than overlapping.
+
+**Acceptance.** The enforcement applies to every iOS target's framework link; the existing CI
+framework link passes with it on; the explanatory comment is present; and the full local gate is
+green.
 
 ## 4. Implementation Plan and Progress Tracking (for agent)
 
@@ -52,4 +91,7 @@ Not applicable.
 
 ## 8. References
 
-<Links to designs, similar PRs, external docs, RFCs.>
+https://github.com/jitrapon/astro-mobile/issues/151
+https://github.com/jitrapon/astro-mobile/issues/146
+https://kotlinlang.org/docs/whatsnew1920.html
+https://touchlab.co/gradle-transitive-dependency-resolution
