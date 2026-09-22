@@ -260,12 +260,21 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.ui)
+    // `ui-tooling-preview` carries only the `@Preview` annotation AppShellPreviews.kt needs at
+    // compile time, so it stays on `implementation`. Its sibling `ui-tooling` — the runtime
+    // inspector — is debug-only below.
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // Test-only artifacts stay off `implementation`: there, either would ship in the release APK.
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // `ui-tooling` is the runtime preview inspector, and it is debug-only for a reason beyond the
+    // obvious one. Its AAR manifest declares an `androidx.compose.ui.tooling.PreviewActivity`;
+    // manifest merger folds that activity into the app's merged manifest, and AAPT2 generates a
+    // keep rule for every manifest-declared component, since the framework instantiates them
+    // reflectively by name. On `implementation` that ships a dev-only Activity in the release APK
+    // and pins it against the shrinker. Debug-only removes both.
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
