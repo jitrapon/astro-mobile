@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.Packaging
+import com.android.build.gradle.internal.tasks.AndroidTestTask
 import com.ncorti.ktfmt.gradle.FormattingOptionsBean
 import com.ncorti.ktfmt.gradle.KtfmtExtension
 import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
@@ -245,6 +246,72 @@ android {
 
     fun Packaging.() {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    }
+}
+
+// Instrumented tests install the app-under-test APK on a device, and the platform refuses an
+// unsigned one. Signing stays all-or-nothing (see the note above `keystorePropertiesFile`), so with
+// the four credentials absent the release variant is packaged unsigned and a run against it dies at
+// install time with INSTALL_PARSE_FAILED_NO_CERTIFICATES — an error that names neither which
+// credential is missing nor where to put it. This task turns that into a failure that says both.
+//
+// It is deliberately NOT wired into `check`: it fails on every machine without release credentials,
+// which includes the CI runner that only assembles, and `check` must stay green there. Its one
+// consumer is the instrumented-test wiring below. Run it directly to confirm credentials resolve.
+val verifyReleaseSigningCredentials =
+    tasks.register("verifyReleaseSigningCredentials") {
+        group = "verification"
+        description = "Fail naming the absent ASTRO_KEYSTORE_* credentials, not at install time."
+        // Resolved at configuration time and captured as a plain list so the task body stays
+        // configuration-cache safe.
+        val missingCredentials =
+            listOf(
+                    "ASTRO_KEYSTORE_FILE" to releaseStoreFile,
+                    "ASTRO_KEYSTORE_PASSWORD" to releaseStorePassword,
+                    "ASTRO_KEY_ALIAS" to releaseKeyAlias,
+                    "ASTRO_KEY_PASSWORD" to releaseKeyPassword,
+                )
+                .filter { (_, value) -> value.isNullOrBlank() }
+                .map { (name, _) -> name }
+        doLast {
+            check(missingCredentials.isEmpty()) {
+                """
+                |Release signing credentials are missing, so the release APK an instrumented test
+                |run installs would be unsigned and the install would fail with
+                |INSTALL_PARSE_FAILED_NO_CERTIFICATES.
+                |
+                |Missing: ${missingCredentials.joinToString()}
+                |
+                |Supply all four, as environment variables or as keys in a gitignored
+                |keystore.properties at the repo root:
+                |
+                |  ASTRO_KEYSTORE_FILE      (storeFile)      absolute path to the keystore
+                |  ASTRO_KEYSTORE_PASSWORD  (storePassword)
+                |  ASTRO_KEY_ALIAS          (keyAlias)
+                |  ASTRO_KEY_PASSWORD       (keyPassword)
+                """
+                    .trimMargin()
+            }
+            logger.lifecycle("Release signing credentials OK: all four resolved.")
+        }
+    }
+
+// AGP creates one instrumented-test run task per variant and per Gradle Managed Device
+// (`connectedReleaseAndroidTest`, `<device><Variant>AndroidTest`, …), so there is no single task
+// name to hook. `AndroidTestTask` is the interface every one of them implements. Matching on that
+// type rather than on a name pattern is what keeps the guard honest: an AGP release that moves or
+// removes the interface fails this build script to compile, where a name pattern would quietly stop
+// matching and leave the runs unguarded — the one failure mode a guard must not have.
+//
+// The guard attaches only when the build type under test resolves no signing config, which is
+// exactly when the install cannot succeed. Under AGP's default `testBuildType = "debug"` — signed
+// by
+// the auto-generated debug keystore — nothing is attached and debug runs are untouched.
+if (android.buildTypes.getByName(android.testBuildType).signingConfig == null) {
+    tasks.configureEach {
+        if (this is AndroidTestTask) {
+            dependsOn(verifyReleaseSigningCredentials)
+        }
     }
 }
 
