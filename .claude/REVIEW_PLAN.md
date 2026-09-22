@@ -75,3 +75,22 @@ composition. Compiler-plugin adoption stays out of this branch, as §3 already r
 
 **Codex's "commit the completed plan" next step** is satisfied by this iteration's commit; §§4–5
 were uncommitted working-tree changes when the review ran, which is the normal shape of this gate.
+
+### Round 2 — 2026-09-22 · verdict `needs-attention`
+
+Rounds 1's three findings were not re-raised. One new finding, narrower than round 1's.
+
+**Finding 1 [medium] — "Test tab and switcher interactions through dispatch."**
+Disposition: **AGREE.**
+
+Correct, and it is the same class of hole round 1 closed in the implementation, left open one layer
+up in the checks. C3's check asserted displayed state only; C4's started from an `ActionEffect`
+rather than from a tap. Between them, B6 proved dispatch in isolation and B7a proved the action
+survives the projection — so every specified check could pass with the tab or switcher callback
+never calling `dispatch`, which is exactly the user-visible failure B7a exists to prevent. C4a
+already started from a real tap, which is why it was not implicated.
+
+Addressed by rewriting both checks to begin at the interaction: C3 now taps a non-active switcher
+option and asserts the observed request changed and the selection moved; C4 now taps a delivered
+destination carrying each of the five action types and asserts the user-visible outcome, explicitly
+forbidding effect injection as the entry point.
