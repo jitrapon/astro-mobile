@@ -94,3 +94,23 @@ Addressed by rewriting both checks to begin at the interaction: C3 now taps a no
 option and asserts the observed request changed and the selection moved; C4 now taps a delivered
 destination carrying each of the five action types and asserts the user-visible outcome, explicitly
 forbidding effect injection as the entry point.
+
+### Round 3 — 2026-09-22 · verdict `needs-attention`
+
+Rounds 1 and 2's findings were not re-raised. One new finding, the exact mirror of round 2's on the
+iOS side.
+
+**Finding 1 [medium] — "Exercise all delivered action types in the iOS runtime pass."**
+Disposition: **AGREE.**
+
+Correct. C7 requires iOS to execute four effects, but its runtime check named only a switcher
+selection, a URL-opening tab and an event tap — so a missing Swift handler for `ShowScreen` or
+`ShowEvents` would pass every gate, since compilation proves no execution and the shared dispatch
+tests prove only that the effect was produced. Accepted because the remedy costs nothing beyond
+widening a manual pass the plan already schedules — Codex's own recommendation notes it needs no
+Swift test target and no extra CI job, which is what made round 1's version of this finding
+disproportionate and this one not.
+
+Addressed by rewriting C7's check to tap a delivered destination carrying each of the five action
+types through the real tab dispatch path and assert each visible outcome and its payload, mirroring
+C4.
