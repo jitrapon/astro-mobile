@@ -222,6 +222,15 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            // Declared explicitly rather than inherited. AGP already applies
+            // `proguard-android-optimize.txt` when a minified build type names no `proguardFiles`,
+            // so naming it here adds no rule that was missing — it pins which default applies
+            // (the plain `proguard-android.txt` turns R8's optimization passes off wholesale) and
+            // gives the app's own rules a home. See proguard-rules.pro's header.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             // Null when no credentials resolved, which leaves the variant unsigned rather than
             // failing the build — see the all-or-nothing note above `keystorePropertiesFile`.
             signingConfig = signingConfigs.findByName("release")
