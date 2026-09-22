@@ -237,6 +237,40 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
     }
+    // Instrumented tests run against the *release* variant, not AGP's default `debug`. The shrinker
+    // is what they exist to cover: R8 strips a reflectively reached type only when minification is
+    // on, so a debug run installs an unshrunk APK that cannot reproduce the failure however well it
+    // is written. Flipping this makes every `*AndroidTest` task build, sign and install the
+    // minified release APK — which is also why `verifyReleaseSigningCredentials` below attaches to
+    // them, and why anything the tests need must come from a configuration the release variant
+    // resolves (`androidTestImplementation`), never `debugImplementation`.
+    testBuildType = "release"
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                // A Gradle-provisioned emulator, so a release-variant instrumented run needs no
+                // attached device and no hand-managed AVD — CI invokes one task and AGP does the
+                // rest. The DSL name is load-bearing: AGP derives the run task's name from it
+                // (`aospAtd34ReleaseAndroidTest`), and the CI job names that task.
+                //
+                // `aosp-atd` is the Automated Test Device image — headless, no Play Services, no
+                // preinstalled apps — the cheapest image that still boots a real framework. AOSP
+                // rather than `google-atd` because nothing here touches Play Services. API 34
+                // publishes both `x86_64` and `arm64-v8a`, so the same device provisions on a
+                // Linux CI runner and an Apple Silicon dev machine without pinning an ABI.
+                //
+                // `apiLevel` rather than AGP 9's `sdkVersion`: the latter is still incubating and
+                // carries the same value.
+                create("aospAtd34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -304,9 +338,9 @@ val verifyReleaseSigningCredentials =
 // matching and leave the runs unguarded — the one failure mode a guard must not have.
 //
 // The guard attaches only when the build type under test resolves no signing config, which is
-// exactly when the install cannot succeed. Under AGP's default `testBuildType = "debug"` — signed
-// by
-// the auto-generated debug keystore — nothing is attached and debug runs are untouched.
+// exactly when the install cannot succeed. It keys on whatever `testBuildType` names rather than on
+// the literal "release", so a tested variant that is signed — `debug` under AGP's default, or
+// `release` itself once the four credentials resolve — attaches nothing and runs untouched.
 if (android.buildTypes.getByName(android.testBuildType).signingConfig == null) {
     tasks.configureEach {
         if (this is AndroidTestTask) {
