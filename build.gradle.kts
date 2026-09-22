@@ -725,8 +725,12 @@ val iosVerification =
 
 val androidCommonVerification =
     listOf(
-        ":androidApp" to "testDebugUnitTest",
-        ":androidApp" to "lintDebug",
+        // Both follow `testBuildType`, which :androidApp sets to "release" so instrumented tests
+        // run against the shrunk APK — AGP points the unit-test and lint lifecycles at the same
+        // variant. So these are the release forms, not the debug ones, and a future change to
+        // `testBuildType` must move them in lockstep or this partition's own guard fails.
+        ":androidApp" to "testReleaseUnitTest",
+        ":androidApp" to "lintRelease",
         ":androidApp" to "detekt",
         ":androidApp" to "ktfmtCheck",
         ":androidApp" to "verifyKtfmtAlignment",
