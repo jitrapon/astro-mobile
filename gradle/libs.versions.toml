@@ -132,11 +132,10 @@ androidx-compose-animation = { module = "androidx.compose.animation:animation", 
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
-# Test-only artifacts. `ui-test-junit4` belongs on `androidTestImplementation` and
-# `ui-test-manifest` on `debugImplementation`; on `implementation` either would ship in the release
-# APK.
+# Test-only. `ui-test-junit4` belongs on `androidTestImplementation`; on `implementation` it would
+# ship in the release APK. No `ui-test-manifest`: instrumented tests run against the release variant,
+# which a debug-only host-activity manifest never reaches, so they host in the app's MainActivity.
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
-androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 

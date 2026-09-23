@@ -1,9 +1,18 @@
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.dsl.Packaging
+import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.gradle.internal.tasks.AndroidTestTask
+import com.android.tools.r8.tracereferences.TraceReferences
+import com.android.tools.r8.tracereferences.TraceReferencesCommand
+import com.android.tools.r8.tracereferences.TraceReferencesKeepRules
 import com.ncorti.ktfmt.gradle.FormattingOptionsBean
 import com.ncorti.ktfmt.gradle.KtfmtExtension
 import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import java.time.Duration
 import java.util.Properties
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 
 plugins {
     id("com.android.application")
@@ -222,11 +231,70 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
+            // Declared explicitly rather than inherited. AGP already applies
+            // `proguard-android-optimize.txt` when a minified build type names no `proguardFiles`,
+            // so naming it here adds no rule that was missing — it pins which default applies
+            // (the plain `proguard-android.txt` turns R8's optimization passes off wholesale) and
+            // gives the app's own rules a home. See proguard-rules.pro's header.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             // Null when no credentials resolved, which leaves the variant unsigned rather than
             // failing the build — see the all-or-nothing note above `keystorePropertiesFile`.
             signingConfig = signingConfigs.findByName("release")
         }
+        // The release variant as instrumented tests need it: `initWith` copies minification, both
+        // R8 file lists and the signing config. It departs from `release` in exactly two ways, both
+        // wired under `androidComponents` below — generated keep rules for what the tests call, and
+        // API 24 as its minimum. `release` itself cannot be the tested build type: the tests call
+        // into code R8 removes or reshapes when only the app's own reach is counted, and keeping
+        // it there would ship it.
+        create("minifiedTest") {
+            initWith(getByName("release"))
+            // Library variants have no `minifiedTest`; resolve theirs as for `release`.
+            matchingFallbacks += "release"
+            // The test APK is shrunk too, against this variant's mapping, and needs rules of its
+            // own. `testProguardFiles` reach only the test APK, never the app under test.
+            testProguardFiles("proguard-test-rules.pro")
+        }
     }
+    // Instrumented tests run against the minified `minifiedTest` variant, not AGP's default
+    // `debug`.
+    // The shrinker is what they exist to cover: R8 strips a reflectively reached type only when
+    // minification is on, so a debug run installs an unshrunk APK that cannot reproduce the failure
+    // however well it is written. This makes every `*AndroidTest` task build, sign and install the
+    // minified APK — which is also why `verifyReleaseSigningCredentials` below attaches to them,
+    // and
+    // why anything the tests need must come from a configuration that variant resolves
+    // (`androidTestImplementation`), never `debugImplementation`.
+    testBuildType = "minifiedTest"
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                // A Gradle-provisioned emulator, so a release-variant instrumented run needs no
+                // attached device and no hand-managed AVD — CI invokes one task and AGP does the
+                // rest. The DSL name is load-bearing: AGP derives the run task's name from it
+                // (`aospAtd34MinifiedTestAndroidTest`), and the CI job names that task.
+                //
+                // `aosp-atd` is the Automated Test Device image — headless, no Play Services, no
+                // preinstalled apps — the cheapest image that still boots a real framework. AOSP
+                // rather than `google-atd` because nothing here touches Play Services. API 34
+                // publishes both `x86_64` and `arm64-v8a`, so the same device provisions on a
+                // Linux CI runner and an Apple Silicon dev machine without pinning an ABI.
+                //
+                // `apiLevel` rather than AGP 9's `sdkVersion`: the latter is still incubating and
+                // carries the same value.
+                create("aospAtd34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -236,6 +304,295 @@ android {
 
     fun Packaging.() {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    }
+}
+
+// `minifiedTest` builds for API 24 rather than the app's 23 — a departure from `release` no keep
+// rule can replace. Below 24, R8 desugars Java default interface methods
+// into synthesized `$-CC` companion classes, in each APK separately. The test APK's desugared
+// classes then call a library interface's companion by name — Compose's `TestMonotonicFrameClock`
+// calls `MonotonicFrameClock$-CC.$default$getKey` — while the app's R8 has renamed that companion
+// and dropped the method, since nothing in the app implements the interface without overriding it.
+// A synthesized class matches no `-keep` pattern, so the test dies on `NoSuchMethodError`. From API
+// 24 default methods are native and no companion exists to go missing. The shrink of the app's own
+// types — which keep rules decide, not the desugaring level — is unchanged.
+//
+// Its other departure is keep rules generated for whatever the instrumented tests reference. AGP
+// builds the test APK without every class the app's runtime classpath already carries, expecting
+// the app APK to supply it — but it minifies the app counting only the app's own reach
+// (issuetracker.google.com/issues/126429384). So a class or member the tests reach and the app does
+// not ends up in neither APK: the runner dies before its first test on `androidx.tracing.Trace`,
+// then `kotlin.LazyKt`, and a test calling an app API finds it inlined away or its signature
+// rewritten (`NoSuchMethodError` on `AstroTheme`'s default-arguments overload). A hand-kept list
+// converges one device crash at a time and drifts with every new test or dependency; R8's own
+// TraceReferences computes the exact set instead, on every build.
+androidComponents {
+    beforeVariants(selector().withBuildType("minifiedTest")) { variantBuilder ->
+        variantBuilder.minSdk = 24
+    }
+    onVariants(selector().withBuildType("minifiedTest")) { variant ->
+        val androidTest =
+            checkNotNull(variant.androidTest) {
+                "`minifiedTest` is the tested build type, so it must have an androidTest component."
+            }
+        val generateKeepRules =
+            tasks.register<GenerateInstrumentedTestKeepRules>(
+                "generate${variant.name.replaceFirstChar(Char::uppercase)}InstrumentedTestKeepRules"
+            ) {
+                bootClasspath.set(androidComponents.sdkComponents.bootClasspath)
+                keepRules.set(
+                    layout.buildDirectory.file(
+                        "generated/instrumentedTestKeepRules/${variant.name}/keep-rules.pro"
+                    )
+                )
+            }
+        // Both pre-R8: the app's classes as they enter its shrink, the tests' as they are compiled.
+        variant.artifacts
+            .forScope(ScopedArtifacts.Scope.ALL)
+            .use(generateKeepRules)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                GenerateInstrumentedTestKeepRules::appJars,
+                GenerateInstrumentedTestKeepRules::appDirectories,
+            )
+        androidTest.artifacts
+            .forScope(ScopedArtifacts.Scope.ALL)
+            .use(generateKeepRules)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                GenerateInstrumentedTestKeepRules::testJars,
+                GenerateInstrumentedTestKeepRules::testDirectories,
+            )
+        variant.proguardFiles.add(generateKeepRules.flatMap { it.keepRules })
+    }
+}
+
+/**
+ * Writes `-keep` rules for every class, method and field the instrumented tests reference in the
+ * app under test — its own code and the libraries it carries — so the app's shrink keeps them.
+ *
+ * Names are kept too, not just the members. AGP shrinks the test APK against the app's mapping, but
+ * that does not carry every member rename across: with obfuscation allowed, the app renamed
+ * `kotlinx.coroutines.BuildersKt.runBlockingK$default` while the test APK still called it by its
+ * original name on the renamed class, and died on `NoSuchMethodError`. Pinning the names of only
+ * what the tests touch leaves R8 free to rename, shrink and optimize everything else.
+ *
+ * Rules for kotlinx.serialization and for generated `$$serializer` classes are dropped. Testing a
+ * minified build exists to catch R8 removing what the app reaches only reflectively, above all the
+ * serializers polymorphic decoding looks up; a test that touched one would otherwise keep it in the
+ * tested APK while the shipping one loses it, and pass over the very failure it exists to find.
+ */
+abstract class GenerateInstrumentedTestKeepRules : DefaultTask() {
+    @get:Classpath abstract val testJars: ListProperty<RegularFile>
+    @get:Classpath abstract val testDirectories: ListProperty<Directory>
+    @get:Classpath abstract val appJars: ListProperty<RegularFile>
+    @get:Classpath abstract val appDirectories: ListProperty<Directory>
+    @get:Classpath abstract val bootClasspath: ListProperty<RegularFile>
+    @get:OutputFile abstract val keepRules: RegularFileProperty
+
+    @TaskAction
+    fun generate() {
+        val scratch = temporaryDir.apply { deleteRecursively() }.apply { mkdirs() }
+        // TraceReferences reads archives, not class directories, so each directory is jarred.
+        fun archives(jars: List<RegularFile>, directories: List<Directory>, prefix: String) =
+            jars.map { it.asFile.toPath() } +
+                directories.mapIndexed { index, directory ->
+                    jarDirectory(directory.asFile, scratch.resolve("$prefix-$index.jar")).toPath()
+                }
+        val rules = StringBuilder()
+        val command =
+            TraceReferencesCommand.builder()
+                .addLibraryFiles(bootClasspath.get().map { it.asFile.toPath() })
+                .addSourceFiles(archives(testJars.get(), testDirectories.get(), "test"))
+                .addTargetFiles(archives(appJars.get(), appDirectories.get(), "app"))
+                .setConsumer(
+                    TraceReferencesKeepRules.builder()
+                        .setAllowObfuscation(false)
+                        .setOutputConsumer { chunk, _ -> rules.append(chunk) }
+                        .build()
+                )
+                .build()
+        TraceReferences.run(command)
+        keepRules.get().asFile.writeText(allowAccessWidening(dropSerializationRules("$rules")))
+    }
+
+    private fun jarDirectory(directory: File, jar: File): File {
+        JarOutputStream(jar.outputStream().buffered()).use { out ->
+            directory
+                .walkTopDown()
+                .filter { it.isFile && it.name.endsWith(".class") }
+                .forEach { file ->
+                    out.putNextEntry(JarEntry(file.relativeTo(directory).invariantSeparatorsPath))
+                    file.inputStream().use { it.copyTo(out) }
+                    out.closeEntry()
+                }
+        }
+        return jar
+    }
+
+    /**
+     * Lets R8 widen the access of what the rules pin. The Kotlin stdlib and kotlinx.coroutines
+     * compile their multi-file facades (`CollectionsKt`, `BuildersKt`) as chains of package-private
+     * part classes; R8 repackages classes across packages under `-allowaccessmodification`, and a
+     * part pinned without that allowance stays package-private while its subclass moves away — the
+     * app then dies at startup on `IllegalAccessError`. Widening visibility never breaks a caller.
+     */
+    private fun allowAccessWidening(rules: String): String =
+        rules.replace(Regex("^-keep ", RegexOption.MULTILINE), "-keep,allowaccessmodification ")
+
+    /** Removes each whole rule — header through closing brace — that names a serialization type. */
+    private fun dropSerializationRules(rules: String): String {
+        val kept = StringBuilder()
+        val lines = rules.lines().iterator()
+        while (lines.hasNext()) {
+            val header = lines.next()
+            val rule = StringBuilder().appendLine(header)
+            if (header.trimEnd().endsWith("{")) {
+                while (lines.hasNext()) {
+                    val line = lines.next()
+                    rule.appendLine(line)
+                    if (line.trim() == "}") break
+                }
+            }
+            val namesSerialization =
+                "kotlinx.serialization." in header || "\$\$serializer" in header
+            if (!namesSerialization) kept.append(rule)
+        }
+        return kept.toString()
+    }
+}
+
+// Instrumented tests install the app-under-test APK on a device, and the platform refuses an
+// unsigned one. Signing stays all-or-nothing (see the note above `keystorePropertiesFile`), so with
+// the four credentials absent the release variant is packaged unsigned and a run against it dies at
+// install time with INSTALL_PARSE_FAILED_NO_CERTIFICATES — an error that names neither which
+// credential is missing nor where to put it. This task turns that into a failure that says both.
+//
+// It is deliberately NOT wired into `check`: it fails on every machine without release credentials,
+// which includes the CI runner that only assembles, and `check` must stay green there. Its one
+// consumer is the instrumented-test wiring below. Run it directly to confirm credentials resolve.
+val verifyReleaseSigningCredentials =
+    tasks.register("verifyReleaseSigningCredentials") {
+        group = "verification"
+        description = "Fail naming the absent ASTRO_KEYSTORE_* credentials, not at install time."
+        // Resolved at configuration time and captured as a plain list so the task body stays
+        // configuration-cache safe.
+        val missingCredentials =
+            listOf(
+                    "ASTRO_KEYSTORE_FILE" to releaseStoreFile,
+                    "ASTRO_KEYSTORE_PASSWORD" to releaseStorePassword,
+                    "ASTRO_KEY_ALIAS" to releaseKeyAlias,
+                    "ASTRO_KEY_PASSWORD" to releaseKeyPassword,
+                )
+                .filter { (_, value) -> value.isNullOrBlank() }
+                .map { (name, _) -> name }
+        doLast {
+            check(missingCredentials.isEmpty()) {
+                """
+                |Release signing credentials are missing, so the minified APK an instrumented test
+                |run installs would be unsigned and the install would fail with
+                |INSTALL_PARSE_FAILED_NO_CERTIFICATES.
+                |
+                |Missing: ${missingCredentials.joinToString()}
+                |
+                |Supply all four, as environment variables or as keys in a gitignored
+                |keystore.properties at the repo root:
+                |
+                |  ASTRO_KEYSTORE_FILE      (storeFile)      absolute path to the keystore
+                |  ASTRO_KEYSTORE_PASSWORD  (storePassword)
+                |  ASTRO_KEY_ALIAS          (keyAlias)
+                |  ASTRO_KEY_PASSWORD       (keyPassword)
+                """
+                    .trimMargin()
+            }
+            logger.lifecycle("Release signing credentials OK: all four resolved.")
+        }
+    }
+
+// AGP creates one instrumented-test run task per variant and per Gradle Managed Device
+// (`connectedReleaseAndroidTest`, `<device><Variant>AndroidTest`, …), so there is no single task
+// name to hook. `AndroidTestTask` is the interface every one of them implements. Matching on that
+// type rather than on a name pattern is what keeps the guard honest: an AGP release that moves or
+// removes the interface fails this build script to compile, where a name pattern would quietly stop
+// matching and leave the runs unguarded — the one failure mode a guard must not have.
+//
+// The guard attaches only when the build type under test resolves no signing config, which is
+// exactly when the install cannot succeed. It keys on whatever `testBuildType` names rather than on
+// the literal "release", so a tested variant that is signed — `debug` under AGP's default, or
+// `release` itself once the four credentials resolve — attaches nothing and runs untouched.
+if (android.buildTypes.getByName(android.testBuildType).signingConfig == null) {
+    tasks.configureEach {
+        if (this is AndroidTestTask) {
+            dependsOn(verifyReleaseSigningCredentials)
+        }
+    }
+}
+
+// An instrumented run that executed no test fails. The test platform reports a runner that died
+// before its first test — a class the tested APK's shrink removed, a crash in the app's own
+// startup — as an empty result and a green build: `tests="0"`, exit code 0, BUILD SUCCESSFUL. For
+// a gate whose job is to run the minified APK, that is the one outcome that must never pass.
+//
+// A runner that dies earlier — in its `onCreate`, before it can report anything — is worse: the
+// instrumentation never signals completion, `am instrument -w` blocks, and the run hangs until
+// something kills it. The timeout turns that into a named failure. It spans the whole task,
+// emulator
+// boot included, with ample room for a suite that grows.
+//
+// Attached to the test task itself rather than to a finalizer, so no `-x` can run the tests without
+// the check. Stale result files are cleared first, so only what this run wrote is counted.
+tasks.configureEach {
+    if (this is AndroidTestTask) {
+        timeout.set(Duration.ofMinutes(20))
+        val resultsDir = resultsDir
+        val taskPath = path
+        doFirst { InstrumentedTestResults.clear(resultsDir.get().asFile) }
+        doLast { InstrumentedTestResults.requireExecutedTests(resultsDir.get().asFile, taskPath) }
+    }
+}
+
+/** Reads the JUnit XML an instrumented-test task writes under its results directory. */
+object InstrumentedTestResults {
+    fun clear(resultsDir: File) {
+        junitReports(resultsDir).forEach(File::delete)
+    }
+
+    fun requireExecutedTests(resultsDir: File, taskPath: String) {
+        val reports = junitReports(resultsDir)
+        val executed = reports.sumOf(::countExecutedTests)
+        check(executed > 0) {
+            """
+            |$taskPath executed no tests, which is a failure, not a pass.
+            |
+            |${reports.size} JUnit report(s) under $resultsDir, summing to 0 executed tests. The
+            |usual cause is the instrumentation runner crashing before its first test — a class or
+            |member the tested APK's shrink removed, or a crash in the app's startup — which the
+            |test platform reports as an empty, successful run. Its output is not kept: reproduce
+            |with `adb shell am instrument -w -r <test package>/<runner>` against the same two
+            |APKs to see the stack trace.
+            """
+                .trimMargin()
+        }
+    }
+
+    private fun junitReports(resultsDir: File): List<File> =
+        resultsDir
+            .walkTopDown()
+            .filter { it.isFile && it.name.startsWith("TEST-") && it.name.endsWith(".xml") }
+            .toList()
+
+    // Summed over <testsuite> elements only. The empty run writes a bare <testsuites tests="0"/>
+    // root, and that root's own count is what the platform reports as a pass.
+    private fun countExecutedTests(report: File): Int {
+        val suites =
+            javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(report)
+                .getElementsByTagName("testsuite")
+        return (0 until suites.length).sumOf { index ->
+            val suite = suites.item(index) as org.w3c.dom.Element
+            suite.getAttribute("tests").toIntOrNull() ?: 0
+        }
     }
 }
 
@@ -260,12 +617,22 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.ui)
+    // `ui-tooling-preview` carries only the `@Preview` annotation AppShellPreviews.kt needs at
+    // compile time, so it stays on `implementation`. Its sibling `ui-tooling` — the runtime
+    // inspector — is debug-only below.
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    // Test-only artifacts stay off `implementation`: there, either would ship in the release APK.
+    // Test-only, so off `implementation`, where it would ship in the release APK. Its usual partner
+    // `ui-test-manifest` is deliberately absent: it exists only to declare a host activity in the
+    // *debug* manifest, and instrumented tests run against release — they host in MainActivity.
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // `ui-tooling` is the runtime preview inspector, and it is debug-only for a reason beyond the
+    // obvious one. Its AAR manifest declares an `androidx.compose.ui.tooling.PreviewActivity`;
+    // manifest merger folds that activity into the app's merged manifest, and AAPT2 generates a
+    // keep rule for every manifest-declared component, since the framework instantiates them
+    // reflectively by name. On `implementation` that ships a dev-only Activity in the release APK
+    // and pins it against the shrinker. Debug-only removes both.
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
