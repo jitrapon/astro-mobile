@@ -67,6 +67,81 @@ jobs:
       # task, it's an extra packaging assurance. Reuses the Kotlin already compiled by the step above.
       - run: ./gradlew :androidApp:assemble
 
+  verify-android-release:
+    # Runtime coverage of the shrunk app. `:androidApp:assemble` above proves the minified APK
+    # *builds*; it cannot see R8 stripping a type the app reaches only reflectively (a polymorphic
+    # serializer, a registry entry), because that fails when the code runs, not when it links. This
+    # job installs the minified `minifiedTest` variant — `release` plus keep rules for what the tests
+    # call — on a Gradle Managed Device and runs the instrumented suite against it.
+    #
+    # Deliberately outside the verifyCheckPartition guard, the same classification
+    # `:androidApp:assemble` carries: booting an emulator and installing a signed APK is artifact and
+    # runtime coverage beyond `check`, not a `check` task, and `check` must stay runnable on a machine
+    # with no emulator and no release keystore. Its own job rather than a step of
+    # verify-android-common so the emulator's boot and run proceed in parallel with that job, and a
+    # failure here names the shrunk-runtime gate rather than hiding among the lint and unit tests.
+    name: verify-android-release
+    runs-on: ubuntu-latest
+    # Backstop above the 20-minute timeout each instrumented-test task carries, which covers the run
+    # but not the system-image download, first boot or compilation that precede it.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # No submodule: only `verifyVendoredContractParity` reads the astro-docs mirror, and it
+          # runs in verify-android-common. Nothing this job builds or runs reads it, so the job
+          # needs no deploy key either.
+          submodules: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      # Hosted Linux runners expose /dev/kvm but leave it root-only, so the emulator falls back to
+      # software emulation — slow enough that the boot alone can outrun the test task's timeout.
+      # This rule opens the device node to the runner user before the managed device is provisioned.
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # The platform refuses to install an unsigned APK, and signing is all-or-nothing, so the
+      # tested variant needs all four ASTRO_KEYSTORE_* credentials. They are minted per run rather
+      # than read from a secret: the gate needs *a* signature, not the shipping one, and a throwaway
+      # key keeps the real release key off a runner that executes pull-request code. The keystore
+      # lives in RUNNER_TEMP, outside the checkout, and the random password is masked before it is
+      # exported. PKCS12 (keytool's default) ignores a key password distinct from the store's, so
+      # both carry the same value.
+      - name: Generate an ephemeral release keystore
+        run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::$password"
+          keystore="$RUNNER_TEMP/astro-ci-release.p12"
+          keytool -genkeypair -noprompt \
+            -keystore "$keystore" -storetype PKCS12 \
+            -storepass "$password" -keypass "$password" \
+            -alias astro-ci -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=Astro CI ephemeral"
+          {
+            echo "ASTRO_KEYSTORE_FILE=$keystore"
+            echo "ASTRO_KEYSTORE_PASSWORD=$password"
+            echo "ASTRO_KEY_ALIAS=astro-ci"
+            echo "ASTRO_KEY_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
+
+      # The task name comes from the managed device's DSL name and the tested build type
+      # (`androidApp/build.gradle.kts`). Every instrumented-test task fails when it executes zero
+      # tests and times out when the runner never reports, so a runner that crashes under R8 turns
+      # this red rather than passing an empty run. SwiftShader renders on a runner that has no GPU.
+      - run: >-
+          ./gradlew :androidApp:aospAtd34MinifiedTestAndroidTest
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+
   verify-ios:
     # macOS-only half of `check`: the shared module's iOS simulator tests (Kotlin/Native cross-
     # compiles iOS targets only on a macOS host) plus the Swift gates. `swift` ships with the
