@@ -1,5 +1,6 @@
 package io.jitrapon.astro.ui.shell
 
+import android.view.ViewGroup
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,11 +12,12 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
+import io.jitrapon.astro.ui.main.MainActivity
 import io.jitrapon.astro.ui.main.theme.AstroTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
@@ -23,7 +25,10 @@ import org.junit.Test
 
 class AppShellTest {
 
-    @get:Rule val composeRule = createComposeRule()
+    // Hosted in the app's own activity rather than `createComposeRule()`'s bare ComponentActivity.
+    // That activity reaches the app's manifest only through `ui-test-manifest`, a debug-only
+    // artifact, and instrumented tests run against the release variant — so it would not resolve.
+    @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
     fun loadingShowsNoBarUntilTabsArriveThenEachTabShowsItsOwnPlaceholder() {
@@ -104,6 +109,12 @@ class AppShellTest {
     }
 
     private fun showShell(shellState: MutableStateFlow<AppShellState>) {
+        // MainActivity composes the live shell in `onCreate`, and the rule refuses to set content
+        // over an activity that already has some. Detach it first: its composition is disposed
+        // with its view, so only the fixture state below drives what these tests observe.
+        composeRule.activityRule.scenario.onActivity { activity ->
+            activity.findViewById<ViewGroup>(android.R.id.content).removeAllViews()
+        }
         composeRule.setContent { AstroTheme { AppShellRoute(shellState = shellState) } }
     }
 
