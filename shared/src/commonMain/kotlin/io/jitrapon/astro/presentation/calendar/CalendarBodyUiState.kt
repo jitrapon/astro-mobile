@@ -4,6 +4,7 @@ import io.jitrapon.astro.data.calendar.AgendaBody
 import io.jitrapon.astro.data.calendar.AgendaDay
 import io.jitrapon.astro.data.calendar.Calendar
 import io.jitrapon.astro.data.calendar.CalendarColor
+import io.jitrapon.astro.data.calendar.CalendarScreen
 import io.jitrapon.astro.data.calendar.ChipStyle
 import io.jitrapon.astro.data.calendar.EventBlockPresentation
 import io.jitrapon.astro.data.calendar.EventCardPresentation
@@ -100,6 +101,23 @@ data class EventChipUiState(
     val calendarColor: CalendarColor?,
     val accessibilityLabel: String?,
 )
+
+/**
+ * This screen's body as the state its renderer reads, with the screen's resolved preferences
+ * applied — the one place they reach a body:
+ * - `chipDensity.maxSubtitleLines` caps every event's subtitle lines;
+ * - `chipStyle` reaches only the filled-bar components (the month and time-grid all-day bars);
+ * - `weekStart` is carried onto a month body unmodified, for its grid to order rows from.
+ *
+ * `chipDensity`'s two fields are each authoritative for one thing — `level` for which preset is
+ * active, `maxSubtitleLines` for how many lines to draw — and the server may remap one without the
+ * other changing, so neither this projection nor any client re-derives either from the other.
+ */
+internal fun CalendarScreen.toCalendarBodyUiState(): CalendarBodyUiState =
+    when (val body = body) {
+        is MonthBody -> body.toMonthBodyUiState(resolvedPreferences)
+        is AgendaBody -> body.toAgendaBodyUiState(resolvedPreferences)
+    }
 
 /** This month body with [preferences] applied to its week start and every event it places. */
 internal fun MonthBody.toMonthBodyUiState(preferences: ResolvedPreferences): MonthBodyUiState =
