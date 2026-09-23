@@ -159,7 +159,7 @@ On-ramp into the spec-driven workflow for a GitHub issue. This skill stops once 
 
      Refs: <issue URL>
 
-     Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+     Co-Authored-By: Claude Opus <noreply@anthropic.com>
      ```
 
      Use a HEREDOC for the message so multi-line formatting survives the shell.

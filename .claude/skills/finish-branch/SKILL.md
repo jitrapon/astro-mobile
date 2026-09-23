@@ -117,7 +117,7 @@ After the checkout, run `git status --porcelain -- .claude/REVIEW_ADVERSARIAL.md
   and SPEC.md are per-branch working state. The audit trail for this
   branch lives in earlier commits; main keeps the canonical skeleton.
 
-  Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+  Co-Authored-By: Claude Opus <noreply@anthropic.com>
   ```
 
   The pre-commit hook may reformat — if it fails, diagnose and create a NEW commit (no `--amend`). Standard rules apply.
