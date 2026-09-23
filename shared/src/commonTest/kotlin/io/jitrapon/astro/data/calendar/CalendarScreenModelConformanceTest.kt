@@ -8,6 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -85,7 +86,7 @@ class CalendarScreenModelConformanceTest {
      */
     @Test
     fun pinsEachPresentationToTheSingleRegionTheContractFixesForIt() {
-        PINNED_PRESENTATION_REGIONS.forEach { (schemaName, presentation) ->
+        PRESENTATION_BRANCHES.forEach { (schemaName, presentation) ->
             val declared =
                 assertNotNull(
                     contractSchema(schemaName).enumsByProperty["region"],
@@ -96,6 +97,34 @@ class CalendarScreenModelConformanceTest {
                 declared.toSet(),
                 setOf(presentation.region.wireName()),
                 "$schemaName pins a region the contract gives to another component.",
+            )
+        }
+    }
+
+    /**
+     * The component id each branch supplies is the one the contract fixes for its schema, and the
+     * one that branch is actually encoded under.
+     *
+     * Platform registries key renderers on `componentId`, not on the discriminator, so a branch
+     * whose id drifted from its `@SerialName` would decode correctly and then resolve to the
+     * fallback renderer on every platform — silently. The contract side is read from its own
+     * `component` enum per schema rather than from a hand-copied list, and the wire side from the
+     * encoded key, so a mismatch in either direction fails here.
+     */
+    @Test
+    fun suppliesEachComponentTheIdTheContractFixesAndEncodesItUnderThatId() {
+        BODY_BRANCHES.forEach { (schemaName, body) ->
+            assertComponentIdMatchesContractAndWire(
+                schemaName,
+                body.componentId,
+                strictContractJson.encodeToJsonElement<CalendarBody>(body),
+            )
+        }
+        PRESENTATION_BRANCHES.forEach { (schemaName, presentation) ->
+            assertComponentIdMatchesContractAndWire(
+                schemaName,
+                presentation.componentId,
+                strictContractJson.encodeToJsonElement<EventPresentation>(presentation),
             )
         }
     }
@@ -384,13 +413,40 @@ private val UNMODELLED_SCHEMAS =
     )
 
 /**
- * One instance of every presentation branch, paired with the contract schema that fixes its region.
- *
- * Instances rather than descriptors because a pinned region has no descriptor element to read — the
- * only way to see the value is to hold a branch and ask it. Content is irrelevant here; every field
- * but the region is left at whatever the branch needs to construct.
+ * One instance of every modelled body branch, paired with the contract schema that fixes its
+ * component. Instances for the same reason as [PRESENTATION_BRANCHES]; the props are empty.
  */
-private val PINNED_PRESENTATION_REGIONS: List<Pair<String, EventPresentation>> =
+private val BODY_BRANCHES: List<Pair<String, CalendarBody>> =
+    listOf(
+        "MonthBody" to
+            MonthBody(
+                CalendarMonthViewModel(
+                    range = CalendarRange(start = "", end = ""),
+                    monthAnchor = "",
+                    headerLabel = "",
+                    calendars = emptyMap(),
+                    events = emptyList(),
+                )
+            ),
+        "AgendaBody" to
+            AgendaBody(
+                CalendarAgendaViewModel(
+                    range = CalendarRange(start = "", end = ""),
+                    calendars = emptyMap(),
+                    days = emptyList(),
+                )
+            ),
+    )
+
+/**
+ * One instance of every presentation branch, paired with the contract schema that fixes its region
+ * and its component.
+ *
+ * Instances rather than descriptors because a pinned value has no descriptor element to read — the
+ * only way to see it is to hold a branch and ask it. Content is irrelevant here; every field but
+ * the pinned ones is left at whatever the branch needs to construct.
+ */
+private val PRESENTATION_BRANCHES: List<Pair<String, EventPresentation>> =
     listOf(
         "MonthAllDayBarPresentation" to MonthAllDayBarPresentation(title = ""),
         "MonthTimedMarkerPresentation" to
@@ -417,6 +473,36 @@ private fun SerialDescriptor.requiredElementNames(): Set<String> =
 
 private fun SerialDescriptor.elementNames(): Set<String> =
     (0 until elementsCount).map { getElementName(it) }.toSet()
+
+private fun assertComponentIdMatchesContractAndWire(
+    schemaName: String,
+    componentId: String,
+    encoded: JsonElement,
+) {
+    val declared =
+        assertNotNull(
+            contractSchema(schemaName).enumsByProperty[COMPONENT_DISCRIMINATOR],
+            "$schemaName no longer fixes a single component.",
+        )
+    assertEquals(
+        declared.toSet(),
+        setOf(componentId),
+        "$schemaName supplies a component id the contract gives to another component.",
+    )
+
+    val encodedComponent =
+        assertNotNull(
+                encoded.jsonObject[COMPONENT_DISCRIMINATOR],
+                "$schemaName is encoded without its `$COMPONENT_DISCRIMINATOR` key.",
+            )
+            .jsonPrimitive
+            .content
+    assertEquals(
+        encodedComponent,
+        componentId,
+        "$schemaName is encoded under a different component than the id it supplies.",
+    )
+}
 
 private inline fun <reified T> assertDiscriminatedAsContractDeclares(schemaName: String, value: T) {
     val schema = contractSchema(schemaName)

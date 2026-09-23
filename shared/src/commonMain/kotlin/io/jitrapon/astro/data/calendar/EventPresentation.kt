@@ -44,6 +44,12 @@ enum class EventRegion {
 @Serializable
 @JsonClassDiscriminator("component")
 sealed interface EventPresentation {
+    /**
+     * The versioned component name this presentation was decoded from — the key a platform registry
+     * resolves its renderer by. Supplied per branch like [region], from the same constant the
+     * branch's discriminator is declared with.
+     */
+    val componentId: String
     val region: EventRegion
     val accessibilityLabel: String?
 }
@@ -55,7 +61,7 @@ sealed interface EventPresentation {
  * [ResolvedPreferences.chipStyle].
  */
 @Serializable
-@SerialName("calendar.event.monthAllDayBar.v1")
+@SerialName(CalendarComponentIds.MONTH_ALL_DAY_BAR)
 data class MonthAllDayBarPresentation(
     val title: String,
     /** Ordered; the client renders the first [ChipDensity.maxSubtitleLines] of them. */
@@ -65,6 +71,9 @@ data class MonthAllDayBarPresentation(
     val styleVariant: String? = null,
     val styleToken: String? = null,
 ) : EventPresentation {
+    override val componentId: String
+        get() = CalendarComponentIds.MONTH_ALL_DAY_BAR
+
     override val region: EventRegion
         get() = EventRegion.MONTH_SPAN_BAND
 }
@@ -77,11 +86,14 @@ data class MonthAllDayBarPresentation(
  * color is denormalized onto the presentation. Chip style does not apply (there is no fill).
  */
 @Serializable
-@SerialName("calendar.event.monthTimedMarker.v1")
+@SerialName(CalendarComponentIds.MONTH_TIMED_MARKER)
 data class MonthTimedMarkerPresentation(
     val line: PresentationLine,
     override val accessibilityLabel: String? = null,
 ) : EventPresentation {
+    override val componentId: String
+        get() = CalendarComponentIds.MONTH_TIMED_MARKER
+
     override val region: EventRegion
         get() = EventRegion.MONTH_CELL
 }
@@ -91,7 +103,7 @@ data class MonthTimedMarkerPresentation(
  * lane-packs and segments at column boundaries.
  */
 @Serializable
-@SerialName("calendar.event.timeGridAllDayBar.v1")
+@SerialName(CalendarComponentIds.TIME_GRID_ALL_DAY_BAR)
 data class TimeGridAllDayBarPresentation(
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
@@ -100,6 +112,9 @@ data class TimeGridAllDayBarPresentation(
     val styleVariant: String? = null,
     val styleToken: String? = null,
 ) : EventPresentation {
+    override val componentId: String
+        get() = CalendarComponentIds.TIME_GRID_ALL_DAY_BAR
+
     override val region: EventRegion
         get() = EventRegion.TIME_GRID_ALL_DAY_BAND
 }
@@ -109,7 +124,7 @@ data class TimeGridAllDayBarPresentation(
  * the event's start and end instants.
  */
 @Serializable
-@SerialName("calendar.event.block.v1")
+@SerialName(CalendarComponentIds.EVENT_BLOCK)
 data class EventBlockPresentation(
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
@@ -118,13 +133,16 @@ data class EventBlockPresentation(
     val styleVariant: String? = null,
     val styleToken: String? = null,
 ) : EventPresentation {
+    override val componentId: String
+        get() = CalendarComponentIds.EVENT_BLOCK
+
     override val region: EventRegion
         get() = EventRegion.TIME_GRID_BODY
 }
 
 /** Agenda list row. */
 @Serializable
-@SerialName("calendar.event.card.v1")
+@SerialName(CalendarComponentIds.EVENT_CARD)
 data class EventCardPresentation(
     val title: String,
     val subtitleLines: List<PresentationLine> = emptyList(),
@@ -133,6 +151,9 @@ data class EventCardPresentation(
     val styleVariant: String? = null,
     val styleToken: String? = null,
 ) : EventPresentation {
+    override val componentId: String
+        get() = CalendarComponentIds.EVENT_CARD
+
     override val region: EventRegion
         get() = EventRegion.AGENDA_LIST
 }

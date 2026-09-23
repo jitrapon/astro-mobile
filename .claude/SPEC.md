@@ -106,7 +106,7 @@ Design decisions this plan encodes, settled with the user before drafting:
 
 ### Phase B — the shared component identity, render models, and action model
 
-- [ ] B1. Give `CalendarBody` and `EventPresentation` a `componentId` property, each branch supplying its own versioned wire name the way `EventPresentation.region` is supplied rather than decoded, and add a `CalendarComponentIds` object holding those names as constants so the `@SerialName` values and the platform registries read one source.
+- [x] B1. Give `CalendarBody` and `EventPresentation` a `componentId` property, each branch supplying its own versioned wire name the way `EventPresentation.region` is supplied rather than decoded, and add a `CalendarComponentIds` object holding those names as constants so the `@SerialName` values and the platform registries read one source.
 - [ ] B2. Add `shared/.../presentation/calendar/CalendarBodyUiState.kt`: `CalendarBodyUiState` (sealed, each case carrying its `componentId`) with `MonthBodyUiState` / `AgendaBodyUiState` / `AgendaDayUiState`, and `EventChipUiState` carrying `componentId`, title, already-capped subtitle lines, chip style, the accent colour resolved from `calendars[calendarId]`, and the accessibility label.
 - [ ] B3. Add `CalendarScreen.toCalendarBodyUiState()` — the one place `resolvedPreferences` is applied: `chipDensity.maxSubtitleLines` caps the subtitle lines, `chipStyle` reaches only the filled-bar components the contract scopes it to, `weekStart` reaches the month state. Document that clients must not re-derive either density value from the other.
 - [ ] B4. Add `ViewSwitcherUiState` / `ViewSwitcherOptionUiState` (`id`, `label`, `isActive`, and the `SwitchCalendarViewAction` selecting it produces), projected from the delivered `ViewSwitcher`.
@@ -148,7 +148,7 @@ baseline added; run `./gradlew ktfmtFormat` before each commit.
 - [x] A6. `AppShellTest`'s four tests pass on the managed device against the minified `minifiedTest` variant.
 - [x] A7. `MinifiedAppSmokeTest` passes on the managed device, and adds no `io.jitrapon` rule to the generated keep file. It has teeth: a temporary `-assumenosideeffects` rule letting R8 drop the `initKoin` call makes it fail with `KoinApplication has not been started`.
 - [x] A8. `./gradlew verifyCheckPartition` stays green, `./gradlew check` passes locally, and the new CI job is green on the pull request.
-- [ ] B1. A `commonTest` conformance test asserts each branch's `componentId` equals the `@SerialName` the contract declares, read from the generated `EmbeddedContract` constants rather than a hand-copied list. `./gradlew :shared:testAndroidHostTest :shared:iosSimulatorArm64Test`.
+- [x] B1. A `commonTest` conformance test asserts each branch's `componentId` equals the `@SerialName` the contract declares, read from the generated `EmbeddedContract` constants rather than a hand-copied list. `./gradlew :shared:testAndroidHostTest :shared:iosSimulatorArm64Test`.
 - [ ] B2. `commonTest` covers each `CalendarBodyUiState` case's construction from the contract fixture, including an event whose `subtitleLines` exceed the cap.
 - [ ] B3. `commonTest` asserts: subtitle lines are capped at `maxSubtitleLines` (including `0`), `chipStyle` reaches only the filled-bar components, `weekStart` is carried through unmodified, and a missing calendar id yields no accent colour rather than throwing.
 - [ ] B4. `commonTest` asserts exactly one option is `isActive`, that it matches the delivered `activeSelection`, and that contract order is preserved.

@@ -17,17 +17,30 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("component")
-sealed interface CalendarBody
+sealed interface CalendarBody {
+    /**
+     * The versioned component name this body was decoded from — the key a platform registry
+     * resolves its renderer by. Each branch supplies its own rather than decoding it, the same
+     * constant its discriminator is declared with, so the two cannot disagree.
+     */
+    val componentId: String
+}
 
 /** Month grid body. */
 @Serializable
-@SerialName("calendar.month.v1")
-data class MonthBody(val props: CalendarMonthViewModel) : CalendarBody
+@SerialName(CalendarComponentIds.MONTH_BODY)
+data class MonthBody(val props: CalendarMonthViewModel) : CalendarBody {
+    override val componentId: String
+        get() = CalendarComponentIds.MONTH_BODY
+}
 
 /** Agenda list body. */
 @Serializable
-@SerialName("calendar.agenda.v1")
-data class AgendaBody(val props: CalendarAgendaViewModel) : CalendarBody
+@SerialName(CalendarComponentIds.AGENDA_BODY)
+data class AgendaBody(val props: CalendarAgendaViewModel) : CalendarBody {
+    override val componentId: String
+        get() = CalendarComponentIds.AGENDA_BODY
+}
 
 /** An inclusive date window: both [start] and [end] are covered by the view. */
 @Serializable data class CalendarRange(val start: String, val end: String)
