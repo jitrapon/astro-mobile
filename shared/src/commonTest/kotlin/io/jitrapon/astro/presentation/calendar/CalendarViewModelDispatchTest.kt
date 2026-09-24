@@ -24,6 +24,7 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -118,13 +119,21 @@ class CalendarViewModelDispatchTest {
         val backend = ViewStampingBackend(agendaFails = { true })
         val viewModel = backend.monthViewModel(this)
         val painted = backgroundScope.recordStates(viewModel.state)
-        painted.awaitLatest { it.stampedView() == MONTH }
+        val month = painted.awaitLatest { it.stampedView() == MONTH }
 
         viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
         val failed = painted.awaitLatest { it.failure != null }
 
         assertEquals(MONTH, failed.stampedView())
         assertEquals(false, failed.isLoading)
+        assertNotNull(month.viewSwitcher)
+        assertEquals(month.title, failed.title)
+        assertEquals(month.body, failed.body)
+        assertEquals(
+            month.viewSwitcher,
+            failed.viewSwitcher,
+            "The failed switch left nothing to switch back with.",
+        )
     }
 
     @Test

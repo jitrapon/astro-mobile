@@ -9,6 +9,8 @@ import io.jitrapon.astro.data.calendar.respondWithMonthScreenFixture
 import io.jitrapon.astro.recordStates
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,6 +73,36 @@ class CalendarViewModelTest {
             CalendarScreenQueryState.Failed(refused, lastLoadedResponse = null, isFetching = false)
                 .toCalendarUiState(),
         )
+    }
+
+    @Test
+    fun aFailureKeepsTheTitleBodyAndSwitcherOfTheScreenItLandedOver() {
+        val screen = decodeMonthScreenFixture()
+        val refused = IllegalStateException("the backend refused the exchange")
+
+        val failed =
+            CalendarScreenQueryState.Failed(
+                    refused,
+                    lastLoadedResponse = screen,
+                    isFetching = false,
+                )
+                .toCalendarUiState()
+
+        assertEquals(screen.screen.title, failed.title)
+        assertEquals(screen.screen.toCalendarBodyUiState(), failed.body)
+        assertEquals(screen.screen.viewSwitcher.toViewSwitcherUiState(), failed.viewSwitcher)
+        assertIs<MonthBodyUiState>(failed.body)
+        assertTrue(
+            failed.viewSwitcher?.options?.any { it.isActive } == true,
+            "The kept switcher lost its active view: ${failed.viewSwitcher}",
+        )
+
+        val nothingKept =
+            CalendarScreenQueryState.Failed(refused, lastLoadedResponse = null, isFetching = false)
+                .toCalendarUiState()
+        assertNull(nothingKept.title)
+        assertNull(nothingKept.body)
+        assertNull(nothingKept.viewSwitcher)
     }
 
     @Test
