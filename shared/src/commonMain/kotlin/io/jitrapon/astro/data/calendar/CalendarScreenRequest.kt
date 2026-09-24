@@ -66,16 +66,19 @@ sealed interface RequestedCalendarView {
     data class TimeGrid(val dayCount: Int) : RequestedCalendarView {
 
         init {
-            require(dayCount in MIN_DAY_COUNT..MAX_DAY_COUNT) {
+            require(dayCount in DAY_COUNTS) {
                 "A time grid shows $MIN_DAY_COUNT-$MAX_DAY_COUNT days; was $dayCount."
             }
         }
 
         override val wireValue: String = "timegrid"
 
-        private companion object {
-            const val MIN_DAY_COUNT = 1
-            const val MAX_DAY_COUNT = 7
+        companion object {
+            private const val MIN_DAY_COUNT = 1
+            private const val MAX_DAY_COUNT = 7
+
+            /** Every day count a time grid can be requested with, as the contract bounds it. */
+            internal val DAY_COUNTS: IntRange = MIN_DAY_COUNT..MAX_DAY_COUNT
         }
     }
 
@@ -92,6 +95,24 @@ sealed interface RequestedCalendarView {
         val ALL: List<RequestedCalendarView> = listOf(Month, Agenda, TimeGrid(dayCount = 1), Year)
     }
 }
+
+/**
+ * The view to request for this delivered selection, or `null` for a time grid whose day count falls
+ * outside the contract's bounds — a selection decoding accepts but no request can express, which a
+ * caller treats as nothing to switch to rather than as a reason to fail.
+ */
+internal fun CalendarViewSelection.toRequestedCalendarView(): RequestedCalendarView? =
+    when (this) {
+        AgendaViewSelection -> RequestedCalendarView.Agenda
+        MonthViewSelection -> RequestedCalendarView.Month
+        YearViewSelection -> RequestedCalendarView.Year
+        is TimeGridViewSelection ->
+            if (dayCount in RequestedCalendarView.TimeGrid.DAY_COUNTS) {
+                RequestedCalendarView.TimeGrid(dayCount)
+            } else {
+                null
+            }
+    }
 
 /**
  * A calendar date with no time and no offset, which is what the window boundaries of a screen

@@ -171,5 +171,5 @@ class CalendarViewModelTest {
  * A child of the test's background scope, so a case that never cancels it still leaves nothing
  * running, and cancelling it inside a case is exactly the screen going away.
  */
-private fun TestScope.presentationScope(): CoroutineScope =
+internal fun TestScope.presentationScope(): CoroutineScope =
     CoroutineScope(backgroundScope.coroutineContext + Job(backgroundScope.coroutineContext.job))
