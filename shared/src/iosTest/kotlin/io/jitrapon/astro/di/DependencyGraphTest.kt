@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
+import org.koin.core.qualifier.named
 import org.koin.mp.KoinPlatformTools
 
 /**
@@ -52,7 +53,9 @@ class DependencyGraphTest {
         DependencyGraph.start(baseUrl = UNREACHABLE_BASE_URL)
         DependencyGraph.calendarScreenObserver()
         val deliveryScope =
-            KoinPlatformTools.defaultContext().get().get<CoroutineScope>(MAIN_THREAD_DELIVERY_SCOPE)
+            KoinPlatformTools.defaultContext()
+                .get()
+                .get<CoroutineScope>(named("mainThreadDeliveryScope"))
 
         DependencyGraph.stop()
 
