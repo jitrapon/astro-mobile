@@ -217,6 +217,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The contract-decoding test reads the vendored month-screen fixture as an asset straight from
+    // where :shared's contract tests read it — the one copy verifyVendoredContractParity holds to
+    // the astro-docs mirror — so the instrumented decode cannot drift from the contract.
+    sourceSets
+        .getByName("androidTest")
+        .assets
+        .srcDir(rootProject.file("shared/src/commonTest/resources/contract"))
+
     signingConfigs {
         if (hasReleaseSigningCredentials) {
             create("release") {
@@ -377,10 +385,17 @@ androidComponents {
  * original name on the renamed class, and died on `NoSuchMethodError`. Pinning the names of only
  * what the tests touch leaves R8 free to rename, shrink and optimize everything else.
  *
- * Rules for kotlinx.serialization and for generated `$$serializer` classes are dropped. Testing a
+ * Rules for serializer implementations are dropped: generated `$serializer` / `$$serializer`
+ * classes, kotlinx.serialization's built-in `…Serializer`s, and its `internal` packages. Testing a
  * minified build exists to catch R8 removing what the app reaches only reflectively, above all the
  * serializers polymorphic decoding looks up; a test that touched one would otherwise keep it in the
  * tested APK while the shipping one loses it, and pass over the very failure it exists to find.
+ *
+ * The codec's public API — `Json`, the `serializer(KType)` lookup, `SerializersModule`, the
+ * `KSerializer` / `DeserializationStrategy` interfaces — keeps its rules, so a test can decode
+ * through the app's own codec. Pinning those names keeps no serializer: a reified
+ * `decodeFromString<T>()` still has to find `T`'s serializer by the same reflective lookup the app
+ * does, and fails exactly where the shipped app would.
  */
 abstract class GenerateInstrumentedTestKeepRules : DefaultTask() {
     @get:Classpath abstract val testJars: ListProperty<RegularFile>
@@ -440,7 +455,20 @@ abstract class GenerateInstrumentedTestKeepRules : DefaultTask() {
     private fun allowAccessWidening(rules: String): String =
         rules.replace(Regex("^-keep ", RegexOption.MULTILINE), "-keep,allowaccessmodification ")
 
-    /** Removes each whole rule — header through closing brace — that names a serialization type. */
+    /** Removes each whole rule — header through closing brace — that keeps a serializer. */
+    private fun keepsASerializer(header: String): Boolean {
+        val className =
+            Regex("""(?:class|interface|enum)\s+([\w.$]+)""").find(header)?.groupValues?.get(1)
+                ?: return false
+        val simpleName = className.substringAfterLast('.')
+        return "\$serializer" in className ||
+            className.startsWith("kotlinx.serialization.internal.") ||
+            className.startsWith("kotlinx.serialization.json.internal.") ||
+            (className.startsWith("kotlinx.serialization.") &&
+                simpleName.endsWith("Serializer") &&
+                simpleName != "KSerializer")
+    }
+
     private fun dropSerializationRules(rules: String): String {
         val kept = StringBuilder()
         val lines = rules.lines().iterator()
@@ -454,9 +482,7 @@ abstract class GenerateInstrumentedTestKeepRules : DefaultTask() {
                     if (line.trim() == "}") break
                 }
             }
-            val namesSerialization =
-                "kotlinx.serialization." in header || "\$\$serializer" in header
-            if (!namesSerialization) kept.append(rule)
+            if (!keepsASerializer(header)) kept.append(rule)
         }
         return kept.toString()
     }
@@ -628,6 +654,10 @@ dependencies {
     // `ui-test-manifest` is deliberately absent: it exists only to declare a host activity in the
     // *debug* manifest, and instrumented tests run against release — they host in MainActivity.
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // The contract-decoding test decodes the vendored fixture through the app's own codec, whose
+    // type is kotlinx.serialization's. The test needs the API at compile time; at run time the
+    // app's copy — shrunk by R8 — is what executes.
+    androidTestImplementation(libs.kotlinx.serialization.json)
     // `ui-tooling` is the runtime preview inspector, and it is debug-only for a reason beyond the
     // obvious one. Its AAR manifest declares an `androidx.compose.ui.tooling.PreviewActivity`;
     // manifest merger folds that activity into the app's merged manifest, and AAPT2 generates a
