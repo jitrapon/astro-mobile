@@ -41,6 +41,12 @@ import org.junit.Test
  * nothing this test does keeps a serializer, so one R8 removed fails the decode below rather than
  * being rescued by the test's own presence.
  *
+ * What it cannot vouch for is the shipping build itself. Every contract model it names is kept
+ * whole in this APK — name, members and annotations, with R8's merging and inlining of those
+ * classes switched off — where `release` leaves them to the optimizer.
+ * `ReleaseContractRenderingTest` in `:androidAppReleaseTest` closes that gap by running black-box
+ * against `release`'s own shrink.
+ *
  * Kept apart from [MinifiedAppSmokeTest], which stays black-box so it proves the app starts with
  * nothing kept on its behalf.
  */

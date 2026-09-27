@@ -72,7 +72,11 @@ jobs:
     # *builds*; it cannot see R8 stripping a type the app reaches only reflectively (a polymorphic
     # serializer, a registry entry), because that fails when the code runs, not when it links. This
     # job installs the minified `minifiedTest` variant — `release` plus keep rules for what the tests
-    # call — on a Gradle Managed Device and runs the instrumented suite against it.
+    # call — on a Gradle Managed Device and runs the instrumented suite against it. Those generated
+    # keeps pin every contract model a test names, so the same job also runs `:androidAppReleaseTest`
+    # black-box against `releaseLoopback` — `release`'s shrink with no test keep, fed the contract
+    # fixture from a backend on the device's loopback — which is the run that proves the APK users
+    # get decodes a delivered screen.
     #
     # Deliberately outside the verifyCheckPartition guard, the same classification
     # `:androidApp:assemble` carries: booting an emulator and installing a signed APK is artifact and
@@ -134,12 +138,15 @@ jobs:
             echo "ASTRO_KEY_PASSWORD=$password"
           } >> "$GITHUB_ENV"
 
-      # The task name comes from the managed device's DSL name and the tested build type
-      # (`androidApp/build.gradle.kts`). Every instrumented-test task fails when it executes zero
-      # tests and times out when the runner never reports, so a runner that crashes under R8 turns
-      # this red rather than passing an empty run. SwiftShader renders on a runner that has no GPU.
+      # Each task name comes from the managed device's DSL name and the tested build type
+      # (`androidApp/build.gradle.kts`, `androidAppReleaseTest/build.gradle.kts`). Every
+      # instrumented-test task fails when it executes zero tests and times out when the runner never
+      # reports, so a runner that crashes under R8 turns this red rather than passing an empty run.
+      # One invocation, so both runs share the one managed device's system image. SwiftShader
+      # renders on a runner that has no GPU.
       - run: >-
           ./gradlew :androidApp:aospAtd34MinifiedTestAndroidTest
+          :androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
 
   verify-ios:

@@ -58,6 +58,13 @@ Use it sparingly — CI's `./gradlew check` and the security workflow still enfo
 
 Instrumented tests run against the **minified** app — the `minifiedTest` build type, which is `release` plus keep rules for what the tests call — because R8 stripping something the app reaches only reflectively (a polymorphic serializer, a registry entry) fails only when the shrunk code runs. CI runs them in the `verify-android-release` job; `./gradlew check` does not, since it needs an emulator and a signing key.
 
+A second, black-box run covers what the first cannot: `minifiedTest`'s generated keeps pin every contract model a test names, so it is not the APK users get. `:androidAppReleaseTest` runs against `releaseLoopback` — `release`'s own shrink with no test keep, pointed at a backend on the device's loopback — serves the vendored contract fixture there, and checks through UiAutomator that the shipped app renders it. CI runs both in the same job:
+
+```bash
+./gradlew :androidApp:aospAtd34MinifiedTestAndroidTest \
+  :androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest
+```
+
 The APK under test must be signed, so the run needs the four release-signing credentials. They resolve from a gitignored `keystore.properties` at the repo root (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) or, failing that, from these environment variables:
 
 | Variable                  | What it is                            |

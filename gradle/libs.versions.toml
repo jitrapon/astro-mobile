@@ -58,6 +58,14 @@ structured-coroutines = "1.1.1"
 # bump that lands alone — a Renovate security bump, say — would otherwise compile by luck in every
 # build that never reaches that path. Renovate is disabled for this ref for the same reason.
 compose-stability-analyzer = "0.14.0"
+# `:androidAppReleaseTest` only — the black-box run against the `releaseLoopback` build. The test
+# APK is self-instrumenting, so it runs in a process of its own and none of these reaches the app's
+# classpath. `mockwebserver3` shares no lockstep with the OkHttp Ktor's engine pulls into the app:
+# the two load into separate processes from separate APKs.
+androidx-test-runner = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+androidx-test-uiautomator = "2.4.0"
+mockwebserver = "5.5.0"
 # CycloneDX Gradle plugin — produces the SBOM the PR-blocking `sca` job hands to osv-scanner. It
 # ships in no artifact; it exists so software-composition analysis reads the RESOLVED Gradle graph
 # at PR time instead of waiting for the post-merge Dependency Graph inventory. Plugin 3.x needs
@@ -138,6 +146,12 @@ androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
+
+# Test-only — the black-box release run in `:androidAppReleaseTest`.
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+androidx-test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidx-test-uiautomator" }
+mockwebserver3 = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "mockwebserver" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }

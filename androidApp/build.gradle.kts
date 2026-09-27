@@ -9,7 +9,6 @@ import com.ncorti.ktfmt.gradle.FormattingOptionsBean
 import com.ncorti.ktfmt.gradle.KtfmtExtension
 import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
-import java.time.Duration
 import java.util.Properties
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
@@ -204,6 +203,11 @@ val hasReleaseSigningCredentials =
         it.isNullOrBlank()
     }
 
+// The port the `releaseLoopback` build's backend answers on. Read from `gradle.properties` because
+// `:androidAppReleaseTest` starts that backend and must listen where this build connects.
+val releaseLoopbackBackendPort =
+    providers.gradleProperty("astro.releaseLoopback.backendPort").get().toInt()
+
 android {
     compileSdk = 37
 
@@ -215,6 +219,9 @@ android {
         versionName = "0.1.2"
         vectorDrawables { useSupportLibrary = true }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // The backend origin, per build type — see `AstroApplication`. Every build type but
+        // `releaseLoopback` still points at the development placeholder.
+        buildConfigField("String", "BACKEND_BASE_URL", "\"http://10.0.2.2:8080/api\"")
     }
 
     // The contract-decoding test reads the vendored month-screen fixture as an asset straight from
@@ -266,6 +273,24 @@ android {
             // own. `testProguardFiles` reach only the test APK, never the app under test.
             testProguardFiles("proguard-test-rules.pro")
         }
+        // The shipping shrink, pointed at a backend on the device's own loopback.
+        // `:androidAppReleaseTest`
+        // runs black-box against it: the one build that proves the APK users get decodes a
+        // delivered screen, since `minifiedTest`'s generated keeps pin every contract model a test
+        // names — keeping those classes whole where `release` lets R8 merge, inline and rewrite
+        // them. So beside `initWith` it departs from `release` only where no class is touched: the
+        // base URL below, and a `src/releaseLoopback` manifest overlay permitting cleartext to
+        // `127.0.0.1` alone. No keep rule, no `minSdk` change — `androidComponents` below selects
+        // `minifiedTest` by name and never reaches this build type.
+        create("releaseLoopback") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            buildConfigField(
+                "String",
+                "BACKEND_BASE_URL",
+                "\"http://127.0.0.1:$releaseLoopbackBackendPort/api\"",
+            )
+        }
     }
     // Instrumented tests run against the minified `minifiedTest` variant, not AGP's default
     // `debug`.
@@ -307,7 +332,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     namespace = "io.jitrapon.astro"
 
     fun Packaging.() {
@@ -554,73 +582,9 @@ if (android.buildTypes.getByName(android.testBuildType).signingConfig == null) {
     }
 }
 
-// An instrumented run that executed no test fails. The test platform reports a runner that died
-// before its first test — a class the tested APK's shrink removed, a crash in the app's own
-// startup — as an empty result and a green build: `tests="0"`, exit code 0, BUILD SUCCESSFUL. For
-// a gate whose job is to run the minified APK, that is the one outcome that must never pass.
-//
-// A runner that dies earlier — in its `onCreate`, before it can report anything — is worse: the
-// instrumentation never signals completion, `am instrument -w` blocks, and the run hangs until
-// something kills it. The timeout turns that into a named failure. It spans the whole task,
-// emulator
-// boot included, with ample room for a suite that grows.
-//
-// Attached to the test task itself rather than to a finalizer, so no `-x` can run the tests without
-// the check. Stale result files are cleared first, so only what this run wrote is counted.
-tasks.configureEach {
-    if (this is AndroidTestTask) {
-        timeout.set(Duration.ofMinutes(20))
-        val resultsDir = resultsDir
-        val taskPath = path
-        doFirst { InstrumentedTestResults.clear(resultsDir.get().asFile) }
-        doLast { InstrumentedTestResults.requireExecutedTests(resultsDir.get().asFile, taskPath) }
-    }
-}
-
-/** Reads the JUnit XML an instrumented-test task writes under its results directory. */
-object InstrumentedTestResults {
-    fun clear(resultsDir: File) {
-        junitReports(resultsDir).forEach(File::delete)
-    }
-
-    fun requireExecutedTests(resultsDir: File, taskPath: String) {
-        val reports = junitReports(resultsDir)
-        val executed = reports.sumOf(::countExecutedTests)
-        check(executed > 0) {
-            """
-            |$taskPath executed no tests, which is a failure, not a pass.
-            |
-            |${reports.size} JUnit report(s) under $resultsDir, summing to 0 executed tests. The
-            |usual cause is the instrumentation runner crashing before its first test — a class or
-            |member the tested APK's shrink removed, or a crash in the app's startup — which the
-            |test platform reports as an empty, successful run. Its output is not kept: reproduce
-            |with `adb shell am instrument -w -r <test package>/<runner>` against the same two
-            |APKs to see the stack trace.
-            """
-                .trimMargin()
-        }
-    }
-
-    private fun junitReports(resultsDir: File): List<File> =
-        resultsDir
-            .walkTopDown()
-            .filter { it.isFile && it.name.startsWith("TEST-") && it.name.endsWith(".xml") }
-            .toList()
-
-    // Summed over <testsuite> elements only. The empty run writes a bare <testsuites tests="0"/>
-    // root, and that root's own count is what the platform reports as a pass.
-    private fun countExecutedTests(report: File): Int {
-        val suites =
-            javax.xml.parsers.DocumentBuilderFactory.newInstance()
-                .newDocumentBuilder()
-                .parse(report)
-                .getElementsByTagName("testsuite")
-        return (0 until suites.length).sumOf { index ->
-            val suite = suites.item(index) as org.w3c.dom.Element
-            suite.getAttribute("tests").toIntOrNull() ?: 0
-        }
-    }
-}
+// Every instrumented run — this module's and `:androidAppReleaseTest`'s — carries a timeout and
+// fails
+// on executing zero tests; both are attached in the root build script.
 
 dependencies {
     // The `structured-coroutines` ruleset on Detekt's rule classpath (40 syntactic coroutine

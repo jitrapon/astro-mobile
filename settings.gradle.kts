@@ -12,4 +12,6 @@ rootProject.name = "Astro"
 
 include(":androidApp")
 
+include(":androidAppReleaseTest")
+
 include(":shared")
