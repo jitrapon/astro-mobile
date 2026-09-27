@@ -11,4 +11,10 @@ object CalendarComponentTestTags {
 
     /** The tag on the fallback drawn for [componentId], which no renderer is registered for. */
     fun unregistered(componentId: String): String = "calendar_component_unregistered_$componentId"
+
+    /** The tag on each subtitle line drawn for the event whose id is [eventId]. */
+    fun subtitleLine(eventId: String): String = "calendar_event_subtitle_line_$eventId"
+
+    /** The tag on the month body's weekday label at [position], 0 being the week's first day. */
+    fun weekday(position: Int): String = "calendar_month_weekday_$position"
 }
