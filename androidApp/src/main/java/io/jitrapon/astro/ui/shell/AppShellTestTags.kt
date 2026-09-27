@@ -6,6 +6,10 @@ object AppShellTestTags {
     const val LOADING = "app_shell_loading"
     const val FAILURE = "app_shell_failure"
     const val NO_DESTINATIONS = "app_shell_no_destinations"
+    const val CALENDAR_TOP_BAR = "app_shell_calendar_top_bar"
+
+    /** The tag on the view switcher's option whose id is [optionId]. */
+    fun viewSwitcherOption(optionId: String): String = "app_shell_view_option_$optionId"
 
     /** The tag on the placeholder shown for the destination whose id is [destinationId]. */
     fun destinationPlaceholder(destinationId: String): String =

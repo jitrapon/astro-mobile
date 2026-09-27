@@ -8,6 +8,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldDefaults
 import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -23,35 +24,63 @@ import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
+import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * The app shell fed by a stream of shell states: collects [shellState] for as long as the host is
- * at least started, and draws each state with [AppShell].
+ * The app shell fed by streams of state: collects [shellState] and [calendarState] for as long as
+ * the host is at least started, and draws them with [AppShell].
  *
- * Takes the stream rather than the view model that publishes it, so a test or a preview can drive
- * the shell with any flow of states.
+ * Takes the streams rather than the view model that publishes them, so a test or a preview can
+ * drive the shell with any flow of states.
  */
 @Composable
-fun AppShellRoute(shellState: StateFlow<AppShellState>, modifier: Modifier = Modifier) {
+fun AppShellRoute(
+    shellState: StateFlow<AppShellState>,
+    calendarState: StateFlow<CalendarUiState>,
+    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val state by shellState.collectAsStateWithLifecycle()
-    AppShell(state = state, modifier = modifier)
+    val calendar by calendarState.collectAsStateWithLifecycle()
+    AppShell(
+        state = state,
+        calendar = calendar,
+        onCalendarViewSelected = onCalendarViewSelected,
+        modifier = modifier,
+    )
 }
 
 /**
  * The shell around every screen: a bottom bar with one tab per destination the server delivered,
  * and the selected destination's screen above it — or, before any destinations have arrived, a
  * loading or failure placeholder with no bar at all.
+ *
+ * [calendar] is the one screen this app observes. A tab whose target is that screen draws it — its
+ * title and view switcher in a top bar, its body below — and [onCalendarViewSelected] receives the
+ * option chosen from its switcher.
  */
 @Composable
-fun AppShell(state: AppShellState, modifier: Modifier = Modifier) {
+fun AppShell(
+    state: AppShellState,
+    calendar: CalendarUiState,
+    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     when (state) {
         AppShellState.Loading -> LoadingPlaceholder(modifier)
         AppShellState.NoDestinations -> NoDestinationsPlaceholder(modifier)
         is AppShellState.Failed -> FailurePlaceholder(modifier)
-        is AppShellState.Tabs -> TabbedShell(tabs = state.tabs, modifier = modifier)
+        is AppShellState.Tabs ->
+            TabbedShell(
+                tabs = state.tabs,
+                calendar = calendar,
+                onCalendarViewSelected = onCalendarViewSelected,
+                modifier = modifier,
+            )
     }
 }
 
@@ -67,20 +96,39 @@ fun AppShell(state: AppShellState, modifier: Modifier = Modifier) {
  * first, and back from the first leaves the app. Entries are keyed by destination id, so two
  * destinations that route to the same screen still get separate entries and separate saved state.
  *
- * The window draws edge to edge, so the bar and the content below it take their insets explicitly:
- * the default [BottomNavigation] and [Scaffold] overloads apply none, which would leave the tabs
- * under the system navigation bar with their tap targets behind the system's own controls.
+ * The selected tab shows the calendar screen when its target is that screen's id, and the calendar
+ * top bar appears only then — a title and switcher belong to that screen, not to the shell.
+ *
+ * The window draws edge to edge, so the bars and the content between them take their insets
+ * explicitly: the default [BottomNavigation], [TopAppBar] and [Scaffold] overloads apply none,
+ * which would leave the tabs under the system navigation bar with their tap targets behind the
+ * system's own controls.
  */
 @Composable
-private fun TabbedShell(tabs: List<AppShellTab>, modifier: Modifier = Modifier) {
+private fun TabbedShell(
+    tabs: List<AppShellTab>,
+    calendar: CalendarUiState,
+    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var selectedDestinationId by rememberSaveable { mutableStateOf<String?>(null) }
     val startTab = tabs.first()
     val selectedTab = tabs.firstOrNull { it.destinationId == selectedDestinationId } ?: startTab
     val backStack = if (selectedTab == startTab) listOf(startTab) else listOf(startTab, selectedTab)
+    val calendarScreenId = calendar.content?.screen?.id
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
         modifier = modifier,
+        topBar = {
+            if (calendarScreenId != null && selectedTab.targetScreenId == calendarScreenId) {
+                CalendarTopBar(
+                    title = calendar.title.orEmpty(),
+                    viewSwitcher = calendar.viewSwitcher,
+                    onViewSelected = onCalendarViewSelected,
+                )
+            }
+        },
         bottomBar = {
             ShellBottomBar(
                 tabs = tabs,
@@ -94,7 +142,14 @@ private fun TabbedShell(tabs: List<AppShellTab>, modifier: Modifier = Modifier) 
             modifier = Modifier.padding(contentPadding),
             onBack = { selectedDestinationId = startTab.destinationId },
             entryProvider = { tab ->
-                NavEntry(key = tab, contentKey = tab.destinationId) { DestinationPlaceholder(tab) }
+                NavEntry(key = tab, contentKey = tab.destinationId) {
+                    val body = calendar.body
+                    if (body != null && tab.targetScreenId == calendarScreenId) {
+                        CalendarScreenBody(body)
+                    } else {
+                        DestinationPlaceholder(tab)
+                    }
+                }
             },
         )
     }

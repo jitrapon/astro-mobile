@@ -16,6 +16,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import io.jitrapon.astro.data.calendar.NavigateAction
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.ui.main.MainActivity
@@ -116,7 +117,18 @@ class AppShellTest {
         composeRule.activityRule.scenario.onActivity { activity ->
             activity.findViewById<ViewGroup>(android.R.id.content).removeAllViews()
         }
-        composeRule.setContent { AstroTheme { AppShellRoute(shellState = shellState) } }
+        composeRule.setContent {
+            AstroTheme {
+                AppShellRoute(
+                    shellState = shellState,
+                    calendarState =
+                        MutableStateFlow(
+                            CalendarUiState(content = null, isLoading = false, failure = null)
+                        ),
+                    onCalendarViewSelected = {},
+                )
+            }
+        }
     }
 
     private companion object {

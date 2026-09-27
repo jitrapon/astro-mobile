@@ -21,7 +21,11 @@ class MainActivity : ComponentActivity() {
             AstroTheme {
                 val shellViewModel: AppShellViewModel =
                     viewModel(factory = AppShellViewModel.Factory)
-                AppShellRoute(shellState = shellViewModel.shellState)
+                AppShellRoute(
+                    shellState = shellViewModel.shellState,
+                    calendarState = shellViewModel.calendarState,
+                    onCalendarViewSelected = shellViewModel::selectCalendarView,
+                )
             }
         }
     }

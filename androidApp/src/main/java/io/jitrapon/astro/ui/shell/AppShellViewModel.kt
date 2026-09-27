@@ -9,13 +9,16 @@ import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.RequestedCalendarView
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.CalendarViewModel
+import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.toAppShellState
 import java.util.Calendar
 import java.util.GregorianCalendar
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -24,51 +27,62 @@ import org.koin.core.context.GlobalContext
 
 /**
  * Holds the app shell's state across configuration changes: it observes the current month's
- * calendar screen and publishes the shell that screen implies.
+ * calendar screen, publishes that screen and the shell it implies, and forwards what the person
+ * does on the screen back to it.
  *
  * It derives nothing itself. The shell is the shared [CalendarViewModel]'s state mapped through
  * [toAppShellState], the one projection both apps use, so Android and iOS cannot disagree about
  * which destinations become tabs or when the bar is shown.
  *
- * The request is fixed at construction. A shell that outlives a month boundary keeps observing the
- * month it started in, which is acceptable while the shell renders only destinations — they do not
- * depend on the month asked for.
+ * The screen is opened through [openCalendarScreen] on this view model's own scope, so it lives
+ * exactly as long as the shell does. Production opens a [CalendarViewModel]; see [Factory].
  */
-class AppShellViewModel(
-    calendarScreenRepository: CalendarScreenRepository,
-    request: CalendarScreenRequest,
-) : ViewModel() {
+class AppShellViewModel(openCalendarScreen: (CoroutineScope) -> CalendarScreenHandle) :
+    ViewModel() {
 
-    private val calendarViewModel =
-        CalendarViewModel(calendarScreenRepository, request, viewModelScope)
+    private val calendarScreen = openCalendarScreen(viewModelScope)
 
     /**
-     * The shell as it stands now. Collecting it is what starts the observation, and it stops when
-     * the last collector leaves, exactly as [CalendarViewModel.state] does.
+     * The calendar screen as it stands now — its title, body and view switcher. Collecting it is
+     * what starts the observation, and it stops when the last collector leaves, exactly as
+     * [CalendarViewModel.state] does.
      */
+    val calendarState: StateFlow<CalendarUiState> = calendarScreen.state
+
+    /** The shell as it stands now, derived from [calendarState] and started by collecting it. */
     val shellState: StateFlow<AppShellState> =
-        calendarViewModel.state
+        calendarScreen.state
             .map { it.toAppShellState() }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(),
-                calendarViewModel.state.value.toAppShellState(),
+                calendarScreen.state.value.toAppShellState(),
             )
+
+    /**
+     * Switches the calendar to [option]'s view. The screen consumes the switch itself — it
+     * re-points the request it observes — so there is no effect for the platform to carry out.
+     */
+    fun selectCalendarView(option: ViewSwitcherOptionUiState) {
+        calendarScreen.dispatch(option.action)
+    }
 
     companion object {
         /**
-         * Builds the view model with the repository resolved from the graph [AstroApplication]
-         * started and the request for the month the device is in now.
+         * Builds the view model over a [CalendarViewModel] observing the month the device is in
+         * now, through the repository resolved from the graph [AstroApplication] started.
          *
-         * Resolution happens here, at the composition edge, so the class itself takes plain
-         * constructor arguments and a test can hand it any repository.
+         * Resolution happens here, at the composition edge, so the class itself takes a plain
+         * function and a test can hand it any screen.
          */
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                AppShellViewModel(
-                    calendarScreenRepository = GlobalContext.get().get(),
-                    request = currentMonthRequest(),
-                )
+                val calendarScreenRepository: CalendarScreenRepository = GlobalContext.get().get()
+                val request = currentMonthRequest()
+                AppShellViewModel { scope ->
+                    CalendarViewModel(calendarScreenRepository, request, scope)
+                        .toCalendarScreenHandle()
+                }
             }
         }
     }

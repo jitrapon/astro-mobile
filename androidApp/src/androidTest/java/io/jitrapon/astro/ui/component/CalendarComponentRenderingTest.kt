@@ -9,35 +9,21 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import io.jitrapon.astro.WORK_CALENDARS
+import io.jitrapon.astro.allDayEvent
+import io.jitrapon.astro.calendarScreenResponse
 import io.jitrapon.astro.data.calendar.AgendaBody
 import io.jitrapon.astro.data.calendar.AgendaDay
-import io.jitrapon.astro.data.calendar.AllDayEvent
-import io.jitrapon.astro.data.calendar.Calendar
 import io.jitrapon.astro.data.calendar.CalendarAgendaViewModel
-import io.jitrapon.astro.data.calendar.CalendarBody
-import io.jitrapon.astro.data.calendar.CalendarColor
-import io.jitrapon.astro.data.calendar.CalendarItemType
-import io.jitrapon.astro.data.calendar.CalendarMonthViewModel
 import io.jitrapon.astro.data.calendar.CalendarRange
-import io.jitrapon.astro.data.calendar.CalendarScreen
 import io.jitrapon.astro.data.calendar.CalendarScreenResponse
-import io.jitrapon.astro.data.calendar.ChipDensity
-import io.jitrapon.astro.data.calendar.ChipDensityLevel
-import io.jitrapon.astro.data.calendar.ChipStyle
 import io.jitrapon.astro.data.calendar.EventCardPresentation
-import io.jitrapon.astro.data.calendar.EventPermissions
-import io.jitrapon.astro.data.calendar.EventPresentation
 import io.jitrapon.astro.data.calendar.MonthAllDayBarPresentation
-import io.jitrapon.astro.data.calendar.MonthBody
-import io.jitrapon.astro.data.calendar.MonthViewSelection
-import io.jitrapon.astro.data.calendar.Navigation
 import io.jitrapon.astro.data.calendar.PresentationLine
-import io.jitrapon.astro.data.calendar.PresentedCalendarEvent
-import io.jitrapon.astro.data.calendar.ResolvedPreferences
-import io.jitrapon.astro.data.calendar.ThemeRef
-import io.jitrapon.astro.data.calendar.ViewSwitcher
 import io.jitrapon.astro.data.calendar.WeekStart
+import io.jitrapon.astro.monthBody
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
+import io.jitrapon.astro.resolvedPreferences
 import io.jitrapon.astro.ui.main.MainActivity
 import io.jitrapon.astro.ui.main.theme.AstroTheme
 import java.text.DateFormatSymbols
@@ -138,45 +124,36 @@ class CalendarComponentRenderingTest {
         const val MONTH_HEADER = "เมษายน 2569"
         const val ALL_DAY_EVENT_ID = "s1"
         const val CARD_TITLE = "Standup"
-        const val CALENDAR_ID = "cal-work"
         val SUBTITLES = listOf("Office", "Floor 3", "Bring laptop")
         val AGENDA_DAY_HEADERS = listOf("พฤ. 16 เม.ย.", "ศ. 17 เม.ย.")
 
         fun monthScreen(weekStart: WeekStart, maxSubtitleLines: Int): CalendarScreenResponse =
-            screenWith(
-                weekStart = weekStart,
-                maxSubtitleLines = maxSubtitleLines,
+            calendarScreenResponse(
+                preferences = resolvedPreferences(weekStart, maxSubtitleLines),
                 body =
-                    MonthBody(
-                        CalendarMonthViewModel(
-                            range = CalendarRange(start = "2026-03-30", end = "2026-05-10"),
-                            monthAnchor = "2026-04-01",
-                            headerLabel = MONTH_HEADER,
-                            calendars = CALENDARS,
-                            events =
-                                listOf(
-                                    event(
-                                        id = ALL_DAY_EVENT_ID,
-                                        presentation =
-                                            MonthAllDayBarPresentation(
-                                                title = "สงกรานต์",
-                                                subtitleLines = SUBTITLES.map(::PresentationLine),
-                                            ),
-                                    )
-                                ),
-                        )
+                    monthBody(
+                        headerLabel = MONTH_HEADER,
+                        events =
+                            listOf(
+                                allDayEvent(
+                                    id = ALL_DAY_EVENT_ID,
+                                    presentation =
+                                        MonthAllDayBarPresentation(
+                                            title = "สงกรานต์",
+                                            subtitleLines = SUBTITLES.map(::PresentationLine),
+                                        ),
+                                )
+                            ),
                     ),
             )
 
         fun agendaScreen(): CalendarScreenResponse =
-            screenWith(
-                weekStart = WeekStart.MONDAY,
-                maxSubtitleLines = 1,
+            calendarScreenResponse(
                 body =
                     AgendaBody(
                         CalendarAgendaViewModel(
                             range = CalendarRange(start = "2026-04-16", end = "2026-04-17"),
-                            calendars = CALENDARS,
+                            calendars = WORK_CALENDARS,
                             days =
                                 listOf(
                                     AgendaDay(
@@ -184,7 +161,7 @@ class CalendarComponentRenderingTest {
                                         headerLabel = AGENDA_DAY_HEADERS[0],
                                         events =
                                             listOf(
-                                                event(
+                                                allDayEvent(
                                                     id = "c1",
                                                     presentation =
                                                         EventCardPresentation(title = CARD_TITLE),
@@ -198,75 +175,6 @@ class CalendarComponentRenderingTest {
                                     ),
                                 ),
                         )
-                    ),
-            )
-
-        fun screenWith(
-            weekStart: WeekStart,
-            maxSubtitleLines: Int,
-            body: CalendarBody,
-        ): CalendarScreenResponse =
-            CalendarScreenResponse(
-                schemaVersion = "0.2.0",
-                serverTime = "2026-04-16T03:30:00Z",
-                locale = "th-TH",
-                timeZone = "Asia/Bangkok",
-                theme = ThemeRef(id = "light", version = "1"),
-                screen =
-                    CalendarScreen(
-                        id = "calendar",
-                        title = MONTH_HEADER,
-                        navigation = Navigation(emptyList()),
-                        viewSwitcher =
-                            ViewSwitcher(
-                                activeSelection = MonthViewSelection,
-                                options = emptyList(),
-                            ),
-                        resolvedPreferences =
-                            ResolvedPreferences(
-                                weekStart = weekStart,
-                                chipStyle = ChipStyle.PASTEL,
-                                chipDensity =
-                                    ChipDensity(
-                                        level = ChipDensityLevel.COMFORTABLE,
-                                        maxSubtitleLines = maxSubtitleLines,
-                                    ),
-                            ),
-                        body = body,
-                    ),
-            )
-
-        fun event(id: String, presentation: EventPresentation): PresentedCalendarEvent =
-            PresentedCalendarEvent(
-                itemType = CalendarItemType.CALENDAR_EVENT_V1,
-                presentation = presentation,
-                props =
-                    AllDayEvent(
-                        id = id,
-                        calendarId = CALENDAR_ID,
-                        permissions =
-                            EventPermissions(canEdit = true, canDelete = true, canMove = true),
-                        version = "$id:v1",
-                        startDate = "2026-04-16",
-                        endDate = "2026-04-16",
-                    ),
-            )
-
-        val CALENDARS =
-            mapOf(
-                CALENDAR_ID to
-                    Calendar(
-                        id = CALENDAR_ID,
-                        displayName = "งาน",
-                        color =
-                            CalendarColor(
-                                accentToken = "calendar.work.accent",
-                                accentColor = "#b81311",
-                                backgroundToken = "calendar.work.background",
-                                backgroundColor = "#f9dcda",
-                                foregroundToken = "calendar.work.foreground",
-                                foregroundColor = "#5c0a09",
-                            ),
                     )
             )
     }
