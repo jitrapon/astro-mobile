@@ -6,6 +6,9 @@ package io.jitrapon.astro.ui.component
  */
 object CalendarComponentTestTags {
 
+    /** The tag on the month body's affordance presenting the events it does not list. */
+    const val MONTH_OVERFLOW = "calendar_month_overflow"
+
     /** The tag on the renderer registered for the component whose versioned id is [componentId]. */
     fun registered(componentId: String): String = "calendar_component_$componentId"
 

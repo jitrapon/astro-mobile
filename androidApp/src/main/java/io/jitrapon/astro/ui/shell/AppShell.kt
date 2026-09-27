@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
@@ -108,6 +109,17 @@ private fun TabbedShell(
     val rootTab = navigatingTabs.firstOrNull()
     val selectedTab = selection.selectedTab(navigatingTabs)
 
+    // Every affordance in the shell dispatches an action; [source] is the tab it came from, which a
+    // screen effect prefers when choosing the destination to show.
+    val act = { action: Action, source: AppShellTab? ->
+        selection.carryOut(
+            effect = interactions.dispatch(action),
+            source = source,
+            navigatingTabs = navigatingTabs,
+            openExternalUrl = interactions.openExternalUrl,
+        )
+    }
+
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
         modifier = modifier,
@@ -116,7 +128,7 @@ private fun TabbedShell(
                 CalendarTopBar(
                     title = calendar.title.orEmpty(),
                     viewSwitcher = calendar.viewSwitcher,
-                    onViewSelected = interactions.onCalendarViewSelected,
+                    onViewSelected = { option -> act(option.action, selectedTab) },
                 )
             }
         },
@@ -124,22 +136,15 @@ private fun TabbedShell(
             ShellBottomBar(
                 tabs = tabs,
                 selectedTab = selectedTab,
-                onTabSelected = { tab ->
-                    selection.carryOut(
-                        effect = interactions.onTabSelected(tab),
-                        source = tab,
-                        navigatingTabs = navigatingTabs,
-                        openExternalUrl = interactions.onOpenExternalUrl,
-                    )
-                },
+                onTabSelected = { tab -> act(tab.action, tab) },
             )
         },
     ) { contentPadding ->
         if (rootTab != null && selectedTab != null) {
             ShellScreens(
-                rootTab = rootTab,
-                selectedTab = selectedTab,
+                backStack = backStackOf(rootTab, selectedTab),
                 calendar = calendar,
+                onAction = { action -> act(action, selectedTab) },
                 onBack = { selection.select(rootTab) },
                 modifier = Modifier.padding(contentPadding),
             )
@@ -152,20 +157,25 @@ private fun TabbedShell(
 }
 
 /**
- * The navigation display for the selected destination. Its back stack is derived from the selection
- * rather than kept alongside it: [rootTab] is its root, and any other selected tab sits above it.
- * Entries are keyed by destination id, so two destinations that route to the same screen still get
- * separate entries and separate saved state.
+ * The back stack for [selectedTab], derived from the selection rather than kept alongside it:
+ * [rootTab] is its root, and any other selected tab sits above it. Back from another tab therefore
+ * returns to the root, and back from the root leaves the app.
+ */
+private fun backStackOf(rootTab: AppShellTab, selectedTab: AppShellTab): List<AppShellTab> =
+    if (selectedTab == rootTab) listOf(rootTab) else listOf(rootTab, selectedTab)
+
+/**
+ * The navigation display for [backStack]'s top destination. Entries are keyed by destination id, so
+ * two destinations that route to the same screen still get separate entries and saved state.
  */
 @Composable
 private fun ShellScreens(
-    rootTab: AppShellTab,
-    selectedTab: AppShellTab,
+    backStack: List<AppShellTab>,
     calendar: CalendarUiState,
+    onAction: (Action) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val backStack = if (selectedTab == rootTab) listOf(rootTab) else listOf(rootTab, selectedTab)
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -174,7 +184,7 @@ private fun ShellScreens(
             NavEntry(key = tab, contentKey = tab.destinationId) {
                 val body = calendar.body
                 if (body != null && tab.showsScreenOf(calendar)) {
-                    CalendarScreenBody(body)
+                    CalendarScreenBody(body, onAction)
                 } else {
                     DestinationPlaceholder(tab)
                 }

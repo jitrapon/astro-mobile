@@ -35,7 +35,7 @@ import org.junit.Test
 /**
  * Pins that a tab carrying each of the contract's five action types produces its user-visible
  * outcome when tapped, through the shell's real path: the tab's callback, the route,
- * [AppShellViewModel.selectTab], the screen's dispatch, and the shell carrying out the effect.
+ * [AppShellViewModel.dispatch], the screen's dispatch, and the shell carrying out the effect.
  *
  * Only the screen behind the shell is scripted — a minified test build can reach no backend — and
  * its dispatch answers with the shared `toActionEffect` mapping the real view model uses, so no
@@ -126,9 +126,8 @@ class AppShellActionTest {
                     calendarState = shellViewModel.calendarState,
                     interactions =
                         AppShellInteractions(
-                            onTabSelected = shellViewModel::selectTab,
-                            onCalendarViewSelected = shellViewModel::selectCalendarView,
-                            onOpenExternalUrl = { openedUrls += it },
+                            dispatch = shellViewModel::dispatch,
+                            openExternalUrl = { openedUrls += it },
                         ),
                 )
             }

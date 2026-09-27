@@ -37,14 +37,15 @@ internal class ShellSelectionState(private val selectedDestinationId: MutableSta
     }
 
     /**
-     * Carries out [effect], which acting on [source] produced: showing a screen selects the
-     * destination that targets it, opening a URL goes to [openExternalUrl], and the event effects
-     * show the placeholder surface. A screen no navigating tab targets has nowhere to be shown, so
-     * that effect leaves the selection where it is.
+     * Carries out [effect], which acting from [source] produced — the tab tapped, or the one
+     * showing the screen an action came from: showing a screen selects the destination that targets
+     * it, opening a URL goes to [openExternalUrl], and the event effects show the placeholder
+     * surface. A screen no navigating tab targets has nowhere to be shown, so that effect leaves
+     * the selection where it is.
      */
     fun carryOut(
         effect: ActionEffect?,
-        source: AppShellTab,
+        source: AppShellTab?,
         navigatingTabs: List<AppShellTab>,
         openExternalUrl: (String) -> Unit,
     ) {
@@ -80,7 +81,7 @@ internal fun rememberShellSelectionState(): ShellSelectionState {
  */
 private fun List<AppShellTab>.destinationShowing(
     screenId: String,
-    preferring: AppShellTab,
+    preferring: AppShellTab?,
 ): AppShellTab? =
-    if (preferring.targetScreenId == screenId) preferring
+    if (preferring?.targetScreenId == screenId) preferring
     else firstOrNull { it.targetScreenId == screenId }

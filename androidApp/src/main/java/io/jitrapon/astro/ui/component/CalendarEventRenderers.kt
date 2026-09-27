@@ -1,6 +1,7 @@
 package io.jitrapon.astro.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +26,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.ChipStyle
+import io.jitrapon.astro.data.calendar.OpenEventDetailAction
 import io.jitrapon.astro.presentation.calendar.EventChipUiState
 
 // Stand-ins for the real event-presentation renderers. Each reads only its own chip's props — the
@@ -34,16 +37,24 @@ import io.jitrapon.astro.presentation.calendar.EventChipUiState
 
 /** A month all-day bar: a filled bar, drawn per the resolved chip style. */
 @Composable
-internal fun MonthAllDayBarPlaceholder(event: EventChipUiState, modifier: Modifier = Modifier) {
-    FilledBarChip(event, modifier)
+internal fun MonthAllDayBarPlaceholder(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilledBarChip(event, onAction, modifier)
 }
 
 /** A month timed marker: a dot in the calendar's accent before its one server-composed line. */
 @Composable
-internal fun MonthTimedMarkerPlaceholder(event: EventChipUiState, modifier: Modifier = Modifier) {
+internal fun MonthTimedMarkerPlaceholder(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = event.calendarColor.toChipColors()
     Row(
-        modifier = modifier.eventChipRoot(event),
+        modifier = modifier.eventChipRoot(event, onAction),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -54,20 +65,32 @@ internal fun MonthTimedMarkerPlaceholder(event: EventChipUiState, modifier: Modi
 
 /** A time-grid all-day bar: a filled bar, drawn per the resolved chip style. */
 @Composable
-internal fun TimeGridAllDayBarPlaceholder(event: EventChipUiState, modifier: Modifier = Modifier) {
-    FilledBarChip(event, modifier)
+internal fun TimeGridAllDayBarPlaceholder(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilledBarChip(event, onAction, modifier)
 }
 
 /** A time-grid block. Chip style does not reach it, so it keeps one look under every style. */
 @Composable
-internal fun EventBlockPlaceholder(event: EventChipUiState, modifier: Modifier = Modifier) {
-    AccentEdgeChip(event, modifier)
+internal fun EventBlockPlaceholder(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AccentEdgeChip(event, onAction, modifier)
 }
 
 /** An agenda card. Chip style does not reach it, so it keeps one look under every style. */
 @Composable
-internal fun EventCardPlaceholder(event: EventChipUiState, modifier: Modifier = Modifier) {
-    AccentEdgeChip(event, modifier)
+internal fun EventCardPlaceholder(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AccentEdgeChip(event, onAction, modifier)
 }
 
 /**
@@ -76,22 +99,30 @@ internal fun EventCardPlaceholder(event: EventChipUiState, modifier: Modifier = 
  * accent-edge treatment rather than failing.
  */
 @Composable
-private fun FilledBarChip(event: EventChipUiState, modifier: Modifier = Modifier) {
+private fun FilledBarChip(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     when (event.chipStyle) {
-        ChipStyle.PASTEL -> PastelChip(event, modifier)
+        ChipStyle.PASTEL -> PastelChip(event, onAction, modifier)
         ChipStyle.ACCENT_EDGE,
-        null -> AccentEdgeChip(event, modifier)
+        null -> AccentEdgeChip(event, onAction, modifier)
     }
 }
 
 /** A pastel fill in the calendar's background colour, with its foreground colour on top. */
 @Composable
-private fun PastelChip(event: EventChipUiState, modifier: Modifier = Modifier) {
+private fun PastelChip(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = event.calendarColor.toChipColors()
     Box(
         modifier =
             modifier
-                .eventChipRoot(event)
+                .eventChipRoot(event, onAction)
                 .clip(CHIP_SHAPE)
                 .background(colors.background)
                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -102,12 +133,16 @@ private fun PastelChip(event: EventChipUiState, modifier: Modifier = Modifier) {
 
 /** A surface-coloured chip marked by an edge in the calendar's accent colour. */
 @Composable
-private fun AccentEdgeChip(event: EventChipUiState, modifier: Modifier = Modifier) {
+private fun AccentEdgeChip(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = event.calendarColor.toChipColors()
     Row(
         modifier =
             modifier
-                .eventChipRoot(event)
+                .eventChipRoot(event, onAction)
                 .height(IntrinsicSize.Min)
                 .clip(CHIP_SHAPE)
                 .background(MaterialTheme.colors.surface)
@@ -147,13 +182,20 @@ private fun ChipText(event: EventChipUiState, color: Color) {
 }
 
 /**
- * The root of every event chip: tagged with the component id the registry resolved it by, and
- * speaking the event's accessibility label, when it has one, in place of its drawn text.
+ * The root of every event chip: tagged with the component id the registry resolved it by, tappable
+ * to open the event's detail, and speaking the event's accessibility label, when it has one, in
+ * place of its drawn text.
+ *
+ * The contract attaches no action to an event, so the tap builds its own from the event's id —
+ * which is what makes the open-event-detail action reachable at all.
  */
-private fun Modifier.eventChipRoot(event: EventChipUiState): Modifier {
-    val tagged = testTag(CalendarComponentTestTags.registered(event.componentId))
-    val label = event.accessibilityLabel ?: return tagged
-    return tagged.semantics(mergeDescendants = true) { contentDescription = label }
+private fun Modifier.eventChipRoot(event: EventChipUiState, onAction: (Action) -> Unit): Modifier {
+    val tappable =
+        testTag(CalendarComponentTestTags.registered(event.componentId)).clickable {
+            onAction(OpenEventDetailAction(event.eventId))
+        }
+    val label = event.accessibilityLabel ?: return tappable
+    return tappable.semantics(mergeDescendants = true) { contentDescription = label }
 }
 
 private val CHIP_SHAPE = RoundedCornerShape(4.dp)

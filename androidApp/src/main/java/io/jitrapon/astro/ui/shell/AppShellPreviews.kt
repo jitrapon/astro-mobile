@@ -97,7 +97,6 @@ private val NO_CALENDAR_SCREEN = CalendarUiState(content = null, isLoading = fal
 /** Interactions that do nothing: a preview draws the shell, it does not act on it. */
 private val PREVIEW_INTERACTIONS =
     AppShellInteractions(
-        onTabSelected = { null },
-        onCalendarViewSelected = {},
-        onOpenExternalUrl = {},
+        dispatch = { null },
+        openExternalUrl = {},
     )

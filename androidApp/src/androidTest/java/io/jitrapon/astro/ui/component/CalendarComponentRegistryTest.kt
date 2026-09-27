@@ -37,7 +37,7 @@ class CalendarComponentRegistryTest {
     fun everyModelledBodyComponentIsDrawnByItsRegisteredRenderer() {
         val bodies = CalendarComponentIds.BODY_IDS.map { bodyStateFor(it) }
 
-        show { bodies.forEach { CalendarBodyComponent(it) } }
+        show { bodies.forEach { CalendarBodyComponent(it, onAction = {}) } }
 
         bodies.forEach { body ->
             composeRule
@@ -53,7 +53,7 @@ class CalendarComponentRegistryTest {
     fun everyModelledEventPresentationIsDrawnByItsRegisteredRenderer() {
         val events = CalendarComponentIds.EVENT_PRESENTATION_IDS.map { eventWith(componentId = it) }
 
-        show { events.forEach { CalendarEventComponent(it) } }
+        show { events.forEach { CalendarEventComponent(it, onAction = {}) } }
 
         events.forEach { event ->
             composeRule
@@ -71,8 +71,8 @@ class CalendarComponentRegistryTest {
         val event = eventWith(componentId = UNREGISTERED_EVENT_ID)
 
         show {
-            CalendarBodyComponent(body)
-            CalendarEventComponent(event)
+            CalendarBodyComponent(body, onAction = {})
+            CalendarEventComponent(event, onAction = {})
         }
 
         listOf(UNREGISTERED_BODY_ID, UNREGISTERED_EVENT_ID).forEach { id ->
@@ -90,7 +90,7 @@ class CalendarComponentRegistryTest {
         val mismatched =
             AgendaBodyUiState(componentId = CalendarComponentIds.MONTH_BODY, days = emptyList())
 
-        show { CalendarBodyComponent(mismatched) }
+        show { CalendarBodyComponent(mismatched, onAction = {}) }
 
         composeRule
             .onNodeWithTag(CalendarComponentTestTags.unregistered(CalendarComponentIds.MONTH_BODY))

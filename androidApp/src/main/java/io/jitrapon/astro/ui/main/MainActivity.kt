@@ -31,9 +31,8 @@ class MainActivity : ComponentActivity() {
                 val interactions =
                     remember(shellViewModel) {
                         AppShellInteractions(
-                            onTabSelected = shellViewModel::selectTab,
-                            onCalendarViewSelected = shellViewModel::selectCalendarView,
-                            onOpenExternalUrl = ::openExternalUrl,
+                            dispatch = shellViewModel::dispatch,
+                            openExternalUrl = ::openExternalUrl,
                         )
                     }
                 AppShellRoute(

@@ -1,23 +1,21 @@
 package io.jitrapon.astro.ui.shell
 
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.presentation.action.ActionEffect
-import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
-import io.jitrapon.astro.presentation.shell.AppShellTab
 
 /**
- * What the shell reports the person doing, and the one platform service it needs to answer them.
+ * How the shell acts on what the person does, and the one platform service it needs to finish.
  *
- * Grouped rather than passed singly so the shell's entry points stay readable as the screens inside
- * it gain affordances, and so a test or preview supplies them in one place.
+ * Every affordance inside the shell — a tab, a view option, an event on the screen — produces an
+ * [Action], so one [dispatch] serves them all and the shell carries out whatever effect comes back.
+ * Grouped so a test or preview supplies both in one place.
  */
 class AppShellInteractions(
     /**
-     * Dispatches the tab's action and returns the effect the shell must carry out, or `null` when
-     * the screen consumed the action itself.
+     * Acts on the calendar screen and returns the effect the shell must carry out, or `null` when
+     * the screen consumed the action itself — as a view switch is.
      */
-    val onTabSelected: (AppShellTab) -> ActionEffect?,
-    /** Switches the calendar to the chosen view. */
-    val onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
-    /** Opens [String] — a URL the server delivered — outside the app. */
-    val onOpenExternalUrl: (String) -> Unit,
+    val dispatch: (Action) -> ActionEffect?,
+    /** Opens a URL the server delivered outside the app. */
+    val openExternalUrl: (String) -> Unit,
 )

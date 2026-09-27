@@ -34,7 +34,7 @@ import org.junit.Test
 /**
  * Pins that the calendar screen's top bar shows the delivered title and switcher, and that choosing
  * a view travels the shell's real path — the switcher's callback, the route, and
- * [AppShellViewModel.selectCalendarView] — to the screen's dispatch.
+ * [AppShellViewModel.dispatch] — to the screen's dispatch.
  *
  * The screen behind the shell is scripted: dispatch records each action and, like the real view
  * model once the new request has delivered, publishes a screen with the chosen view active. What
@@ -97,9 +97,8 @@ class CalendarTopBarTest {
                     calendarState = shellViewModel.calendarState,
                     interactions =
                         AppShellInteractions(
-                            onTabSelected = shellViewModel::selectTab,
-                            onCalendarViewSelected = shellViewModel::selectCalendarView,
-                            onOpenExternalUrl = {},
+                            dispatch = shellViewModel::dispatch,
+                            openExternalUrl = {},
                         ),
                 )
             }

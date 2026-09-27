@@ -2,17 +2,23 @@ package io.jitrapon.astro.ui.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.CalendarComponentIds
 import io.jitrapon.astro.presentation.calendar.AgendaBodyUiState
 import io.jitrapon.astro.presentation.calendar.CalendarBodyUiState
 import io.jitrapon.astro.presentation.calendar.EventChipUiState
 import io.jitrapon.astro.presentation.calendar.MonthBodyUiState
 
-/** Draws one calendar body the server selected. */
-internal typealias CalendarBodyRenderer = @Composable (CalendarBodyUiState, Modifier) -> Unit
+/**
+ * Draws one calendar body the server selected, reporting each action the person takes on it to the
+ * `(Action) -> Unit` it is handed.
+ */
+internal typealias CalendarBodyRenderer =
+    @Composable (CalendarBodyUiState, (Action) -> Unit, Modifier) -> Unit
 
-/** Draws one event in the presentation component the server selected for it. */
-internal typealias CalendarEventRenderer = @Composable (EventChipUiState, Modifier) -> Unit
+/** Draws one event in the presentation component the server selected for it, reporting its tap. */
+internal typealias CalendarEventRenderer =
+    @Composable (EventChipUiState, (Action) -> Unit, Modifier) -> Unit
 
 /**
  * Maps each server-driven calendar component, by the versioned id the contract delivers it as, to
@@ -36,27 +42,37 @@ internal object CalendarComponentRegistry {
     private val bodyRenderers: Map<String, CalendarBodyRenderer> =
         mapOf(
             CalendarComponentIds.MONTH_BODY to
-                bodyRenderer<MonthBodyUiState> { body, modifier ->
-                    MonthBodyPlaceholder(body, modifier)
+                bodyRenderer<MonthBodyUiState> { body, onAction, modifier ->
+                    MonthBodyPlaceholder(body, onAction, modifier)
                 },
             CalendarComponentIds.AGENDA_BODY to
-                bodyRenderer<AgendaBodyUiState> { body, modifier ->
-                    AgendaBodyPlaceholder(body, modifier)
+                bodyRenderer<AgendaBodyUiState> { body, onAction, modifier ->
+                    AgendaBodyPlaceholder(body, onAction, modifier)
                 },
         )
 
     private val eventRenderers: Map<String, CalendarEventRenderer> =
         mapOf(
             CalendarComponentIds.MONTH_ALL_DAY_BAR to
-                eventRenderer { event, modifier -> MonthAllDayBarPlaceholder(event, modifier) },
+                eventRenderer { event, onAction, modifier ->
+                    MonthAllDayBarPlaceholder(event, onAction, modifier)
+                },
             CalendarComponentIds.MONTH_TIMED_MARKER to
-                eventRenderer { event, modifier -> MonthTimedMarkerPlaceholder(event, modifier) },
+                eventRenderer { event, onAction, modifier ->
+                    MonthTimedMarkerPlaceholder(event, onAction, modifier)
+                },
             CalendarComponentIds.TIME_GRID_ALL_DAY_BAR to
-                eventRenderer { event, modifier -> TimeGridAllDayBarPlaceholder(event, modifier) },
+                eventRenderer { event, onAction, modifier ->
+                    TimeGridAllDayBarPlaceholder(event, onAction, modifier)
+                },
             CalendarComponentIds.EVENT_BLOCK to
-                eventRenderer { event, modifier -> EventBlockPlaceholder(event, modifier) },
+                eventRenderer { event, onAction, modifier ->
+                    EventBlockPlaceholder(event, onAction, modifier)
+                },
             CalendarComponentIds.EVENT_CARD to
-                eventRenderer { event, modifier -> EventCardPlaceholder(event, modifier) },
+                eventRenderer { event, onAction, modifier ->
+                    EventCardPlaceholder(event, onAction, modifier)
+                },
         )
 
     /** The renderer registered for the body component [componentId], or the fallback. */
@@ -69,11 +85,11 @@ internal object CalendarComponentRegistry {
     fun eventRendererFor(componentId: String): CalendarEventRenderer =
         eventRenderers[componentId] ?: UNREGISTERED_EVENT
 
-    private val UNREGISTERED_BODY: CalendarBodyRenderer = { body, modifier ->
+    private val UNREGISTERED_BODY: CalendarBodyRenderer = { body, _, modifier ->
         UnregisteredComponent(body.componentId, modifier)
     }
 
-    private val UNREGISTERED_EVENT: CalendarEventRenderer = { event, modifier ->
+    private val UNREGISTERED_EVENT: CalendarEventRenderer = { event, _, modifier ->
         UnregisteredComponent(event.componentId, modifier)
     }
 
@@ -86,20 +102,38 @@ internal object CalendarComponentRegistry {
      * a hand-built state — and it falls back visibly rather than throwing a cast failure mid-frame.
      */
     private inline fun <reified T : CalendarBodyUiState> bodyRenderer(
-        noinline render: @Composable (T, Modifier) -> Unit
-    ): CalendarBodyRenderer = { body, modifier ->
-        if (body is T) render(body, modifier) else UnregisteredComponent(body.componentId, modifier)
+        noinline render: @Composable (T, (Action) -> Unit, Modifier) -> Unit
+    ): CalendarBodyRenderer = { body, onAction, modifier ->
+        if (body is T) {
+            render(body, onAction, modifier)
+        } else {
+            UnregisteredComponent(body.componentId, modifier)
+        }
     }
 }
 
-/** Draws [body] with the renderer its component id is registered to. */
+/**
+ * Draws [body] with the renderer its component id is registered to, reporting each action taken on
+ * it to [onAction].
+ */
 @Composable
-internal fun CalendarBodyComponent(body: CalendarBodyUiState, modifier: Modifier = Modifier) {
-    CalendarComponentRegistry.bodyRendererFor(body.componentId)(body, modifier)
+internal fun CalendarBodyComponent(
+    body: CalendarBodyUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CalendarComponentRegistry.bodyRendererFor(body.componentId)(body, onAction, modifier)
 }
 
-/** Draws [event] with the renderer its presentation component id is registered to. */
+/**
+ * Draws [event] with the renderer its presentation component id is registered to, reporting its tap
+ * to [onAction].
+ */
 @Composable
-internal fun CalendarEventComponent(event: EventChipUiState, modifier: Modifier = Modifier) {
-    CalendarComponentRegistry.eventRendererFor(event.componentId)(event, modifier)
+internal fun CalendarEventComponent(
+    event: EventChipUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CalendarComponentRegistry.eventRendererFor(event.componentId)(event, onAction, modifier)
 }

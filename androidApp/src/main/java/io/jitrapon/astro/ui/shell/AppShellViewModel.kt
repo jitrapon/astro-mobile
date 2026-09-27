@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
@@ -12,9 +13,7 @@ import io.jitrapon.astro.data.calendar.RequestedCalendarView
 import io.jitrapon.astro.presentation.action.ActionEffect
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.CalendarViewModel
-import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
-import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.presentation.shell.toAppShellState
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -62,18 +61,10 @@ class AppShellViewModel(openCalendarScreen: (CoroutineScope) -> CalendarScreenHa
             )
 
     /**
-     * Switches the calendar to [option]'s view. The screen consumes the switch itself — it
-     * re-points the request it observes — so there is no effect for the platform to carry out.
-     */
-    fun selectCalendarView(option: ViewSwitcherOptionUiState) {
-        calendarScreen.dispatch(option.action)
-    }
-
-    /**
-     * Carries out [tab]'s action as far as the screen can, and returns the effect the shell must
+     * Carries out [action] as far as the calendar screen can, and returns the effect the shell must
      * carry out for the rest — or `null` when the screen consumed it, as a view switch is.
      */
-    fun selectTab(tab: AppShellTab): ActionEffect? = calendarScreen.dispatch(tab.action)
+    fun dispatch(action: Action): ActionEffect? = calendarScreen.dispatch(action)
 
     companion object {
         /**

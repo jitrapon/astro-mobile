@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.presentation.calendar.CalendarBodyUiState
 import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.calendar.ViewSwitcherUiState
@@ -91,10 +92,17 @@ private fun ViewSwitcherRow(
     }
 }
 
-/** The calendar screen's body, drawn by whichever renderer its component is registered to. */
+/**
+ * The calendar screen's body, drawn by whichever renderer its component is registered to, with what
+ * the person does on it reported to [onAction].
+ */
 @Composable
-internal fun CalendarScreenBody(body: CalendarBodyUiState, modifier: Modifier = Modifier) {
+internal fun CalendarScreenBody(
+    body: CalendarBodyUiState,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        CalendarBodyComponent(body)
+        CalendarBodyComponent(body, onAction)
     }
 }

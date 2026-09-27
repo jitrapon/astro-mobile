@@ -130,9 +130,8 @@ class AppShellTest {
                     // exactly as the real dispatch would answer it.
                     interactions =
                         AppShellInteractions(
-                            onTabSelected = { it.action.toActionEffect() },
-                            onCalendarViewSelected = {},
-                            onOpenExternalUrl = {},
+                            dispatch = { it.toActionEffect() },
+                            openExternalUrl = {},
                         ),
                 )
             }

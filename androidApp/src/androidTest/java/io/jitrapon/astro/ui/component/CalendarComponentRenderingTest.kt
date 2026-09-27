@@ -51,12 +51,18 @@ class CalendarComponentRenderingTest {
         composeRule.onNodeWithText(MONTH_HEADER).assertIsDisplayed()
     }
 
+    // A chip is tappable, so its lines merge into the chip's one semantics node — as they should
+    // for
+    // accessibility. Counting them means looking in the unmerged tree.
     @Test
     fun aChipWithMoreSubtitleLinesThanTheCapDrawsExactlyTheCap() {
         show(monthScreen(weekStart = WeekStart.MONDAY, maxSubtitleLines = 1))
 
         composeRule
-            .onAllNodesWithTag(CalendarComponentTestTags.subtitleLine(ALL_DAY_EVENT_ID))
+            .onAllNodesWithTag(
+                CalendarComponentTestTags.subtitleLine(ALL_DAY_EVENT_ID),
+                useUnmergedTree = true,
+            )
             .assertCountEquals(1)
         composeRule.onNodeWithText(SUBTITLES.first()).assertIsDisplayed()
     }
@@ -66,7 +72,10 @@ class CalendarComponentRenderingTest {
         show(monthScreen(weekStart = WeekStart.MONDAY, maxSubtitleLines = 0))
 
         composeRule
-            .onAllNodesWithTag(CalendarComponentTestTags.subtitleLine(ALL_DAY_EVENT_ID))
+            .onAllNodesWithTag(
+                CalendarComponentTestTags.subtitleLine(ALL_DAY_EVENT_ID),
+                useUnmergedTree = true,
+            )
             .assertCountEquals(0)
     }
 
@@ -114,7 +123,7 @@ class CalendarComponentRenderingTest {
         composeRule.activityRule.scenario.onActivity { activity ->
             activity.findViewById<ViewGroup>(android.R.id.content).removeAllViews()
         }
-        composeRule.setContent { AstroTheme { CalendarBodyComponent(body) } }
+        composeRule.setContent { AstroTheme { CalendarBodyComponent(body, onAction = {}) } }
         composeRule.waitForIdle()
     }
 
