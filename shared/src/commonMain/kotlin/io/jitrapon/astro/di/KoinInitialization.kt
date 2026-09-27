@@ -13,19 +13,15 @@ import org.koin.core.module.Module
  * Swift initializes and resolves through this module's own facade, never through Koin itself.
  */
 fun initKoin(baseUrl: String) {
-    startDependencyGraph(baseUrl)
+    startKoin { modules(sharedGraphModules(baseUrl)) }
 }
 
 /**
- * Starts the graph [initKoin] starts, plus [platformModules] — the bindings only one platform's app
- * consumes.
+ * The modules every platform's graph is built from. A platform whose app needs bindings of its own
+ * starts these plus its modules in one `startKoin`, composed directly with `+` — never handed in
+ * through a parameter, so a compile-time graph check can see the whole graph from the start call.
  *
- * Loaded in the same start rather than added afterwards, so there is no instant at which the graph
- * is running without them and a teardown closes them alongside everything else. Internal because
- * [Module] is Koin's type and must not reach the framework surface.
+ * Internal because [Module] is Koin's type and must not reach the framework surface.
  */
-internal fun startDependencyGraph(baseUrl: String, platformModules: List<Module> = emptyList()) {
-    startKoin {
-        modules(listOf(platformHttpEngineModule, dataLayerModule(baseUrl)) + platformModules)
-    }
-}
+internal fun sharedGraphModules(baseUrl: String): List<Module> =
+    listOf(platformHttpEngineModule, dataLayerModule(baseUrl))

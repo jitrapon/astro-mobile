@@ -2,6 +2,7 @@ package io.jitrapon.astro.di
 
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.presentation.calendar.CalendarScreenObserver
+import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
 
@@ -22,9 +23,13 @@ object DependencyGraph {
     /**
      * Starts the graph against the backend at [baseUrl]. Call once, at app launch, before anything
      * resolves from it.
+     *
+     * The iOS-only bindings load in the same start as the shared ones rather than afterwards, so
+     * there is no instant at which the graph runs without them, and a teardown closes them
+     * alongside everything else.
      */
     fun start(baseUrl: String) {
-        startDependencyGraph(baseUrl, platformModules = listOf(iosPresentationModule))
+        startKoin { modules(sharedGraphModules(baseUrl) + iosPresentationModule) }
     }
 
     /** Resolves the calendar screen's data boundary from the running graph. */
