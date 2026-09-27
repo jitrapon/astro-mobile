@@ -21,4 +21,14 @@ object CalendarComponentIds {
     const val TIME_GRID_ALL_DAY_BAR: String = "calendar.event.timeGridAllDayBar.v1"
     const val EVENT_BLOCK: String = "calendar.event.block.v1"
     const val EVENT_CARD: String = "calendar.event.card.v1"
+
+    /**
+     * Every body component id above — what a platform registry must hold a body renderer for, so a
+     * test can enumerate them rather than restate the list.
+     */
+    val BODY_IDS: Set<String> = setOf(MONTH_BODY, AGENDA_BODY)
+
+    /** Every event-presentation component id above, for the same reason as [BODY_IDS]. */
+    val EVENT_PRESENTATION_IDS: Set<String> =
+        setOf(MONTH_ALL_DAY_BAR, MONTH_TIMED_MARKER, TIME_GRID_ALL_DAY_BAR, EVENT_BLOCK, EVENT_CARD)
 }
