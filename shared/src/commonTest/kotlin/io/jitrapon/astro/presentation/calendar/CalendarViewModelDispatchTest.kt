@@ -137,6 +137,30 @@ class CalendarViewModelDispatchTest {
     }
 
     @Test
+    fun selectingAFailedViewAgainRetriesItAndSelectingALoadedOneDoesNot() = runTest {
+        var agendaAnswers = 0
+        val backend = ViewStampingBackend(agendaFails = { ++agendaAnswers == 1 })
+        val viewModel = backend.monthViewModel(this)
+        val painted = backgroundScope.recordStates(viewModel.state)
+        painted.awaitLatest { it.stampedView() == MONTH }
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+        painted.awaitLatest { it.failure != null && !it.isLoading }
+
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+
+        val agenda = painted.awaitLatest { it.stampedView() == AGENDA }
+        assertNull(agenda.failure)
+        assertEquals(listOf(MONTH, AGENDA, AGENDA), backend.requestedViews)
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+        advanceUntilIdle()
+        assertEquals(
+            listOf(MONTH, AGENDA, AGENDA),
+            backend.requestedViews,
+            "Selecting the view already showing exchanged again.",
+        )
+    }
+
+    @Test
     fun aSupersededSwitchIsCancelledRatherThanReportedOrPainted() = runTest {
         val stalled = StalledExchange()
         val backend = ViewStampingBackend(beforeAgendaAnswers = { stalled.hold() })

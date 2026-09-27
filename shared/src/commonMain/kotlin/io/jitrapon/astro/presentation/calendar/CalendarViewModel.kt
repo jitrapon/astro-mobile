@@ -61,10 +61,11 @@ class CalendarViewModel(
 ) {
 
     /**
-     * The request whose screen is observed. Only [dispatch] moves it, and only its view — the
-     * window, zone, locale and known theme a presenter chose stay as they were.
+     * The observation in force, and the request it observes. Only [dispatch] replaces it: to move
+     * the request's view — the window, zone, locale and known theme a presenter chose stay as they
+     * were — or to observe the same request afresh after its exchange failed.
      */
-    private val observedRequest = MutableStateFlow(request)
+    private val observation = MutableStateFlow(RequestObservation(request))
 
     /**
      * The screen as it stands now, and every state that replaces it until [scope] ends.
@@ -84,10 +85,10 @@ class CalendarViewModel(
      * failure, because a screen that went away was not a failure to load one.
      */
     val state: StateFlow<CalendarUiState> =
-        observedRequest
+        observation
             .flatMapLatest { observed ->
-                calendarScreenRepository.observeCalendarScreen(observed).map {
-                    ObservedRequestState(observed, it.toCalendarUiState())
+                calendarScreenRepository.observeCalendarScreen(observed.request).map {
+                    ObservedRequestState(observed.request, it.toCalendarUiState())
                 }
             }
             .runningFold(null) { painted: PaintedState?, next -> painted.followedBy(next) }
@@ -110,14 +111,35 @@ class CalendarViewModel(
 
     /**
      * Re-points the observed request at [selection]'s view. A selection no request can express
-     * leaves the view where it is; one naming the view already observed changes nothing, since an
-     * equal request is not a new one.
+     * leaves the view where it is.
+     *
+     * One naming the view already observed is how a user retries it. While the screen shows another
+     * view's content — a switch whose exchange failed paints the previous screen, and its switcher
+     * still marks the previous view active — selecting the failed view again is the only affordance
+     * left. So it observes that request afresh when its last exchange failed and none is in flight,
+     * which exchanges again; otherwise it changes nothing, and a repeated tap on a view that
+     * loaded, or is loading, costs no exchange.
      */
     private fun switchView(selection: CalendarViewSelection) {
         val view = selection.toRequestedCalendarView() ?: return
-        observedRequest.update { it.copy(view = view) }
+        observation.update { current ->
+            when {
+                current.request.view != view ->
+                    RequestObservation(current.request.copy(view = view))
+                state.value.failedWithNothingInFlight() -> RequestObservation(current.request)
+                else -> current
+            }
+        }
     }
 }
+
+private fun CalendarUiState.failedWithNothingInFlight(): Boolean = failure != null && !isLoading
+
+/**
+ * One observation of [request]. Compared by identity, not by its request, so observing a request
+ * afresh is a new value where re-selecting the same request would otherwise be dropped as equal.
+ */
+private class RequestObservation(val request: CalendarScreenRequest)
 
 /** One observed state, tagged with the request it was observed for. */
 private class ObservedRequestState(
