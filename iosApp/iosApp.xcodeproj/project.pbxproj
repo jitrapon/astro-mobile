@@ -12,6 +12,8 @@
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
 		5D1A0E3F2E7C4B0100A5F001 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1A0E3E2E7C4B0100A5F001 /* AppShellView.swift */; };
+		5D1A0E412E7C4B0100A5F001 /* CalendarComponentRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1A0E402E7C4B0100A5F001 /* CalendarComponentRegistry.swift */; };
+		5D1A0E432E7C4B0100A5F001 /* CalendarComponentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1A0E422E7C4B0100A5F001 /* CalendarComponentViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -35,6 +37,8 @@
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5D1A0E3E2E7C4B0100A5F001 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
+		5D1A0E402E7C4B0100A5F001 /* CalendarComponentRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarComponentRegistry.swift; sourceTree = "<group>"; };
+		5D1A0E422E7C4B0100A5F001 /* CalendarComponentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarComponentViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +81,8 @@
 			isa = PBXGroup;
 			children = (
 				5D1A0E3E2E7C4B0100A5F001 /* AppShellView.swift */,
+				5D1A0E402E7C4B0100A5F001 /* CalendarComponentRegistry.swift */,
+				5D1A0E422E7C4B0100A5F001 /* CalendarComponentViews.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
@@ -188,6 +194,8 @@
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 				5D1A0E3F2E7C4B0100A5F001 /* AppShellView.swift in Sources */,
+				5D1A0E412E7C4B0100A5F001 /* CalendarComponentRegistry.swift in Sources */,
+				5D1A0E432E7C4B0100A5F001 /* CalendarComponentViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
