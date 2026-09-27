@@ -1,28 +1,30 @@
 ---
 name: update-xcode
-description: 'Upgrade the pinned Xcode (typically a 27.x beta) end-to-end and re-sync everything in this repo that hangs off its absolute path: install the new version via the `xcodes` CLI, accept the license, update every hardcoded `/Applications/Xcode-*.app` reference (.claude/CLAUDE.md, ios-device-debug, settings.local.json), re-register the local `xcode` MCP server (mcpbridge), re-export the eight vendored Apple Agent Skills with PROVENANCE.md preservation, and run the post-upgrade checks (xcode-select, simulator runtimes, Swift lint gates). Use when the user says "update Xcode", "upgrade Xcode", "a new Xcode beta is out", "move to Beta N", "re-export the vendored Xcode skills", or after any Xcode install when the xcode MCP server fails to connect. Takes an optional target version; with none, targets the latest prerelease.'
+description: 'Upgrade the pinned Xcode (typically a 27.x beta) end-to-end and re-sync everything in this repo that hangs off its absolute path: install the new version via the `xcodes` CLI, accept the license, update every hardcoded `/Applications/Xcode-*.app` reference (.claude/CLAUDE.md, ios-device-debug, settings.local.json), re-register the local `xcode` MCP server (mcpbridge), re-export the eight vendored Apple Agent Skills with PROVENANCE.md preservation, run the post-upgrade checks (xcode-select, simulator runtimes, Swift lint gates), and re-pin CI''s Xcode (the `verify-ios` runner label + `DEVELOPER_DIR` in .github/workflows/ci.yml). Use when the user says "update Xcode", "upgrade Xcode", "a new Xcode beta is out", "move to Beta N", "re-export the vendored Xcode skills", or after any Xcode install when the xcode MCP server fails to connect. Takes an optional target version; with none, targets the latest prerelease.'
 argument-hint: '[target version, e.g. "27.0 Beta 4" or "26.1"; omit for the latest prerelease]'
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
-version: '1.0.0'
+version: '1.1.0'
 ---
 
 # Update Xcode & re-sync the repo (astro-mobile)
 
-One Xcode upgrade touches five surfaces in this repo, because the setup pins an
+One Xcode upgrade touches six surfaces in this repo, because the setup pins an
 **absolute, versioned app path** (`/Applications/Xcode-27.0.0-Beta.N.app` — the
 `xcodes` CLI's naming convention). Missing any one of them leaves a silently
-broken surface (a dead MCP server, stale docs, drifted vendored skills). Work
+broken surface (a dead MCP server, stale docs, drifted vendored skills, CI
+checking with a different toolchain than developers build with). Work
 through the phases **in order** — later phases need the new Xcode installed,
 licensed, and running.
 
-The five surfaces:
+The six surfaces:
 
 1. the Xcode install itself (`xcodes`),
 2. hardcoded path references (`.claude/CLAUDE.md`, `ios-device-debug/SKILL.md`,
    `.claude/settings.local.json`),
 3. the local-scope `xcode` MCP server (mcpbridge),
 4. the eight vendored Apple Agent Skills + their `PROVENANCE.md` files,
-5. post-upgrade toolchain checks.
+5. post-upgrade toolchain checks,
+6. CI's Xcode pin (the `verify-ios` job in `.github/workflows/ci.yml`).
 
 ## Phase 0 — establish old & target versions
 
@@ -30,12 +32,31 @@ The five surfaces:
 xcodes installed                       # what's on disk + which is Selected
 xcode-select -p                        # the active developer dir
 grep -rn "Xcode-" .claude/CLAUDE.md .claude/skills/ios-device-debug/SKILL.md .claude/settings.local.json
+grep -n "runs-on: \|DEVELOPER_DIR:" .github/workflows/ci.yml   # CI's label + pin
 ```
 
-The grep tells you the **old pinned path** (call it `$OLD_APP`). The target is
+The first grep tells you the **old pinned path** (call it `$OLD_APP`); the
+second, CI's runner label and pinned Xcode. The target is
 the skill argument, or the latest prerelease if none was given (`xcodes update`
 then `xcodes list | tail` to see it). If the target is already installed *and*
-all greps already show its path, there is nothing to do — say so and stop.
+all greps already show its path (CI's at the target's major.minor), there is
+nothing to do — say so and stop.
+
+**Side-by-side install** — the user wants the new version on disk but keeps the
+current one active: run Phase 1 **without** `--select`, skip its
+`sudo xcode-select -s`, and stop there. The pin has not moved, so Phases 2–6 do
+not apply — paths, MCP server, vendored skills and CI all stay on the selected
+version. Two effects of the new install reach the version still in use:
+
+- The first tool run from the new developer dir — even
+  `DEVELOPER_DIR=$DEV xcrun simctl list runtimes` — installs its system
+  components unprompted and upgrades + restarts the **shared** CoreSimulator
+  service every installed Xcode uses. Check nothing is booted first
+  (`xcrun simctl list devices | grep -c "(Booted)"` → 0).
+- That same auto-install can leave nothing for sudo to do:
+  `DEVELOPER_DIR=$DEV xcodebuild -checkFirstLaunchStatus` exiting 0, plus
+  `simctl` exiting 0 rather than 69, means first launch and the license are
+  both done.
 
 ## Phase 1 — install via `xcodes`
 
@@ -120,7 +141,10 @@ grep -rn "$OLD_APP" .claude/ && echo "STALE REFS REMAIN" || echo clean
 ```
 
 Do **not** touch `PROVENANCE.md` files here — they record the version skills
-were *exported from* (a historical fact) and are handled in Phase 4.
+were *exported from* (a historical fact) and are handled in Phase 4. CI's pin
+is not in this set either: runner images name Xcode differently
+(`Xcode_27.0.app`, not `Xcode-27.0.0.app`), so this sed never matches it — it
+moves in Phase 6.
 
 ## Phase 3 — re-register the `xcode` MCP server
 
@@ -240,12 +264,51 @@ pgrep -fl "$(basename $NEW_APP)" || open -a "$NEW_APP"
   delete the old bundle by its exact name, or let the user empty the Trash in
   Finder.
 
-## Phase 6 — branch & commit
+## Phase 6 — re-pin CI's Xcode
+
+The `verify-ios` job in `.github/workflows/ci.yml` pins Xcode with a job-level
+`DEVELOPER_DIR` on a runner label whose image carries that version, so CI
+formats and compiles with the toolchain developers use (swift-format ships
+inside Xcode). Move it **only because the local pin moved** in Phase 2 — never
+for a side-by-side install.
+
+Pin GitHub's `Xcode_<major>.<minor>.app` alias, never an exact
+`Xcode_<major>.<minor>.<patch>.app` path: an image keeps one patch per minor
+and the alias tracks the newest, so an exact path vanishes on the next image
+rollout and turns every PR red.
+
+1. **Find an image that carries the target.** Each label's installed Xcodes
+   are listed in its runner-images readme:
+   ```bash
+   gh api repos/actions/runner-images/contents/images/macos --jq '.[].name' | grep Readme
+   gh api repos/actions/runner-images/contents/images/macos/<image>-Readme.md \
+     --jq .content | base64 -d | grep -A12 '^### Xcode'
+   ```
+   `xcode-27` → `xcode-27-arm64-Readme.md`, `macos-26` →
+   `macos-26-arm64-Readme.md`; the runner-images `README.md` image table maps
+   every label. A new major has so far arrived first under a **preview** label
+   (`xcode-<major>`) before a GA `macos-<N>` image carries it — tell the user
+   (GitHub warns of queueing delays and instability on previews), and once a
+   GA label carries the pinned version, move off the preview.
+2. **The image lacks the target** (a beta not rolled out yet, or a version
+   dropped) → do **not** point `DEVELOPER_DIR` at a path the image lacks — the
+   job's `Verify pinned Xcode` step would fail every run. Tell the user and
+   leave CI on its current pin until an image carries it.
+3. **Edit `ci.yml`:** `DEVELOPER_DIR`, `runs-on:` if the label changes, and the
+   version named in the job's comment. Then update `.claude/CLAUDE.md`'s CI
+   section — the `verify-ios` bullet and the "pinned, not inherited" paragraph.
+4. **After pushing, confirm the pin took** from the PR's run — the
+   `Verify pinned Xcode` step prints the version and build:
+   ```bash
+   gh run view <run-id> --log | grep -E "verify-ios.*(Xcode [0-9]|Build version)"
+   ```
+
+## Phase 7 — branch & commit
 
 On `main`, branch first (`chore/xcode-<version>-upgrade`). Commit the path
-updates + re-exported skills + provenance together, with a message that names
-the new version/build and summarizes upstream skill changes (Phase 4 step 8).
-`settings.local.json` is untracked — it changes but never commits.
+updates + re-exported skills + provenance + CI pin together, with a message that
+names the new version/build and summarizes upstream skill changes (Phase 4
+step 8). `settings.local.json` is untracked — it changes but never commits.
 
 ## Boundaries
 
