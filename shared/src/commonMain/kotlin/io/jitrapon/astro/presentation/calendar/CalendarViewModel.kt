@@ -15,8 +15,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
@@ -68,6 +70,20 @@ class CalendarViewModel(
     private val observation = MutableStateFlow(RequestObservation(request))
 
     /**
+     * What was last painted, kept for the view model's lifetime rather than for one collection's.
+     *
+     * [state] stops observing when its last collector leaves — an Android screen does whenever the
+     * app goes to the background — and each new collection folds on from here instead of from
+     * nothing. From nothing, a request that had not yet delivered a screen of its own would come
+     * back with no previous screen to paint beside its loading flag or failure: a user whose switch
+     * failed would return to a screen with no tabs and no switcher to retry or switch back with.
+     *
+     * Only the sharing coroutine behind [state] reads or writes it, and it runs one collection at a
+     * time — a restart waits for the collection it replaces to finish.
+     */
+    private var lastPainted: PaintedState? = null
+
+    /**
      * The screen as it stands now, and every state that replaces it until [scope] ends.
      *
      * Nothing is observed until something collects this, and the observation stops when the last
@@ -84,17 +100,22 @@ class CalendarViewModel(
      * Once [scope] is cancelled this stops changing. It does not complete and it reports no
      * failure, because a screen that went away was not a failure to load one.
      */
-    val state: StateFlow<CalendarUiState> =
-        observation
-            .flatMapLatest { observed ->
-                calendarScreenRepository.observeCalendarScreen(observed.request).map {
-                    ObservedRequestState(observed.request, it.toCalendarUiState())
+    val state: StateFlow<CalendarUiState> = flow {
+        emitAll(
+            observation
+                .flatMapLatest { observed ->
+                    calendarScreenRepository.observeCalendarScreen(observed.request).map {
+                        ObservedRequestState(observed.request, it.toCalendarUiState())
+                    }
                 }
-            }
-            .runningFold(null) { painted: PaintedState?, next -> painted.followedBy(next) }
-            .filterNotNull()
-            .map { it.uiState }
-            .stateIn(scope, SharingStarted.WhileSubscribed(), NOTHING_SHOWING_YET)
+                .runningFold(lastPainted) { painted, next ->
+                    painted.followedBy(next).also { lastPainted = it }
+                }
+                .filterNotNull()
+        )
+    }
+        .map { it.uiState }
+        .stateIn(scope, SharingStarted.WhileSubscribed(), NOTHING_SHOWING_YET)
 
     /**
      * Carries out [action] as far as the shared layer can, and returns what the platform must do

@@ -28,6 +28,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -161,6 +162,31 @@ class CalendarViewModelDispatchTest {
     }
 
     @Test
+    fun aFailedSwitchKeepsThePreviousScreenAcrossACollectionRestart() = runTest {
+        val backend = ViewStampingBackend(agendaFails = { true })
+        val viewModel = backend.monthViewModel(this)
+        val beforeBackground = backgroundScope.recordStates(viewModel.state)
+        beforeBackground.awaitLatest { it.stampedView() == MONTH }
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+        beforeBackground.awaitLatest { it.failure != null && !it.isLoading }
+
+        // Every collector leaves, as an Android screen's does in the background. The pause lets the
+        // view model's sharing — a background task, which `advanceUntilIdle` never waits for —
+        // actually stop observing before a collector returns, so the return restarts it.
+        beforeBackground.stopCollecting()
+        delay(COLLECTION_STOP_PAUSE_MILLIS)
+        val afterReturn = backgroundScope.recordStates(viewModel.state)
+        afterReturn.awaitLatest { it.isLoading }
+        afterReturn.awaitLatest { it.failure != null && !it.isLoading }
+
+        assertEquals(listOf(MONTH, AGENDA, AGENDA), backend.requestedViews)
+        assertTrue(
+            afterReturn.states.all { it.stampedView() == MONTH },
+            "The return lost the screen to switch back with: ${afterReturn.states}",
+        )
+    }
+
+    @Test
     fun aSupersededSwitchIsCancelledRatherThanReportedOrPainted() = runTest {
         val stalled = StalledExchange()
         val backend = ViewStampingBackend(beforeAgendaAnswers = { stalled.hold() })
@@ -239,6 +265,9 @@ class CalendarViewModelDispatchTest {
         assertEquals(listOf(MONTH, AGENDA), backend.requestedViews)
     }
 }
+
+/** Long enough, in virtual time, for a collection that lost its last collector to stop. */
+private const val COLLECTION_STOP_PAUSE_MILLIS = 1L
 
 private const val MONTH = "month"
 private const val AGENDA = "agenda"

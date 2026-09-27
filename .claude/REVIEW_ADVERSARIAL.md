@@ -5,7 +5,34 @@
 > skeleton. The newest round lives directly under this header; prior rounds are
 > demoted into the `Previous rounds` section between the markers below.
 
-## Latest round — 2026-09-27
+## Latest round — 2026-09-27 (round 2)
+- Base ref: main
+- Focus sent to Codex: Branch completes M-2 (3/3): adds the SDUI component registry keyed on the contract's versioned component ids (per-platform registries on Android Compose and iOS SwiftUI with visible fallbacks, over :shared render models that apply resolvedPreferences), the action model (all five contract Action types mapped once to ActionEffects, dispatched through CalendarViewModel and the iOS CalendarScreenSubscription), and closes the release-shrinker gap with app-level R8 keep rules, a minifiedTest build type with generated instrumented-test keep rules, and a CI job running the shrunk app on a Gradle Managed Device. Kotlin Multiplatform Mobile app (shared business logic + Jetpack Compose on Android, SwiftUI on iOS); watch for expect/actual correctness, platform behavior divergence, coroutine/concurrency and main-thread-safety issues, null handling, state-management bugs, and missing cross-platform test coverage. Additional focus: round 1 added a black-box release gate — the releaseLoopback build type (androidApp/build.gradle.kts, androidApp/src/releaseLoopback/), the self-instrumenting :androidAppReleaseTest module (ReleaseContractRenderingTest with an on-device MockWebServer and UiAutomator), the instrumented-run guard moved to the root build script, and the CI step; plus the failed-view-switch retry via an identity-compared RequestObservation in CalendarViewModel. Challenge whether releaseLoopback is truly R8-equivalent to release, whether the black-box assertions could pass on a broken decode, and whether the retry can loop or race.
+
+### Codex Adversarial Review
+
+Target: branch diff against main
+Verdict: needs-attention
+
+Do not ship yet: backgrounding can remove failed-switch recovery controls, and the black-box release gate misses a renderer it claims to verify. Review was static; device tests were not run.
+
+Findings:
+- [medium] Preserve the painted screen across collection restarts (shared/src/commonMain/kotlin/io/jitrapon/astro/presentation/calendar/CalendarViewModel.kt:94-97)
+  **RESOLVED** — Valid: `AppShell` collects with `collectAsStateWithLifecycle`, and both `WhileSubscribed()` layers have no stop timeout, so backgrounding stops `CalendarViewModel`'s pipeline and `runningFold` restarted from `null`; a failed switch then came back as a contentless loading/failed screen with no tabs to retry from. The last `PaintedState` is now a view-model field that each collection folds on from (`flow { … runningFold(lastPainted) … }`). New `aFailedSwitchKeepsThePreviousScreenAcrossACollectionRestart` (commonTest, JVM + iOS simulator) drops every collector, resubscribes, and requires the month screen painted through the re-exchange and its failure; without the fix it records `(no content, loading)` then `(no content, failure)`.
+- [medium] Require positive coverage of each tested event renderer (androidAppReleaseTest/src/main/java/io/jitrapon/astro/releasetest/ReleaseContractRenderingTest.kt:89-98)
+  The gate accepts any one event title and only checks that fallback text is absent. The fixture's first three events are all-day bars, and MonthBodyPlaceholder hides every later event behind overflow. Consequently, no timed marker is rendered: removing its registry entry or breaking its rendering still passes both assertions. The unmodified release shrink therefore lacks the claimed runtime coverage for this component.
+  Recommendation: Serve fixture cases that place each supported presentation within the visible event limit, and assert each case's distinctive text or accessibility label positively. Verify that deliberately removing the timed-marker registration makes this black-box gate fail.
+
+Next steps:
+- Add lifecycle restart coverage and preserve failed-switch recovery state.
+- Strengthen black-box renderer assertions, then rerun both managed-device gates.
+
+<!-- previous-rounds:start -->
+
+## Previous rounds
+
+### 2026-09-27 — base main
+- Status when archived: both findings RESOLVED in 8886348c, d6e202a5 (recorded 8171ff4b); three C7 iOS nits fixed alongside in 8d1ff2a5, 91d0fbb6, bcd62caf, e3aa3bd9.
 - Base ref: main
 - Focus sent to Codex: Branch completes M-2 (3/3): adds the SDUI component registry keyed on the contract's versioned component ids (per-platform registries on Android Compose and iOS SwiftUI with visible fallbacks, over :shared render models that apply resolvedPreferences — chipDensity, chipStyle, weekStart), the action model (all five contract Action types mapped once to ActionEffects, dispatched through CalendarViewModel and the iOS CalendarScreenSubscription, with the shell projection no longer dropping non-navigating destinations, plus client-built event-detail and overflow actions), and closes the release-shrinker gap with app-level R8 keep rules, a minifiedTest build type with generated instrumented-test keep rules, and a CI job running the shrunk app's instrumented tests on a Gradle Managed Device. Kotlin Multiplatform Mobile app (shared business logic + Jetpack Compose on Android, SwiftUI on iOS); watch for expect/actual correctness, platform behavior divergence, coroutine/concurrency and main-thread-safety issues, null handling, state-management bugs, and missing cross-platform test coverage. Additional focus: whether the R8 keep rules and the minifiedTest variant actually prove the shipping release build decodes polymorphic contract types (i.e. could a test-only keep mask a release-only strip), and the view-switch dispatch race between an in-flight request and a new one.
 
@@ -28,8 +55,5 @@ Next steps:
 - Verify polymorphic decoding with shipping release shrink settings and no test-generated app keeps.
 - Implement and test failed-switch retry behavior on the shared dispatch path.
 
-<!-- previous-rounds:start -->
-
-## Previous rounds
 
 <!-- previous-rounds:end -->
