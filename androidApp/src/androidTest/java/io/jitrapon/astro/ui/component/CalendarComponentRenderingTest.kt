@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import io.jitrapon.astro.WORK_CALENDARS
@@ -49,6 +50,13 @@ class CalendarComponentRenderingTest {
         show(monthScreen(weekStart = WeekStart.MONDAY, maxSubtitleLines = 1))
 
         composeRule.onNodeWithText(MONTH_HEADER).assertIsDisplayed()
+    }
+
+    @Test
+    fun theMonthPlaceholderDrawsNoHeadingTheScreenTitleRepeats() {
+        show(monthScreen(weekStart = WeekStart.MONDAY, maxSubtitleLines = 1, title = MONTH_HEADER))
+
+        composeRule.onAllNodesWithText(MONTH_HEADER).assertCountEquals(0)
     }
 
     // A chip is tappable, so its lines merge into the chip's one semantics node — as they should
@@ -136,8 +144,16 @@ class CalendarComponentRenderingTest {
         val SUBTITLES = listOf("Office", "Floor 3", "Bring laptop")
         val AGENDA_DAY_HEADERS = listOf("พฤ. 16 เม.ย.", "ศ. 17 เม.ย.")
 
-        fun monthScreen(weekStart: WeekStart, maxSubtitleLines: Int): CalendarScreenResponse =
+        /** A screen title the month heading does not repeat, so the heading is drawn. */
+        const val SCREEN_TITLE = "ปฏิทิน"
+
+        fun monthScreen(
+            weekStart: WeekStart,
+            maxSubtitleLines: Int,
+            title: String = SCREEN_TITLE,
+        ): CalendarScreenResponse =
             calendarScreenResponse(
+                title = title,
                 preferences = resolvedPreferences(weekStart, maxSubtitleLines),
                 body =
                     monthBody(
