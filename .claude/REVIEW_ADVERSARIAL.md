@@ -14,6 +14,8 @@
 Target: branch diff against main
 Verdict: needs-attention
 
+**Round status:** 2 of 2 findings RESOLVED (8886348c, d6e202a5); 0 deferred; 0 not an issue. Alongside, three UI nits from the iOS simulator pass were fixed: the duplicated month heading (8d1ff2a5, 91d0fbb6), the ~17 pt "+N more" tap target on both platforms (bcd62caf), and the unknown-icon star VoiceOver read as "favorite" (e3aa3bd9).
+
 Do not ship yet: failed view switches cannot be retried normally, and the minified gate can mask release-only serialization failures. Static review only; tests were not rerun.
 
 Findings:
