@@ -5,11 +5,14 @@ import shared
 /// the selected destination's screen above it — or, when no destination is there to draw, a
 /// loading, failure or nothing-to-show placeholder with no tab bar at all.
 ///
-/// It draws a shell state and nothing more. Which destinations become tabs, and when the bar is
-/// shown, is decided once in the shared `toAppShellState()` projection, so this view and the
-/// Android shell cannot disagree about it.
+/// Which destinations become tabs, and when the bar is shown, is decided once in the shared
+/// `toAppShellState()` projection, so this view and the Android shell cannot disagree about it.
+/// `calendar` is the one screen this app observes; a tab targeting it draws it, and every action
+/// taken in the shell goes through `dispatch`.
 struct AppShellView: View {
     let state: any AppShellState
+    let calendar: CalendarUiState
+    let dispatch: (Action) -> ActionEffect?
 
     /// The destination id the tab bar opens on. `nil`, or an id the state does not carry, opens on
     /// the first tab.
@@ -18,7 +21,9 @@ struct AppShellView: View {
     var body: some View {
         switch state {
         case let tabbed as AppShellStateTabs where !tabbed.tabs.isEmpty:
-            TabbedShellView(tabs: tabbed.tabs, initialSelection: initialSelection)
+            TabbedShellView(
+                tabs: tabbed.tabs, calendar: calendar, dispatch: dispatch,
+                initialSelection: initialSelection)
         case is AppShellStateFailed:
             ShellMessageView(message: "Couldn't load your calendar.")
         case is AppShellStateNoDestinations:
@@ -33,20 +38,39 @@ struct AppShellView: View {
 
 /// The tab bar and each tab's navigation stack for `tabs`, which is never empty.
 ///
-/// Tabs are identified and selected by destination id, not by target screen id: two destinations
-/// may route to the same screen and must still be two tabs, each with its own navigation state.
-/// When a refresh delivers destinations that no longer include the selected one, the first tab is
+/// Selecting a tab dispatches its action, and the shell carries out the effect that comes back:
+/// showing a screen selects the destination targeting it — the tapped one when it does, so two tabs
+/// routing to one screen keep separate selection — opening a URL hands it to the system, and the
+/// event effects open the not-yet-built event surface. A tab whose action does not navigate is never
+/// selected: it acts, and the current screen stays in place.
+///
+/// Tabs are identified and selected by destination id, not by target screen id. When a refresh
+/// delivers destinations that no longer include the selected one, the first navigating tab is
 /// shown instead.
 private struct TabbedShellView: View {
     let tabs: [AppShellTab]
+    let calendar: CalendarUiState
+    let dispatch: (Action) -> ActionEffect?
 
     /// The destination the user last selected. No initial value is declared: `@State` ignores an
     /// assignment in `init` over one, and an optional would carry an implicit `nil`.
     @State private var selectedDestinationId: String
 
-    init(tabs: [AppShellTab], initialSelection: String?) {
+    /// The message the not-yet-built event surface is showing, or `nil` when it is closed.
+    @State private var eventSurfaceMessage: String?
+
+    @Environment(\.openURL) private var openURL
+
+    init(
+        tabs: [AppShellTab], calendar: CalendarUiState,
+        dispatch: @escaping (Action) -> ActionEffect?, initialSelection: String?
+    ) {
         self.tabs = tabs
-        self.selectedDestinationId = initialSelection ?? tabs[0].destinationId
+        self.calendar = calendar
+        self.dispatch = dispatch
+        self.selectedDestinationId =
+            initialSelection ?? tabs.first { $0.targetScreenId != nil }?.destinationId
+            ?? tabs[0].destinationId
     }
 
     var body: some View {
@@ -57,23 +81,91 @@ private struct TabbedShellView: View {
                     value: tab.destinationId
                 ) {
                     NavigationStack {
-                        DestinationPlaceholderView(label: tab.label)
+                        DestinationView(
+                            tab: tab, calendar: calendar,
+                            onAction: { act($0, source: tab) })
                     }
                 }
             }
         }
+        .alert(
+            "Not available yet", isPresented: eventSurfaceIsPresented,
+            presenting: eventSurfaceMessage
+        ) { _ in
+            Button("OK") {}
+        } message: { message in
+            Text(verbatim: message)
+        }
     }
 
+    /// Reads the shown destination; a tap on a tab dispatches that tab's action instead of
+    /// selecting it outright, so only an effect that shows a screen moves the selection.
     private var selection: Binding<String> {
         Binding(
             get: { resolvedDestinationId },
-            set: { selectedDestinationId = $0 }
+            set: { destinationId in
+                guard let tab = tabs.first(where: { $0.destinationId == destinationId }) else {
+                    return
+                }
+                act(tab.action, source: tab)
+            }
+        )
+    }
+
+    private var eventSurfaceIsPresented: Binding<Bool> {
+        Binding(
+            get: { eventSurfaceMessage != nil },
+            set: { if !$0 { eventSurfaceMessage = nil } }
         )
     }
 
     private var resolvedDestinationId: String {
-        tabs.contains(where: { $0.destinationId == selectedDestinationId })
-            ? selectedDestinationId : tabs[0].destinationId
+        let navigating = tabs.filter { $0.targetScreenId != nil }
+        if navigating.contains(where: { $0.destinationId == selectedDestinationId }) {
+            return selectedDestinationId
+        }
+        return navigating.first?.destinationId ?? tabs[0].destinationId
+    }
+
+    /// Dispatches `action`, taken from `source`, and carries out the effect that comes back.
+    private func act(_ action: Action, source: AppShellTab) {
+        switch dispatch(action) {
+        case let show as ActionEffectShowScreen:
+            let target =
+                source.targetScreenId == show.screenId
+                ? source : tabs.first { $0.targetScreenId == show.screenId }
+            if let target {
+                selectedDestinationId = target.destinationId
+            }
+        case let open as ActionEffectOpenExternalUrl:
+            if let url = URL(string: open.url) {
+                openURL(url)
+            }
+        case let detail as ActionEffectShowEventDetail:
+            eventSurfaceMessage = "Event details aren't available yet (\(detail.eventId))."
+        case let events as ActionEffectShowEvents:
+            eventSurfaceMessage =
+                "Event lists aren't available yet (\(events.eventIds.joined(separator: ", ")))."
+        default:
+            break
+        }
+    }
+}
+
+/// A tab's screen: the calendar screen when the tab targets it, otherwise a placeholder.
+private struct DestinationView: View {
+    let tab: AppShellTab
+    let calendar: CalendarUiState
+    let onAction: (Action) -> Void
+
+    var body: some View {
+        if let screenId = tab.targetScreenId, screenId == calendar.content?.screen.id {
+            CalendarScreenView(
+                title: calendar.title ?? "", viewSwitcher: calendar.viewSwitcher,
+                component: calendar.body, onAction: onAction)
+        } else {
+            DestinationPlaceholderView(label: tab.label)
+        }
     }
 }
 
@@ -132,23 +224,34 @@ private let previewTabs = [
         action: NavigateAction(screen: "expense")),
 ]
 
+/// No calendar screen observed: the previews show the shell's own states, not a screen's chrome.
+private let previewCalendar = CalendarUiState(content: nil, isLoading: false, failure: nil)
+
 #Preview("Loading") {
-    AppShellView(state: AppShellStateLoading.shared)
+    AppShellView(
+        state: AppShellStateLoading.shared, calendar: previewCalendar, dispatch: { _ in nil })
 }
 
 #Preview("No destinations") {
-    AppShellView(state: AppShellStateNoDestinations.shared)
+    AppShellView(
+        state: AppShellStateNoDestinations.shared, calendar: previewCalendar,
+        dispatch: { _ in nil })
 }
 
 #Preview("Failure") {
     AppShellView(
-        state: AppShellStateFailed(failure: KotlinException(message: "No backend reachable")))
+        state: AppShellStateFailed(failure: KotlinException(message: "No backend reachable")),
+        calendar: previewCalendar, dispatch: { _ in nil })
 }
 
 #Preview("Calendar selected") {
-    AppShellView(state: AppShellStateTabs(tabs: previewTabs), initialSelection: "calendar")
+    AppShellView(
+        state: AppShellStateTabs(tabs: previewTabs), calendar: previewCalendar,
+        dispatch: { _ in nil }, initialSelection: "calendar")
 }
 
 #Preview("Expense selected") {
-    AppShellView(state: AppShellStateTabs(tabs: previewTabs), initialSelection: "expense")
+    AppShellView(
+        state: AppShellStateTabs(tabs: previewTabs), calendar: previewCalendar,
+        dispatch: { _ in nil }, initialSelection: "expense")
 }
