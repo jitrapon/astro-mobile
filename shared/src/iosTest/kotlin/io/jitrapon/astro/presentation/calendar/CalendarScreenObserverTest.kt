@@ -1,18 +1,24 @@
 package io.jitrapon.astro.presentation.calendar
 
+import io.jitrapon.astro.data.calendar.AgendaViewSelection
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryFixture
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryState
+import io.jitrapon.astro.data.calendar.OpenEventDetailAction
+import io.jitrapon.astro.data.calendar.RequestedCalendarView
 import io.jitrapon.astro.data.calendar.StalledExchange
+import io.jitrapon.astro.data.calendar.SwitchCalendarViewAction
 import io.jitrapon.astro.data.calendar.decodeMonthScreenFixture
 import io.jitrapon.astro.data.calendar.monthScreenRequest
 import io.jitrapon.astro.data.calendar.respondWithMonthScreenFixture
 import io.jitrapon.astro.data.calendar.respondWithServerTime
 import io.jitrapon.astro.data.calendar.serverTimeOfExchange
+import io.jitrapon.astro.presentation.action.ActionEffect
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.toAppShellState
 import io.jitrapon.astro.recordStates
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -196,6 +202,56 @@ class CalendarScreenObserverTest {
 
         listening.awaitLatest { it.content?.serverTime == serverTimeOfExchange(2) }
         assertTrue(delivery.isActive, "Cancelling one subscription ended the delivery scope.")
+    }
+
+    @Test
+    fun aDispatchedViewSwitchPutsANewRequestOnTheWireAndDeliversItsScreen() = runTest {
+        val requestedViews = mutableListOf<String?>()
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) { request ->
+                requestedViews += request.url.parameters["view"]
+                respondWithServerTime(serverTimeOfExchange(requestedViews.size))
+            }
+        val delivery = deliveryScope()
+        val observer = CalendarScreenObserver(fixture.calendarScreenRepository, delivery)
+        val heard = HeardStates()
+        val subscription = observer.observe(monthScreenRequest(), heard::record)
+        heard.awaitLatest { it.content?.serverTime == serverTimeOfExchange(1) }
+
+        val effect = subscription.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+
+        assertNull(effect, "A view switch left Swift an effect to carry out: $effect")
+        heard.awaitLatest { it.content?.serverTime == serverTimeOfExchange(2) }
+        assertEquals(
+            listOf<String?>(
+                RequestedCalendarView.Month.wireValue,
+                RequestedCalendarView.Agenda.wireValue,
+            ),
+            requestedViews,
+            "The switch did not put an agenda request on the wire.",
+        )
+
+        subscription.cancel()
+        subscription.cancel()
+        advanceUntilIdle()
+        assertTrue(
+            delivery.coroutineContext.job.children.none(),
+            "Cancelling after a dispatch left the subscription's coroutines running.",
+        )
+        assertTrue(delivery.isActive, "Cancelling the subscription ended the delivery scope.")
+    }
+
+    @Test
+    fun aDispatchedActionThatNeedsSwiftReturnsItsEffect() = runTest {
+        val fixture = CalendarScreenQueryFixture(backgroundScope, testScheduler)
+        val observer = CalendarScreenObserver(fixture.calendarScreenRepository, deliveryScope())
+        val subscription = observer.observe(monthScreenRequest()) {}
+
+        assertEquals(
+            ActionEffect.ShowEventDetail("e1"),
+            subscription.dispatch(OpenEventDetailAction("e1")),
+        )
+        subscription.cancel()
     }
 
     /** Waits until an observation of the month request is showing the screen served at [time]. */

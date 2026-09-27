@@ -1,9 +1,14 @@
 package io.jitrapon.astro.presentation.calendar
 
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
+import io.jitrapon.astro.presentation.action.ActionEffect
+import io.jitrapon.astro.presentation.action.toActionEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -49,7 +54,8 @@ internal constructor(
 
     /**
      * Starts watching the screen matching [request], calling [onState] with the state as it stands
-     * and with every state that replaces it, until the returned subscription is cancelled.
+     * and with every state that replaces it, until the returned subscription is cancelled. What the
+     * person does on the screen goes back through [CalendarScreenSubscription.dispatch].
      *
      * Nothing is ever delivered that reports a cancellation: a subscription that is cancelled
      * simply stops hearing about the screen, even while an exchange for it is still in flight.
@@ -61,27 +67,49 @@ internal constructor(
         // One child coroutine of the delivery scope per subscription, and the view model's scope is
         // that coroutine's own: the sharing coroutine the view model starts is its child, so
         // cancelling the subscription ends both, cancelling one subscription ends no other, and
-        // tearing down the graph still ends every subscription at once.
+        // tearing down the graph still ends every subscription at once. Actions reach the view
+        // model over a channel drained inside the same coroutine, since the view model exists only
+        // there; the channel closes with the subscription, however it ends.
+        val actions = Channel<Action>(Channel.UNLIMITED)
         val subscription = deliveryScope.launch {
             coroutineScope {
-                CalendarViewModel(
+                val viewModel =
+                    CalendarViewModel(
                         calendarScreenRepository = calendarScreenRepository,
                         request = request,
                         scope = this,
                     )
-                    .state
-                    .collect { state -> onState(state) }
+                launch { for (action in actions) viewModel.dispatch(action) }
+                viewModel.state.collect { state -> onState(state) }
             }
         }
-        return CalendarScreenSubscription(subscription)
+        subscription.invokeOnCompletion { actions.close() }
+        return CalendarScreenSubscription(subscription, actions)
     }
 }
 
 /**
- * The handle Swift holds for one [CalendarScreenObserver.observe] call; cancelling it is the only
- * thing that ends the subscription short of the whole graph being torn down.
+ * The handle Swift holds for one [CalendarScreenObserver.observe] call: what it acts on the screen
+ * through, and what it cancels — the only thing that ends the subscription short of the whole graph
+ * being torn down.
  */
-class CalendarScreenSubscription internal constructor(private val subscription: Job) {
+class CalendarScreenSubscription
+internal constructor(private val subscription: Job, private val actions: SendChannel<Action>) {
+
+    /**
+     * Acts on this subscription's screen, and returns the effect Swift must carry out — or `null`
+     * when the screen consumes the action itself.
+     *
+     * The effect is returned at once, from the same shared mapping the screen's view model answers
+     * with, while the view model carries the action out on the delivery thread. Only a view switch
+     * changes the screen: it re-points what this subscription observes, and reaches Swift as the
+     * next states delivered to its callback. After [cancel] nothing further is delivered, so a
+     * switch then changes nothing Swift can see.
+     */
+    fun dispatch(action: Action): ActionEffect? {
+        actions.trySend(action)
+        return action.toActionEffect()
+    }
 
     /**
      * Stops delivery and releases the subscription's coroutines.
