@@ -16,6 +16,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import io.jitrapon.astro.data.calendar.NavigateAction
+import io.jitrapon.astro.presentation.action.toActionEffect
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
@@ -125,7 +126,14 @@ class AppShellTest {
                         MutableStateFlow(
                             CalendarUiState(content = null, isLoading = false, failure = null)
                         ),
-                    onCalendarViewSelected = {},
+                    // Navigating tabs are all this suite delivers, so a selection shows its screen
+                    // exactly as the real dispatch would answer it.
+                    interactions =
+                        AppShellInteractions(
+                            onTabSelected = { it.action.toActionEffect() },
+                            onCalendarViewSelected = {},
+                            onOpenExternalUrl = {},
+                        ),
                 )
             }
         }

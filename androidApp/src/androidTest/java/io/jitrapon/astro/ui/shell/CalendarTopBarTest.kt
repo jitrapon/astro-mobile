@@ -95,7 +95,12 @@ class CalendarTopBarTest {
                 AppShellRoute(
                     shellState = shellViewModel.shellState,
                     calendarState = shellViewModel.calendarState,
-                    onCalendarViewSelected = shellViewModel::selectCalendarView,
+                    interactions =
+                        AppShellInteractions(
+                            onTabSelected = shellViewModel::selectTab,
+                            onCalendarViewSelected = shellViewModel::selectCalendarView,
+                            onOpenExternalUrl = {},
+                        ),
                 )
             }
         }

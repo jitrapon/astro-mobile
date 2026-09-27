@@ -9,10 +9,12 @@ import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.RequestedCalendarView
+import io.jitrapon.astro.presentation.action.ActionEffect
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.CalendarViewModel
 import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
+import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.presentation.shell.toAppShellState
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -66,6 +68,12 @@ class AppShellViewModel(openCalendarScreen: (CoroutineScope) -> CalendarScreenHa
     fun selectCalendarView(option: ViewSwitcherOptionUiState) {
         calendarScreen.dispatch(option.action)
     }
+
+    /**
+     * Carries out [tab]'s action as far as the screen can, and returns the effect the shell must
+     * carry out for the rest — or `null` when the screen consumed it, as a view switch is.
+     */
+    fun selectTab(tab: AppShellTab): ActionEffect? = calendarScreen.dispatch(tab.action)
 
     companion object {
         /**

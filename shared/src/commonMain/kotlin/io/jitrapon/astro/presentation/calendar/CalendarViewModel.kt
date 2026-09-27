@@ -4,13 +4,10 @@ import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.CalendarViewSelection
-import io.jitrapon.astro.data.calendar.NavigateAction
-import io.jitrapon.astro.data.calendar.OpenEventDetailAction
-import io.jitrapon.astro.data.calendar.OpenUrlAction
-import io.jitrapon.astro.data.calendar.PresentModalAction
 import io.jitrapon.astro.data.calendar.SwitchCalendarViewAction
 import io.jitrapon.astro.data.calendar.toRequestedCalendarView
 import io.jitrapon.astro.presentation.action.ActionEffect
+import io.jitrapon.astro.presentation.action.toActionEffect
 import kotlin.experimental.ExperimentalObjCRefinement
 import kotlin.native.HiddenFromObjC
 import kotlinx.coroutines.CoroutineScope
@@ -106,17 +103,10 @@ class CalendarViewModel(
      * the platform learns of the switch through [state]. Every other action needs a platform
      * surface — navigation, a browser, a modal — so it comes back as the [ActionEffect] naming it.
      */
-    fun dispatch(action: Action): ActionEffect? =
-        when (action) {
-            is SwitchCalendarViewAction -> {
-                switchView(action.selection)
-                null
-            }
-            is NavigateAction -> ActionEffect.ShowScreen(action.screen)
-            is OpenUrlAction -> ActionEffect.OpenExternalUrl(action.url)
-            is OpenEventDetailAction -> ActionEffect.ShowEventDetail(action.eventId)
-            is PresentModalAction -> ActionEffect.ShowEvents(action.eventIds)
-        }
+    fun dispatch(action: Action): ActionEffect? {
+        if (action is SwitchCalendarViewAction) switchView(action.selection)
+        return action.toActionEffect()
+    }
 
     /**
      * Re-points the observed request at [selection]'s view. A selection no request can express

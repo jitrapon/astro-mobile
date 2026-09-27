@@ -1,5 +1,12 @@
 package io.jitrapon.astro.presentation.action
 
+import io.jitrapon.astro.data.calendar.Action
+import io.jitrapon.astro.data.calendar.NavigateAction
+import io.jitrapon.astro.data.calendar.OpenEventDetailAction
+import io.jitrapon.astro.data.calendar.OpenUrlAction
+import io.jitrapon.astro.data.calendar.PresentModalAction
+import io.jitrapon.astro.data.calendar.SwitchCalendarViewAction
+
 /**
  * What a platform does in response to a dispatched action that the shared layer cannot carry out
  * itself — each case names the client's behaviour, not the wire type that asked for it.
@@ -25,3 +32,19 @@ sealed interface ActionEffect {
      */
     data class ShowEvents(val eventIds: List<String>) : ActionEffect
 }
+
+/**
+ * The effect a platform carries out for this action, or `null` for a [SwitchCalendarViewAction],
+ * which the observing view model consumes itself and leaves nothing for a platform to do.
+ *
+ * The one mapping from the contract's action types to client behaviour, so neither the view model
+ * nor anything standing in for it restates which action opens what.
+ */
+fun Action.toActionEffect(): ActionEffect? =
+    when (this) {
+        is SwitchCalendarViewAction -> null
+        is NavigateAction -> ActionEffect.ShowScreen(screen)
+        is OpenUrlAction -> ActionEffect.OpenExternalUrl(url)
+        is OpenEventDetailAction -> ActionEffect.ShowEventDetail(eventId)
+        is PresentModalAction -> ActionEffect.ShowEvents(eventIds)
+    }

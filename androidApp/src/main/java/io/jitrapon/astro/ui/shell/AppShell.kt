@@ -15,8 +15,6 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,7 +23,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
-import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import kotlinx.coroutines.flow.StateFlow
@@ -41,17 +38,12 @@ import kotlinx.coroutines.flow.StateFlow
 fun AppShellRoute(
     shellState: StateFlow<AppShellState>,
     calendarState: StateFlow<CalendarUiState>,
-    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    interactions: AppShellInteractions,
     modifier: Modifier = Modifier,
 ) {
     val state by shellState.collectAsStateWithLifecycle()
     val calendar by calendarState.collectAsStateWithLifecycle()
-    AppShell(
-        state = state,
-        calendar = calendar,
-        onCalendarViewSelected = onCalendarViewSelected,
-        modifier = modifier,
-    )
+    AppShell(state = state, calendar = calendar, interactions = interactions, modifier = modifier)
 }
 
 /**
@@ -60,14 +52,13 @@ fun AppShellRoute(
  * loading or failure placeholder with no bar at all.
  *
  * [calendar] is the one screen this app observes. A tab whose target is that screen draws it — its
- * title and view switcher in a top bar, its body below — and [onCalendarViewSelected] receives the
- * option chosen from its switcher.
+ * title and view switcher in a top bar, its body below.
  */
 @Composable
 fun AppShell(
     state: AppShellState,
     calendar: CalendarUiState,
-    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    interactions: AppShellInteractions,
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -78,7 +69,7 @@ fun AppShell(
             TabbedShell(
                 tabs = state.tabs,
                 calendar = calendar,
-                onCalendarViewSelected = onCalendarViewSelected,
+                interactions = interactions,
                 modifier = modifier,
             )
     }
@@ -87,14 +78,15 @@ fun AppShell(
 /**
  * The bottom bar and the navigation display for [tabs], which is never empty.
  *
- * Selection is held by destination id, the tab's identity, and survives recreation. When a refresh
- * delivers a set of destinations that no longer contains the selected one, the first tab is shown
- * instead.
+ * Selecting a tab dispatches its action, and the shell carries out the effect that comes back:
+ * showing a screen selects the destination that targets it, opening a URL hands it to the platform,
+ * and the event effects open the not-yet-built event surface. A tab whose action does not navigate
+ * therefore never becomes the selection and holds no back stack — it acts, and the current screen
+ * stays in place.
  *
- * The back stack is derived from the selection rather than kept alongside it: the first tab is its
- * root, and any other selected tab sits above it. Back from another tab therefore returns to the
- * first, and back from the first leaves the app. Entries are keyed by destination id, so two
- * destinations that route to the same screen still get separate entries and separate saved state.
+ * Which destination is selected, and how each effect changes it, is [ShellSelectionState]'s; the
+ * back stack derived from it is [ShellScreens']. With no navigating tab at all there is no screen
+ * to show, only the bar.
  *
  * The selected tab shows the calendar screen when its target is that screen's id, and the calendar
  * top bar appears only then — a title and switcher belong to that screen, not to the shell.
@@ -108,24 +100,23 @@ fun AppShell(
 private fun TabbedShell(
     tabs: List<AppShellTab>,
     calendar: CalendarUiState,
-    onCalendarViewSelected: (ViewSwitcherOptionUiState) -> Unit,
+    interactions: AppShellInteractions,
     modifier: Modifier = Modifier,
 ) {
-    var selectedDestinationId by rememberSaveable { mutableStateOf<String?>(null) }
-    val startTab = tabs.first()
-    val selectedTab = tabs.firstOrNull { it.destinationId == selectedDestinationId } ?: startTab
-    val backStack = if (selectedTab == startTab) listOf(startTab) else listOf(startTab, selectedTab)
-    val calendarScreenId = calendar.content?.screen?.id
+    val selection = rememberShellSelectionState()
+    val navigatingTabs = tabs.filter { it.targetScreenId != null }
+    val rootTab = navigatingTabs.firstOrNull()
+    val selectedTab = selection.selectedTab(navigatingTabs)
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
         modifier = modifier,
         topBar = {
-            if (calendarScreenId != null && selectedTab.targetScreenId == calendarScreenId) {
+            if (selectedTab?.showsScreenOf(calendar) == true) {
                 CalendarTopBar(
                     title = calendar.title.orEmpty(),
                     viewSwitcher = calendar.viewSwitcher,
-                    onViewSelected = onCalendarViewSelected,
+                    onViewSelected = interactions.onCalendarViewSelected,
                 )
             }
         },
@@ -133,32 +124,75 @@ private fun TabbedShell(
             ShellBottomBar(
                 tabs = tabs,
                 selectedTab = selectedTab,
-                onTabSelected = { selectedDestinationId = it.destinationId },
+                onTabSelected = { tab ->
+                    selection.carryOut(
+                        effect = interactions.onTabSelected(tab),
+                        source = tab,
+                        navigatingTabs = navigatingTabs,
+                        openExternalUrl = interactions.onOpenExternalUrl,
+                    )
+                },
             )
         },
     ) { contentPadding ->
-        NavDisplay(
-            backStack = backStack,
-            modifier = Modifier.padding(contentPadding),
-            onBack = { selectedDestinationId = startTab.destinationId },
-            entryProvider = { tab ->
-                NavEntry(key = tab, contentKey = tab.destinationId) {
-                    val body = calendar.body
-                    if (body != null && tab.targetScreenId == calendarScreenId) {
-                        CalendarScreenBody(body)
-                    } else {
-                        DestinationPlaceholder(tab)
-                    }
-                }
-            },
-        )
+        if (rootTab != null && selectedTab != null) {
+            ShellScreens(
+                rootTab = rootTab,
+                selectedTab = selectedTab,
+                calendar = calendar,
+                onBack = { selection.select(rootTab) },
+                modifier = Modifier.padding(contentPadding),
+            )
+        }
     }
+
+    selection.shownEventEffect?.let { effect ->
+        EventSurfacePlaceholder(effect = effect, onDismiss = selection::dismissEventSurface)
+    }
+}
+
+/**
+ * The navigation display for the selected destination. Its back stack is derived from the selection
+ * rather than kept alongside it: [rootTab] is its root, and any other selected tab sits above it.
+ * Entries are keyed by destination id, so two destinations that route to the same screen still get
+ * separate entries and separate saved state.
+ */
+@Composable
+private fun ShellScreens(
+    rootTab: AppShellTab,
+    selectedTab: AppShellTab,
+    calendar: CalendarUiState,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val backStack = if (selectedTab == rootTab) listOf(rootTab) else listOf(rootTab, selectedTab)
+    NavDisplay(
+        backStack = backStack,
+        modifier = modifier,
+        onBack = onBack,
+        entryProvider = { tab ->
+            NavEntry(key = tab, contentKey = tab.destinationId) {
+                val body = calendar.body
+                if (body != null && tab.showsScreenOf(calendar)) {
+                    CalendarScreenBody(body)
+                } else {
+                    DestinationPlaceholder(tab)
+                }
+            }
+        },
+    )
+}
+
+/** Whether this tab's target is the screen [calendar] carries. */
+private fun AppShellTab.showsScreenOf(calendar: CalendarUiState): Boolean {
+    val screenId = calendar.content?.screen?.id
+    return screenId != null && targetScreenId == screenId
 }
 
 @Composable
 private fun ShellBottomBar(
     tabs: List<AppShellTab>,
-    selectedTab: AppShellTab,
+    selectedTab: AppShellTab?,
     onTabSelected: (AppShellTab) -> Unit,
 ) {
     BottomNavigation(
@@ -167,8 +201,9 @@ private fun ShellBottomBar(
     ) {
         tabs.forEach { tab ->
             BottomNavigationItem(
-                selected = tab.destinationId == selectedTab.destinationId,
+                selected = tab.destinationId == selectedTab?.destinationId,
                 onClick = { onTabSelected(tab) },
+                modifier = Modifier.testTag(AppShellTestTags.tab(tab.destinationId)),
                 icon = { Icon(imageVector = tab.iconToken.toTabIcon(), contentDescription = null) },
                 label = { Text(tab.label) },
             )
