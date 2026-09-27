@@ -11,7 +11,6 @@ import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import mockwebserver3.RecordedRequest
-import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -33,9 +32,12 @@ import org.junit.runner.RunWith
  * since the keep rules generated for it pin every contract model it names.
  *
  * What it reads comes from the fixture, not from a copy of it: the destination labels only a
- * decoded navigation carries (each destination's action is a polymorphic type), and the event text
- * only the month renderer draws. The registry's fallback names the component id it has no renderer
- * for, so no visible text may contain one of the fixture's component ids.
+ * decoded navigation carries (each destination's action is a polymorphic type), and, for every
+ * event presentation the fixture delivers, one event's text as that component's renderer draws it.
+ * The month renderer lists only its first few events and folds the rest into an overflow, so the
+ * served fixture moves one event of each presentation to the front — the contract's own events,
+ * reordered, so each component is on screen to be checked. The registry's fallback names the
+ * component id it has no renderer for, so no visible text may contain one of the fixture's ids.
  */
 @RunWith(AndroidJUnit4::class)
 class ReleaseContractRenderingTest {
@@ -50,9 +52,11 @@ class ReleaseContractRenderingTest {
         )
     private val backend = MockWebServer()
 
+    private val servedScreen = fixture.withOneEventOfEachPresentationFirst()
+
     @Before
     fun startBackend() {
-        val body = fixture.toString()
+        val body = servedScreen.toString()
         backend.dispatcher =
             object : Dispatcher() {
                 override fun dispatch(request: RecordedRequest): MockResponse =
@@ -78,7 +82,7 @@ class ReleaseContractRenderingTest {
     @Test
     fun theShippedAppRendersTheDeliveredScreenThroughItsRegisteredRenderers() {
         launchAppUnderTest()
-        val screen = fixture.getJSONObject("screen")
+        val screen = servedScreen.getJSONObject("screen")
 
         destinationLabels(screen).forEach { label ->
             assertTrue(
@@ -86,11 +90,12 @@ class ReleaseContractRenderingTest {
                 device.wait(Until.hasObject(By.text(label)), SETTLE_TIMEOUT_MILLIS),
             )
         }
-        val eventTexts = plainEventTexts(screen)
-        assertTrue(
-            "None of the delivered events' text appeared: $eventTexts",
-            eventTexts.any { device.hasObject(By.text(it)) },
-        )
+        firstEventOfEachPresentation(monthEvents(screen)).forEach { (componentId, event) ->
+            assertTrue(
+                "$componentId never drew its event ${event.getJSONObject("props").getString("id")}.",
+                device.wait(Until.hasObject(event.drawnAs()), SETTLE_TIMEOUT_MILLIS),
+            )
+        }
         componentIds(screen).forEach { componentId ->
             assertFalse(
                 "The registry fell back for $componentId.",
@@ -114,36 +119,6 @@ class ReleaseContractRenderingTest {
             device.wait(Until.hasObject(By.pkg(APP_PACKAGE).depth(0)), SETTLE_TIMEOUT_MILLIS),
         )
     }
-
-    private fun destinationLabels(screen: JSONObject): List<String> =
-        screen.getJSONObject("navigation").getJSONArray("destinations").objects().map {
-            it.getString("label")
-        }
-
-    /**
-     * Each event's visible text, for events without an accessibility label — one replaces what a
-     * chip exposes to UiAutomator, so its title could not be matched as text.
-     */
-    private fun plainEventTexts(screen: JSONObject): List<String> =
-        monthEvents(screen)
-            .map { it.getJSONObject("presentation") }
-            .filterNot { it.has("accessibilityLabel") }
-            .mapNotNull { presentation ->
-                presentation.optString("title").ifEmpty { null }
-                    ?: presentation.optJSONObject("line")?.optString("text")?.ifEmpty { null }
-            }
-
-    private fun componentIds(screen: JSONObject): Set<String> {
-        val body = screen.getJSONObject("body")
-        return monthEvents(screen)
-            .map { it.getJSONObject("presentation").getString("component") }
-            .toSet() + body.getString("component")
-    }
-
-    private fun monthEvents(screen: JSONObject): List<JSONObject> =
-        screen.getJSONObject("body").getJSONObject("props").getJSONArray("events").objects()
-
-    private fun JSONArray.objects(): List<JSONObject> = (0 until length()).map(::getJSONObject)
 
     private companion object {
         const val APP_PACKAGE = "io.jitrapon.astro"
