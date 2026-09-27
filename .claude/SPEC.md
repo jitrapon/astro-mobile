@@ -132,7 +132,7 @@ Design decisions this plan encodes, settled with the user before drafting:
 ### Phase D — documentation
 
 - [x] D1. Update `.claude/CLAUDE.md`: the registry / render-model / action-model seams under "Key patterns"; the `presentation/action/` and `ui/component/` package additions; the `verify-android-release` job and why it sits outside `verifyCheckPartition`; the `minifiedTest` build type, its TraceReferences-generated keep rules and `minSdk` 24, the zero-test gate and the managed device; and `androidApp/proguard-rules.pro` and `androidApp/proguard-test-rules.pro` added to the "Documented config files" list.
-- [ ] D2. Update `README.md` / `CONTRIBUTING.md` with how to run the release-variant instrumented tests locally, including the ephemeral-keystore one-liner and the four environment variables.
+- [x] D2. Update `README.md` / `CONTRIBUTING.md` with how to run the release-variant instrumented tests locally, including the ephemeral-keystore one-liner and the four environment variables.
 
 ## 5. Testing & Validation (for agent)
 
@@ -169,7 +169,7 @@ baseline added; run `./gradlew ktfmtFormat` before each commit.
 - [x] C7. Same build and Swift gates as C6, plus a runtime `ios-device-debug` pass that **taps a delivered destination carrying each of the five action types** through the real tab dispatch path, asserting each visible outcome and its payload — the target screen shown, the delivered URL opened, the event surface carrying the delivered id, the events surface carrying the delivered ids, and the view changed — then a switcher selection and an event tap. Compilation proves none of this, and the shared dispatch tests prove only that the effect was produced, so a missing Swift handler for any one effect would otherwise pass every gate. Mirrors C4 on the Android side; needs no Swift test target and no extra CI job. (Run against a loopback stub backend serving the vendored month fixture with scripted destinations and the switcher's active view following the `view` parameter — the full Swift → Kotlin bridge → view model → decode path — in two destination sets, since an iPhone tab bar shows five tabs before collapsing into More; the app was installed with `simctl` from an unsigned `xcodebuild`, Xcode having no signing account, and driven through a DeviceHub session.)
 - [x] C8. The extended `MinifiedAppSmokeTest` passes on the managed device. Confirm it has teeth: with `isMinifyEnabled = true` and a keep rule the decode needs deliberately removed, the test fails — then restore. (Landed as a sibling `MinifiedContractDecodingTest`, keeping the smoke test black-box. Reaching the app's codec from the test APK meant narrowing the A5a generator — settled with the user — to drop only rules that keep a serializer implementation; the kept kotlinx rules are exactly the codec API: `Json`, `SerializersKt`, `SerializersModule`, `KSerializer`, `DeserializationStrategy`. Teeth: ignoring kotlinx-serialization-core-jvm's consumer rules failed all three cases on "Serializer for class 'CalendarScreenResponse' is not found" and the polymorphic `navigate` lookup; restored.)
 - [x] D1. `./gradlew check` stays green and a re-read of `.claude/CLAUDE.md` shows every changed config file listed under "Documented config files".
-- [ ] D2. The documented local command runs end-to-end on a clean checkout with no `keystore.properties`.
+- [x] D2. The documented local command runs end-to-end on a clean checkout with no `keystore.properties`.
 
 ## 6. Deployment
 

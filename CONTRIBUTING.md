@@ -54,6 +54,34 @@ git push --no-verify
 
 Use it sparingly — CI's `./gradlew check` and the security workflow still enforce the same checks on the PR, so bypassing locally only defers the failure.
 
+## Running the release-variant instrumented tests
+
+Instrumented tests run against the **minified** app — the `minifiedTest` build type, which is `release` plus keep rules for what the tests call — because R8 stripping something the app reaches only reflectively (a polymorphic serializer, a registry entry) fails only when the shrunk code runs. CI runs them in the `verify-android-release` job; `./gradlew check` does not, since it needs an emulator and a signing key.
+
+The APK under test must be signed, so the run needs the four release-signing credentials. They resolve from a gitignored `keystore.properties` at the repo root (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) or, failing that, from these environment variables:
+
+| Variable                  | What it is                            |
+| ------------------------- | ------------------------------------- |
+| `ASTRO_KEYSTORE_FILE`     | absolute path to the keystore         |
+| `ASTRO_KEYSTORE_PASSWORD` | the keystore's password               |
+| `ASTRO_KEY_ALIAS`         | the signing key's alias in it         |
+| `ASTRO_KEY_PASSWORD`      | the signing key's password            |
+
+With none set, the run stops before installing and names whichever are missing. No real key is needed — a throwaway keystore does, exactly as CI makes one:
+
+```bash
+keystore="$(mktemp -d)/astro-local-release.p12"
+password="$(openssl rand -hex 24)"
+keytool -genkeypair -noprompt -keystore "$keystore" -storetype PKCS12 \
+  -storepass "$password" -keypass "$password" -alias astro-local \
+  -keyalg RSA -keysize 2048 -validity 1 -dname "CN=Astro local ephemeral"
+ASTRO_KEYSTORE_FILE="$keystore" ASTRO_KEYSTORE_PASSWORD="$password" \
+  ASTRO_KEY_ALIAS=astro-local ASTRO_KEY_PASSWORD="$password" \
+  ./gradlew :androidApp:aospAtd34MinifiedTestAndroidTest
+```
+
+The task provisions and boots its own emulator (a Gradle Managed Device, API 34 ATD), so no device or AVD needs to be running; the first run downloads the system image. It needs hardware virtualization — present on an Apple Silicon Mac, and `/dev/kvm` on Linux. Results land under `androidApp/build/outputs/androidTest-results/managedDevice/minifiedtest/aospAtd34/`. A run that executes zero tests fails rather than passing, and one that hangs is stopped after 20 minutes.
+
 ## Android CLI & skills
 
 Android development tasks (project/emulator/build/run/screenshots, plus the official Google Android skill catalog) go through the **Android CLI**, not ad-hoc Gradle invocations. Install it on macOS:
