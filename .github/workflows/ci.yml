@@ -72,8 +72,20 @@ jobs:
     # compiles iOS targets only on a macOS host) plus the Swift gates. `swift` ships with the
     # runner's Xcode and `swiftlint` is installed below, so swiftFormatCheck/swiftLintCheck enforce
     # here instead of self-skipping — full parity with the Kotlin ktfmt + Detekt gate.
+    #
+    # Pinned to the Xcode developers build with, never to whatever the image defaults to: swift-format
+    # ships inside Xcode, Kotlin/Native links against its SDKs, and the app build below compiles with
+    # its Swift compiler, so an unpinned runner checks formatting and compiles the app with a
+    # different toolchain than the one that produced the code. `macos-latest` carries no Xcode 27
+    # (its newest is 26.6), hence the `xcode-27` image — a GitHub public preview, so queueing delays
+    # are possible. DEVELOPER_DIR, not the image default, holds the version: the default moves as
+    # GitHub adds releases, and this must move only when the local pin does. The `Xcode_27.0` alias
+    # tracks the newest 27.0.x patch, since the image keeps one patch per minor and an exact patch
+    # path disappears on the next rollout.
     name: verify-ios
-    runs-on: macos-latest
+    runs-on: xcode-27
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -82,6 +94,17 @@ jobs:
           # Fetching a private submodule onto the expensive runner to satisfy no gate would be cost
           # and credential exposure for nothing.
           submodules: false
+
+      # Fail at once, naming the cause, when an image rollout has dropped the pinned Xcode — rather
+      # than as an xcrun error from inside a Gradle task minutes later. The printed version and build
+      # are the record of which toolchain this run compiled with.
+      - name: Verify pinned Xcode
+        run: |
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "::error::Pinned Xcode $DEVELOPER_DIR is not on this runner image; re-pin DEVELOPER_DIR to a version the image carries."
+            exit 1
+          fi
+          xcodebuild -version
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
