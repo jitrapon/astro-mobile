@@ -38,7 +38,11 @@ class CalendarBodyUiStateTest {
         val screen = fixtureScreen()
         val body = screen.monthBody()
 
-        val state = body.toMonthBodyUiState(screen.resolvedPreferences)
+        val state =
+            body.toMonthBodyUiState(
+                screen.resolvedPreferences,
+                screenTitle = HEADING_THE_TITLE_DOES_NOT_REPEAT,
+            )
 
         assertEquals(CalendarComponentIds.MONTH_BODY, state.componentId)
         assertEquals(body.props.headerLabel, state.headerLabel)
@@ -49,6 +53,16 @@ class CalendarBodyUiStateTest {
             body.props.events.map { it.presentation.componentId },
             state.events.map { it.componentId },
         )
+    }
+
+    @Test
+    fun aMonthHeadingThatRepeatsTheScreenTitleIsDropped() {
+        val screen = fixtureScreen()
+
+        val state = screen.toCalendarBodyUiState() as MonthBodyUiState
+
+        assertEquals(screen.title, screen.monthBody().props.headerLabel)
+        assertNull(state.headerLabel, "The month was named by both the title and the heading.")
     }
 
     @Test
@@ -92,7 +106,11 @@ class CalendarBodyUiStateTest {
         val lines = List(cap + 2) { PresentationLine("line $it") }
         val body = screen.monthBody().withFirstAllDayBarSubtitleLines(lines)
 
-        val state = body.toMonthBodyUiState(screen.resolvedPreferences)
+        val state =
+            body.toMonthBodyUiState(
+                screen.resolvedPreferences,
+                screenTitle = HEADING_THE_TITLE_DOES_NOT_REPEAT,
+            )
 
         val chip = state.events.first { it.componentId == CalendarComponentIds.MONTH_ALL_DAY_BAR }
         assertEquals(lines.take(cap), chip.subtitleLines)
@@ -129,7 +147,9 @@ class CalendarBodyUiStateTest {
         val agendaScreen = screen.copy(body = AgendaBody(screen.monthBody().props.asAgenda()))
 
         assertEquals(
-            screen.monthBody().toMonthBodyUiState(screen.resolvedPreferences),
+            screen
+                .monthBody()
+                .toMonthBodyUiState(screen.resolvedPreferences, screenTitle = screen.title),
             screen.toCalendarBodyUiState(),
         )
         assertEquals(
@@ -350,3 +370,6 @@ private fun CalendarEvent.withIdentity(
         is TimedEvent -> copy(id = id, calendarId = calendarId)
         is AllDayEvent -> copy(id = id, calendarId = calendarId)
     }
+
+/** A screen title no fixture heading equals, so the heading under test is kept. */
+private const val HEADING_THE_TITLE_DOES_NOT_REPEAT = "Calendar"

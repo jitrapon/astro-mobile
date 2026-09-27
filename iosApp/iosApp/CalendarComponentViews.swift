@@ -5,7 +5,7 @@ import shared
 // only its own component's props — the subtitle lines already capped and the chip style already
 // scoped by the shared projection — matching the Android renderers prop for prop.
 
-/// The month body: its heading, a weekday row starting on the resolved week start, and its events in
+/// The month body: its heading unless the title already names the month, a weekday row starting on the resolved week start, and its events in
 /// the server's display order. Past `maxVisibleEvents` the rest collapse into one "more" affordance
 /// presenting the hidden events — the contract attaches no action to an overflow, so it builds its
 /// own from the ids it hides.
@@ -20,8 +20,10 @@ struct MonthBodyPlaceholderView: View {
     var body: some View {
         let hidden = month.events.dropFirst(Self.maxVisibleEvents)
         VStack(alignment: .leading, spacing: 8) {
-            Text(verbatim: month.headerLabel)
-                .font(.headline)
+            if let headerLabel = month.headerLabel {
+                Text(verbatim: headerLabel)
+                    .font(.headline)
+            }
             WeekdayRowView(weekStart: month.weekStart)
             ForEach(month.events.prefix(Self.maxVisibleEvents), id: \.eventId) { event in
                 CalendarEventComponentView(event: event, onAction: onAction)

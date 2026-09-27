@@ -48,7 +48,7 @@ internal fun MonthBodyPlaceholder(
         modifier = modifier.testTag(CalendarComponentTestTags.registered(body.componentId)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = body.headerLabel, style = MaterialTheme.typography.h6)
+        body.headerLabel?.let { Text(text = it, style = MaterialTheme.typography.h6) }
         WeekdayRow(body.weekStart)
         visible.forEach { event ->
             CalendarEventComponent(event, onAction, Modifier.fillMaxWidth())

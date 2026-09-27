@@ -37,8 +37,11 @@ sealed interface CalendarBodyUiState {
 /** A month grid body. */
 data class MonthBodyUiState(
     override val componentId: String,
-    /** Server-formatted month and year heading. */
-    val headerLabel: String,
+    /**
+     * Server-formatted month and year heading, or `null` when it repeats the screen's title — which
+     * each platform already shows in its bar, so drawing both would name the month twice.
+     */
+    val headerLabel: String?,
     /** First day of the month the view is centred on. */
     val monthAnchor: String,
     /** The weekday the grid's rows start on, as the user's preferences resolved it. */
@@ -109,21 +112,29 @@ data class EventChipUiState(
  * - `chipStyle` reaches only the filled-bar components (the month and time-grid all-day bars);
  * - `weekStart` is carried onto a month body unmodified, for its grid to order rows from.
  *
+ * A month heading equal to the screen's title is dropped too: the title already names the month.
+ *
  * `chipDensity`'s two fields are each authoritative for one thing — `level` for which preset is
  * active, `maxSubtitleLines` for how many lines to draw — and the server may remap one without the
  * other changing, so neither this projection nor any client re-derives either from the other.
  */
 internal fun CalendarScreen.toCalendarBodyUiState(): CalendarBodyUiState =
     when (val body = body) {
-        is MonthBody -> body.toMonthBodyUiState(resolvedPreferences)
+        is MonthBody -> body.toMonthBodyUiState(resolvedPreferences, screenTitle = title)
         is AgendaBody -> body.toAgendaBodyUiState(resolvedPreferences)
     }
 
-/** This month body with [preferences] applied to its week start and every event it places. */
-internal fun MonthBody.toMonthBodyUiState(preferences: ResolvedPreferences): MonthBodyUiState =
+/**
+ * This month body with [preferences] applied to its week start and every event it places, and its
+ * heading dropped when it says what [screenTitle] already does.
+ */
+internal fun MonthBody.toMonthBodyUiState(
+    preferences: ResolvedPreferences,
+    screenTitle: String,
+): MonthBodyUiState =
     MonthBodyUiState(
         componentId = componentId,
-        headerLabel = props.headerLabel,
+        headerLabel = props.headerLabel.takeUnless { it == screenTitle },
         monthAnchor = props.monthAnchor,
         weekStart = preferences.weekStart,
         events = props.events.map { it.toEventChipUiState(props.calendars, preferences) },
