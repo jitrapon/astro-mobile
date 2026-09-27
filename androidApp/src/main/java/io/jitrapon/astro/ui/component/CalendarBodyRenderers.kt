@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -56,10 +58,14 @@ internal fun MonthBodyPlaceholder(
         if (hidden.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.calendar_month_more_events, hidden.size),
+                // A caption line is ~17dp tall. The minimum height sits inside `clickable`, so the
+                // whole padded box takes the tap — out to the 48dp Material requires — while the
+                // text keeps its size, centred in it.
                 modifier =
-                    Modifier.testTag(CalendarComponentTestTags.MONTH_OVERFLOW).clickable {
-                        onAction(PresentModalAction(hidden.map { it.eventId }))
-                    },
+                    Modifier.testTag(CalendarComponentTestTags.MONTH_OVERFLOW)
+                        .clickable { onAction(PresentModalAction(hidden.map { it.eventId })) }
+                        .heightIn(min = 48.dp)
+                        .wrapContentHeight(),
                 style = MaterialTheme.typography.caption,
                 color = MaterialTheme.colors.primary,
             )

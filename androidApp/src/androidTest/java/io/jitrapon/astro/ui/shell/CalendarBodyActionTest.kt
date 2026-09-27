@@ -1,11 +1,13 @@
 package io.jitrapon.astro.ui.shell
 
 import android.view.ViewGroup
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import io.jitrapon.astro.CALENDAR_SCREEN_ID
 import io.jitrapon.astro.allDayEvent
 import io.jitrapon.astro.calendarScreenResponse
@@ -71,6 +73,15 @@ class CalendarBodyActionTest {
             .assertTextContains(hiddenIds.joinToString(", "), substring = true)
     }
 
+    @Test
+    fun theMonthOverflowIsAFullSizeTouchTarget() {
+        showShell()
+
+        composeRule
+            .onNodeWithTag(CalendarComponentTestTags.MONTH_OVERFLOW)
+            .assertHeightIsAtLeast(MINIMUM_TOUCH_TARGET)
+    }
+
     private fun showShell() {
         val calendarState = MutableStateFlow(LOADED)
         val shellViewModel = AppShellViewModel {
@@ -106,6 +117,9 @@ class CalendarBodyActionTest {
     private companion object {
         /** How many events the month placeholder lists before its overflow takes the rest. */
         const val VISIBLE_MONTH_EVENTS = 3
+
+        /** Material's minimum touch target. */
+        val MINIMUM_TOUCH_TARGET = 48.dp
 
         val EVENT_IDS = listOf("s1", "s2", "s3", "s4")
         val EVENT_TITLES = listOf("สงกรานต์", "ทริปเชียงใหม่", "ประชุมนอกสถานที่", "Offsite")

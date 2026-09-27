@@ -29,8 +29,14 @@ struct MonthBodyPlaceholderView: View {
                 CalendarEventComponentView(event: event, onAction: onAction)
             }
             if !hidden.isEmpty {
-                Button("+\(hidden.count) more") {
+                // A caption line is ~17 pt tall; the frame pads the tap target out to the 44 pt the
+                // Human Interface Guidelines ask for without enlarging the text.
+                Button {
                     onAction(PresentModalAction(eventIds: hidden.map(\.eventId)))
+                } label: {
+                    Text("+\(hidden.count) more")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .font(.caption)
             }
