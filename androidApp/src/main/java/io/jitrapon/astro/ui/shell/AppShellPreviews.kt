@@ -3,6 +3,7 @@ package io.jitrapon.astro.ui.shell
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import io.jitrapon.astro.data.calendar.NavigateAction
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.ui.main.theme.AstroTheme
@@ -14,13 +15,13 @@ private val PreviewTabs =
             destinationId = "calendar",
             label = "Calendar",
             iconToken = "icon.calendar",
-            targetScreenId = "calendar",
+            action = NavigateAction("calendar"),
         ),
         AppShellTab(
             destinationId = "expense",
             label = "Expense",
             iconToken = "icon.wallet",
-            targetScreenId = "expense",
+            action = NavigateAction("expense"),
         ),
     )
 

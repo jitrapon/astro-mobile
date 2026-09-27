@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import io.jitrapon.astro.data.calendar.NavigateAction
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.ui.main.MainActivity
@@ -66,14 +67,14 @@ class AppShellTest {
                 destinationId = "calendar",
                 label = "Calendar",
                 iconToken = "icon.calendar",
-                targetScreenId = "calendar",
+                action = NavigateAction("calendar"),
             )
         val secondary =
             AppShellTab(
                 destinationId = "shared-calendar",
                 label = "Shared calendar",
                 iconToken = null,
-                targetScreenId = "calendar",
+                action = NavigateAction("calendar"),
             )
         val tabs = listOf(primary, secondary)
         showShell(MutableStateFlow(AppShellState.Tabs(tabs)))
@@ -126,13 +127,13 @@ class AppShellTest {
                     destinationId = "calendar",
                     label = "ปฏิทิน",
                     iconToken = "icon.calendar",
-                    targetScreenId = "calendar",
+                    action = NavigateAction("calendar"),
                 ),
                 AppShellTab(
                     destinationId = "expense",
                     label = "ค่าใช้จ่าย",
                     iconToken = "icon.wallet",
-                    targetScreenId = "expense",
+                    action = NavigateAction("expense"),
                 ),
             )
     }

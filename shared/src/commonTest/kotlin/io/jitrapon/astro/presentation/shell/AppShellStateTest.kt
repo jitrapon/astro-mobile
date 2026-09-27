@@ -7,7 +7,9 @@ import io.jitrapon.astro.data.calendar.MonthViewSelection
 import io.jitrapon.astro.data.calendar.NavDestination
 import io.jitrapon.astro.data.calendar.NavigateAction
 import io.jitrapon.astro.data.calendar.Navigation
+import io.jitrapon.astro.data.calendar.OpenEventDetailAction
 import io.jitrapon.astro.data.calendar.OpenUrlAction
+import io.jitrapon.astro.data.calendar.PresentModalAction
 import io.jitrapon.astro.data.calendar.StalledExchange
 import io.jitrapon.astro.data.calendar.SwitchCalendarViewAction
 import io.jitrapon.astro.data.calendar.decodeMonthScreenFixture
@@ -18,6 +20,7 @@ import io.jitrapon.astro.presentation.calendar.CalendarViewModel
 import io.jitrapon.astro.recordStates
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
@@ -41,18 +44,62 @@ class AppShellStateTest {
     }
 
     @Test
-    fun aDestinationThatDoesNotNavigateIsNotATab() {
-        val screen =
-            withDestinations(
-                destination("calendar", NavigateAction("calendar")),
-                destination("help", OpenUrlAction("https://astro.test/help")),
-                destination("month", SwitchCalendarViewAction(MonthViewSelection)),
-            )
+    fun theFixturesDestinationsAllBecomeTabsCarryingTheirDeliveredActions() {
+        val screen = decodeMonthScreenFixture()
+        val delivered = screen.screen.navigation.destinations
+
+        val tabs = assertIs<AppShellState.Tabs>(loaded(screen).toAppShellState()).tabs
 
         assertEquals(
-            listOf("calendar"),
-            (loaded(screen).toAppShellState() as AppShellState.Tabs).tabs.map { it.destinationId },
+            delivered.map { it.id to it.action },
+            tabs.map { it.destinationId to it.action },
+            "The projection dropped or altered a delivered destination",
         )
+    }
+
+    @Test
+    fun aDestinationOfEveryActionTypeIsATabCarryingThatAction() {
+        val screen = withDestinations(*EVERY_ACTION_TYPE.toTypedArray())
+
+        val tabs = assertIs<AppShellState.Tabs>(loaded(screen).toAppShellState()).tabs
+
+        assertEquals(
+            EVERY_ACTION_TYPE.map { it.id to it.action },
+            tabs.map { it.destinationId to it.action },
+        )
+    }
+
+    @Test
+    fun onlyANavigatingTabHasATargetScreen() {
+        val tabs =
+            assertIs<AppShellState.Tabs>(
+                    loaded(withDestinations(*EVERY_ACTION_TYPE.toTypedArray())).toAppShellState()
+                )
+                .tabs
+
+        assertEquals(
+            mapOf(
+                "calendar" to "calendar",
+                "help" to null,
+                "month" to null,
+                "event" to null,
+                "overflow" to null,
+            ),
+            tabs.associate { it.destinationId to it.targetScreenId },
+        )
+    }
+
+    @Test
+    fun aSettledScreenWhoseDestinationsAllDoNotNavigateStillHasTabs() {
+        val screen =
+            withDestinations(
+                *EVERY_ACTION_TYPE.filter { it.action !is NavigateAction }.toTypedArray()
+            )
+
+        val tabs = assertIs<AppShellState.Tabs>(loaded(screen).toAppShellState()).tabs
+
+        assertEquals(listOf("help", "month", "event", "overflow"), tabs.map { it.destinationId })
+        assertTrue(tabs.all { it.targetScreenId == null })
     }
 
     @Test
@@ -67,8 +114,8 @@ class AppShellStateTest {
         assertEquals(
             AppShellState.Tabs(
                 listOf(
-                    AppShellTab("calendar", "first", ICON_TOKEN, "calendar"),
-                    AppShellTab("expense", "expense", ICON_TOKEN, "expense"),
+                    AppShellTab("calendar", "first", ICON_TOKEN, NavigateAction("calendar")),
+                    AppShellTab("expense", "expense", ICON_TOKEN, NavigateAction("expense")),
                 )
             ),
             loaded(screen).toAppShellState(),
@@ -128,26 +175,17 @@ class AppShellStateTest {
     }
 
     @Test
-    fun aSettledScreenWithNoRoutableDestinationsHasNowhereToGo() {
-        val nothingRoutable =
-            listOf(
-                withDestinations(destination("help", OpenUrlAction("https://astro.test/help"))),
-                withDestinations(),
-            )
-
-        nothingRoutable.forEach { screen ->
-            assertEquals(
-                AppShellState.NoDestinations,
-                CalendarUiState(content = screen, isLoading = false, failure = null)
-                    .toAppShellState(),
-                "A settled screen offering nothing routable did not project to NoDestinations",
-            )
-        }
+    fun aSettledScreenWithNoDestinationsHasNowhereToGo() {
+        assertEquals(
+            AppShellState.NoDestinations,
+            CalendarUiState(content = withDestinations(), isLoading = false, failure = null)
+                .toAppShellState(),
+        )
     }
 
     @Test
-    fun aScreenWithNoRoutableDestinationsIsStillFailedOrLoadingWhenEitherApplies() {
-        val screen = withDestinations(destination("help", OpenUrlAction("https://astro.test/help")))
+    fun aScreenWithNoDestinationsIsStillFailedOrLoadingWhenEitherApplies() {
+        val screen = withDestinations()
 
         assertEquals(
             AppShellState.Failed(REFUSED),
@@ -197,14 +235,24 @@ private val FIXTURE_TABS =
             destinationId = "calendar",
             label = "ปฏิทิน",
             iconToken = "icon.calendar",
-            targetScreenId = "calendar",
+            action = NavigateAction("calendar"),
         ),
         AppShellTab(
             destinationId = "expense",
             label = "ค่าใช้จ่าย",
             iconToken = "icon.wallet",
-            targetScreenId = "expense",
+            action = NavigateAction("expense"),
         ),
+    )
+
+/** One destination per contract action type, the navigating one first. */
+private val EVERY_ACTION_TYPE =
+    listOf(
+        destination("calendar", NavigateAction("calendar")),
+        destination("help", OpenUrlAction("https://astro.test/help")),
+        destination("month", SwitchCalendarViewAction(MonthViewSelection)),
+        destination("event", OpenEventDetailAction("event-1")),
+        destination("overflow", PresentModalAction(listOf("event-1", "event-2"))),
     )
 
 private val REFUSED = IllegalStateException("the backend refused the exchange")

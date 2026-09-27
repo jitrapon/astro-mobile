@@ -126,10 +126,10 @@ private struct ShellMessageView: View {
 private let previewTabs = [
     AppShellTab(
         destinationId: "calendar", label: "Calendar", iconToken: "icon.calendar",
-        targetScreenId: "calendar"),
+        action: NavigateAction(screen: "calendar")),
     AppShellTab(
         destinationId: "expense", label: "Expense", iconToken: "icon.wallet",
-        targetScreenId: "expense"),
+        action: NavigateAction(screen: "expense")),
 ]
 
 #Preview("Loading") {
