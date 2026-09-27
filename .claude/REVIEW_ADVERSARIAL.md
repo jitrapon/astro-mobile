@@ -14,6 +14,8 @@
 Target: branch diff against main
 Verdict: needs-attention
 
+**Round status:** 2 of 2 findings RESOLVED (ae881a08, 7aad3b31); 0 deferred; 0 not an issue. Both were edges of round 1's fixes (the restart gap predates the branch; the renderer gap was in round 1's new test).
+
 Do not ship yet: backgrounding can remove failed-switch recovery controls, and the black-box release gate misses a renderer it claims to verify. Review was static; device tests were not run.
 
 Findings:
