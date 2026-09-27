@@ -76,14 +76,21 @@ private struct TabbedShellView: View {
     var body: some View {
         TabView(selection: selection) {
             ForEach(tabs, id: \.destinationId) { tab in
-                Tab(
-                    tab.label, systemImage: TabSymbol.name(for: tab.iconToken),
-                    value: tab.destinationId
-                ) {
+                Tab(value: tab.destinationId) {
                     NavigationStack {
                         DestinationView(
                             tab: tab, calendar: calendar,
                             onAction: { act($0, source: tab) })
+                    }
+                } label: {
+                    // The delivered label is the tab's whole name. The symbol is decoration, so
+                    // VoiceOver never reads a symbol's own meaning — "favorite" for a star — as
+                    // part of a destination it says nothing about.
+                    Label {
+                        Text(verbatim: tab.label)
+                    } icon: {
+                        Image(systemName: TabSymbol.name(for: tab.iconToken))
+                            .accessibilityHidden(true)
                     }
                 }
             }
@@ -173,12 +180,13 @@ private struct DestinationView: View {
 enum TabSymbol {
 
     /// The symbol for `iconToken`. Tokens this app does not know — including ones the server adds
-    /// later — fall back to a generic symbol rather than leaving the tab blank.
+    /// later — fall back to a generic symbol rather than leaving the tab blank: a plain grid, which
+    /// claims no meaning a destination might not have, where a star reads as "favorite".
     static func name(for iconToken: String?) -> String {
         switch iconToken {
         case "icon.calendar": "calendar"
         case "icon.wallet": "wallet.pass"
-        default: "star"
+        default: "square.grid.2x2"
         }
     }
 }
