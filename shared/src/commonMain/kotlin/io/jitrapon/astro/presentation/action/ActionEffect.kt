@@ -34,8 +34,15 @@ sealed interface ActionEffect {
 }
 
 /**
- * The effect a platform carries out for this action, or `null` for a [SwitchCalendarViewAction],
- * which the observing view model consumes itself and leaves nothing for a platform to do.
+ * The effect a platform carries out for this action, or `null` when there is none to carry out: a
+ * [SwitchCalendarViewAction], which the observing view model consumes itself, or an [OpenUrlAction]
+ * whose URL this client will not hand outside the app.
+ *
+ * The contract constrains a URL only to URI syntax, so a delivered one may name any scheme. Only
+ * `http` and `https` leave the app. Anything else is refused here, once for both platforms: a
+ * `file:` URI makes Android's launch throw `FileUriExposedException` — a crash, not the "no app can
+ * open this" path — and a scheme such as `intent:` or `javascript:` has no business being launched
+ * on a server's say-so.
  *
  * The one mapping from the contract's action types to client behaviour, so neither the view model
  * nor anything standing in for it restates which action opens what.
@@ -44,7 +51,14 @@ fun Action.toActionEffect(): ActionEffect? =
     when (this) {
         is SwitchCalendarViewAction -> null
         is NavigateAction -> ActionEffect.ShowScreen(screen)
-        is OpenUrlAction -> ActionEffect.OpenExternalUrl(url)
+        is OpenUrlAction -> if (url.hasOpenableScheme()) ActionEffect.OpenExternalUrl(url) else null
         is OpenEventDetailAction -> ActionEffect.ShowEventDetail(eventId)
         is PresentModalAction -> ActionEffect.ShowEvents(eventIds)
     }
+
+/** The URL schemes an [OpenUrlAction] may hand outside the app. */
+private val OPENABLE_URL_SCHEMES = setOf("http", "https")
+
+/** Whether this URL's scheme is one of [OPENABLE_URL_SCHEMES], compared case-insensitively. */
+private fun String.hasOpenableScheme(): Boolean =
+    substringBefore(':', missingDelimiterValue = "").lowercase() in OPENABLE_URL_SCHEMES
