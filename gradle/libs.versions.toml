@@ -79,7 +79,7 @@ ktor = "3.6.0"
 koin = "4.2.2"
 # Jetpack Navigation 3 — the Android app's navigation framework (a Compose-state back stack
 # rendered by `NavDisplay`). `runtime` and `ui` release together and are bumped off this one ref.
-navigation3 = "1.1.7"
+navigation3 = "1.2.0"
 # Jetpack Compose UI libraries — `ui` (with its tooling and test artifacts), `animation`, and
 # `material`. AndroidX versions these groups independently, but the app has always held them to one
 # release, and one ref keeps a bump from moving `ui` while leaving `ui-tooling` or the test
