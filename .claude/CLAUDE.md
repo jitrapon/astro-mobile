@@ -140,7 +140,7 @@ A teammate opening the file on `main` with no branch/SPEC context should guess w
 ## Tech stack & versions
 
 - Kotlin 2.4.20, Gradle 9.x, Android Gradle Plugin 9.x.
-- Android: compileSdk 37, minSdk 23, targetSdk 37, Java 17.
+- Android: compileSdk 37, minSdk 30, targetSdk 37, Java 17.
 - Jetpack Compose for Android UI, with **Navigation 3** (`navigation3-runtime` / `navigation3-ui`) for the app shell's back stack; SwiftUI for iOS UI, with the `Tab`-based `TabView` and `NavigationStack` (iOS 18 deployment target). `:androidApp` resolves from the shared Koin graph through `koin-core` (the catalog's existing Koin alias).
 - iOS targets: `iosX64`, `iosArm64`, `iosSimulatorArm64`.
 - `:shared` product stack: **Ktor client 3.x** (OkHttp engine on Android, Darwin on iOS) with `ContentNegotiation` and `HttpTimeout` — the deadlines are set in `createBackendHttpClient` rather than left to the engines, which impose different ones, so a stalled backend does not give up after seconds on one platform and a minute on the other — **kotlinx.serialization** JSON (its compiler plugin applied by id in `shared/build.gradle.kts`, inheriting the Kotlin-pinned artifact from the root `buildscript` classpath), **kotlinx.coroutines** (declared explicitly rather than inherited through Ktor — the data layer's API is suspend-based, so coroutines is part of its own contract), and **Koin 4.x** for DI. Ktor's `ktor-client-mock`, `kotlinx-coroutines-test`, and `koin-test` back `commonTest`.

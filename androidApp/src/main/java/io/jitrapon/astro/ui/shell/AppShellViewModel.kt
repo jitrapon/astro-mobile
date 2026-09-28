@@ -78,8 +78,7 @@ class AppShellViewModel(
  * The month-view request for the month the device is in now, in the device's zone and locale.
  *
  * The window ends on the month's own last day rather than a fixed count, so a screen promising the
- * current month is not missing its final days. Built with [GregorianCalendar] rather than
- * `java.time`, which is unavailable below API 26 without core-library desugaring.
+ * current month is not missing its final days.
  */
 private fun currentMonthRequest(): CalendarScreenRequest {
     val timeZone = TimeZone.getDefault()

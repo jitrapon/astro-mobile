@@ -6,7 +6,7 @@ The mobile client for Astro — a Kotlin Multiplatform Mobile (KMP) smart planne
 
 ## Stack
 
-Kotlin 2.3.10 · Gradle 9.x · Android Gradle Plugin 9.x · Jetpack Compose (Android UI) · SwiftUI (iOS UI). Android targets compileSdk 36 / minSdk 23 / targetSdk 36 on Java 17; iOS targets `iosX64`, `iosArm64`, `iosSimulatorArm64`. Lint/format: ktfmt + Detekt (Kotlin), swift-format + SwiftLint (Swift).
+Kotlin 2.3.10 · Gradle 9.x · Android Gradle Plugin 9.x · Jetpack Compose (Android UI) · SwiftUI (iOS UI). Android targets compileSdk 36 / minSdk 30 / targetSdk 36 on Java 17; iOS targets `iosX64`, `iosArm64`, `iosSimulatorArm64`. Lint/format: ktfmt + Detekt (Kotlin), swift-format + SwiftLint (Swift).
 
 ## Getting started
 

@@ -42,7 +42,7 @@ A real device/emulator does.
   devices + running emulators.
 - **Gradle** builds the APK — the CLI *deploys* an APK, it does not build it.
 - App facts (from `androidApp/`): `applicationId`/namespace `io.jitrapon.astro`,
-  **`minSdk 23`** (the device/emulator API floor), launcher activity
+  **`minSdk 30`** (the device/emulator API floor), launcher activity
   `io.jitrapon.astro/io.jitrapon.astro.ui.main.MainActivity`.
 
 ## Device selection & fallback chain (the core logic)
@@ -156,8 +156,8 @@ harmless but consumes resources — mention it if you leave it up).
   ```
 - **`adb devices` shows `unauthorized`** → accept the RSA debugging prompt on the
   device. `offline` → replug / `adb kill-server && adb start-server`.
-- **Install fails on API floor** → the app is `minSdk 23`; a device/emulator
-  below API 23 can't install it. Pick an API ≥ 23 image.
+- **Install fails on API floor** → the app is `minSdk 30`; a device/emulator
+  below API 30 can't install it. Pick an API ≥ 30 image.
 - **`android layout` returns nothing** → a WebView or running animation; use
   `screen capture --annotate` and retry `layout` after navigating.
 
