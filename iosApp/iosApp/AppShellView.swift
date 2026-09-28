@@ -47,6 +47,9 @@ struct AppShellView: View {
 /// Tabs are identified and selected by destination id, not by target screen id. When a refresh
 /// delivers destinations that no longer include the selected one, the first navigating tab is
 /// shown instead.
+///
+/// When no tab navigates there is nothing to select and no screen to draw, so the shell is the bar
+/// alone — as on Android — rather than a `TabView`, which always selects a tab and draws its screen.
 private struct TabbedShellView: View {
     let tabs: [AppShellTab]
     let calendar: CalendarUiState
@@ -74,6 +77,26 @@ private struct TabbedShellView: View {
     }
 
     var body: some View {
+        shell
+            .alert(
+                "Not available yet", isPresented: eventSurfaceIsPresented,
+                presenting: eventSurfaceMessage
+            ) { _ in
+                Button("OK") {}
+            } message: { message in
+                Text(verbatim: message)
+            }
+    }
+
+    @ViewBuilder private var shell: some View {
+        if tabs.contains(where: { $0.targetScreenId != nil }) {
+            tabView
+        } else {
+            ActionOnlyBarView(tabs: tabs) { act($0.action, source: $0) }
+        }
+    }
+
+    private var tabView: some View {
         TabView(selection: selection) {
             ForEach(tabs, id: \.destinationId) { tab in
                 Tab(value: tab.destinationId) {
@@ -94,14 +117,6 @@ private struct TabbedShellView: View {
                     }
                 }
             }
-        }
-        .alert(
-            "Not available yet", isPresented: eventSurfaceIsPresented,
-            presenting: eventSurfaceMessage
-        ) { _ in
-            Button("OK") {}
-        } message: { message in
-            Text(verbatim: message)
         }
     }
 
@@ -155,6 +170,40 @@ private struct TabbedShellView: View {
                 "Event lists aren't available yet (\(events.eventIds.joined(separator: ", ")))."
         default:
             break
+        }
+    }
+}
+
+/// The bar alone, for a shell whose destinations all act rather than navigate: one button per
+/// destination, none of them selected, and no screen above them. A tap dispatches the destination's
+/// action; the shell carries out whatever effect comes back.
+private struct ActionOnlyBarView: View {
+    let tabs: [AppShellTab]
+    let onTap: (AppShellTab) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            Divider()
+            HStack(spacing: 0) {
+                ForEach(tabs, id: \.destinationId) { tab in
+                    Button {
+                        onTap(tab)
+                    } label: {
+                        VStack(spacing: 2) {
+                            Image(systemName: TabSymbol.name(for: tab.iconToken))
+                                .accessibilityHidden(true)
+                            Text(verbatim: tab.label)
+                                .font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.top, 6)
+            .background(.bar)
         }
     }
 }
@@ -263,4 +312,20 @@ private let previewCalendar = CalendarUiState(content: nil, isLoading: false, fa
     AppShellView(
         state: AppShellStateTabs(tabs: previewTabs), calendar: previewCalendar,
         dispatch: { _ in nil }, initialSelection: "expense")
+}
+
+/// Destinations that all act rather than navigate: the shell is the bar alone, nothing selected.
+private let previewActionOnlyTabs = [
+    AppShellTab(
+        destinationId: "help", label: "Help", iconToken: nil,
+        action: OpenUrlAction(url: "https://example.com/help")),
+    AppShellTab(
+        destinationId: "agenda", label: "Agenda", iconToken: "icon.calendar",
+        action: SwitchCalendarViewAction(selection: AgendaViewSelection.shared)),
+]
+
+#Preview("Action-only destinations") {
+    AppShellView(
+        state: AppShellStateTabs(tabs: previewActionOnlyTabs), calendar: previewCalendar,
+        dispatch: { _ in nil })
 }
