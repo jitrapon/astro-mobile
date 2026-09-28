@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.jitrapon.astro.R
+import io.jitrapon.astro.presentation.action.ActionEffect
 import io.jitrapon.astro.presentation.shell.AppShellTab
 
 /** What stands in for a destination's screen until that screen is built. */
@@ -62,6 +65,36 @@ internal fun FailurePlaceholder(modifier: Modifier = Modifier) {
             modifier = Modifier.testTag(AppShellTestTags.FAILURE),
         )
     }
+}
+
+/**
+ * What stands in for the event detail and event list surfaces until they are built: a dialog naming
+ * what was asked for, so a tap that produces either effect is visibly answered rather than silently
+ * dropped.
+ */
+@Composable
+internal fun EventSurfacePlaceholder(effect: ActionEffect, onDismiss: () -> Unit) {
+    val message =
+        when (effect) {
+            is ActionEffect.ShowEventDetail ->
+                stringResource(R.string.app_shell_event_detail_not_built, effect.eventId)
+            is ActionEffect.ShowEvents ->
+                stringResource(
+                    R.string.app_shell_events_not_built,
+                    effect.eventIds.joinToString(", "),
+                )
+            else -> return
+        }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.app_shell_event_surface_title)) },
+        text = { Text(message, modifier = Modifier.testTag(AppShellTestTags.EVENT_SURFACE)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.app_shell_event_surface_dismiss))
+            }
+        },
+    )
 }
 
 /**

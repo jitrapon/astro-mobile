@@ -5,10 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.RequestedCalendarView
+import io.jitrapon.astro.presentation.action.ActionEffect
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.CalendarViewModel
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.toAppShellState
@@ -16,6 +19,7 @@ import java.util.Calendar
 import java.util.GregorianCalendar
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -24,51 +28,75 @@ import org.koin.core.context.GlobalContext
 
 /**
  * Holds the app shell's state across configuration changes: it observes the current month's
- * calendar screen and publishes the shell that screen implies.
+ * calendar screen, publishes that screen and the shell it implies, and forwards what the person
+ * does on the screen back to it.
  *
  * It derives nothing itself. The shell is the shared [CalendarViewModel]'s state mapped through
  * [toAppShellState], the one projection both apps use, so Android and iOS cannot disagree about
  * which destinations become tabs or when the bar is shown.
  *
- * The request is fixed at construction. A shell that outlives a month boundary keeps observing the
- * month it started in, which is acceptable while the shell renders only destinations — they do not
- * depend on the month asked for.
+ * The screen is opened through [openCalendarScreen] on this view model's own scope, so it lives
+ * exactly as long as the shell does. Production opens a [CalendarViewModel]; see [Factory].
  */
-class AppShellViewModel(
-    calendarScreenRepository: CalendarScreenRepository,
-    request: CalendarScreenRequest,
-) : ViewModel() {
+class AppShellViewModel(openCalendarScreen: (CoroutineScope) -> CalendarScreenHandle) :
+    ViewModel() {
 
-    private val calendarViewModel =
-        CalendarViewModel(calendarScreenRepository, request, viewModelScope)
+    private val calendarScreen = openCalendarScreen(viewModelScope)
 
     /**
-     * The shell as it stands now. Collecting it is what starts the observation, and it stops when
-     * the last collector leaves, exactly as [CalendarViewModel.state] does.
+     * The calendar screen as it stands now — its title, body and view switcher. Collecting it is
+     * what starts the observation, and it stops when the last collector leaves, exactly as
+     * [CalendarViewModel.state] does.
      */
+    val calendarState: StateFlow<CalendarUiState> = calendarScreen.state
+
+    /** The shell as it stands now, derived from [calendarState] and started by collecting it. */
     val shellState: StateFlow<AppShellState> =
-        calendarViewModel.state
+        calendarScreen.state
             .map { it.toAppShellState() }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(),
-                calendarViewModel.state.value.toAppShellState(),
+                calendarScreen.state.value.toAppShellState(),
             )
+
+    /**
+     * Carries out [action] as far as the calendar screen can, and returns the effect the shell must
+     * carry out for the rest — or `null` when the screen consumed it, as a view switch is.
+     */
+    fun dispatch(action: Action): ActionEffect? = calendarScreen.dispatch(action)
+
+    /**
+     * Brings the calendar screen up to what it would ask for now — the month the device is in, in
+     * its current zone and language — keeping its view.
+     *
+     * The screen asks once, when this view model is built, and this view model outlives more than
+     * that request: a month's end passed overnight in the background, a trip into another zone, a
+     * language switched in settings, which recreates the activity but not this. Unchanged, the
+     * request changes nothing unless the screen's last load failed, when this retries it — so it is
+     * safe, and useful, to call every time the screen starts.
+     */
+    fun showCurrentMonth() {
+        calendarScreen.updateRequest(currentMonthRequest())
+    }
 
     companion object {
         /**
-         * Builds the view model with the repository resolved from the graph [AstroApplication]
-         * started and the request for the month the device is in now.
+         * Builds the view model over a [CalendarViewModel] observing the month the device is in now
+         * — [showCurrentMonth] keeps it there — through the repository resolved from the graph
+         * [AstroApplication] started.
          *
-         * Resolution happens here, at the composition edge, so the class itself takes plain
-         * constructor arguments and a test can hand it any repository.
+         * Resolution happens here, at the composition edge, so the class itself takes a plain
+         * function and a test can hand it any screen.
          */
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                AppShellViewModel(
-                    calendarScreenRepository = GlobalContext.get().get(),
-                    request = currentMonthRequest(),
-                )
+                val calendarScreenRepository: CalendarScreenRepository = GlobalContext.get().get()
+                val request = currentMonthRequest()
+                AppShellViewModel { scope ->
+                    CalendarViewModel(calendarScreenRepository, request, scope)
+                        .toCalendarScreenHandle()
+                }
             }
         }
     }

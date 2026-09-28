@@ -3,6 +3,8 @@ package io.jitrapon.astro.ui.shell
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import io.jitrapon.astro.data.calendar.NavigateAction
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.shell.AppShellState
 import io.jitrapon.astro.presentation.shell.AppShellTab
 import io.jitrapon.astro.ui.main.theme.AstroTheme
@@ -14,26 +16,38 @@ private val PreviewTabs =
             destinationId = "calendar",
             label = "Calendar",
             iconToken = "icon.calendar",
-            targetScreenId = "calendar",
+            action = NavigateAction("calendar"),
         ),
         AppShellTab(
             destinationId = "expense",
             label = "Expense",
             iconToken = "icon.wallet",
-            targetScreenId = "expense",
+            action = NavigateAction("expense"),
         ),
     )
 
 @Preview(showBackground = true)
 @Composable
 internal fun AppShellTabsPreview() {
-    AstroTheme { AppShell(state = AppShellState.Tabs(PreviewTabs)) }
+    AstroTheme {
+        AppShell(
+            state = AppShellState.Tabs(PreviewTabs),
+            calendar = NO_CALENDAR_SCREEN,
+            interactions = PREVIEW_INTERACTIONS,
+        )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 internal fun AppShellLoadingPreview() {
-    AstroTheme { AppShell(state = AppShellState.Loading) }
+    AstroTheme {
+        AppShell(
+            state = AppShellState.Loading,
+            calendar = NO_CALENDAR_SCREEN,
+            interactions = PREVIEW_INTERACTIONS,
+        )
+    }
 }
 
 /**
@@ -45,20 +59,44 @@ internal fun AppShellLoadingPreview() {
 @Composable
 internal fun AppShellFailureNightPreview() {
     AstroTheme(darkTheme = true) {
-        AppShell(state = AppShellState.Failed(IllegalStateException("No backend reachable")))
+        AppShell(
+            state = AppShellState.Failed(IllegalStateException("No backend reachable")),
+            calendar = NO_CALENDAR_SCREEN,
+            interactions = PREVIEW_INTERACTIONS,
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 internal fun AppShellNoDestinationsPreview() {
-    AstroTheme { AppShell(state = AppShellState.NoDestinations) }
+    AstroTheme {
+        AppShell(
+            state = AppShellState.NoDestinations,
+            calendar = NO_CALENDAR_SCREEN,
+            interactions = PREVIEW_INTERACTIONS,
+        )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 internal fun AppShellFailurePreview() {
     AstroTheme {
-        AppShell(state = AppShellState.Failed(IllegalStateException("No backend reachable")))
+        AppShell(
+            state = AppShellState.Failed(IllegalStateException("No backend reachable")),
+            calendar = NO_CALENDAR_SCREEN,
+            interactions = PREVIEW_INTERACTIONS,
+        )
     }
 }
+
+/** No calendar screen observed: the previews show the shell's own states, not a screen's chrome. */
+private val NO_CALENDAR_SCREEN = CalendarUiState(content = null, isLoading = false, failure = null)
+
+/** Interactions that do nothing: a preview draws the shell, it does not act on it. */
+private val PREVIEW_INTERACTIONS =
+    AppShellInteractions(
+        dispatch = { null },
+        openExternalUrl = {},
+    )

@@ -51,6 +51,7 @@ Install the local pre-commit / pre-push git hooks once after cloning (see [`CONT
 | Unused iOS code (on-demand)   | `./gradlew peripheryScan`                  |
 | iOS app build (simulator)     | `xcodebuild build -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath iosApp/build/DerivedData ARCHS=arm64 CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM=""` |
 | Full CI gate                  | `./gradlew check`                          |
+| Release-variant instrumented tests | `./gradlew :androidApp:aospAtd34MinifiedTestAndroidTest` (needs signing credentials — see [CONTRIBUTING.md](CONTRIBUTING.md#running-the-release-variant-instrumented-tests)) |
 
 `./gradlew check` is the authoritative gate — it aggregates compile, unit tests, Detekt, and ktfmt verification (plus swift-format and SwiftLint wherever the Swift toolchain resolves on PATH). Run it before pushing.
 

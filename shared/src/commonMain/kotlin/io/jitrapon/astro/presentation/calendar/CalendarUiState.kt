@@ -22,6 +22,11 @@ import io.jitrapon.astro.data.calendar.CalendarScreenResponse
  * [CalendarScreenQueryState.Failed.lastLoadedResponse] as readily as from a loaded screen, so the
  * pair a caller branches on — content present, failure present — can express an error banner over
  * live content and not only a full error screen.
+ *
+ * [title], [body] and [viewSwitcher] are what a renderer draws of that screen, and they are derived
+ * from [content] rather than supplied beside it. Whatever [content] a state carries — a loaded
+ * screen, the one a failure landed over, or the previous view's screen kept across a view switch —
+ * they describe that same screen, so no construction or copy can pair a screen with another's body.
  */
 data class CalendarUiState(
     /**
@@ -48,7 +53,19 @@ data class CalendarUiState(
      * arrives here: cancellation is not a failure.
      */
     val failure: Exception?,
-)
+) {
+    /** The screen's server-formatted heading, or `null` when there is no screen to head. */
+    val title: String? = content?.screen?.title
+
+    /**
+     * The screen's body with its resolved preferences applied, or `null` when there is no screen.
+     * The only form of the body a renderer reads.
+     */
+    val body: CalendarBodyUiState? = content?.screen?.toCalendarBodyUiState()
+
+    /** The screen's view chooser, or `null` when there is no screen to choose a view of. */
+    val viewSwitcher: ViewSwitcherUiState? = content?.screen?.viewSwitcher?.toViewSwitcherUiState()
+}
 
 /**
  * Projects one observed state onto what a renderer paints.

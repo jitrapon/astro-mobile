@@ -4,4 +4,12 @@
     <string name="app_shell_loading">Loading…</string>
     <string name="app_shell_failure">Couldn\'t load your calendar.</string>
     <string name="app_shell_no_destinations">Nothing to show here yet.</string>
+    <string name="app_shell_event_surface_title">Not available yet</string>
+    <string name="app_shell_event_detail_not_built">Event details aren\'t available yet (%1$s).</string>
+    <string name="app_shell_events_not_built">Event lists aren\'t available yet (%1$s).</string>
+    <string name="app_shell_event_surface_dismiss">OK</string>
+    <string name="app_shell_no_app_for_url">No app can open this link.</string>
+    <string name="calendar_screen_failure">Couldn\'t load that view. Choose it again to retry.</string>
+    <string name="calendar_month_more_events">+%1$d more</string>
+    <string name="calendar_component_unregistered">Can\'t show %1$s yet.</string>
 </resources>

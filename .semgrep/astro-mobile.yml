@@ -71,6 +71,9 @@ rules:
       # trailing-host requirement (`[^"\s]`) avoids matching a bare "http://".
       - pattern-regex: '"http://[^"\s]+"'
       # Exempt loopback / emulator dev hosts, with or without a port or path.
+      # The port must be a numeric literal: a string template there could
+      # carry `80@evil.example` and turn the loopback host into userinfo, so
+      # a URL built from a runtime port is assembled without an http:// literal.
       - pattern-not-regex: '"http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:[0-9]+)?(/[^"]*)?"'
 
   # --- 3. Sensitive data leaked to logs --------------------------------------

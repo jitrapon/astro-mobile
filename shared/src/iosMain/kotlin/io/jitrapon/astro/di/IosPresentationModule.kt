@@ -12,12 +12,6 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
- * Names the scope Swift-facing subscriptions deliver on, apart from the unqualified scope the data
- * layer runs exchanges on — the two differ in dispatcher and in what cancelling them ends.
- */
-internal val MAIN_THREAD_DELIVERY_SCOPE = named("mainThreadDeliveryScope")
-
-/**
  * The bindings only the iOS app needs: what turns a shared observation into something Swift can
  * subscribe to.
  *
@@ -29,14 +23,19 @@ internal val iosPresentationModule: Module = module {
     // `Main.immediate`, whose first dispatch would run inside `observe` before Swift holds the
     // handle it returns. A `SupervisorJob` so one subscription's end cannot end another's, and
     // cancelled on teardown so no subscription outlives the graph that served it.
-    single<CoroutineScope>(MAIN_THREAD_DELIVERY_SCOPE) {
+    //
+    // Named apart from the unqualified scope the data layer runs exchanges on — the two differ in
+    // dispatcher and in what cancelling them ends, yet share a type, so only a qualifier tells them
+    // apart. Written as an inline literal at each use rather than a shared `val`, because a
+    // compile-time graph check can read a literal but not a value computed at runtime.
+    single<CoroutineScope>(named("mainThreadDeliveryScope")) {
             CoroutineScope(SupervisorJob() + Dispatchers.Main)
         }
         .withOptions { onClose { it?.cancel() } }
     single {
         CalendarScreenObserver(
             calendarScreenRepository = get(),
-            deliveryScope = get(MAIN_THREAD_DELIVERY_SCOPE),
+            deliveryScope = get(named("mainThreadDeliveryScope")),
         )
     }
 }

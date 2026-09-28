@@ -1,4 +1,6 @@
+import com.android.build.gradle.internal.tasks.AndroidTestTask
 import java.io.File
+import java.time.Duration
 import javax.inject.Inject
 import org.cyclonedx.gradle.CyclonedxDirectTask
 import org.gradle.process.ExecOperations
@@ -725,11 +727,19 @@ val iosVerification =
 
 val androidCommonVerification =
     listOf(
-        ":androidApp" to "testDebugUnitTest",
-        ":androidApp" to "lintDebug",
+        // Both follow `testBuildType`, which :androidApp sets to "minifiedTest" so instrumented
+        // tests run against the shrunk APK — AGP points the unit-test and lint lifecycles at the
+        // same variant. So these are the `minifiedTest` forms, not the debug ones, and a future
+        // change to `testBuildType` must move them in lockstep or this partition's own guard fails.
+        ":androidApp" to "testMinifiedTestUnitTest",
+        ":androidApp" to "lintMinifiedTest",
         ":androidApp" to "detekt",
         ":androidApp" to "ktfmtCheck",
         ":androidApp" to "verifyKtfmtAlignment",
+        // Lint and formatting only: the module's one test runs on a device, in the
+        // verify-android-release job, never under `check`.
+        ":androidAppReleaseTest" to "detekt",
+        ":androidAppReleaseTest" to "ktfmtCheck",
         ":shared" to "testAndroidHostTest",
         ":shared" to "detekt",
         ":shared" to "ktfmtCheck",
@@ -851,6 +861,81 @@ gradle.projectsEvaluated {
                 "CI partition OK: verifyAndroidCommon ∪ verifyIos covers exactly the $closureSize " +
                     "action-bearing tasks `check` runs."
             )
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------------------------
+// Instrumented-test runs
+// ----------------------------------------------------------------------------------------------
+// An instrumented run that executed no test fails. The test platform reports a runner that died
+// before its first test — a class the tested APK's shrink removed, a crash in the app's own
+// startup — as an empty result and a green build: `tests="0"`, exit code 0, BUILD SUCCESSFUL. For
+// a gate whose job is to run the minified APK, that is the one outcome that must never pass.
+//
+// A runner that dies earlier — in its `onCreate`, before it can report anything — is worse: the
+// instrumentation never signals completion, `am instrument -w` blocks, and the run hangs until
+// something kills it. The timeout turns that into a named failure. It spans the whole task,
+// emulator
+// boot included, with ample room for a suite that grows.
+//
+// Attached to the test task itself rather than to a finalizer, so no `-x` can run the tests without
+// the check. Stale result files are cleared first, so only what this run wrote is counted.
+subprojects {
+    tasks.configureEach {
+        if (this is AndroidTestTask) {
+            timeout.set(Duration.ofMinutes(20))
+            val resultsDir = resultsDir
+            val taskPath = path
+            doFirst { InstrumentedTestResults.clear(resultsDir.get().asFile) }
+            doLast {
+                InstrumentedTestResults.requireExecutedTests(resultsDir.get().asFile, taskPath)
+            }
+        }
+    }
+}
+
+/** Reads the JUnit XML an instrumented-test task writes under its results directory. */
+object InstrumentedTestResults {
+    fun clear(resultsDir: File) {
+        junitReports(resultsDir).forEach(File::delete)
+    }
+
+    fun requireExecutedTests(resultsDir: File, taskPath: String) {
+        val reports = junitReports(resultsDir)
+        val executed = reports.sumOf(::countExecutedTests)
+        check(executed > 0) {
+            """
+            |$taskPath executed no tests, which is a failure, not a pass.
+            |
+            |${reports.size} JUnit report(s) under $resultsDir, summing to 0 executed tests. The
+            |usual cause is the instrumentation runner crashing before its first test — a class or
+            |member the tested APK's shrink removed, or a crash in the app's startup — which the
+            |test platform reports as an empty, successful run. Its output is not kept: reproduce
+            |with `adb shell am instrument -w -r <test package>/<runner>` against the same two
+            |APKs to see the stack trace.
+            """
+                .trimMargin()
+        }
+    }
+
+    private fun junitReports(resultsDir: File): List<File> =
+        resultsDir
+            .walkTopDown()
+            .filter { it.isFile && it.name.startsWith("TEST-") && it.name.endsWith(".xml") }
+            .toList()
+
+    // Summed over <testsuite> elements only. The empty run writes a bare <testsuites tests="0"/>
+    // root, and that root's own count is what the platform reports as a pass.
+    private fun countExecutedTests(report: File): Int {
+        val suites =
+            javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(report)
+                .getElementsByTagName("testsuite")
+        return (0 until suites.length).sumOf { index ->
+            val suite = suites.item(index) as org.w3c.dom.Element
+            suite.getAttribute("tests").toIntOrNull() ?: 0
         }
     }
 }

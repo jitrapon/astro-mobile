@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  `releaseLoopback`-only network policy: cleartext to the device's own loopback address and nowhere
+  else. `:androidAppReleaseTest` serves the contract fixture on 127.0.0.1 from its own process, and
+  since API 28 the platform denies that exchange unless a config permits it — the release run would
+  then settle on the failure placeholder and prove nothing about decoding.
+
+  Only the numeric address, which the build type's base URL names. No `10.0.2.2`, no `localhost`:
+  nothing this build talks to lives anywhere else.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

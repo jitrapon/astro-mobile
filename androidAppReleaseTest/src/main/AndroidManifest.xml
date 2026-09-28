@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The fixture backend listens on a loopback socket, and opening any socket takes this. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Package visibility: from API 30 an app sees only what it declares, and the test launches
+         the app under test through its launcher intent. -->
+    <queries>
+        <package android:name="io.jitrapon.astro" />
+    </queries>
+
+</manifest>

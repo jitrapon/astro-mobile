@@ -8,22 +8,78 @@ import shared
 /// destinations become tabs — and whether a tab bar shows at all — is decided in Kotlin exactly as
 /// it is for the Android shell. Until the first state arrives the shell is loading.
 struct ContentView: View {
-    @State private var shellState: any AppShellState = AppShellStateLoading.shared
+    @State private var screen = CalendarScreenModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        AppShellView(state: shellState)
-            .task {
-                // Ending the view's task finishes the stream, which cancels the subscription. A
-                // cancelled subscription delivers nothing further, so the last shell stays standing
-                // rather than being overwritten with a failure the user never caused.
-                for await delivered in CalendarScreenObservation.statesForCurrentMonth() {
-                    shellState = delivered.toAppShellState()
-                }
-            }
+        AppShellView(
+            state: screen.state.toAppShellState(), calendar: screen.state,
+            dispatch: screen.dispatch
+        )
+        // Ending the view's task ends the observation, which cancels the subscription. A
+        // cancelled subscription delivers nothing further, so the last shell stays standing rather
+        // than being overwritten with a failure the user never caused.
+        .task { await screen.observeCurrentMonth() }
+        // An app left in the background can come back in a later month, zone or language than
+        // the one it asked for; each return to the foreground brings the screen up to now.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { screen.showCurrentMonth() }
+        }
     }
 }
 
-/// The current month's calendar screen as a stream of the states it passes through.
+/// The current month's calendar screen as SwiftUI observes it: the latest delivered state, and the
+/// way to act on the screen.
+///
+/// The Kotlin subscription is a callback plus a handle, because a `Flow` does not cross the
+/// framework boundary. This model holds that handle for as long as `observeCurrentMonth()` runs,
+/// so actions reach the same subscription whose states it publishes, and ending the call — the
+/// view's task cancelled — cancels it, so no Kotlin coroutine outlives the screen that asked for it.
+@MainActor
+@Observable
+final class CalendarScreenModel {
+    /// The screen as last delivered — loading until the first delivery.
+    private(set) var state = CalendarUiState(content: nil, isLoading: true, failure: nil)
+
+    @ObservationIgnored private var subscription: CalendarScreenSubscription?
+
+    /// Watches this month's screen until the calling task is cancelled.
+    func observeCurrentMonth() async {
+        guard subscription == nil, let request = CalendarScreenObservation.currentMonthRequest()
+        else {
+            return
+        }
+        // The graph delivers on the main thread, never inside `observe`, so the callback may
+        // update this main-actor model directly.
+        let subscription = DependencyGraph.shared.calendarScreenObserver().observe(
+            request: request
+        ) { [weak self] delivered in
+            MainActor.assumeIsolated { self?.state = delivered }
+        }
+        self.subscription = subscription
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(3_600))
+        }
+        subscription.cancel()
+        self.subscription = nil
+    }
+
+    /// Brings the screen up to what it would ask for now — this month, in the device's current
+    /// zone and language — keeping its view. Unchanged, it changes nothing unless the screen's last
+    /// load failed, when it retries; so it is safe, and useful, on every return to the foreground.
+    func showCurrentMonth() {
+        guard let request = CalendarScreenObservation.currentMonthRequest() else { return }
+        subscription?.updateRequest(fresh: request)
+    }
+
+    /// Acts on the screen, returning the effect the shell must carry out, or `nil` when the screen
+    /// consumed the action itself — as a view switch is — or nothing is being observed.
+    func dispatch(_ action: Action) -> ActionEffect? {
+        subscription?.dispatch(action: action)
+    }
+}
+
+/// How the current month's calendar screen is asked for.
 enum CalendarScreenObservation {
 
     /// The device's locale as the BCP-47 tag the contract asks for.
@@ -61,33 +117,9 @@ enum CalendarScreenObservation {
         return calendar
     }
 
-    /// Subscribes to this month's screen through the graph and yields every state it passes
-    /// through, for as long as the stream is iterated.
-    ///
-    /// The Kotlin subscription is a callback plus a handle, because a `Flow` does not cross the
-    /// framework boundary. The stream owns that handle: whichever way iteration ends — the view's
-    /// task cancelled, or the loop abandoned — its termination cancels the subscription, so no
-    /// Kotlin coroutine outlives the screen that asked for it.
-    static func statesForCurrentMonth() -> AsyncStream<CalendarUiState> {
-        AsyncStream { continuation in
-            guard let request = currentMonthRequest() else {
-                continuation.finish()
-                return
-            }
-            let subscription = DependencyGraph.shared.calendarScreenObserver().observe(
-                request: request
-            ) { state in
-                continuation.yield(state)
-            }
-            continuation.onTermination = { _ in
-                subscription.cancel()
-            }
-        }
-    }
-
     /// The request for the current month, or `nil` when the device's calendar cannot say which
     /// month that is.
-    private static func currentMonthRequest() -> CalendarScreenRequest? {
+    static func currentMonthRequest() -> CalendarScreenRequest? {
         let now = Date()
         let calendar = Self.gregorianDeviceCalendar
         let today = calendar.dateComponents([.year, .month], from: now)
