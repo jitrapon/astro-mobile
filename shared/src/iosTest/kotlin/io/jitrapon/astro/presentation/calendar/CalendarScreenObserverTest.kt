@@ -243,7 +243,7 @@ class CalendarScreenObserverTest {
     }
 
     @Test
-    fun aMovedWindowPutsTheNewDatesOnTheWireAndDeliversTheirScreen() = runTest {
+    fun anUpdatedRequestPutsItsDatesOnTheWireAndDeliversTheirScreen() = runTest {
         val requestedWindows = mutableListOf<Pair<String?, String?>>()
         val fixture =
             CalendarScreenQueryFixture(backgroundScope, testScheduler) { request ->
@@ -257,13 +257,15 @@ class CalendarScreenObserverTest {
         val nextMonthStart = CalendarDate(year = 2026, month = 5, dayOfMonth = 1)
         val nextMonthEnd = CalendarDate(year = 2026, month = 5, dayOfMonth = 31)
 
-        subscription.moveWindow(nextMonthStart, nextMonthEnd)
+        subscription.updateRequest(
+            monthScreenRequest().copy(start = nextMonthStart, end = nextMonthEnd)
+        )
 
         heard.awaitLatest { it.content?.serverTime == serverTimeOfExchange(2) }
         assertEquals(
             nextMonthStart.toIsoDate() to nextMonthEnd.toIsoDate(),
             requestedWindows.last(),
-            "The moved window did not reach the wire.",
+            "The updated request's dates did not reach the wire.",
         )
         subscription.cancel()
     }

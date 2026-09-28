@@ -1,28 +1,30 @@
 package io.jitrapon.astro.ui.shell
 
 import io.jitrapon.astro.data.calendar.CalendarDate
+import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import java.util.Calendar
 import java.util.GregorianCalendar
+import java.util.Locale
 import java.util.TimeZone
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Pins that the shell moves its calendar screen to the month the device is in now — the window a
- * month-view request covers, from its first day to its last — when asked to.
+ * Pins that the shell brings its calendar screen up to what it would ask for now — the month the
+ * device is in, from its first day to its last, in the device's zone and language — when asked to.
  */
 class AppShellViewModelTest {
 
     @Test
-    fun showingTheCurrentMonthMovesTheScreenToItsFirstAndLastDay() {
-        val moves = mutableListOf<Pair<CalendarDate, CalendarDate>>()
+    fun showingTheCurrentMonthHandsTheScreenTodaysRequest() {
+        val updates = mutableListOf<CalendarScreenRequest>()
         val shellViewModel = AppShellViewModel {
             CalendarScreenHandle(
                 state = MutableStateFlow(CalendarUiState(null, isLoading = true, failure = null)),
                 dispatch = { null },
-                moveWindow = { start, end -> moves += start to end },
+                updateRequest = { updates += it },
             )
         }
 
@@ -32,9 +34,10 @@ class AppShellViewModelTest {
         val year = now.get(Calendar.YEAR)
         val month = now.get(Calendar.MONTH) + 1
         val lastDay = now.getActualMaximum(Calendar.DAY_OF_MONTH)
-        assertEquals(
-            listOf(CalendarDate(year, month, 1) to CalendarDate(year, month, lastDay)),
-            moves,
-        )
+        val update = updates.single()
+        assertEquals(CalendarDate(year, month, 1), update.start)
+        assertEquals(CalendarDate(year, month, lastDay), update.end)
+        assertEquals(TimeZone.getDefault().id, update.timeZone)
+        assertEquals(Locale.getDefault().toLanguageTag(), update.locale)
     }
 }

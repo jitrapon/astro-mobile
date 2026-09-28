@@ -1,7 +1,6 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.Action
-import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.CalendarViewSelection
@@ -64,10 +63,10 @@ class CalendarViewModel(
 ) {
 
     /**
-     * The observation in force, and the request it observes. Only [dispatch] and [moveWindow]
-     * replace it: to move the request's view, to observe the same request afresh after its exchange
-     * failed, or to move its dates. The zone, locale and known theme a presenter chose stay as they
-     * were.
+     * The observation in force, and the request it observes. Only [dispatch] and [updateRequest]
+     * replace it: to move the request's view, to take a presenter's fresh dates, zone and locale,
+     * or to observe the same request afresh after its exchange failed. The known theme a presenter
+     * chose stays as it was.
      */
     private val observation = MutableStateFlow(RequestObservation(request))
 
@@ -133,18 +132,31 @@ class CalendarViewModel(
     }
 
     /**
-     * Re-points the observed request at the dates from [start] to [end], both inclusive, keeping
-     * its view — how a presenter follows the calendar into a new month when the one it asked for
-     * has passed. A window equal to the one observed changes nothing, so a presenter may call this
-     * whenever it wants the dates checked, not only when they differ.
+     * Takes [fresh]'s dates, time zone and locale for the observed request, keeping the view the
+     * screen shows and the theme it knows — how a presenter keeps the screen current when what it
+     * would ask for now differs from what it asked for then: a new month, a zone the device moved
+     * into, a language the user switched to.
      *
-     * Like a view switch, the screen showing now stays painted until the moved request delivers one
-     * of its own.
+     * A presenter may call this whenever it wants the request checked. When nothing differs it
+     * changes nothing — unless the screen's last exchange failed and none is in flight, when it
+     * observes the request afresh: a presenter checking in again is then the retry, which a user
+     * may have no other way to trigger. Like a view switch, the screen showing now stays painted
+     * until the updated request delivers one of its own.
      */
-    fun moveWindow(start: CalendarDate, end: CalendarDate) {
+    fun updateRequest(fresh: CalendarScreenRequest) {
         observation.update { current ->
-            if (current.request.start == start && current.request.end == end) current
-            else RequestObservation(current.request.copy(start = start, end = end))
+            val updated =
+                current.request.copy(
+                    start = fresh.start,
+                    end = fresh.end,
+                    timeZone = fresh.timeZone,
+                    locale = fresh.locale,
+                )
+            when {
+                updated != current.request -> RequestObservation(updated)
+                state.value.failedWithNothingInFlight() -> RequestObservation(current.request)
+                else -> current
+            }
         }
     }
 

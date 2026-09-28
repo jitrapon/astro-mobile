@@ -20,8 +20,8 @@ struct ContentView: View {
         // cancelled subscription delivers nothing further, so the last shell stays standing rather
         // than being overwritten with a failure the user never caused.
         .task { await screen.observeCurrentMonth() }
-        // An app left in the background can come back in a later month than the one it asked
-        // for; each return to the foreground moves the screen to whichever month it is now.
+        // An app left in the background can come back in a later month, zone or language than
+        // the one it asked for; each return to the foreground brings the screen up to now.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { screen.showCurrentMonth() }
         }
@@ -64,11 +64,12 @@ final class CalendarScreenModel {
         self.subscription = nil
     }
 
-    /// Moves the screen to the month the device is in now, keeping its view. The same month changes
-    /// nothing, so this is safe to call on every return to the foreground.
+    /// Brings the screen up to what it would ask for now — this month, in the device's current
+    /// zone and language — keeping its view. Unchanged, it changes nothing unless the screen's last
+    /// load failed, when it retries; so it is safe, and useful, on every return to the foreground.
     func showCurrentMonth() {
         guard let request = CalendarScreenObservation.currentMonthRequest() else { return }
-        subscription?.moveWindow(start: request.start, end: request.end)
+        subscription?.updateRequest(fresh: request)
     }
 
     /// Acts on the screen, returning the effect the shell must carry out, or `nil` when the screen

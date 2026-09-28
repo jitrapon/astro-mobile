@@ -1,7 +1,6 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.Action
-import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.presentation.action.ActionEffect
@@ -117,13 +116,14 @@ internal constructor(
     }
 
     /**
-     * Moves this subscription's screen to the dates from [start] to [end], keeping its view — how
-     * Swift follows the calendar into a new month once the one it asked for has passed. The same
-     * dates change nothing, so Swift may call this whenever it wants them checked. Like a view
-     * switch, it reaches Swift as the next states delivered to its callback.
+     * Takes [fresh]'s dates, time zone and locale for this subscription's screen, keeping its view
+     * — how Swift keeps the screen current when it would ask for something else now: a new month,
+     * another zone, another language. The same request changes nothing unless the screen's last
+     * exchange failed, when it retries. What it brings reaches Swift as the next states delivered
+     * to its callback.
      */
-    fun moveWindow(start: CalendarDate, end: CalendarDate) {
-        commands.trySend { it.moveWindow(start, end) }
+    fun updateRequest(fresh: CalendarScreenRequest) {
+        commands.trySend { it.updateRequest(fresh) }
     }
 
     /**

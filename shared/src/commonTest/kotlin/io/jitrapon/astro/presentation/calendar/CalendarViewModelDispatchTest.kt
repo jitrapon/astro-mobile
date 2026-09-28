@@ -188,7 +188,7 @@ class CalendarViewModelDispatchTest {
     }
 
     @Test
-    fun movingTheWindowObservesTheNewDatesInTheViewShowing() = runTest {
+    fun anUpdatedRequestTakesTheFreshDatesZoneAndLocaleInTheViewShowing() = runTest {
         val backend = ViewStampingBackend()
         val viewModel = backend.monthViewModel(this)
         val painted = backgroundScope.recordStates(viewModel.state)
@@ -196,16 +196,36 @@ class CalendarViewModelDispatchTest {
         viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
         painted.awaitLatest { it.stampedView() == AGENDA }
 
-        viewModel.moveWindow(NEXT_MONTH_START, NEXT_MONTH_END)
+        viewModel.updateRequest(NEXT_MONTH_ELSEWHERE)
 
-        // The agenda screen already showing satisfies "agenda, settled"; the moved request is only
-        // on its way once the screen reports it loading.
+        // The agenda screen already showing satisfies "agenda, settled"; the updated request is
+        // only on its way once the screen reports it loading.
         painted.awaitLatest { it.isLoading }
         painted.awaitLatest { it.stampedView() == AGENDA && !it.isLoading }
         assertEquals(listOf(MONTH, AGENDA, AGENDA), backend.requestedViews)
-        val moved = backend.requests.last().url.parameters
-        assertEquals(NEXT_MONTH_START.toIsoDate(), moved["start"])
-        assertEquals(NEXT_MONTH_END.toIsoDate(), moved["end"])
+        val updated = backend.requests.last().url.parameters
+        assertEquals(NEXT_MONTH_ELSEWHERE.start.toIsoDate(), updated["start"])
+        assertEquals(NEXT_MONTH_ELSEWHERE.end.toIsoDate(), updated["end"])
+        assertEquals(NEXT_MONTH_ELSEWHERE.timeZone, updated["tz"])
+        assertEquals(NEXT_MONTH_ELSEWHERE.locale, updated["locale"])
+    }
+
+    @Test
+    fun anUnchangedRequestAfterAFailedUpdateRetriesIt() = runTest {
+        var agendaAnswers = 0
+        val backend = ViewStampingBackend(agendaFails = { ++agendaAnswers == 2 })
+        val viewModel = backend.monthViewModel(this)
+        val painted = backgroundScope.recordStates(viewModel.state)
+        painted.awaitLatest { it.stampedView() == MONTH }
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+        painted.awaitLatest { it.stampedView() == AGENDA }
+        viewModel.updateRequest(NEXT_MONTH_ELSEWHERE)
+        painted.awaitLatest { it.failure != null && !it.isLoading }
+
+        viewModel.updateRequest(NEXT_MONTH_ELSEWHERE)
+
+        painted.awaitLatest { it.failure == null && !it.isLoading }
+        assertEquals(listOf(MONTH, AGENDA, AGENDA, AGENDA), backend.requestedViews)
     }
 
     @Test
@@ -288,9 +308,15 @@ class CalendarViewModelDispatchTest {
     }
 }
 
-/** A window a month on from the fixture request's. */
-private val NEXT_MONTH_START = CalendarDate(year = 2026, month = 5, dayOfMonth = 1)
-private val NEXT_MONTH_END = CalendarDate(year = 2026, month = 5, dayOfMonth = 31)
+/** The fixture request as a presenter would ask for it a month on, from another zone and locale. */
+private val NEXT_MONTH_ELSEWHERE =
+    monthScreenRequest()
+        .copy(
+            start = CalendarDate(year = 2026, month = 5, dayOfMonth = 1),
+            end = CalendarDate(year = 2026, month = 5, dayOfMonth = 31),
+            timeZone = "Europe/London",
+            locale = "en-GB",
+        )
 
 /** Long enough, in virtual time, for a collection that lost its last collector to stop. */
 private const val COLLECTION_STOP_PAUSE_MILLIS = 1L
