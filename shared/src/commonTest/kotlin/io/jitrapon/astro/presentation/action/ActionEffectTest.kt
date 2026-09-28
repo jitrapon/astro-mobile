@@ -11,7 +11,7 @@ class ActionEffectTest {
     @Test
     fun aWebUrlOpensOutsideTheApp() {
         for (url in
-            listOf("https://example.com/help", "http://example.com", "HTTPS://example.com")) {
+            listOf("https://example.com/help", "http://127.0.0.1/help", "HTTPS://example.com")) {
             assertEquals(ActionEffect.OpenExternalUrl(url), OpenUrlAction(url).toActionEffect())
         }
     }
