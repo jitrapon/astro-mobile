@@ -64,12 +64,15 @@ struct AgendaBodyPlaceholderView: View {
 
 /// Seven short weekday names in the device's language, starting on `weekStart` — the order the
 /// month grid's rows will take. Read from the Gregorian calendar, whose weekday symbols start on
-/// Sunday, so the rotation below does not depend on the user's own first weekday.
+/// Sunday, so the rotation below does not depend on the user's own first weekday. A calendar made
+/// by identifier carries no locale and names weekdays in English, so it is given the device's.
 struct WeekdayRowView: View {
     let weekStart: WeekStart
 
     var body: some View {
-        let symbols = Foundation.Calendar(identifier: .gregorian).shortWeekdaySymbols
+        var gregorian = Foundation.Calendar(identifier: .gregorian)
+        gregorian.locale = .current
+        let symbols = gregorian.shortWeekdaySymbols
         let first = weekStart == .monday ? 1 : 0
         let ordered = Array(symbols[first...] + symbols[..<first])
         HStack(spacing: 0) {
