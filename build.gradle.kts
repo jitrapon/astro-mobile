@@ -11,7 +11,7 @@ buildscript {
     }
     dependencies {
         classpath(libs.kotlin.gradle.plugin)
-        classpath("com.android.tools.build:gradle:9.4.0")
+        classpath("com.android.tools.build:gradle:9.4.1")
         classpath(libs.kotlin.compose.compiler.gradle.plugin)
         // The kotlinx.serialization Kotlin compiler plugin. It sits on the classpath rather than
         // in `plugins {}` because :shared applies it by id with no version
