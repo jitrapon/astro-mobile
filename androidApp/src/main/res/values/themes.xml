@@ -5,9 +5,8 @@
   content is laid out, which silently zeroes `WindowInsets.systemBars` and leaves the bottom bar
   drawing under the system navigation however carefully the bar asks for its insets.
 
-  Split day/night rather than a `DayNight` parent, which the platform only offers from API 29
-  while this app supports API 23. The colours themselves come from `AstroTheme`; this theme only
-  decides the window background behind them.
+  Day and night are split across `values/` and `values-night/`. The colours themselves come from
+  `AstroTheme`; this theme only decides the window background behind them.
 -->
 <resources>
     <style name="Theme.Astro" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
