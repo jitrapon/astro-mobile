@@ -70,9 +70,7 @@ struct WeekdayRowView: View {
     let weekStart: WeekStart
 
     var body: some View {
-        var gregorian = Foundation.Calendar(identifier: .gregorian)
-        gregorian.locale = .current
-        let symbols = gregorian.shortWeekdaySymbols
+        let symbols = Self.localizedShortWeekdaySymbols()
         let first = weekStart == .monday ? 1 : 0
         let ordered = Array(symbols[first...] + symbols[..<first])
         HStack(spacing: 0) {
@@ -82,6 +80,13 @@ struct WeekdayRowView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    /// The Gregorian calendar's short weekday names, Sunday first, in the device's language.
+    private static func localizedShortWeekdaySymbols() -> [String] {
+        var gregorian = Foundation.Calendar(identifier: .gregorian)
+        gregorian.locale = .current
+        return gregorian.shortWeekdaySymbols
     }
 }
 
