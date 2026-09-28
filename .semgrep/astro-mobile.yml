@@ -71,7 +71,9 @@ rules:
       # trailing-host requirement (`[^"\s]`) avoids matching a bare "http://".
       - pattern-regex: '"http://[^"\s]+"'
       # Exempt loopback / emulator dev hosts, with or without a port or path.
-      - pattern-not-regex: '"http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:[0-9]+)?(/[^"]*)?"'
+      # The port may be a string template (`:$port`, `:${port}`) — the host,
+      # not the port, is what keeps the traffic on the device.
+      - pattern-not-regex: '"http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:([0-9]+|\$[A-Za-z_][A-Za-z0-9_]*|\$\{[^}"]+\}))?(/[^"]*)?"'
 
   # --- 3. Sensitive data leaked to logs --------------------------------------
   - id: kotlin-sensitive-data-in-log
