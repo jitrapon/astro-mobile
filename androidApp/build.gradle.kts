@@ -9,6 +9,7 @@ import com.ncorti.ktfmt.gradle.FormattingOptionsBean
 import com.ncorti.ktfmt.gradle.KtfmtExtension
 import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import java.net.URI
 import java.util.Properties
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
@@ -208,6 +209,12 @@ val hasReleaseSigningCredentials =
 val releaseLoopbackBackendPort =
     providers.gradleProperty("astro.releaseLoopback.backendPort").get().toInt()
 
+// Assembled from its parts rather than templated into a URL literal, so the port can only ever be
+// the integer above — a template in the authority could carry `80@evil.example` and make the
+// loopback address mere userinfo, which is why the cleartext-URL rule exempts numeric ports alone.
+val releaseLoopbackBackendBaseUrl =
+    URI("http", null, "127.0.0.1", releaseLoopbackBackendPort, "/api", null, null).toString()
+
 android {
     compileSdk = 37
 
@@ -286,7 +293,7 @@ android {
             buildConfigField(
                 "String",
                 "BACKEND_BASE_URL",
-                "\"http://127.0.0.1:$releaseLoopbackBackendPort/api\"",
+                "\"$releaseLoopbackBackendBaseUrl\"",
             )
         }
     }
