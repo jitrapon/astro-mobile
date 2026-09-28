@@ -1,6 +1,7 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.Action
+import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.data.calendar.CalendarViewSelection
@@ -63,9 +64,10 @@ class CalendarViewModel(
 ) {
 
     /**
-     * The observation in force, and the request it observes. Only [dispatch] replaces it: to move
-     * the request's view — the window, zone, locale and known theme a presenter chose stay as they
-     * were — or to observe the same request afresh after its exchange failed.
+     * The observation in force, and the request it observes. Only [dispatch] and [moveWindow]
+     * replace it: to move the request's view, to observe the same request afresh after its exchange
+     * failed, or to move its dates. The zone, locale and known theme a presenter chose stay as they
+     * were.
      */
     private val observation = MutableStateFlow(RequestObservation(request))
 
@@ -128,6 +130,22 @@ class CalendarViewModel(
     fun dispatch(action: Action): ActionEffect? {
         if (action is SwitchCalendarViewAction) switchView(action.selection)
         return action.toActionEffect()
+    }
+
+    /**
+     * Re-points the observed request at the dates from [start] to [end], both inclusive, keeping
+     * its view — how a presenter follows the calendar into a new month when the one it asked for
+     * has passed. A window equal to the one observed changes nothing, so a presenter may call this
+     * whenever it wants the dates checked, not only when they differ.
+     *
+     * Like a view switch, the screen showing now stays painted until the moved request delivers one
+     * of its own.
+     */
+    fun moveWindow(start: CalendarDate, end: CalendarDate) {
+        observation.update { current ->
+            if (current.request.start == start && current.request.end == end) current
+            else RequestObservation(current.request.copy(start = start, end = end))
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.AgendaViewSelection
+import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryFixture
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryState
 import io.jitrapon.astro.data.calendar.OpenEventDetailAction
@@ -239,6 +240,32 @@ class CalendarScreenObserverTest {
             "Cancelling after a dispatch left the subscription's coroutines running.",
         )
         assertTrue(delivery.isActive, "Cancelling the subscription ended the delivery scope.")
+    }
+
+    @Test
+    fun aMovedWindowPutsTheNewDatesOnTheWireAndDeliversTheirScreen() = runTest {
+        val requestedWindows = mutableListOf<Pair<String?, String?>>()
+        val fixture =
+            CalendarScreenQueryFixture(backgroundScope, testScheduler) { request ->
+                requestedWindows += request.url.parameters["start"] to request.url.parameters["end"]
+                respondWithServerTime(serverTimeOfExchange(requestedWindows.size))
+            }
+        val observer = CalendarScreenObserver(fixture.calendarScreenRepository, deliveryScope())
+        val heard = HeardStates()
+        val subscription = observer.observe(monthScreenRequest(), heard::record)
+        heard.awaitLatest { it.content?.serverTime == serverTimeOfExchange(1) }
+        val nextMonthStart = CalendarDate(year = 2026, month = 5, dayOfMonth = 1)
+        val nextMonthEnd = CalendarDate(year = 2026, month = 5, dayOfMonth = 31)
+
+        subscription.moveWindow(nextMonthStart, nextMonthEnd)
+
+        heard.awaitLatest { it.content?.serverTime == serverTimeOfExchange(2) }
+        assertEquals(
+            nextMonthStart.toIsoDate() to nextMonthEnd.toIsoDate(),
+            requestedWindows.last(),
+            "The moved window did not reach the wire.",
+        )
+        subscription.cancel()
     }
 
     @Test

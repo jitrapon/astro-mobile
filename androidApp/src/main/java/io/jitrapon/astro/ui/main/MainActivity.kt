@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.jitrapon.astro.R
 import io.jitrapon.astro.ui.main.theme.AstroTheme
@@ -28,6 +29,12 @@ class MainActivity : ComponentActivity() {
             AstroTheme {
                 val shellViewModel: AppShellViewModel =
                     viewModel(factory = AppShellViewModel.Factory)
+                // Every start, not only the first: an activity brought back to the foreground in a
+                // later month moves its calendar there. The same month changes nothing.
+                LifecycleStartEffect(shellViewModel) {
+                    shellViewModel.showCurrentMonth()
+                    onStopOrDispose {}
+                }
                 val interactions =
                     remember(shellViewModel) {
                         AppShellInteractions(

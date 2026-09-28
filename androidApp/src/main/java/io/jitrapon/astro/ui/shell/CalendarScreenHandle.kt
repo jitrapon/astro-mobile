@@ -1,6 +1,7 @@
 package io.jitrapon.astro.ui.shell
 
 import io.jitrapon.astro.data.calendar.Action
+import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.presentation.action.ActionEffect
 import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.CalendarViewModel
@@ -22,8 +23,13 @@ class CalendarScreenHandle(
      * consumed the action itself — as a view switch is.
      */
     val dispatch: (Action) -> ActionEffect?,
+    /**
+     * Moves the screen to the dates from its first argument to its second, keeping its view, as
+     * [CalendarViewModel.moveWindow] does. A scripted screen that never moves may leave it be.
+     */
+    val moveWindow: (start: CalendarDate, end: CalendarDate) -> Unit = { _, _ -> },
 )
 
 /** This view model as the handle the shell drives it through. */
 fun CalendarViewModel.toCalendarScreenHandle(): CalendarScreenHandle =
-    CalendarScreenHandle(state = state, dispatch = ::dispatch)
+    CalendarScreenHandle(state = state, dispatch = ::dispatch, moveWindow = ::moveWindow)

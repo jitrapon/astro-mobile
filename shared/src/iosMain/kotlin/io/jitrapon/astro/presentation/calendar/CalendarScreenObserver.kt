@@ -1,6 +1,7 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.Action
+import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenRepository
 import io.jitrapon.astro.data.calendar.CalendarScreenRequest
 import io.jitrapon.astro.presentation.action.ActionEffect
@@ -67,10 +68,11 @@ internal constructor(
         // One child coroutine of the delivery scope per subscription, and the view model's scope is
         // that coroutine's own: the sharing coroutine the view model starts is its child, so
         // cancelling the subscription ends both, cancelling one subscription ends no other, and
-        // tearing down the graph still ends every subscription at once. Actions reach the view
-        // model over a channel drained inside the same coroutine, since the view model exists only
-        // there; the channel closes with the subscription, however it ends.
-        val actions = Channel<Action>(Channel.UNLIMITED)
+        // tearing down the graph still ends every subscription at once. What Swift asks of the
+        // screen — an action, a moved window — reaches the view model over a channel drained
+        // inside the same coroutine, since the view model exists only there; the channel closes
+        // with the subscription, however it ends.
+        val commands = Channel<(CalendarViewModel) -> Unit>(Channel.UNLIMITED)
         val subscription = deliveryScope.launch {
             coroutineScope {
                 val viewModel =
@@ -79,12 +81,12 @@ internal constructor(
                         request = request,
                         scope = this,
                     )
-                launch { for (action in actions) viewModel.dispatch(action) }
+                launch { for (command in commands) command(viewModel) }
                 viewModel.state.collect { state -> onState(state) }
             }
         }
-        subscription.invokeOnCompletion { actions.close() }
-        return CalendarScreenSubscription(subscription, actions)
+        subscription.invokeOnCompletion { commands.close() }
+        return CalendarScreenSubscription(subscription, commands)
     }
 }
 
@@ -94,7 +96,10 @@ internal constructor(
  * being torn down.
  */
 class CalendarScreenSubscription
-internal constructor(private val subscription: Job, private val actions: SendChannel<Action>) {
+internal constructor(
+    private val subscription: Job,
+    private val commands: SendChannel<(CalendarViewModel) -> Unit>,
+) {
 
     /**
      * Acts on this subscription's screen, and returns the effect Swift must carry out — or `null`
@@ -107,8 +112,18 @@ internal constructor(private val subscription: Job, private val actions: SendCha
      * switch then changes nothing Swift can see.
      */
     fun dispatch(action: Action): ActionEffect? {
-        actions.trySend(action)
+        commands.trySend { it.dispatch(action) }
         return action.toActionEffect()
+    }
+
+    /**
+     * Moves this subscription's screen to the dates from [start] to [end], keeping its view — how
+     * Swift follows the calendar into a new month once the one it asked for has passed. The same
+     * dates change nothing, so Swift may call this whenever it wants them checked. Like a view
+     * switch, it reaches Swift as the next states delivered to its callback.
+     */
+    fun moveWindow(start: CalendarDate, end: CalendarDate) {
+        commands.trySend { it.moveWindow(start, end) }
     }
 
     /**

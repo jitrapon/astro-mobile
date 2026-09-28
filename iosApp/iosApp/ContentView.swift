@@ -9,6 +9,7 @@ import shared
 /// it is for the Android shell. Until the first state arrives the shell is loading.
 struct ContentView: View {
     @State private var screen = CalendarScreenModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         AppShellView(
@@ -19,6 +20,11 @@ struct ContentView: View {
         // cancelled subscription delivers nothing further, so the last shell stays standing rather
         // than being overwritten with a failure the user never caused.
         .task { await screen.observeCurrentMonth() }
+        // An app left in the background can come back in a later month than the one it asked
+        // for; each return to the foreground moves the screen to whichever month it is now.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { screen.showCurrentMonth() }
+        }
     }
 }
 
@@ -56,6 +62,13 @@ final class CalendarScreenModel {
         }
         subscription.cancel()
         self.subscription = nil
+    }
+
+    /// Moves the screen to the month the device is in now, keeping its view. The same month changes
+    /// nothing, so this is safe to call on every return to the foreground.
+    func showCurrentMonth() {
+        guard let request = CalendarScreenObservation.currentMonthRequest() else { return }
+        subscription?.moveWindow(start: request.start, end: request.end)
     }
 
     /// Acts on the screen, returning the effect the shell must carry out, or `nil` when the screen

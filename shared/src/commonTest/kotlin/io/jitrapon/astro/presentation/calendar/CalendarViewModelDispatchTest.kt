@@ -1,6 +1,7 @@
 package io.jitrapon.astro.presentation.calendar
 
 import io.jitrapon.astro.data.calendar.AgendaViewSelection
+import io.jitrapon.astro.data.calendar.CalendarDate
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryFixture
 import io.jitrapon.astro.data.calendar.CalendarScreenQueryState
 import io.jitrapon.astro.data.calendar.MonthViewSelection
@@ -187,6 +188,27 @@ class CalendarViewModelDispatchTest {
     }
 
     @Test
+    fun movingTheWindowObservesTheNewDatesInTheViewShowing() = runTest {
+        val backend = ViewStampingBackend()
+        val viewModel = backend.monthViewModel(this)
+        val painted = backgroundScope.recordStates(viewModel.state)
+        painted.awaitLatest { it.stampedView() == MONTH }
+        viewModel.dispatch(SwitchCalendarViewAction(AgendaViewSelection))
+        painted.awaitLatest { it.stampedView() == AGENDA }
+
+        viewModel.moveWindow(NEXT_MONTH_START, NEXT_MONTH_END)
+
+        // The agenda screen already showing satisfies "agenda, settled"; the moved request is only
+        // on its way once the screen reports it loading.
+        painted.awaitLatest { it.isLoading }
+        painted.awaitLatest { it.stampedView() == AGENDA && !it.isLoading }
+        assertEquals(listOf(MONTH, AGENDA, AGENDA), backend.requestedViews)
+        val moved = backend.requests.last().url.parameters
+        assertEquals(NEXT_MONTH_START.toIsoDate(), moved["start"])
+        assertEquals(NEXT_MONTH_END.toIsoDate(), moved["end"])
+    }
+
+    @Test
     fun aSupersededSwitchIsCancelledRatherThanReportedOrPainted() = runTest {
         val stalled = StalledExchange()
         val backend = ViewStampingBackend(beforeAgendaAnswers = { stalled.hold() })
@@ -265,6 +287,10 @@ class CalendarViewModelDispatchTest {
         assertEquals(listOf(MONTH, AGENDA), backend.requestedViews)
     }
 }
+
+/** A window a month on from the fixture request's. */
+private val NEXT_MONTH_START = CalendarDate(year = 2026, month = 5, dayOfMonth = 1)
+private val NEXT_MONTH_END = CalendarDate(year = 2026, month = 5, dayOfMonth = 31)
 
 /** Long enough, in virtual time, for a collection that lost its last collector to stop. */
 private const val COLLECTION_STOP_PAUSE_MILLIS = 1L

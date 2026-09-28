@@ -66,10 +66,24 @@ class AppShellViewModel(openCalendarScreen: (CoroutineScope) -> CalendarScreenHa
      */
     fun dispatch(action: Action): ActionEffect? = calendarScreen.dispatch(action)
 
+    /**
+     * Moves the calendar screen to the month the device is in now, keeping its view.
+     *
+     * The screen asks for a month once, when this view model is built, and this view model can
+     * outlive that month — an app left in the background overnight at a month's end comes back to
+     * the one that has passed. The same month changes nothing, so this is safe to call every time
+     * the screen starts.
+     */
+    fun showCurrentMonth() {
+        val current = currentMonthRequest()
+        calendarScreen.moveWindow(current.start, current.end)
+    }
+
     companion object {
         /**
-         * Builds the view model over a [CalendarViewModel] observing the month the device is in
-         * now, through the repository resolved from the graph [AstroApplication] started.
+         * Builds the view model over a [CalendarViewModel] observing the month the device is in now
+         * — [showCurrentMonth] keeps it there — through the repository resolved from the graph
+         * [AstroApplication] started.
          *
          * Resolution happens here, at the composition edge, so the class itself takes a plain
          * function and a test can hand it any screen.
