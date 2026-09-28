@@ -36,7 +36,7 @@ android {
     targetProjectPath = ":androidApp"
 
     defaultConfig {
-        minSdk = 23
+        minSdk = 30
         targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Where the test serves the fixture — the port `releaseLoopback`'s base URL names.

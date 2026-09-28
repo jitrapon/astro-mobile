@@ -260,11 +260,10 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
         // The release variant as instrumented tests need it: `initWith` copies minification, both
-        // R8 file lists and the signing config. It departs from `release` in exactly two ways, both
-        // wired under `androidComponents` below — generated keep rules for what the tests call, and
-        // API 24 as its minimum. `release` itself cannot be the tested build type: the tests call
-        // into code R8 removes or reshapes when only the app's own reach is counted, and keeping
-        // it there would ship it.
+        // R8 file lists and the signing config. It departs from `release` in exactly one way, wired
+        // under `androidComponents` below: keep rules generated for what the tests call. `release`
+        // itself cannot be the tested build type: the tests call into code R8 removes or reshapes
+        // when only the app's own reach is counted, and keeping it there would ship it.
         create("minifiedTest") {
             initWith(getByName("release"))
             // Library variants have no `minifiedTest`; resolve theirs as for `release`.
@@ -274,14 +273,13 @@ android {
             testProguardFiles("proguard-test-rules.pro")
         }
         // The shipping shrink, pointed at a backend on the device's own loopback.
-        // `:androidAppReleaseTest`
-        // runs black-box against it: the one build that proves the APK users get decodes a
-        // delivered screen, since `minifiedTest`'s generated keeps pin every contract model a test
-        // names — keeping those classes whole where `release` lets R8 merge, inline and rewrite
-        // them. So beside `initWith` it departs from `release` only where no class is touched: the
-        // base URL below, and a `src/releaseLoopback` manifest overlay permitting cleartext to
-        // `127.0.0.1` alone. No keep rule, no `minSdk` change — `androidComponents` below selects
-        // `minifiedTest` by name and never reaches this build type.
+        // `:androidAppReleaseTest` runs black-box against it: the one build that proves the APK
+        // users get decodes a delivered screen, since `minifiedTest`'s generated keeps pin every
+        // contract model a test names — keeping those classes whole where `release` lets R8 merge,
+        // inline and rewrite them. So beside `initWith` it departs from `release` only where no
+        // class is touched: the base URL below, and a `src/releaseLoopback` manifest overlay
+        // permitting cleartext to `127.0.0.1` alone. No keep rule — `androidComponents` below
+        // selects `minifiedTest` by name and never reaches this build type.
         create("releaseLoopback") {
             initWith(getByName("release"))
             matchingFallbacks += "release"
@@ -343,29 +341,16 @@ android {
     }
 }
 
-// `minifiedTest` builds for API 24 rather than the app's 23 — a departure from `release` no keep
-// rule can replace. Below 24, R8 desugars Java default interface methods
-// into synthesized `$-CC` companion classes, in each APK separately. The test APK's desugared
-// classes then call a library interface's companion by name — Compose's `TestMonotonicFrameClock`
-// calls `MonotonicFrameClock$-CC.$default$getKey` — while the app's R8 has renamed that companion
-// and dropped the method, since nothing in the app implements the interface without overriding it.
-// A synthesized class matches no `-keep` pattern, so the test dies on `NoSuchMethodError`. From API
-// 24 default methods are native and no companion exists to go missing. The shrink of the app's own
-// types — which keep rules decide, not the desugaring level — is unchanged.
-//
-// Its other departure is keep rules generated for whatever the instrumented tests reference. AGP
-// builds the test APK without every class the app's runtime classpath already carries, expecting
-// the app APK to supply it — but it minifies the app counting only the app's own reach
-// (issuetracker.google.com/issues/126429384). So a class or member the tests reach and the app does
-// not ends up in neither APK: the runner dies before its first test on `androidx.tracing.Trace`,
-// then `kotlin.LazyKt`, and a test calling an app API finds it inlined away or its signature
-// rewritten (`NoSuchMethodError` on `AstroTheme`'s default-arguments overload). A hand-kept list
-// converges one device crash at a time and drifts with every new test or dependency; R8's own
-// TraceReferences computes the exact set instead, on every build.
+// `minifiedTest`'s one departure from `release` is keep rules generated for whatever the
+// instrumented tests reference. AGP builds the test APK without every class the app's runtime
+// classpath already carries, expecting the app APK to supply it — but it minifies the app counting
+// only the app's own reach (issuetracker.google.com/issues/126429384). So a class or member the
+// tests reach and the app does not ends up in neither APK: the runner dies before its first test on
+// `androidx.tracing.Trace`, then `kotlin.LazyKt`, and a test calling an app API finds it inlined
+// away or its signature rewritten (`NoSuchMethodError` on `AstroTheme`'s default-arguments
+// overload). A hand-kept list converges one device crash at a time and drifts with every new test
+// or dependency; R8's own TraceReferences computes the exact set instead, on every build.
 androidComponents {
-    beforeVariants(selector().withBuildType("minifiedTest")) { variantBuilder ->
-        variantBuilder.minSdk = 24
-    }
     onVariants(selector().withBuildType("minifiedTest")) { variant ->
         val androidTest =
             checkNotNull(variant.androidTest) {
