@@ -161,8 +161,9 @@ struct TimedMarkerChipView: View {
 }
 
 /// Makes a chip tappable to open its event's detail, and speaks the event's accessibility label,
-/// when it has one, in place of the chip's drawn text. The contract attaches no action to an event,
-/// so the tap builds its own from the event's id.
+/// when it has one, in place of the chip's drawn text. Without one, VoiceOver reads what the chip
+/// draws — its title and every subtitle line — as SwiftUI derives it, rather than the title alone.
+/// The contract attaches no action to an event, so the tap builds its own from the event's id.
 struct EventChipButton<Label: View>: View {
     let event: EventChipUiState
     let onAction: (Action) -> Void
@@ -175,8 +176,7 @@ struct EventChipButton<Label: View>: View {
             label
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(
-            event.accessibilityLabel.map { Text(verbatim: $0) } ?? Text(verbatim: event.title))
+        .accessibilityLabel(ifDelivered: event.accessibilityLabel)
     }
 }
 
@@ -230,5 +230,18 @@ extension Color {
             red: Double((value >> 16) & 0xFF) / 255,
             green: Double((value >> 8) & 0xFF) / 255,
             blue: Double(value & 0xFF) / 255)
+    }
+}
+
+extension View {
+    /// Replaces this view's accessibility label with `label` when the server delivered one, and
+    /// otherwise leaves the label SwiftUI derives from the view's own content.
+    @ViewBuilder
+    fileprivate func accessibilityLabel(ifDelivered label: String?) -> some View {
+        if let label {
+            accessibilityLabel(Text(verbatim: label))
+        } else {
+            self
+        }
     }
 }
