@@ -93,13 +93,20 @@
 #
 # THE REMEDY, IF A FUTURE DEPENDENCY BRINGS ONE
 #
-# Drop the offending rule at its source, in androidApp/build.gradle.kts:
+# Drop the offending rule at its source, in androidApp/build.gradle.kts, on every minified build
+# type — AGP 9 declares `optimization` per build type, not on `android {}`:
 #
-#   android { optimization { keepRules { ignoreFrom("com.example:library") } } }
+#   buildTypes.getByName("release") {
+#       optimization { keepRules { ignoreExternalDependencies("com.example:library") } }
+#   }
+#
+# Declare it on `minifiedTest` and `releaseLoopback` as well, so the builds that test the release
+# shrink shrink with the same rules.
 #
 # Never a counter-keep. ProGuard-language rules are additive and have no negation — a `-keep` cannot
 # undo a `-dontoptimize`, and piling on more keeps to compensate for a bad one only widens the
-# locked-down surface. ignoreFrom is the only mechanism that removes a rule from the merged set.
+# locked-down surface. Ignoring a dependency's rules is the only mechanism that removes a rule from
+# the merged set.
 #
 # SCOPE OF THIS VERDICT
 #
