@@ -81,6 +81,36 @@ class CalendarTopBarTest {
         composeRule.onNodeWithTag(AppShellTestTags.viewSwitcherOption(MONTH)).assertIsNotSelected()
     }
 
+    @Test
+    fun aSwitchInFlightShowsProgressUnderThePaintedScreen() {
+        calendarState.value = loaded(activeSelection = MonthViewSelection).copy(isLoading = true)
+        showShell()
+
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_LOADING).assertIsDisplayed()
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_FAILURE).assertDoesNotExist()
+        composeRule.onNodeWithTag(AppShellTestTags.viewSwitcherOption(MONTH)).assertIsSelected()
+    }
+
+    @Test
+    fun aFailedSwitchSaysSoBesideThePaintedScreen() {
+        calendarState.value =
+            loaded(activeSelection = MonthViewSelection)
+                .copy(failure = IllegalStateException("The switch failed."))
+        showShell()
+
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_FAILURE).assertIsDisplayed()
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_LOADING).assertDoesNotExist()
+        composeRule.onNodeWithTag(AppShellTestTags.viewSwitcherOption(MONTH)).assertIsSelected()
+    }
+
+    @Test
+    fun aSettledScreenShowsNoRequestState() {
+        showShell()
+
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_LOADING).assertDoesNotExist()
+        composeRule.onNodeWithTag(AppShellTestTags.CALENDAR_FAILURE).assertDoesNotExist()
+    }
+
     private fun showShell() {
         val shellViewModel = AppShellViewModel {
             CalendarScreenHandle(state = calendarState, dispatch = ::dispatchScripted)

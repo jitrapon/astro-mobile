@@ -128,6 +128,7 @@ private fun TabbedShell(
                 CalendarTopBar(
                     title = calendar.title.orEmpty(),
                     viewSwitcher = calendar.viewSwitcher,
+                    requestStatus = calendar.requestStatus(),
                     onViewSelected = { option -> act(option.action, selectedTab) },
                 )
             }

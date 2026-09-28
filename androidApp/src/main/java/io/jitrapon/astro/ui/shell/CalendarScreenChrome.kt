@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AppBarDefaults
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -19,18 +20,26 @@ import androidx.compose.material.primarySurface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.jitrapon.astro.R
 import io.jitrapon.astro.data.calendar.Action
 import io.jitrapon.astro.presentation.calendar.CalendarBodyUiState
+import io.jitrapon.astro.presentation.calendar.CalendarUiState
 import io.jitrapon.astro.presentation.calendar.ViewSwitcherOptionUiState
 import io.jitrapon.astro.presentation.calendar.ViewSwitcherUiState
 import io.jitrapon.astro.ui.component.CalendarBodyComponent
 
 /**
- * The calendar screen's top bar: the server-formatted [title], and below it one option per view the
- * screen offers, the active one selected.
+ * The calendar screen's top bar: the server-formatted [title], below it one option per view the
+ * screen offers, the active one selected, and under those the state of the screen's request.
+ *
+ * The shell keeps the painted screen — and so this bar — while a switch loads or after it fails, so
+ * the request's state has to show here or nowhere: [requestStatus] draws a progress line while the
+ * request is in flight, and says the view did not load — and that choosing it again retries it —
+ * once it has failed.
  *
  * An option is selectable even while it is active — choosing it again dispatches an equal request,
  * which the view model treats as no change — so the row needs no state of its own. The bar takes
@@ -41,6 +50,7 @@ import io.jitrapon.astro.ui.component.CalendarBodyComponent
 internal fun CalendarTopBar(
     title: String,
     viewSwitcher: ViewSwitcherUiState?,
+    requestStatus: CalendarRequestStatus,
     onViewSelected: (ViewSwitcherOptionUiState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -58,9 +68,40 @@ internal fun CalendarTopBar(
             if (viewSwitcher != null) {
                 ViewSwitcherRow(viewSwitcher, onViewSelected)
             }
+            when (requestStatus) {
+                CalendarRequestStatus.LOADING ->
+                    LinearProgressIndicator(
+                        modifier =
+                            Modifier.fillMaxWidth().testTag(AppShellTestTags.CALENDAR_LOADING)
+                    )
+                CalendarRequestStatus.FAILED ->
+                    Text(
+                        text = stringResource(R.string.calendar_screen_failure),
+                        modifier =
+                            Modifier.testTag(AppShellTestTags.CALENDAR_FAILURE)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.caption,
+                    )
+                CalendarRequestStatus.SETTLED -> Unit
+            }
         }
     }
 }
+
+/** Where the calendar screen's own request stands, as its top bar shows it. */
+internal enum class CalendarRequestStatus {
+    SETTLED,
+    LOADING,
+    FAILED,
+}
+
+/** This state's request status; one still in flight shows as loading even beside a failure. */
+internal fun CalendarUiState.requestStatus(): CalendarRequestStatus =
+    when {
+        isLoading -> CalendarRequestStatus.LOADING
+        failure != null -> CalendarRequestStatus.FAILED
+        else -> CalendarRequestStatus.SETTLED
+    }
 
 /** The switcher's options in contract order, scrolling sideways when they overflow the bar. */
 @Composable

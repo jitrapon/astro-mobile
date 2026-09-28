@@ -169,7 +169,8 @@ private struct DestinationView: View {
         if let screenId = tab.targetScreenId, screenId == calendar.content?.screen.id {
             CalendarScreenView(
                 title: calendar.title ?? "", viewSwitcher: calendar.viewSwitcher,
-                component: calendar.body, onAction: onAction)
+                component: calendar.body, isLoading: calendar.isLoading,
+                hasFailed: calendar.failure != nil, onAction: onAction)
         } else {
             DestinationPlaceholderView(label: tab.label)
         }
