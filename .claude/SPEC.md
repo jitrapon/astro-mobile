@@ -64,7 +64,7 @@ compile/runtime/test configuration carries it. The dependency-submission job exc
 so the four open alerts are fed by `androidLintTool` alone; the buildscript raise is for the signing
 path, not for alert closure.
 
-- [ ] **1. Catalog entries + buildscript-classpath constraint.** Add a `bouncycastle = "1.85"` ref and
+- [x] **1. Catalog entries + buildscript-classpath constraint.** Add a `bouncycastle = "1.85"` ref and
   `bouncycastle-bcprov` / `bouncycastle-bcpkix` / `bouncycastle-bcutil` library entries to
   `gradle/libs.versions.toml`, with a comment stating that they are consumed **only** as dependency
   constraints on AGP-selected build tooling (never declared as dependencies), why (the advisories
@@ -116,7 +116,7 @@ path, not for alert closure.
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **1.** `./gradlew -q buildEnvironment | grep bouncycastle` shows each of the three modules as
+- [x] **1.** `./gradlew -q buildEnvironment | grep bouncycastle` shows each of the three modules as
   `1.80.2 -> 1.85` (or resolved at 1.85) and no line resolving below 1.85;
   `./gradlew :androidApp:help` still configures. The `libs` accessor resolves inside `buildscript`
   constraints (a configuration error here means it does not — use the same accessor form the

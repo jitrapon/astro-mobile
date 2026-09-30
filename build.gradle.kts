@@ -21,6 +21,20 @@ buildscript {
         // locks it to the same `kotlin` ref as the Kotlin Gradle plugin above: a serialization
         // plugin built against a different Kotlin than the compiler loading it fails the build.
         classpath(libs.kotlin.serialization.gradle.plugin)
+        // Raise the Bouncy Castle AGP selects through `com.android.tools:sdk-common` past its
+        // advisories. That library reads the release keystore and creates the debug signing
+        // certificate, so this code runs in the signing path on the build machine. Constraints, not
+        // dependencies, and plain versions, so they are a floor a newer AGP can still exceed. The
+        // version and the removal condition live on the `bouncycastle` catalog ref; the Lint
+        // runtime is raised to the same ref further down.
+        constraints {
+            listOf(libs.bouncycastle.bcprov, libs.bouncycastle.bcpkix, libs.bouncycastle.bcutil)
+                .forEach { floor ->
+                    classpath(floor) {
+                        because("AGP selects a Bouncy Castle with advisories patched in 1.84/1.85")
+                    }
+                }
+        }
     }
 }
 
