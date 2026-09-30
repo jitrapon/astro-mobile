@@ -75,7 +75,7 @@ path, not for alert closure.
   three entries with a `because(...)`. Plain (required) versions, not `strictly`: the constraint is a
   floor, so a later AGP that ships a newer Bouncy Castle wins conflict resolution rather than being
   held back.
-- [ ] **2. Lint-runtime constraint on every Android module.** In the root `build.gradle.kts`, for
+- [x] **2. Lint-runtime constraint on every Android module.** In the root `build.gradle.kts`, for
   every subproject that applies an Android plugin (`com.android.application`, `com.android.test`,
   `com.android.kotlin.multiplatform.library` — the three this repo uses), add the same three
   constraints to its `androidLintTool` configuration, reading the versions from the catalog entries
@@ -126,7 +126,7 @@ path, not for alert closure.
   instead), and revert. Constraint-only: `git diff main -- build.gradle.kts` shows the three
   entries only inside a `constraints { }` block, with no `strictly`/`version { }` override and no
   new `classpath(libs.bouncycastle…)` outside it.
-- [ ] **2.** `./gradlew -q :<p>:dependencies --configuration androidLintTool | grep bouncycastle` for
+- [x] **2.** `./gradlew -q :<p>:dependencies --configuration androidLintTool | grep bouncycastle` for
   `androidApp`, `androidAppReleaseTest`, `shared` shows every Bouncy Castle node at 1.85, and
   `:androidApp:dependencyInsight --configuration androidLintTool --dependency bcprov-jdk18on`
   names the constraint (its `because` text) as the selection reason — proving it was raised by a

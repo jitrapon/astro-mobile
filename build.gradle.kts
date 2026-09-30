@@ -71,6 +71,37 @@ allprojects {
     }
 }
 
+// Raise the Bouncy Castle in every Android module's Lint runtime to the same floor the buildscript
+// classpath gets above. AGP resolves Android Lint from the `androidLintTool` configuration it adds
+// to each module, and selects Bouncy Castle there at a version with open advisories; this is the
+// graph the dependency-graph submission reports, so it is what the Dependabot alerts track. The
+// version and the removal condition live on the `bouncycastle` catalog ref.
+//
+// Keyed on every Android plugin this repository applies, so a new module is covered by applying
+// one. The configuration is looked up by name rather than matched: if an AGP upgrade renames it or
+// stops creating it, configuration fails here naming it, instead of the constraint quietly binding
+// to nothing and the old version returning unnoticed.
+val bouncyCastleFloors =
+    listOf(libs.bouncycastle.bcprov, libs.bouncycastle.bcpkix, libs.bouncycastle.bcutil)
+
+subprojects {
+    listOf(
+            "com.android.application",
+            "com.android.test",
+            "com.android.kotlin.multiplatform.library",
+        )
+        .forEach { androidPluginId ->
+            plugins.withId(androidPluginId) {
+                val lintTool = configurations.named("androidLintTool").name
+                bouncyCastleFloors.forEach { floor ->
+                    dependencies.constraints.add(lintTool, floor) {
+                        because("AGP selects a Bouncy Castle with advisories patched in 1.84/1.85")
+                    }
+                }
+            }
+        }
+}
+
 tasks.register("clean", Delete::class) { delete(rootProject.buildDir) }
 
 // No-baseline gate. This project forbids Detekt baselines outright — findings are fixed by
