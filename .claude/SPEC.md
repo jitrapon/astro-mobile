@@ -89,7 +89,7 @@ path, not for alert closure.
   component `purl` lists; scan every configuration of every project for Bouncy Castle and confirm it
   still appears only in `androidLintTool` (plus the root buildscript `classpath`). No code change
   expected — if either comparison differs, stop and re-plan.
-- [ ] **4. Exercise the signing path on the new version.** (a) Debug keystore creation — the
+- [x] **4. Exercise the signing path on the new version.** (a) Debug keystore creation — the
   `sdk-common` path that generates a self-signed certificate with Bouncy Castle: run
   `:androidApp:assembleDebug` with `ANDROID_USER_HOME` pointed at a fresh scratchpad directory so AGP
   must create a new `debug.keystore`, then verify the APK with `apksigner verify --print-certs`.
@@ -97,8 +97,12 @@ path, not for alert closure.
   export the four `ASTRO_KEYSTORE_*` / `ASTRO_KEY_*` variables, run `:androidApp:assembleRelease`
   (which also runs `lintVitalRelease` on the raised Lint runtime), and `apksigner verify
   --print-certs` the release APK against that keystore's certificate. No code change expected.
+  A root `keystore.properties` takes precedence over the environment variables, so on a checkout
+  that has one, run the release build from a detached `git worktree` of `HEAD` (the gitignored
+  file is absent there), as CI effectively does.
 - [ ] **5. Run the shrunk, signed app the way `verify-android-release` does.** With the same
-  ephemeral keystore variables, run `:androidApp:aospAtd34MinifiedTestAndroidTest` and
+  ephemeral keystore variables, from a detached worktree for the same `keystore.properties`
+  reason, run `:androidApp:aospAtd34MinifiedTestAndroidTest` and
   `:androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest` locally on the Gradle Managed Device.
   If this host cannot boot the managed device, stop and ask rather than tick — the fallback is the
   PR's CI run of `verify-android-release`, which only happens after a push this skill does not make.
@@ -139,7 +143,7 @@ path, not for alert closure.
   worktree) is empty, and neither contains `org.bouncycastle`; the all-configuration scan (awk over
   `:<p>:dependencies` for each project plus `buildEnvironment`) lists only `androidLintTool` and the
   root `classpath`, every entry at 1.85. Worktree removed (`git worktree list` clean).
-- [ ] **4.** (a) `debug.keystore` exists in the fresh `ANDROID_USER_HOME` after the build, and
+- [x] **4.** (a) `debug.keystore` exists in the fresh `ANDROID_USER_HOME` after the build, and
   `apksigner verify --print-certs` on the debug APK exits 0. (b) `assembleRelease` succeeds (build
   output shows `lintVitalAnalyzeRelease` executed, not `UP-TO-DATE`/`FROM-CACHE` — pass
   `--rerun-tasks` for that task or clean first), and `apksigner verify --print-certs` on the release
