@@ -120,9 +120,19 @@ path, not for alert closure.
   `1.80.2 -> 1.85` (or resolved at 1.85) and no line resolving below 1.85;
   `./gradlew :androidApp:help` still configures. The `libs` accessor resolves inside `buildscript`
   constraints (a configuration error here means it does not — use the same accessor form the
-  existing `classpath(libs.…)` lines use).
+  existing `classpath(libs.…)` lines use). Floor semantics, not a pin: temporarily add a direct
+  `classpath("org.bouncycastle:bcprov-jdk18on:1.86")` to the root buildscript, confirm
+  `buildEnvironment` resolves bcprov at 1.86 (a `strictly` constraint would fail resolution
+  instead), and revert. Constraint-only: `git diff main -- build.gradle.kts` shows the three
+  entries only inside a `constraints { }` block, with no `strictly`/`version { }` override and no
+  new `classpath(libs.bouncycastle…)` outside it.
 - [ ] **2.** `./gradlew -q :<p>:dependencies --configuration androidLintTool | grep bouncycastle` for
-  `androidApp`, `androidAppReleaseTest`, `shared` shows every Bouncy Castle node at 1.85.
+  `androidApp`, `androidAppReleaseTest`, `shared` shows every Bouncy Castle node at 1.85, and
+  `:androidApp:dependencyInsight --configuration androidLintTool --dependency bcprov-jdk18on`
+  names the constraint (its `because` text) as the selection reason — proving it was raised by a
+  constraint, not a new direct dependency. Floor semantics: temporarily declare a direct
+  `androidLintTool("org.bouncycastle:bcprov-jdk18on:1.86")` in `:androidApp`, confirm it resolves
+  at 1.86, and revert.
   Negative check: temporarily change the looked-up configuration name to a nonexistent one, confirm
   `./gradlew help` fails naming it, and revert (evidence: the failure line in the resume summary).
 - [ ] **3.** `diff` of sorted `purl`s from `build/reports/cyclonedx/bom.json` (branch vs. `main`
