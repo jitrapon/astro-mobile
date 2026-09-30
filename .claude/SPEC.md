@@ -100,7 +100,7 @@ path, not for alert closure.
   A root `keystore.properties` takes precedence over the environment variables, so on a checkout
   that has one, run the release build from a detached `git worktree` of `HEAD` (the gitignored
   file is absent there), as CI effectively does.
-- [ ] **5. Run the shrunk, signed app the way `verify-android-release` does.** With the same
+- [x] **5. Run the shrunk, signed app the way `verify-android-release` does.** With the same
   ephemeral keystore variables, from a detached worktree for the same `keystore.properties`
   reason, run `:androidApp:aospAtd34MinifiedTestAndroidTest` and
   `:androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest` locally on the Gradle Managed Device.
@@ -148,7 +148,7 @@ path, not for alert closure.
   output shows `lintVitalAnalyzeRelease` executed, not `UP-TO-DATE`/`FROM-CACHE` — pass
   `--rerun-tasks` for that task or clean first), and `apksigner verify --print-certs` on the release
   APK exits 0 with a SHA-256 digest equal to `keytool -list -v` of the ephemeral keystore.
-- [ ] **5.** Both managed-device tasks pass with a non-zero test count (the root build's zero-tests
+- [x] **5.** Both managed-device tasks pass with a non-zero test count (the root build's zero-tests
   guard fails the task otherwise); quote the UTP result summary.
 - [ ] **6.** `grep -rn -i "bouncy" build.gradle.kts .github/workflows/security.yml .claude/CLAUDE.md
   gradle/libs.versions.toml` shows no remaining claim that the Bouncy Castle stack is AGP-pinned or
