@@ -84,7 +84,7 @@ path, not for alert closure.
   binding to nothing. Comment the block with the same removal condition as item 1 and cross-reference
   the catalog entries. If `androidLintTool` does not yet exist when the plugin's `withId` callback
   fires, find the earliest hook where it does and record why in the comment.
-- [ ] **3. Prove nothing that ships changed.** Build the CycloneDX SBOM on this branch and on `main`
+- [x] **3. Prove nothing that ships changed.** Build the CycloneDX SBOM on this branch and on `main`
   (a temporary `git worktree` under the scratchpad, removed afterwards) and diff their sorted
   component `purl` lists; scan every configuration of every project for Bouncy Castle and confirm it
   still appears only in `androidLintTool` (plus the root buildscript `classpath`). No code change
@@ -135,7 +135,7 @@ path, not for alert closure.
   at 1.86, and revert.
   Negative check: temporarily change the looked-up configuration name to a nonexistent one, confirm
   `./gradlew help` fails naming it, and revert (evidence: the failure line in the resume summary).
-- [ ] **3.** `diff` of sorted `purl`s from `build/reports/cyclonedx/bom.json` (branch vs. `main`
+- [x] **3.** `diff` of sorted `purl`s from `build/reports/cyclonedx/bom.json` (branch vs. `main`
   worktree) is empty, and neither contains `org.bouncycastle`; the all-configuration scan (awk over
   `:<p>:dependencies` for each project plus `buildEnvironment`) lists only `androidLintTool` and the
   root `classpath`, every entry at 1.85. Worktree removed (`git worktree list` clean).
