@@ -694,8 +694,10 @@ tasks.register("peripheryScan") {
 //                              inventory job applies for the same reason. `includeBuildEnvironment`
 //                              already keeps buildscript configurations out of the traversal
 //                              entirely; this is the second layer that holds if it is flipped back.
-//   ^androidLintTool$        — the Android lint tool's own runtime (`:shared` and `:androidApp`);
-//                              carries the Bouncy Castle stack AGP pins.
+//   ^androidLintTool$        — the Android lint tool's own runtime (every Android module); carries
+//                              AGP-pinned tooling such as httpclient and commons-lang3. Its Bouncy
+//                              Castle is the exception: the `bouncyCastleFloors` constraints above
+//                              raise it, but the rest of the configuration stays unremediable.
 //   ^unified-test-platform-  — AGP's Unified Test Platform harness; carries a gRPC/Netty stack
 //     .*$                      several minor versions behind, pinned by AGP.
 //

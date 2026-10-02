@@ -106,7 +106,7 @@ path, not for alert closure.
   `:androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest` locally on the Gradle Managed Device.
   If this host cannot boot the managed device, stop and ask rather than tick — the fallback is the
   PR's CI run of `verify-android-release`, which only happens after a push this skill does not make.
-- [ ] **6. Documentation.** Update every place that describes the Bouncy Castle stack as AGP-pinned
+- [x] **6. Documentation.** Update every place that describes the Bouncy Castle stack as AGP-pinned
   and unremediable: the SBOM skip-list comment in the root `build.gradle.kts` (`^androidLintTool$`
   entry — the skip stays because the configuration's *other* tooling, e.g. httpclient and
   commons-lang3, is still AGP-pinned; Bouncy Castle inside it is now raised by the item-2
@@ -150,7 +150,7 @@ path, not for alert closure.
   APK exits 0 with a SHA-256 digest equal to `keytool -list -v` of the ephemeral keystore.
 - [x] **5.** Both managed-device tasks pass with a non-zero test count (the root build's zero-tests
   guard fails the task otherwise); quote the UTP result summary.
-- [ ] **6.** `grep -rn -i "bouncy" build.gradle.kts .github/workflows/security.yml .claude/CLAUDE.md
+- [x] **6.** `grep -rn -i "bouncy" build.gradle.kts .github/workflows/security.yml .claude/CLAUDE.md
   gradle/libs.versions.toml` shows no remaining claim that the Bouncy Castle stack is AGP-pinned or
   unremediable; `./gradlew ktfmtCheck` passes on the root script.
 - [ ] **7.** `./gradlew check` exits 0 (quote `BUILD SUCCESSFUL` and confirm `verifyCheckPartition`
