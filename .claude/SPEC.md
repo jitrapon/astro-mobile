@@ -92,13 +92,15 @@ Facts fixed at plan time (re-check before relying on them):
   `rules.json` is vendored and parity-gated for M-5, and codegen reads only its theme-id and
   theme-version patterns.
 
-- [ ] **1. Move the astro-docs pin and re-vendor the fixture it changed.** Point `docs/astro-docs`
+- [x] **1. Move the astro-docs pin and re-vendor the fixture it changed.** Point `docs/astro-docs`
   at `fa7309986c` (a merged `main` commit carrying `design/build/`). Copy the mirror's
   `calendar-month-screen.v0.example.json` over
   `shared/src/commonTest/resources/contract/calendar-month-screen.v0.example.json` unedited, since
-  the mirror is upstream. If any test asserts a fixture value that moved (the theme version, the
-  token-set version, a color count), update that assertion to the new fixture and name each one in
-  the commit body. Nothing else changes.
+  the mirror is upstream, except for the top-level `_comment` and the trailing newline. Those are
+  the contract gate's one sanctioned local adaptation, so the vendored ones are kept. If any test
+  asserts a fixture value that moved (the theme version, the token-set version, a color count),
+  update that assertion to the new fixture and name each one in the commit body. Nothing else
+  changes.
 - [ ] **2. Vendor the five design artifacts and gate them against the mirror.** Copy
   `design/build/{themes/light.json, themes/dark.json, base.json, fonts.json, rules.json}` byte-for-byte
   into `shared/design-system/`. Register `verifyVendoredDesignArtifactParity` in the root
@@ -190,7 +192,7 @@ Facts fixed at plan time (re-check before relying on them):
 
 ## 5. Testing & Validation (for agent)
 
-- [ ] **1.** `git ls-tree HEAD docs/astro-docs` shows `fa7309986c…`, and `ls
+- [x] **1.** `git ls-tree HEAD docs/astro-docs` shows `fa7309986c…`, and `ls
   docs/astro-docs/design/build/` lists the five artifacts. `./gradlew verifyVendoredContractParity`
   passes. `./gradlew :shared:testAndroidHostTest :shared:iosSimulatorArm64Test` passes, including
   `ContractParityTest`, which reads the re-vendored fixture. From a detached worktree with an
