@@ -115,7 +115,7 @@ path, not for alert closure.
   ("Only build-time tooling this repo cannot remediate is skipped …") and the version-catalog
   paragraph in "Tech stack & versions" (the families list, and a sentence on the Bouncy Castle
   floor, its constraint-only use, and its removal condition).
-- [ ] **7. Full gate.** Run `./gradlew ktfmtFormat`, then `./gradlew check` (includes
+- [x] **7. Full gate.** Run `./gradlew ktfmtFormat`, then `./gradlew check` (includes
   `verifyCheckPartition`, Lint via `:androidApp:lint`, and the iOS half on this Mac).
 
 ## 5. Testing & Validation (for agent)
@@ -153,7 +153,7 @@ path, not for alert closure.
 - [x] **6.** `grep -rn -i "bouncy" build.gradle.kts .github/workflows/security.yml .claude/CLAUDE.md
   gradle/libs.versions.toml` shows no remaining claim that the Bouncy Castle stack is AGP-pinned or
   unremediable; `./gradlew ktfmtCheck` passes on the root script.
-- [ ] **7.** `./gradlew check` exits 0 (quote `BUILD SUCCESSFUL` and confirm `verifyCheckPartition`
+- [x] **7.** `./gradlew check` exits 0 (quote `BUILD SUCCESSFUL` and confirm `verifyCheckPartition`
   and `:androidApp:lint` ran). Post-merge, out of this branch's reach: the next `main`
   `dependency-submission` reports 1.85 and alerts #17, #18, #50, #51 close — the item-2/3 scans are
   the pre-merge proxy for that, since the submission's graph is every configuration except
