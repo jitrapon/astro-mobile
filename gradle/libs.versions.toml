@@ -1,6 +1,6 @@
 # Gradle version catalog — single source of truth for build-plugin and product dependency versions.
 #
-# Three families live here:
+# Four families live here:
 #
 #   * The Kotlin lint/format toolchain, so the Gradle plugin, the pre-commit hook's standalone CLI
 #     jars, and `verifyKtfmtAlignment` all read the same versions and can never drift.
@@ -10,6 +10,9 @@
 #     a dependency version inline.
 #   * The build tooling the security gates drive — the CycloneDX SBOM generator whose output the
 #     PR-blocking `sca` job scans. It ships nothing, but a bump changes what that gate can see.
+#   * Security floors for build tooling the Android Gradle Plugin selects — Bouncy Castle today.
+#     These are never declared as dependencies; they are read only by dependency constraints that
+#     raise an AGP-selected transitive past its advisories, and are removed once AGP catches up.
 #
 # Two versions stay outside this file, both deliberately. Android Gradle Plugin remains declared
 # inline in the root `buildscript` classpath — it is the one build-plugin version with no catalog
@@ -103,6 +106,18 @@ activity-compose = "1.13.0"
 # dependency, so the app declares it to compile against it. The icon artifacts stopped releasing at
 # 1.7.8; this is its final version, not one to track alongside the Compose UI libraries.
 compose-material-icons = "1.7.8"
+# Bouncy Castle — a security floor, not a dependency. AGP selects it on two build-only graphs: the
+# buildscript classpath (through `com.android.tools:sdk-common`, which reads keystores and creates
+# the debug signing certificate) and every Android module's `androidLintTool` runtime. AGP 9.4.1
+# selects 1.80.2, which carries advisories patched in 1.84 (GHSA-c3fc-8qff-9hwx,
+# GHSA-wg6q-6289-32hp) and 1.85 (GHSA-9pwp-9qqc-pr26, GHSA-qp49-qgx5-5m26). The root build script
+# raises both graphs to this ref with dependency constraints; nothing declares these libraries as
+# a dependency, and none of them reaches an app artifact. The constraints are plain versions, so
+# they act as a floor: a newer AGP that selects a newer Bouncy Castle wins resolution. Remove this
+# ref, the three libraries below and every constraint reading them once the AGP on the classpath
+# selects Bouncy Castle at or above this ref on its own — from then on they select nothing and are
+# stale config.
+bouncycastle = "1.85"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`
@@ -152,6 +167,13 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "android
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
 androidx-test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidx-test-uiautomator" }
 mockwebserver3 = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "mockwebserver" }
+
+# Security floors — read only by the root build script's dependency constraints on AGP-selected
+# build tooling, never declared as dependencies. `bcutil` sits between the other two on AGP's chain
+# (bcpkix → bcutil → bcprov), so it moves with them.
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcutil = { module = "org.bouncycastle:bcutil-jdk18on", version.ref = "bouncycastle" }
 
 [plugins]
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }

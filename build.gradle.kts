@@ -21,6 +21,20 @@ buildscript {
         // locks it to the same `kotlin` ref as the Kotlin Gradle plugin above: a serialization
         // plugin built against a different Kotlin than the compiler loading it fails the build.
         classpath(libs.kotlin.serialization.gradle.plugin)
+        // Raise the Bouncy Castle AGP selects through `com.android.tools:sdk-common` past its
+        // advisories. That library reads the release keystore and creates the debug signing
+        // certificate, so this code runs in the signing path on the build machine. Constraints, not
+        // dependencies, and plain versions, so they are a floor a newer AGP can still exceed. The
+        // version and the removal condition live on the `bouncycastle` catalog ref; the Lint
+        // runtime is raised to the same ref further down.
+        constraints {
+            listOf(libs.bouncycastle.bcprov, libs.bouncycastle.bcpkix, libs.bouncycastle.bcutil)
+                .forEach { floor ->
+                    classpath(floor) {
+                        because("AGP selects a Bouncy Castle with advisories patched in 1.84/1.85")
+                    }
+                }
+        }
     }
 }
 
@@ -55,6 +69,37 @@ allprojects {
         google()
         mavenCentral()
     }
+}
+
+// Raise the Bouncy Castle in every Android module's Lint runtime to the same floor the buildscript
+// classpath gets above. AGP resolves Android Lint from the `androidLintTool` configuration it adds
+// to each module, and selects Bouncy Castle there at a version with open advisories; this is the
+// graph the dependency-graph submission reports, so it is what the Dependabot alerts track. The
+// version and the removal condition live on the `bouncycastle` catalog ref.
+//
+// Keyed on every Android plugin this repository applies, so a new module is covered by applying
+// one. The configuration is looked up by name rather than matched: if an AGP upgrade renames it or
+// stops creating it, configuration fails here naming it, instead of the constraint quietly binding
+// to nothing and the old version returning unnoticed.
+val bouncyCastleFloors =
+    listOf(libs.bouncycastle.bcprov, libs.bouncycastle.bcpkix, libs.bouncycastle.bcutil)
+
+subprojects {
+    listOf(
+            "com.android.application",
+            "com.android.test",
+            "com.android.kotlin.multiplatform.library",
+        )
+        .forEach { androidPluginId ->
+            plugins.withId(androidPluginId) {
+                val lintTool = configurations.named("androidLintTool").name
+                bouncyCastleFloors.forEach { floor ->
+                    dependencies.constraints.add(lintTool, floor) {
+                        because("AGP selects a Bouncy Castle with advisories patched in 1.84/1.85")
+                    }
+                }
+            }
+        }
 }
 
 tasks.register("clean", Delete::class) { delete(rootProject.buildDir) }
@@ -649,8 +694,10 @@ tasks.register("peripheryScan") {
 //                              inventory job applies for the same reason. `includeBuildEnvironment`
 //                              already keeps buildscript configurations out of the traversal
 //                              entirely; this is the second layer that holds if it is flipped back.
-//   ^androidLintTool$        — the Android lint tool's own runtime (`:shared` and `:androidApp`);
-//                              carries the Bouncy Castle stack AGP pins.
+//   ^androidLintTool$        — the Android lint tool's own runtime (every Android module); carries
+//                              AGP-pinned tooling such as httpclient and commons-lang3. Its Bouncy
+//                              Castle is the exception: the `bouncyCastleFloors` constraints above
+//                              raise it, but the rest of the configuration stays unremediable.
 //   ^unified-test-platform-  — AGP's Unified Test Platform harness; carries a gRPC/Netty stack
 //     .*$                      several minor versions behind, pinned by AGP.
 //

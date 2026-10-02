@@ -322,14 +322,17 @@ jobs:
       #
       # DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS drops the buildscript `classpath`
       # configuration from the submitted graph. That configuration is where the
-      # Android Gradle Plugin and its transitive build-time tooling live (apksig →
-      # BouncyCastle, the Google API/analytics client → Netty/jose4j/httpclient,
-      # jdom2, OpenTelemetry). Those run only on the build machine and never ship in
-      # the APK or the iOS app, yet Dependabot was raising ~36 alerts against them
-      # rooted at settings.gradle.kts — noise we can't remediate independently (they
-      # are pinned by AGP). The regex is anchored (`^classpath$`) so it excludes only
-      # the buildscript classpath configs, never the app's `*RuntimeClasspath`
-      # configurations that carry dependencies we actually ship.
+      # Android Gradle Plugin and its transitive build-time tooling live (the Google
+      # API/analytics client → Netty/jose4j/httpclient, jdom2, OpenTelemetry, and
+      # the sdk-common → Bouncy Castle chain). Those run only on the build machine
+      # and never ship in the APK or the iOS app, yet Dependabot was raising ~36
+      # alerts against them rooted at settings.gradle.kts — noise we can't
+      # remediate independently (they are pinned by AGP). Bouncy Castle is the one
+      # exception: the root build.gradle.kts raises it with a catalog-versioned
+      # constraint, on this classpath and on every module's `androidLintTool`
+      # (which this job does submit). The regex is anchored (`^classpath$`) so it
+      # excludes only the buildscript classpath configs, never the app's
+      # `*RuntimeClasspath` configurations that carry dependencies we actually ship.
       - uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         env:
           DEPENDENCY_GRAPH_EXCLUDE_CONFIGURATIONS: "^classpath$"
