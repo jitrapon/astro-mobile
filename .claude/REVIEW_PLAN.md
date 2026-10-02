@@ -28,6 +28,25 @@ Findings:
 Next steps:
 - Correct source-set wiring and add an isolated submodule-free build check before implementing the plan.
 
+## Round 2 — 2026-10-02
+
+Verdict: needs-attention. Round 1's two findings are confirmed closed; one new medium.
+
+### Codex output (verbatim)
+
+Target: branch diff against main
+Verdict: needs-attention
+
+Both round-one findings are closed at the plan level. One registry regression remains undetectable by the proposed tests.
+
+Findings:
+- [medium] Test exact-reference resolution for both bundled themes (.claude/SPEC.md:245-252)
+  The only successful reference lookup tested is the fixture's light theme. A resolver that searches only BundledThemes.light and otherwise falls back by system scheme would pass every listed check. It would incorrectly resolve a valid dark theme reference to light on a light-scheme device, violating §3's reference-resolution requirement.
+  Recommendation: For every bundled theme, construct its exact id/version reference and assert that resolve returns that theme under both system schemes. Retain the fixture integration check and mismatch fallback cases.
+
+Next steps:
+- Extend §5 item 6 with the complete bundled-theme lookup matrix before implementing.
+
 ## Resolution log
 
 ### Round 1 dispositions
@@ -44,3 +63,11 @@ Next steps:
    the generator lands (early detection). §5 item 9 adds the full clean-worktree run: host and
    simulator tests, the `xcodebuild` app build with `--no-build-cache`, and the parity gate failing
    there as the only submodule reader. §4 item 9 is renamed to match.
+
+### Round 2 dispositions
+
+1. **Test exact-reference resolution for both bundled themes: AGREE.** Valid: the only exact match
+   tested was the fixture's light reference, so a resolver that checked only `light` and otherwise
+   fell back by scheme would pass. §5 item 6 now requires every theme in `BundledThemes.all` to
+   resolve from its own exact reference under both system schemes. The fixture and mismatch cases
+   stay.

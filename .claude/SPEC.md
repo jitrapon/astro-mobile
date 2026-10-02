@@ -243,6 +243,8 @@ Facts fixed at plan time (re-check before relying on them):
   `colorScheme`, and each `ColorBindings` value against `bindings.color`. A fail-closed check like
   item 3's covers a binding to an undeclared role. Both host and simulator tests pass.
 - [ ] **6.** A commonTest `BundledThemeRegistryTest`, on both targets, covers:
+  - **every** theme in `BundledThemes.all`: its exact `ThemeRef(id, version)` resolves to that theme
+    under **both** system schemes, so a dark reference on a light-scheme device returns dark;
   - the fixture's `theme`, decoded from `EmbeddedContract.MONTH_SCREEN_FIXTURE_JSON`, resolves to
     `BundledThemes.light` under **both** system schemes;
   - a known id at an unknown version falls back by scheme;
