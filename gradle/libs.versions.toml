@@ -115,7 +115,8 @@ compose-material-icons = "1.7.8"
 # a dependency, and none of them reaches an app artifact. The constraints are plain versions, so
 # they act as a floor: a newer AGP that selects a newer Bouncy Castle wins resolution. Remove this
 # ref, the three libraries below and every constraint reading them once the AGP on the classpath
-# selects Bouncy Castle at or above this ref on its own — from then on they only pin.
+# selects Bouncy Castle at or above this ref on its own — from then on they select nothing and are
+# stale config.
 bouncycastle = "1.85"
 
 [libraries]
