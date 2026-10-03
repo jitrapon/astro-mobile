@@ -101,7 +101,7 @@ Facts fixed at plan time (re-check before relying on them):
   asserts a fixture value that moved (the theme version, the token-set version, a color count),
   update that assertion to the new fixture and name each one in the commit body. Nothing else
   changes.
-- [ ] **2. Vendor the five design artifacts and gate them against the mirror.** Copy
+- [x] **2. Vendor the five design artifacts and gate them against the mirror.** Copy
   `design/build/{themes/light.json, themes/dark.json, base.json, fonts.json, rules.json}` byte-for-byte
   into `shared/design-system/`. Register `verifyVendoredDesignArtifactParity` in the root
   `build.gradle.kts` beside `verifyVendoredContractParity`, with the same shape:
@@ -200,7 +200,7 @@ Facts fixed at plan time (re-check before relying on them):
   `:androidApp:aospAtd34MinifiedTestAndroidTest` and
   `:androidAppReleaseTest:aospAtd34ReleaseLoopbackAndroidTest` pass with non-zero test counts.
   Quote the UTP counts, since both decode or serve the fixture.
-- [ ] **2.** `cmp` of each vendored file against its mirror is silent, and `git check-ignore -v
+- [x] **2.** `cmp` of each vendored file against its mirror is silent, and `git check-ignore -v
   shared/design-system/base.json` prints nothing. `./gradlew verifyVendoredDesignArtifactParity` and
   `./gradlew verifyCheckPartition` pass. Run three negative checks, each reverted afterwards and
   each failure quoted:

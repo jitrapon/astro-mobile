@@ -1,0 +1,129 @@
+{
+  "id": "light",
+  "label": "Light",
+  "version": "72b388da3a0737d9630429d471334101",
+  "tokenSetVersion": 2,
+  "colorScheme": "light",
+  "tokens": {
+    "colors": {
+      "surface": {
+        "hex": "#fbf9f9"
+      },
+      "surface-container": {
+        "hex": "#efeded"
+      },
+      "surface-container-high": {
+        "hex": "#eae8e8"
+      },
+      "on-surface": {
+        "hex": "#1b1c1c"
+      },
+      "on-surface-variant": {
+        "hex": "#5c403c"
+      },
+      "outline": {
+        "hex": "#906f6b"
+      },
+      "outline-variant": {
+        "hex": "#e5bdb8"
+      },
+      "primary": {
+        "hex": "#b81311"
+      },
+      "on-primary": {
+        "hex": "#ffffff"
+      },
+      "primary-container": {
+        "hex": "#dc3128"
+      },
+      "on-primary-container": {
+        "hex": "#fffbff"
+      },
+      "error": {
+        "hex": "#ba1a1a"
+      },
+      "on-error": {
+        "hex": "#ffffff"
+      },
+      "error-container": {
+        "hex": "#ffdad6"
+      },
+      "on-error-container": {
+        "hex": "#93000a"
+      },
+      "success": {
+        "hex": "#006e2a"
+      },
+      "on-success": {
+        "hex": "#ffffff"
+      },
+      "success-container": {
+        "hex": "#8ffa9b"
+      },
+      "on-success-container": {
+        "hex": "#00531e"
+      },
+      "warning": {
+        "hex": "#805600"
+      },
+      "on-warning": {
+        "hex": "#ffffff"
+      },
+      "warning-container": {
+        "hex": "#ffddb0"
+      },
+      "on-warning-container": {
+        "hex": "#614000"
+      },
+      "info": {
+        "hex": "#005bc0"
+      },
+      "on-info": {
+        "hex": "#ffffff"
+      },
+      "info-container": {
+        "hex": "#d8e2ff"
+      },
+      "on-info-container": {
+        "hex": "#004493"
+      },
+      "inverse-surface": {
+        "hex": "#303031"
+      },
+      "inverse-on-surface": {
+        "hex": "#f2f0f0"
+      },
+      "scrim": {
+        "hex": "#000000",
+        "alpha": 0.32
+      }
+    },
+    "shadows": {
+      "elevation-1": {
+        "offsetX": 0,
+        "offsetY": 1,
+        "blur": 3,
+        "spread": 0,
+        "color": {
+          "hex": "#000000",
+          "alpha": 0.15
+        }
+      },
+      "elevation-2": {
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 8,
+        "spread": 0,
+        "color": {
+          "hex": "#000000",
+          "alpha": 0.15
+        }
+      }
+    },
+    "fonts": {
+      "display": "space-mono",
+      "body": "trispace",
+      "thai": "ibm-plex-sans-thai"
+    }
+  }
+}
