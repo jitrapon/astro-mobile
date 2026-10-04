@@ -827,6 +827,307 @@ abstract class GenerateEmbeddedContractSource : DefaultTask() {
     }
 }
 
+/**
+ * Kotlin-source rendering shared by the design-token generators: string literals, literals chunked
+ * under the class-file constant cap, and identifiers derived from the design system's kebab-case
+ * and dotted keys. An `object` rather than top-level script functions, because a task class that
+ * calls into the script body captures the script instance and Gradle can no longer instantiate it.
+ */
+object GeneratedKotlinSource {
+
+    /** Stays well under the JVM's 65535-byte CONSTANT_Utf8 cap even for all-multibyte text. */
+    private const val MAX_CHARS_PER_LITERAL = 3000
+
+    private val IDENTIFIER = Regex("[A-Za-z][A-Za-z0-9_]*")
+
+    fun header(taskName: String, source: String) = buildString {
+        appendLine("// GENERATED FILE — do not edit. Produced by the :shared")
+        appendLine("// `$taskName` task from $source.")
+    }
+
+    fun literal(text: String) = buildString {
+        append('"')
+        text.forEach { character ->
+            when (character) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '$' -> append("\\$")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> append(character)
+            }
+        }
+        append('"')
+    }
+
+    /** A `val` joining [text]'s chunks at runtime, so no single literal outgrows the cap. */
+    fun chunkedConstant(name: String, text: String) = buildString {
+        appendLine("    val $name: String =")
+        appendLine("        listOf(")
+        literalChunks(text).forEach { appendLine("            ${literal(it)},") }
+        appendLine("        )")
+        appendLine("            .joinToString(separator = \"\")")
+    }
+
+    private fun literalChunks(text: String): List<String> {
+        val chunks = mutableListOf<String>()
+        var start = 0
+        while (start < text.length) {
+            var end = minOf(start + MAX_CHARS_PER_LITERAL, text.length)
+            // Never cut between the halves of a surrogate pair: they are one code point.
+            if (end < text.length && text[end - 1].isHighSurrogate()) end--
+            chunks.add(text.substring(start, end))
+            start = end
+        }
+        return chunks
+    }
+
+    /** `grid.line-width` → `gridLineWidth`. */
+    fun camelCaseName(key: String): String {
+        val words = wordsOf(key)
+        return words.first().lowercase() +
+            words.drop(1).joinToString("") { word ->
+                word.lowercase().replaceFirstChar { it.uppercase() }
+            }
+    }
+
+    /** `ibm-plex-sans-thai` → `IBM_PLEX_SANS_THAI`; `displayLg` → `DISPLAY_LG`. */
+    fun screamingSnakeName(key: String) = wordsOf(key).joinToString("_") { it.uppercase() }
+
+    /**
+     * Maps each key to its generated name, failing when two keys collapse onto one name or a key
+     * yields no legal identifier — either would otherwise surface as a confusing compile error in
+     * generated code, or as one design value silently shadowing another.
+     */
+    fun uniqueNames(keys: Collection<String>, context: String, naming: (String) -> String) =
+        keys.associateWith(naming).also { names ->
+            names.forEach { (key, name) ->
+                check(IDENTIFIER.matches(name)) {
+                    "$context: `$key` yields `$name`, which is not a Kotlin identifier."
+                }
+            }
+            names.entries
+                .groupBy({ it.value }, { it.key })
+                .filterValues { it.size > 1 }
+                .forEach { (name, collided) ->
+                    error("$context: ${collided.joinToString { "`$it`" }} all generate `$name`.")
+                }
+        }
+
+    private fun wordsOf(key: String): List<String> {
+        val words =
+            key.split('-', '.', '_')
+                .flatMap { it.split(Regex("(?<=[a-z0-9])(?=[A-Z])")) }
+                .filter { it.isNotEmpty() }
+        check(words.isNotEmpty()) { "Cannot derive a Kotlin name from the key `$key`." }
+        return words
+    }
+}
+
+/**
+ * Generates the design system's plain-value Kotlin surface on the commonMain compilation from the
+ * vendored copies under `shared/design-system/` — never from the astro-docs submodule, which the
+ * iOS CI job and a fresh clone do not have.
+ *
+ * The output reaches Swift through the framework header, so it is restricted to shapes that bridge
+ * as plain values: enums, and objects and classes of numbers and strings. The generator fails
+ * rather than emits a guess on any shape it does not model — a missing required key, an unknown
+ * value form, or two keys that collapse onto one generated name — because a design value silently
+ * dropped or defaulted here would paint wrong on both platforms with nothing to flag it.
+ */
+abstract class GenerateDesignTokenSource : DefaultTask() {
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val fontManifest: RegularFileProperty
+
+    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val directory = outputDirectory.get().asFile
+        // Wipe rather than overwrite so a declaration dropped upstream cannot survive as a stale
+        // generated file the compilation still picks up.
+        directory.deleteRecursively()
+        val packageDirectory = directory.resolve(GENERATED_PACKAGE.replace('.', '/'))
+        packageDirectory.mkdirs()
+
+        val fonts = readFontManifest()
+        packageDirectory.resolve("FontId.kt").writeText(renderFontIds(fonts))
+
+        logger.lifecycle("Design tokens generated: ${fonts.size} font ids.")
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // fonts.json
+    // ------------------------------------------------------------------------------------------
+
+    private data class FontFact(val id: String, val family: String, val bindableRoles: List<String>)
+
+    private fun readFontManifest(): List<FontFact> {
+        val manifest = requireObject(readJson(fontManifest), "fonts.json")
+        requireInt(manifest["fontSetVersion"], "fonts.json: fontSetVersion")
+        val fonts = requireObject(manifest["fonts"], "fonts.json: fonts")
+        check(fonts.isNotEmpty()) { "fonts.json: fonts declares no font." }
+        return fonts.map { (id, node) ->
+            val font = requireObject(node, "fonts.json: fonts.$id")
+            FontFact(
+                id = id as String,
+                family = requireString(font["family"], "fonts.json: fonts.$id.family"),
+                bindableRoles =
+                    requireStringList(font["bindableRoles"], "fonts.json: fonts.$id.bindableRoles"),
+            )
+        }
+    }
+
+    private fun renderFontIds(fonts: List<FontFact>): String {
+        val names =
+            GeneratedKotlinSource.uniqueNames(
+                fonts.map { it.id },
+                "fonts.json",
+                GeneratedKotlinSource::screamingSnakeName,
+            )
+        return buildString {
+            append(GeneratedKotlinSource.header(TASK_NAME, "shared/design-system/fonts.json"))
+            appendLine("package $GENERATED_PACKAGE")
+            appendLine()
+            appendLine("/** A font the design system ships, keyed by its manifest id. */")
+            appendLine(
+                "public enum class FontId(public val id: String, public val family: String) {"
+            )
+            fonts.forEach { font ->
+                appendLine(
+                    "    ${names.getValue(font.id)}(" +
+                        "${GeneratedKotlinSource.literal(font.id)}, " +
+                        "${GeneratedKotlinSource.literal(font.family)}),"
+                )
+            }
+            appendLine("}")
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Typed JSON reads that fail naming the offending path
+    // ------------------------------------------------------------------------------------------
+
+    private fun readJson(file: RegularFileProperty): Any? =
+        groovy.json.JsonSlurper().parse(file.get().asFile, "UTF-8")
+
+    private fun requireObject(node: Any?, context: String): Map<*, *> {
+        check(node is Map<*, *>) { "$context: expected a JSON object, found ${describe(node)}." }
+        return node
+    }
+
+    private fun requireString(node: Any?, context: String): String {
+        check(node is String && node.isNotBlank()) {
+            "$context: expected a non-empty string, found ${describe(node)}."
+        }
+        return node
+    }
+
+    private fun requireInt(node: Any?, context: String): Int {
+        check(node is Int) { "$context: expected an integer, found ${describe(node)}." }
+        return node
+    }
+
+    private fun requireStringList(node: Any?, context: String): List<String> {
+        check(node is List<*> && node.all { it is String }) {
+            "$context: expected a list of strings, found ${describe(node)}."
+        }
+        return node.map { it as String }
+    }
+
+    private fun describe(node: Any?) =
+        when (node) {
+            null -> "nothing"
+            is Map<*, *> -> "an object"
+            is List<*> -> "a list"
+            is String -> "the string \"$node\""
+            else -> "the value $node"
+        }
+
+    private companion object {
+        const val TASK_NAME = "generateDesignTokenSource"
+        const val GENERATED_PACKAGE = "io.jitrapon.astro.design.tokens"
+    }
+}
+
+/**
+ * Embeds the text of every vendored design artifact as commonTest constants, so the parity tests on
+ * both the JVM host and the iOS simulator can parse the JSON independently of the generator —
+ * `kotlin.test` has no multiplatform resource loader. A task of its own rather than a second output
+ * of [GenerateDesignTokenSource]: `kotlin.srcDir(<task provider>)` adds every output of a task to
+ * the source set, which would compile these test payloads into the shipping framework.
+ */
+abstract class GenerateEmbeddedDesignArtifactSource : DefaultTask() {
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val lightTheme: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val darkTheme: RegularFileProperty
+
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val base: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val fontManifest: RegularFileProperty
+
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val rules: RegularFileProperty
+
+    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val directory = outputDirectory.get().asFile
+        directory.deleteRecursively()
+        val packageDirectory = directory.resolve(GENERATED_PACKAGE.replace('.', '/'))
+        packageDirectory.mkdirs()
+
+        val constants =
+            listOf(
+                "LIGHT_THEME_JSON" to lightTheme,
+                "DARK_THEME_JSON" to darkTheme,
+                "BASE_JSON" to base,
+                "FONTS_JSON" to fontManifest,
+                "RULES_JSON" to rules,
+            )
+        packageDirectory
+            .resolve("EmbeddedDesignArtifacts.kt")
+            .writeText(
+                buildString {
+                    append(
+                        GeneratedKotlinSource.header(
+                            "generateEmbeddedDesignArtifactSource",
+                            "the vendored artifacts under shared/design-system/",
+                        )
+                    )
+                    appendLine("package $GENERATED_PACKAGE")
+                    appendLine()
+                    appendLine("/** The vendored design artifacts' text, verbatim. */")
+                    appendLine("internal object EmbeddedDesignArtifacts {")
+                    constants.forEachIndexed { index, (name, file) ->
+                        if (index > 0) appendLine()
+                        append(
+                            GeneratedKotlinSource.chunkedConstant(
+                                name,
+                                file.get().asFile.readText(),
+                            )
+                        )
+                    }
+                    appendLine("}")
+                }
+            )
+    }
+
+    private companion object {
+        const val GENERATED_PACKAGE = "io.jitrapon.astro.design.tokens"
+    }
+}
+
 // ----------------------------------------------------------------------------------------------
 // Embedded contract artifacts for commonTest
 //
@@ -853,16 +1154,49 @@ val generateEmbeddedContractSource =
         outputDirectory.set(layout.buildDirectory.dir("generated/contract/commonTest/kotlin"))
     }
 
+// The design system's vendored artifacts, laid out path-for-path under astro-docs'
+// `design/build/`. Both generators read only these copies; the root
+// verifyVendoredDesignArtifactParity task is the one reader of the submodule.
+val designSystemDirectory = layout.projectDirectory.dir("design-system")
+
+val generateDesignTokenSource =
+    tasks.register<GenerateDesignTokenSource>("generateDesignTokenSource") {
+        group = "build"
+        description =
+            "Emit the vendored design artifacts as plain Kotlin token values on commonMain."
+        fontManifest.set(designSystemDirectory.file("fonts.json"))
+        outputDirectory.set(layout.buildDirectory.dir("generated/designTokens/commonMain/kotlin"))
+    }
+
+val generateEmbeddedDesignArtifactSource =
+    tasks.register<GenerateEmbeddedDesignArtifactSource>("generateEmbeddedDesignArtifactSource") {
+        group = "build"
+        description = "Emit the vendored design artifacts' text as Kotlin constants on commonTest."
+        lightTheme.set(designSystemDirectory.file("themes/light.json"))
+        darkTheme.set(designSystemDirectory.file("themes/dark.json"))
+        base.set(designSystemDirectory.file("base.json"))
+        fontManifest.set(designSystemDirectory.file("fonts.json"))
+        rules.set(designSystemDirectory.file("rules.json"))
+        outputDirectory.set(layout.buildDirectory.dir("generated/designTokens/commonTest/kotlin"))
+    }
+
 // Android Lint reads the source directories registered on a compilation as a plain file collection,
 // which drops the producing-task edge that `kotlin.srcDir(<task provider>)` carries into the Kotlin
 // compile tasks. Without an explicit dependency Gradle's validation fails the build — "uses this
 // output of task ':shared:generateEmbeddedContractSource' without declaring an explicit or implicit
 // dependency" — for the generated contract source. It surfaces only in `check`, because the
 // narrower
-// test tasks never run lint, so removing this edge fails the full gate and nothing before it.
+// test tasks never run lint, so removing this edge fails the full gate and nothing before it. The
+// design-token generators feed source directories the same way, so they need the same edge.
 tasks
     .matching { it.name.startsWith("lintAnalyze") || Regex("generate.*LintModel").matches(it.name) }
-    .configureEach { dependsOn(generateEmbeddedContractSource) }
+    .configureEach {
+        dependsOn(
+            generateEmbeddedContractSource,
+            generateDesignTokenSource,
+            generateEmbeddedDesignArtifactSource,
+        )
+    }
 
 kotlin {
     android {
@@ -912,6 +1246,9 @@ kotlin {
         // warning). The accessors below are the Kotlin plugin's lazy providers, which only
         // configure what the template already created; the eager `by getting` delegate cannot be
         // used for `iosMain` — the template registers it too late for that to resolve.
+        // The generated design tokens are production source: they ship in the framework and are
+        // what both apps paint from. The task provider carries the producer edge to every target.
+        commonMain { kotlin.srcDir(generateDesignTokenSource) }
         commonMain.dependencies {
             // Declared explicitly rather than inherited transitively through Ktor: this module's
             // data-layer API is suspend-based, so coroutines is part of its own contract and must
@@ -935,6 +1272,7 @@ kotlin {
             // outputs, so every target's test compilation depends on it implicitly — no manual
             // dependsOn per compile task, and none can be forgotten when a target is added.
             kotlin.srcDir(generateEmbeddedContractSource)
+            kotlin.srcDir(generateEmbeddedDesignArtifactSource)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

@@ -115,7 +115,7 @@ Facts fixed at plan time (re-check before relying on them):
   unchanged. Wire the task into every subproject's `check` exactly as the contract gate is wired,
   and classify it into `androidCommonVerification`, the half that checks the submodule out, with a
   comment saying so.
-- [ ] **3. Scaffold the token generator, starting with font ids.** Add two typed tasks in
+- [x] **3. Scaffold the token generator, starting with font ids.** Add two typed tasks in
   `shared/build.gradle.kts`, beside `GenerateEmbeddedContractSource`. They are separate tasks, not one
   task with two outputs, because `kotlin.srcDir(<task provider>)` adds **every** output of the task
   to the source set, which would compile test-only payloads into the framework:
@@ -211,12 +211,12 @@ Facts fixed at plan time (re-check before relying on them):
 
   `./gradlew verifyVendoredContractParity` still prints its unchanged messages. Prove it with the
   same byte flip on `openapi.yaml`, reverted.
-- [ ] **3.** All of these compile with the generated `FontId` in place: `./gradlew
+- [x] **3.** All of these compile with the generated `FontId` in place: `./gradlew
   :shared:compileAndroidMain :shared:compileKotlinIosSimulatorArm64 :shared:testAndroidHostTest
   :shared:iosSimulatorArm64Test :androidApp:lint`. The generated files exist under
   `shared/build/generated/designTokens/` and `git status` shows nothing generated under `src/`. A
-  second identical run reports `:shared:generateDesignTokenSource UP-TO-DATE`; touching a vendored
-  file reruns it. A new commonTest `DesignTokensParityTest` parses `EmbeddedDesignArtifacts`'
+  second identical run reports `:shared:generateDesignTokenSource UP-TO-DATE`; changing a vendored
+  file's content reruns it (a bare `touch` does not, since Gradle fingerprints content). A new commonTest `DesignTokensParityTest` parses `EmbeddedDesignArtifacts`'
   `fonts.json` with kotlinx.serialization (independent of the generator's JsonSlurper) and asserts
   `FontId.entries` ids and families equal its keys and `family` fields. Fail-closed check: add a
   bogus value form to a scratch copy wired in temporarily, confirm the generator fails naming the
