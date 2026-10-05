@@ -58,7 +58,7 @@ jobs:
 
       # Provides the Gradle dependency/build cache. No `gradle-version` — the repo's committed
       # wrapper (Gradle 9.x) is authoritative.
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       - run: ./gradlew verifyAndroidCommon
 
@@ -102,7 +102,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       # Hosted Linux runners expose /dev/kvm but leave it root-only, so the emulator falls back to
       # software emulation — slow enough that the boot alone can outrun the test task's timeout.
@@ -193,7 +193,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       # SwiftLint is not toolchain-bundled (unlike swift-format, which ships with Xcode). Without it
       # swiftLintCheck self-skips; install it so the iOS static-analysis gate enforces in CI.
