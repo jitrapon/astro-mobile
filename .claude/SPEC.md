@@ -137,7 +137,7 @@ Facts fixed at plan time (re-check before relying on them):
     exists because Lint drops the source-dir producer edge.
   - The first emitted surface is `enum class FontId(val id: String, val family: String)` from
     `fonts.json`.
-- [ ] **4. Generate the theme-invariant values from `base.json`.** Emit:
+- [x] **4. Generate the theme-invariant values from `base.json`.** Emit:
   - `class Dimension(val dp: Double, val hairline: Boolean, val scalesWithType: Boolean)`. A
     `{hairline: true}` entry is `dp = 0, hairline = true`, so zero and hairline stay distinct.
   - `class Radius(val dp: Double, val full: Boolean)`.
@@ -226,7 +226,7 @@ Facts fixed at plan time (re-check before relying on them):
   independence: in a fresh `git worktree` of `HEAD` under the scratchpad (no submodule, no
   `build/`), `./gradlew --no-build-cache :shared:compileKotlinIosSimulatorArm64
   :shared:testAndroidHostTest` passes. Remove the worktree afterwards.
-- [ ] **4.** `DesignTokensParityTest` grows `base.json` assertions on both targets:
+- [x] **4.** `DesignTokensParityTest` grows `base.json` assertions on both targets:
   - `Spacing.gutter` is `hairline = true, dp = 0.0`;
   - `ComponentMetrics.gridLineWidth.hairline` and `chipAccentEdgeWidth.dp == 3.0`;
   - `Spacing.eventGap` is `scalesWithType = true, dp = 2.0`;

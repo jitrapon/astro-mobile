@@ -1,3 +1,5 @@
+import java.math.BigDecimal
+
 plugins {
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
@@ -840,6 +842,39 @@ object GeneratedKotlinSource {
 
     private val IDENTIFIER = Regex("[A-Za-z][A-Za-z0-9_]*")
 
+    /** Kotlin's hard keywords, which no generated declaration may be named. */
+    private val HARD_KEYWORDS =
+        setOf(
+            "as",
+            "break",
+            "class",
+            "continue",
+            "do",
+            "else",
+            "false",
+            "for",
+            "fun",
+            "if",
+            "in",
+            "interface",
+            "is",
+            "null",
+            "object",
+            "package",
+            "return",
+            "super",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typealias",
+            "typeof",
+            "val",
+            "var",
+            "when",
+            "while",
+        )
+
     fun header(taskName: String, source: String) = buildString {
         appendLine("// GENERATED FILE — do not edit. Produced by the :shared")
         appendLine("// `$taskName` task from $source.")
@@ -883,6 +918,12 @@ object GeneratedKotlinSource {
         return chunks
     }
 
+    /** `4` → `4.0`, `-0.02` → `-0.02`: a `Double` literal spelling the decimal exactly. */
+    fun doubleLiteral(value: BigDecimal): String {
+        val plain = value.stripTrailingZeros().toPlainString()
+        return if ('.' in plain) plain else "$plain.0"
+    }
+
     /** `grid.line-width` → `gridLineWidth`. */
     fun camelCaseName(key: String): String {
         val words = wordsOf(key)
@@ -903,7 +944,7 @@ object GeneratedKotlinSource {
     fun uniqueNames(keys: Collection<String>, context: String, naming: (String) -> String) =
         keys.associateWith(naming).also { names ->
             names.forEach { (key, name) ->
-                check(IDENTIFIER.matches(name)) {
+                check(IDENTIFIER.matches(name) && name !in HARD_KEYWORDS) {
                     "$context: `$key` yields `$name`, which is not a Kotlin identifier."
                 }
             }
@@ -942,6 +983,8 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val fontManifest: RegularFileProperty
 
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val base: RegularFileProperty
+
     @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
     @TaskAction
@@ -956,7 +999,14 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
         val fonts = readFontManifest()
         packageDirectory.resolve("FontId.kt").writeText(renderFontIds(fonts))
 
-        logger.lifecycle("Design tokens generated: ${fonts.size} font ids.")
+        val baseSet = readBase()
+        renderBase(baseSet).forEach { (fileName, source) ->
+            packageDirectory.resolve(fileName).writeText(source)
+        }
+
+        logger.lifecycle(
+            "Design tokens generated: ${fonts.size} font ids, ${baseSet.valueCount} base values."
+        )
     }
 
     // ------------------------------------------------------------------------------------------
@@ -1008,11 +1058,307 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
     }
 
     // ------------------------------------------------------------------------------------------
+    // base.json — the theme-invariant values
+    // ------------------------------------------------------------------------------------------
+
+    private data class DimensionFact(
+        val dp: BigDecimal,
+        val hairline: Boolean,
+        val scalesWithType: Boolean,
+    )
+
+    private data class RadiusFact(val dp: BigDecimal, val full: Boolean)
+
+    private data class TypeRampFact(
+        val fontRole: String,
+        val sizeSp: BigDecimal,
+        val weight: Int,
+        val lineHeightSp: BigDecimal,
+        val letterSpacingEm: BigDecimal,
+    )
+
+    private class BaseFacts(
+        val setVersion: Int,
+        val spacing: Map<String, DimensionFact>,
+        val radii: Map<String, RadiusFact>,
+        val componentMetrics: Map<String, DimensionFact>,
+        val componentRadii: Map<String, RadiusFact>,
+        val typography: Map<String, TypeRampFact>,
+    ) {
+        val valueCount =
+            spacing.size +
+                radii.size +
+                componentMetrics.size +
+                componentRadii.size +
+                typography.size
+    }
+
+    private fun readBase(): BaseFacts {
+        val base = requireObject(readJson(base), "base.json")
+        requireOnlyKeys(base, BASE_KEYS, "base.json")
+        val component = requireObject(base["component"], "base.json: component")
+        requireOnlyKeys(component, setOf("metrics", "radius"), "base.json: component")
+        // `layout.web` is sized in CSS pixels for the web client and has no mobile counterpart; a
+        // layout family for any other platform is new upstream shape, so it fails rather than
+        // being skipped alongside it.
+        base["layout"]?.let { layout ->
+            requireOnlyKeys(
+                requireObject(layout, "base.json: layout"),
+                setOf("web"),
+                "base.json: layout",
+            )
+        }
+        val typography = requireObject(base["typography"], "base.json: typography")
+        requireOnlyKeys(typography, setOf("sizeUnit", "ramps"), "base.json: typography")
+        check(typography["sizeUnit"] == "sp") {
+            "base.json: typography.sizeUnit: expected \"sp\", found ${describe(typography["sizeUnit"])}."
+        }
+        val ramps = requireObject(typography["ramps"], "base.json: typography.ramps")
+        check(ramps.isNotEmpty()) { "base.json: typography.ramps declares no ramp." }
+
+        return BaseFacts(
+            setVersion = requireInt(base["baseSetVersion"], "base.json: baseSetVersion"),
+            spacing =
+                readFamily(base["spacing"], "base.json: spacing") { node, context ->
+                    readDimension(node, context)
+                },
+            radii =
+                readFamily(base["radius"], "base.json: radius") { node, context ->
+                    readRadius(node, context)
+                },
+            componentMetrics =
+                readFamily(component["metrics"], "base.json: component.metrics") { node, context ->
+                    readDimension(node, context)
+                },
+            componentRadii =
+                readFamily(component["radius"], "base.json: component.radius") { node, context ->
+                    readRadius(node, context)
+                },
+            typography =
+                ramps.entries.associate { (key, node) ->
+                    key as String to readTypeRamp(node, "base.json: typography.ramps.$key")
+                },
+        )
+    }
+
+    /** A `{unit: "dp", values: {...}}` family, every value read by [readValue]. */
+    private fun <T> readFamily(
+        node: Any?,
+        context: String,
+        readValue: (Any?, String) -> T,
+    ): Map<String, T> {
+        val family = requireObject(node, context)
+        requireOnlyKeys(family, setOf("unit", "values"), context)
+        check(family["unit"] == "dp") {
+            "$context.unit: expected \"dp\", found ${describe(family["unit"])}."
+        }
+        val values = requireObject(family["values"], "$context.values")
+        check(values.isNotEmpty()) { "$context.values declares no value." }
+        return values.entries.associate { (key, value) ->
+            key as String to readValue(value, "$context.values.$key")
+        }
+    }
+
+    /**
+     * A dp-family value: a number, `{hairline: true}`, or `{value, scalesWithType: true}`. Each
+     * object form is matched by its exact key set, so a variant with an extra key or a `false` flag
+     * fails instead of being read as the nearest form it resembles.
+     */
+    private fun readDimension(node: Any?, context: String): DimensionFact =
+        when {
+            node is Number -> DimensionFact(decimal(node), hairline = false, scalesWithType = false)
+            node is Map<*, *> && node.keys == setOf("hairline") && node["hairline"] == true ->
+                DimensionFact(BigDecimal.ZERO, hairline = true, scalesWithType = false)
+            node is Map<*, *> &&
+                node.keys == setOf("value", "scalesWithType") &&
+                node["scalesWithType"] == true ->
+                DimensionFact(
+                    requireNumber(node["value"], "$context.value"),
+                    hairline = false,
+                    scalesWithType = true,
+                )
+            else ->
+                error(
+                    "$context: unknown dimension form, ${describe(node)}; expected a number, " +
+                        "{hairline: true}, or {value, scalesWithType: true}."
+                )
+        }
+
+    /** A radius-family value: a number or `{full: true}`, matched as [readDimension] matches. */
+    private fun readRadius(node: Any?, context: String): RadiusFact =
+        when {
+            node is Number -> RadiusFact(decimal(node), full = false)
+            node is Map<*, *> && node.keys == setOf("full") && node["full"] == true ->
+                RadiusFact(BigDecimal.ZERO, full = true)
+            else ->
+                error(
+                    "$context: unknown radius form, ${describe(node)}; expected a number or " +
+                        "{full: true}."
+                )
+        }
+
+    private fun readTypeRamp(node: Any?, context: String): TypeRampFact {
+        val ramp = requireObject(node, context)
+        requireOnlyKeys(
+            ramp,
+            setOf("fontRole", "size", "weight", "lineHeight", "letterSpacing"),
+            context,
+        )
+        val fontRole = requireString(ramp["fontRole"], "$context.fontRole")
+        check(fontRole in FONT_ROLES) {
+            "$context.fontRole: expected one of $FONT_ROLES, found \"$fontRole\"."
+        }
+        // An absent letter spacing is the type's natural tracking — zero — rather than a nullable
+        // number, which would bridge to Swift boxed.
+        val letterSpacing =
+            ramp["letterSpacing"]?.let { node ->
+                val spacing = requireObject(node, "$context.letterSpacing")
+                requireOnlyKeys(spacing, setOf("value", "unit"), "$context.letterSpacing")
+                check(spacing["unit"] == "em") {
+                    "$context.letterSpacing.unit: expected \"em\", found ${describe(spacing["unit"])}."
+                }
+                requireNumber(spacing["value"], "$context.letterSpacing.value")
+            } ?: BigDecimal.ZERO
+        return TypeRampFact(
+            fontRole = fontRole,
+            sizeSp = requireNumber(ramp["size"], "$context.size"),
+            weight = requireInt(ramp["weight"], "$context.weight"),
+            lineHeightSp = requireNumber(ramp["lineHeight"], "$context.lineHeight"),
+            letterSpacingEm = letterSpacing,
+        )
+    }
+
+    /** Every base.json file to write, as file name to source. */
+    private fun renderBase(base: BaseFacts): List<Pair<String, String>> {
+        val source = "shared/design-system/base.json"
+        val header =
+            GeneratedKotlinSource.header(TASK_NAME, source) + "package $GENERATED_PACKAGE\n\n"
+        return listOf(
+            "Dimension.kt" to header + DIMENSION_DECLARATION,
+            "Radius.kt" to header + RADIUS_DECLARATION,
+            "FontRole.kt" to header + FONT_ROLE_DECLARATION,
+            "TypeRamp.kt" to header + TYPE_RAMP_DECLARATION,
+            "BaseSetVersion.kt" to
+                header +
+                    "/** The `baseSetVersion` of the design base these values were generated " +
+                    "from. */\n" +
+                    "public const val BASE_SET_VERSION: Int = ${base.setVersion}\n",
+            "Spacing.kt" to
+                header +
+                    renderValueObject(
+                        "Spacing",
+                        "Spacing from the design base's `spacing` family.",
+                        "base.json: spacing",
+                        "Dimension",
+                        base.spacing,
+                        ::renderDimension,
+                    ),
+            "Radii.kt" to
+                header +
+                    renderValueObject(
+                        "Radii",
+                        "Corner radii from the design base's `radius` family.",
+                        "base.json: radius",
+                        "Radius",
+                        base.radii,
+                        ::renderRadius,
+                    ),
+            "ComponentMetrics.kt" to
+                header +
+                    renderValueObject(
+                        "ComponentMetrics",
+                        "Component sizes from the design base's `component.metrics` family.",
+                        "base.json: component.metrics",
+                        "Dimension",
+                        base.componentMetrics,
+                        ::renderDimension,
+                    ),
+            "ComponentRadii.kt" to
+                header +
+                    renderValueObject(
+                        "ComponentRadii",
+                        "Component corner radii from the design base's `component.radius` family.",
+                        "base.json: component.radius",
+                        "Radius",
+                        base.componentRadii,
+                        ::renderRadius,
+                    ),
+            "Typography.kt" to
+                header +
+                    renderValueObject(
+                        "Typography",
+                        "The type ramps from the design base's `typography.ramps`.",
+                        "base.json: typography.ramps",
+                        "TypeRamp",
+                        base.typography,
+                        ::renderTypeRamp,
+                    ),
+        )
+    }
+
+    private fun <T> renderValueObject(
+        objectName: String,
+        documentation: String,
+        context: String,
+        typeName: String,
+        values: Map<String, T>,
+        render: (T) -> String,
+    ): String {
+        val names =
+            GeneratedKotlinSource.uniqueNames(
+                values.keys,
+                context,
+                GeneratedKotlinSource::camelCaseName,
+            )
+        return buildString {
+            appendLine("/** $documentation */")
+            appendLine("public object $objectName {")
+            values.entries.forEachIndexed { index, (key, value) ->
+                if (index > 0) appendLine()
+                appendLine("    /** `$key` */")
+                appendLine("    public val ${names.getValue(key)}: $typeName =")
+                appendLine("        ${render(value)}")
+            }
+            appendLine("}")
+        }
+    }
+
+    private fun renderDimension(fact: DimensionFact) =
+        "Dimension(dp = ${GeneratedKotlinSource.doubleLiteral(fact.dp)}, " +
+            "hairline = ${fact.hairline}, scalesWithType = ${fact.scalesWithType})"
+
+    private fun renderRadius(fact: RadiusFact) =
+        "Radius(dp = ${GeneratedKotlinSource.doubleLiteral(fact.dp)}, full = ${fact.full})"
+
+    private fun renderTypeRamp(fact: TypeRampFact) =
+        "TypeRamp(fontRole = FontRole.${fact.fontRole.uppercase()}, " +
+            "sizeSp = ${GeneratedKotlinSource.doubleLiteral(fact.sizeSp)}, " +
+            "weight = ${fact.weight}, " +
+            "lineHeightSp = ${GeneratedKotlinSource.doubleLiteral(fact.lineHeightSp)}, " +
+            "letterSpacingEm = ${GeneratedKotlinSource.doubleLiteral(fact.letterSpacingEm)})"
+
+    // ------------------------------------------------------------------------------------------
     // Typed JSON reads that fail naming the offending path
     // ------------------------------------------------------------------------------------------
 
     private fun readJson(file: RegularFileProperty): Any? =
         groovy.json.JsonSlurper().parse(file.get().asFile, "UTF-8")
+
+    /** Fails on a key outside [allowed], so new upstream shape is never silently skipped. */
+    private fun requireOnlyKeys(node: Map<*, *>, allowed: Set<String>, context: String) {
+        val unknown = node.keys.filterNot { it in allowed }
+        check(unknown.isEmpty()) {
+            "$context: unmodelled key(s) ${unknown.joinToString { "`$it`" }}; expected only $allowed."
+        }
+    }
+
+    private fun requireNumber(node: Any?, context: String): BigDecimal {
+        check(node is Number) { "$context: expected a number, found ${describe(node)}." }
+        return decimal(node)
+    }
+
+    /** Through the number's decimal text, so a JSON `-0.02` stays exactly that. */
+    private fun decimal(number: Number) = BigDecimal(number.toString())
 
     private fun requireObject(node: Any?, context: String): Map<*, *> {
         check(node is Map<*, *>) { "$context: expected a JSON object, found ${describe(node)}." }
@@ -1041,7 +1387,7 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
     private fun describe(node: Any?) =
         when (node) {
             null -> "nothing"
-            is Map<*, *> -> "an object"
+            is Map<*, *> -> "an object with keys ${node.keys}"
             is List<*> -> "a list"
             is String -> "the string \"$node\""
             else -> "the value $node"
@@ -1050,6 +1396,79 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
     private companion object {
         const val TASK_NAME = "generateDesignTokenSource"
         const val GENERATED_PACKAGE = "io.jitrapon.astro.design.tokens"
+
+        /**
+         * Every top-level base.json key. `bindings` is read with the themes it binds to; `states`
+         * (state-layer opacities) and `layout` are not consumed by any mobile surface yet.
+         */
+        val BASE_KEYS =
+            setOf(
+                "baseSetVersion",
+                "spacing",
+                "radius",
+                "component",
+                "typography",
+                "bindings",
+                "states",
+                "layout",
+            )
+
+        /** The font roles a type ramp may name; each is a [FONT_ROLE_DECLARATION] constant. */
+        val FONT_ROLES = setOf("display", "body")
+
+        val DIMENSION_DECLARATION =
+            """
+            |/**
+            | * A length in density-independent pixels, from a `dp` family of the design base.
+            | *
+            | * [hairline] is the thinnest line the display can draw — one physical pixel at any
+            | * density — and carries `dp = 0.0`. It is a flag rather than a zero, so a renderer can
+            | * never mistake a hairline for an absent line. [scalesWithType] marks a length that grows
+            | * with the user's text size, as `sp` does, from [dp] at the default scale.
+            | */
+            |public class Dimension(
+            |    public val dp: Double,
+            |    public val hairline: Boolean,
+            |    public val scalesWithType: Boolean,
+            |)
+            |"""
+                .trimMargin()
+
+        val RADIUS_DECLARATION =
+            """
+            |/**
+            | * A corner radius in dp. [full] rounds the shorter side completely — a pill or a circle,
+            | * whatever the size — and carries `dp = 0.0`.
+            | */
+            |public class Radius(public val dp: Double, public val full: Boolean)
+            |"""
+                .trimMargin()
+
+        val FONT_ROLE_DECLARATION =
+            """
+            |/** The font role a type ramp draws in; a theme binds each role to a font. */
+            |public enum class FontRole {
+            |    DISPLAY,
+            |    BODY,
+            |}
+            |"""
+                .trimMargin()
+
+        val TYPE_RAMP_DECLARATION =
+            """
+            |/**
+            | * One step of the type ramp. Sizes are in `sp`; [letterSpacingEm] is a fraction of the
+            | * font size, `0.0` where the design base declares none.
+            | */
+            |public class TypeRamp(
+            |    public val fontRole: FontRole,
+            |    public val sizeSp: Double,
+            |    public val weight: Int,
+            |    public val lineHeightSp: Double,
+            |    public val letterSpacingEm: Double,
+            |)
+            |"""
+                .trimMargin()
     }
 }
 
@@ -1165,6 +1584,7 @@ val generateDesignTokenSource =
         description =
             "Emit the vendored design artifacts as plain Kotlin token values on commonMain."
         fontManifest.set(designSystemDirectory.file("fonts.json"))
+        base.set(designSystemDirectory.file("base.json"))
         outputDirectory.set(layout.buildDirectory.dir("generated/designTokens/commonMain/kotlin"))
     }
 
