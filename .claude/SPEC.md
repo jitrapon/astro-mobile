@@ -149,7 +149,7 @@ Facts fixed at plan time (re-check before relying on them):
     key, plus `BASE_SET_VERSION`.
   - Skip `layout.web` and `states`. The generator fails if a `dp` family declares another unit, or
     `typography.sizeUnit` is not `sp`.
-- [ ] **5. Generate the two bundled themes and the color bindings.** Emit:
+- [x] **5. Generate the two bundled themes and the color bindings.** Emit:
   - `enum class ColorRole(val key: String)` from the theme color keys. Fail if light and dark
     declare different key sets, since a bundled theme missing a role would have nothing to paint.
   - `class ThemeColors`, one `Long` ARGB `val` per role, plus `fun color(role: ColorRole): Long` (a
@@ -238,7 +238,7 @@ Facts fixed at plan time (re-check before relying on them):
   Every `spacing` / `component.metrics` / `radius` / `typography.ramps` key in the parsed JSON has a
   generated value, compared as a key set through a generated name map or an explicit list the test
   holds. Both host and simulator tests pass.
-- [ ] **5.** `DesignTokensParityTest` asserts that `ColorRole.entries` keys equal each theme
+- [x] **5.** `DesignTokensParityTest` asserts that `ColorRole.entries` keys equal each theme
   document's color keys, and that every `ThemeColors.color(role)` equals the ARGB the test computes
   from the parsed hex and alpha, for both themes. That covers `light.primary == 0xFFB81311` and
   `scrim == 0x52000000`. It also checks one shadow per theme, the fonts, ids, versions, labels and

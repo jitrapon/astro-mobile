@@ -1,4 +1,5 @@
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 plugins {
     kotlin("multiplatform")
@@ -985,6 +986,16 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
 
     @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val base: RegularFileProperty
 
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val lightTheme: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val darkTheme: RegularFileProperty
+
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val rules: RegularFileProperty
+
     @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
     @TaskAction
@@ -999,13 +1010,22 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
         val fonts = readFontManifest()
         packageDirectory.resolve("FontId.kt").writeText(renderFontIds(fonts))
 
-        val baseSet = readBase()
+        val baseDocument = requireObject(readJson(base), "base.json")
+        val baseSet = readBase(baseDocument)
         renderBase(baseSet).forEach { (fileName, source) ->
             packageDirectory.resolve(fileName).writeText(source)
         }
 
+        val themes = readThemes(fonts, readThemeRules())
+        val colorBindings = readColorBindings(baseDocument, themes.first().colors.keys)
+        renderThemes(themes, colorBindings, fonts).forEach { (fileName, source) ->
+            packageDirectory.resolve(fileName).writeText(source)
+        }
+
         logger.lifecycle(
-            "Design tokens generated: ${fonts.size} font ids, ${baseSet.valueCount} base values."
+            "Design tokens generated: ${fonts.size} font ids, ${baseSet.valueCount} base values, " +
+                "${themes.size} bundled themes of ${themes.first().colors.size} color roles, " +
+                "${colorBindings.size} color bindings."
         )
     }
 
@@ -1093,8 +1113,7 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
                 typography.size
     }
 
-    private fun readBase(): BaseFacts {
-        val base = requireObject(readJson(base), "base.json")
+    private fun readBase(base: Map<*, *>): BaseFacts {
         requireOnlyKeys(base, BASE_KEYS, "base.json")
         val component = requireObject(base["component"], "base.json: component")
         requireOnlyKeys(component, setOf("metrics", "radius"), "base.json: component")
@@ -1338,6 +1357,384 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
             "letterSpacingEm = ${GeneratedKotlinSource.doubleLiteral(fact.letterSpacingEm)})"
 
     // ------------------------------------------------------------------------------------------
+    // themes/*.json — the bundled themes — and base.json's color bindings onto their roles
+    // ------------------------------------------------------------------------------------------
+
+    private class ThemeRules(val themeId: Regex, val themeVersion: Regex)
+
+    private data class ShadowFact(
+        val offsetXDp: BigDecimal,
+        val offsetYDp: BigDecimal,
+        val blurDp: BigDecimal,
+        val spreadDp: BigDecimal,
+        val argb: Long,
+    )
+
+    private class ThemeFact(
+        val id: String,
+        val version: String,
+        val label: String,
+        val colorScheme: String,
+        val tokenSetVersion: Int,
+        val colors: Map<String, Long>,
+        val shadows: Map<String, ShadowFact>,
+        val fonts: Map<String, String>,
+    )
+
+    /**
+     * Only the theme-id and theme-version patterns: the rest of rules.json serves the read-time
+     * validator of a delivered theme, which no bundled value depends on.
+     */
+    private fun readThemeRules(): ThemeRules {
+        val rules = requireObject(readJson(rules), "rules.json")
+        fun pattern(key: String): Regex {
+            val rule = requireObject(rules[key], "rules.json: $key")
+            return Regex(requireString(rule["pattern"], "rules.json: $key.pattern"))
+        }
+        return ThemeRules(themeId = pattern("themeId"), themeVersion = pattern("themeVersion"))
+    }
+
+    /**
+     * Reads both bundled themes and holds them to each other: the same color roles and shadow keys
+     * — a bundled theme missing a role would have nothing to paint it with — and exactly one theme
+     * per color scheme, so a fallback by the system's scheme always finds one.
+     */
+    private fun readThemes(fonts: List<FontFact>, rules: ThemeRules): List<ThemeFact> {
+        val themes = listOf(lightTheme, darkTheme).map { readTheme(it, fonts, rules) }
+        val reference = themes.first()
+        themes.drop(1).forEach { theme ->
+            check(theme.colors.keys == reference.colors.keys) {
+                "themes: `${theme.id}` and `${reference.id}` declare different color roles; " +
+                    "only in `${theme.id}`: ${theme.colors.keys - reference.colors.keys}, " +
+                    "only in `${reference.id}`: ${reference.colors.keys - theme.colors.keys}."
+            }
+            check(theme.shadows.keys == reference.shadows.keys) {
+                "themes: `${theme.id}` and `${reference.id}` declare different shadows; " +
+                    "only in `${theme.id}`: ${theme.shadows.keys - reference.shadows.keys}, " +
+                    "only in `${reference.id}`: ${reference.shadows.keys - theme.shadows.keys}."
+            }
+        }
+        themes
+            .groupBy { it.id }
+            .filterValues { it.size > 1 }
+            .keys
+            .forEach { id -> error("themes: more than one bundled theme has the id `$id`.") }
+        COLOR_SCHEMES.keys.forEach { scheme ->
+            val matching = themes.filter { it.colorScheme == scheme }.map { it.id }
+            check(matching.size == 1) {
+                "themes: expected exactly one bundled theme with colorScheme \"$scheme\", " +
+                    "found ${matching.size} $matching."
+            }
+        }
+        return themes
+    }
+
+    private fun readTheme(
+        file: RegularFileProperty,
+        fonts: List<FontFact>,
+        rules: ThemeRules,
+    ): ThemeFact {
+        val context = "themes/${file.get().asFile.name}"
+        val theme = requireObject(readJson(file), context)
+        requireOnlyKeys(theme, THEME_KEYS, context)
+        val id = requireString(theme["id"], "$context: id")
+        check(rules.themeId.containsMatchIn(id)) {
+            "$context: id \"$id\" does not match rules.json's themeId pattern ${rules.themeId}."
+        }
+        val version = requireString(theme["version"], "$context: version")
+        check(rules.themeVersion.containsMatchIn(version)) {
+            "$context: version \"$version\" does not match rules.json's themeVersion pattern " +
+                "${rules.themeVersion}."
+        }
+        val colorScheme = requireString(theme["colorScheme"], "$context: colorScheme")
+        check(colorScheme in COLOR_SCHEMES) {
+            "$context: colorScheme: expected one of ${COLOR_SCHEMES.keys}, found \"$colorScheme\"."
+        }
+        val tokens = requireObject(theme["tokens"], "$context: tokens")
+        requireOnlyKeys(tokens, setOf("colors", "shadows", "fonts"), "$context: tokens")
+        val colors = requireObject(tokens["colors"], "$context: tokens.colors")
+        check(colors.isNotEmpty()) { "$context: tokens.colors declares no color." }
+        val shadows = requireObject(tokens["shadows"], "$context: tokens.shadows")
+        return ThemeFact(
+            id = id,
+            version = version,
+            label = requireString(theme["label"], "$context: label"),
+            colorScheme = colorScheme,
+            tokenSetVersion = requireInt(theme["tokenSetVersion"], "$context: tokenSetVersion"),
+            colors =
+                colors.entries.associate { (role, node) ->
+                    role as String to readArgb(node, "$context: tokens.colors.$role")
+                },
+            shadows =
+                shadows.entries.associate { (key, node) ->
+                    key as String to readShadow(node, "$context: tokens.shadows.$key")
+                },
+            fonts = readThemeFonts(tokens["fonts"], fonts, "$context: tokens.fonts"),
+        )
+    }
+
+    /**
+     * A `{hex, alpha?}` color as `0xAARRGGBB`, the alpha byte `round(alpha × 255)`. An absent alpha
+     * is opaque, the contract's own default for a color value.
+     */
+    private fun readArgb(node: Any?, context: String): Long {
+        val color = requireObject(node, context)
+        requireOnlyKeys(color, setOf("hex", "alpha"), context)
+        val hex = requireString(color["hex"], "$context.hex")
+        check(HEX_COLOR.matches(hex)) {
+            "$context.hex: expected six hex digits after `#`, found \"$hex\"."
+        }
+        val alpha = color["alpha"]?.let { requireNumber(it, "$context.alpha") } ?: BigDecimal.ONE
+        check(alpha >= BigDecimal.ZERO && alpha <= BigDecimal.ONE) {
+            "$context.alpha: expected a number from 0 to 1, found $alpha."
+        }
+        val alphaByte = alpha.multiply(BigDecimal(255)).setScale(0, RoundingMode.HALF_UP).toLong()
+        return (alphaByte shl 24) or hex.substring(1).toLong(16)
+    }
+
+    /** A shadow in dp. An absent spread is zero, the contract's own default for a shadow value. */
+    private fun readShadow(node: Any?, context: String): ShadowFact {
+        val shadow = requireObject(node, context)
+        requireOnlyKeys(shadow, setOf("offsetX", "offsetY", "blur", "spread", "color"), context)
+        return ShadowFact(
+            offsetXDp = requireNumber(shadow["offsetX"], "$context.offsetX"),
+            offsetYDp = requireNumber(shadow["offsetY"], "$context.offsetY"),
+            blurDp = requireNumber(shadow["blur"], "$context.blur"),
+            spreadDp =
+                shadow["spread"]?.let { requireNumber(it, "$context.spread") } ?: BigDecimal.ZERO,
+            argb = readArgb(shadow["color"], "$context.color"),
+        )
+    }
+
+    /** Every theme font role bound, each to a manifest font that may be bound to that role. */
+    private fun readThemeFonts(
+        node: Any?,
+        fonts: List<FontFact>,
+        context: String,
+    ): Map<String, String> {
+        val bound = requireObject(node, context)
+        requireOnlyKeys(bound, THEME_FONT_ROLES, context)
+        val manifest = fonts.associateBy { it.id }
+        return THEME_FONT_ROLES.associateWith { role ->
+            val id = requireString(bound[role], "$context.$role")
+            val font =
+                checkNotNull(manifest[id]) {
+                    "$context.$role: font \"$id\" is not in fonts.json; expected one of " +
+                        "${manifest.keys}."
+                }
+            check(role in font.bindableRoles) {
+                "$context.$role: font \"$id\" may be bound only to ${font.bindableRoles}."
+            }
+            id
+        }
+    }
+
+    /** base.json's `bindings.color`: a component-level name to the theme color role it paints. */
+    private fun readColorBindings(base: Map<*, *>, colorRoles: Set<String>): Map<String, String> {
+        val bindings = requireObject(base["bindings"], "base.json: bindings")
+        requireOnlyKeys(bindings, setOf("color"), "base.json: bindings")
+        val color = requireObject(bindings["color"], "base.json: bindings.color")
+        return color.entries.associate { (key, node) ->
+            val role = requireString(node, "base.json: bindings.color.$key")
+            check(role in colorRoles) {
+                "base.json: bindings.color.$key: binds to \"$role\", which the bundled themes " +
+                    "do not declare."
+            }
+            key as String to role
+        }
+    }
+
+    /** Every theme file to write, as file name to source. */
+    private fun renderThemes(
+        themes: List<ThemeFact>,
+        colorBindings: Map<String, String>,
+        fonts: List<FontFact>,
+    ): List<Pair<String, String>> {
+        val roles = themes.first().colors.keys
+        val shadowKeys = themes.first().shadows.keys
+        val roleEntries =
+            GeneratedKotlinSource.uniqueNames(
+                roles,
+                "themes: tokens.colors",
+                GeneratedKotlinSource::screamingSnakeName,
+            )
+        val roleProperties =
+            GeneratedKotlinSource.uniqueNames(
+                roles,
+                "themes: tokens.colors",
+                GeneratedKotlinSource::camelCaseName,
+            )
+        val shadowProperties =
+            GeneratedKotlinSource.uniqueNames(
+                shadowKeys,
+                "themes: tokens.shadows",
+                GeneratedKotlinSource::camelCaseName,
+            )
+        val themeProperties =
+            GeneratedKotlinSource.uniqueNames(
+                themes.map { it.id } + BUNDLED_THEMES_ALL,
+                "themes: id",
+                GeneratedKotlinSource::camelCaseName,
+            )
+        val fontEntries =
+            GeneratedKotlinSource.uniqueNames(
+                fonts.map { it.id },
+                "fonts.json",
+                GeneratedKotlinSource::screamingSnakeName,
+            )
+        val bindingProperties =
+            GeneratedKotlinSource.uniqueNames(
+                colorBindings.keys,
+                "base.json: bindings.color",
+                GeneratedKotlinSource::camelCaseName,
+            )
+
+        val themeHeader =
+            GeneratedKotlinSource.header(TASK_NAME, "shared/design-system/themes/") +
+                "package $GENERATED_PACKAGE\n\n"
+        val colorRole = buildString {
+            append(themeHeader)
+            appendLine("/** A semantic color role every bundled theme paints, by its theme key. */")
+            appendLine("public enum class ColorRole(public val key: String) {")
+            roles.forEach { role ->
+                appendLine(
+                    "    ${roleEntries.getValue(role)}(${GeneratedKotlinSource.literal(role)}),"
+                )
+            }
+            appendLine("}")
+        }
+        val themeColors = buildString {
+            append(themeHeader)
+            appendLine("/**")
+            appendLine(
+                " * A theme's color for every [ColorRole], each `0xAARRGGBB`. A `Long` rather than an"
+            )
+            appendLine(
+                " * `Int`, since an opaque color's alpha byte sets the sign bit, and rather than an"
+            )
+            appendLine(" * unsigned type, which reaches Swift boxed.")
+            appendLine(" */")
+            appendLine("public class ThemeColors(")
+            roles.forEach { appendLine("    public val ${roleProperties.getValue(it)}: Long,") }
+            appendLine(") {")
+            appendLine("    /** The color this theme paints [role] with. */")
+            appendLine("    public fun color(role: ColorRole): Long =")
+            appendLine("        when (role) {")
+            roles.forEach { role ->
+                appendLine(
+                    "            ColorRole.${roleEntries.getValue(role)} -> " +
+                        "${roleProperties.getValue(role)}"
+                )
+            }
+            appendLine("        }")
+            appendLine("}")
+        }
+        val themeShadows = buildString {
+            append(themeHeader)
+            appendLine("/** A theme's shadows, one per shadow key every bundled theme declares. */")
+            appendLine("public class ThemeShadows(")
+            shadowKeys.forEach {
+                appendLine("    public val ${shadowProperties.getValue(it)}: Shadow,")
+            }
+            appendLine(")")
+        }
+        val bundledThemes = buildString {
+            append(GeneratedKotlinSource.header(TASK_NAME, "shared/design-system/themes/"))
+            appendLine("package $GENERATED_PACKAGE")
+            appendLine()
+            appendLine("import io.jitrapon.astro.data.calendar.ColorScheme")
+            appendLine()
+            appendLine("/** The themes compiled into the app, one per [ColorScheme]. */")
+            appendLine("public object BundledThemes {")
+            themes.forEach { theme ->
+                appendLine("    /** `${theme.id}@${theme.version}` */")
+                appendLine("    public val ${themeProperties.getValue(theme.id)}: BundledTheme =")
+                appendLine("        BundledTheme(")
+                appendLine("            id = ${GeneratedKotlinSource.literal(theme.id)},")
+                appendLine("            version = ${GeneratedKotlinSource.literal(theme.version)},")
+                appendLine("            label = ${GeneratedKotlinSource.literal(theme.label)},")
+                appendLine(
+                    "            colorScheme = ColorScheme.${COLOR_SCHEMES.getValue(theme.colorScheme)},"
+                )
+                appendLine("            tokenSetVersion = ${theme.tokenSetVersion},")
+                appendLine("            colors =")
+                appendLine("                ThemeColors(")
+                theme.colors.forEach { (role, argb) ->
+                    appendLine(
+                        "                    ${roleProperties.getValue(role)} = ${argbLiteral(argb)},"
+                    )
+                }
+                appendLine("                ),")
+                appendLine("            shadows =")
+                appendLine("                ThemeShadows(")
+                theme.shadows.forEach { (key, shadow) ->
+                    appendLine(
+                        "                    ${shadowProperties.getValue(key)} = " +
+                            "${renderShadow(shadow)},"
+                    )
+                }
+                appendLine("                ),")
+                appendLine("            fonts =")
+                appendLine("                ThemeFonts(")
+                theme.fonts.forEach { (role, id) ->
+                    appendLine("                    $role = FontId.${fontEntries.getValue(id)},")
+                }
+                appendLine("                ),")
+                appendLine("        )")
+                appendLine()
+            }
+            appendLine("    /** Every bundled theme. */")
+            appendLine(
+                "    public val $BUNDLED_THEMES_ALL: List<BundledTheme> = " +
+                    "listOf(${themes.joinToString { themeProperties.getValue(it.id) }})"
+            )
+            appendLine("}")
+        }
+        val colorBindingsSource = buildString {
+            append(GeneratedKotlinSource.header(TASK_NAME, "shared/design-system/base.json"))
+            appendLine("package $GENERATED_PACKAGE")
+            appendLine()
+            appendLine("/**")
+            appendLine(" * The theme color role each component-level color in the design base's")
+            appendLine(" * `bindings.color` paints with.")
+            appendLine(" */")
+            appendLine("public object ColorBindings {")
+            colorBindings.entries.forEachIndexed { index, (key, role) ->
+                if (index > 0) appendLine()
+                appendLine("    /** `$key` */")
+                appendLine(
+                    "    public val ${bindingProperties.getValue(key)}: ColorRole = " +
+                        "ColorRole.${roleEntries.getValue(role)}"
+                )
+            }
+            appendLine("}")
+        }
+        return listOf(
+            "ColorRole.kt" to colorRole,
+            "ThemeColors.kt" to themeColors,
+            "Shadow.kt" to themeHeader + SHADOW_DECLARATION,
+            "ThemeShadows.kt" to themeShadows,
+            "ThemeFonts.kt" to themeHeader + THEME_FONTS_DECLARATION,
+            "BundledTheme.kt" to
+                themeHeader +
+                    "import io.jitrapon.astro.data.calendar.ColorScheme\n\n" +
+                    BUNDLED_THEME_DECLARATION,
+            "BundledThemes.kt" to bundledThemes,
+            "ColorBindings.kt" to colorBindingsSource,
+        )
+    }
+
+    private fun renderShadow(fact: ShadowFact) =
+        "Shadow(offsetXDp = ${GeneratedKotlinSource.doubleLiteral(fact.offsetXDp)}, " +
+            "offsetYDp = ${GeneratedKotlinSource.doubleLiteral(fact.offsetYDp)}, " +
+            "blurDp = ${GeneratedKotlinSource.doubleLiteral(fact.blurDp)}, " +
+            "spreadDp = ${GeneratedKotlinSource.doubleLiteral(fact.spreadDp)}, " +
+            "color = ${argbLiteral(fact.argb)})"
+
+    /** `0xFFB81311L`: the `L` keeps a color whose alpha byte is below `0x80` a `Long` literal. */
+    private fun argbLiteral(argb: Long) = "0x%08XL".format(argb)
+
+    // ------------------------------------------------------------------------------------------
     // Typed JSON reads that fail naming the offending path
     // ------------------------------------------------------------------------------------------
 
@@ -1415,6 +1812,69 @@ abstract class GenerateDesignTokenSource : DefaultTask() {
 
         /** The font roles a type ramp may name; each is a [FONT_ROLE_DECLARATION] constant. */
         val FONT_ROLES = setOf("display", "body")
+
+        val THEME_KEYS = setOf("id", "label", "version", "tokenSetVersion", "colorScheme", "tokens")
+
+        /** The roles a theme binds a font to; each is a [THEME_FONTS_DECLARATION] property. */
+        val THEME_FONT_ROLES = setOf("display", "body", "thai")
+
+        /** A theme's `colorScheme` to the wire `ColorScheme` constant it generates. */
+        val COLOR_SCHEMES = mapOf("light" to "LIGHT", "dark" to "DARK")
+
+        val HEX_COLOR = Regex("#[0-9A-Fa-f]{6}")
+
+        /** `BundledThemes`' list of every theme, which no theme id may generate a name over. */
+        const val BUNDLED_THEMES_ALL = "all"
+
+        val SHADOW_DECLARATION =
+            """
+            |/** A drop shadow: its offsets, blur and spread in dp, and its color as `0xAARRGGBB`. */
+            |public class Shadow(
+            |    public val offsetXDp: Double,
+            |    public val offsetYDp: Double,
+            |    public val blurDp: Double,
+            |    public val spreadDp: Double,
+            |    public val color: Long,
+            |)
+            |"""
+                .trimMargin()
+
+        val THEME_FONTS_DECLARATION =
+            """
+            |/**
+            | * The font a theme binds to each role: [display] and [body] for the type ramps' [FontRole]s,
+            | * and [thai] for Thai script.
+            | */
+            |public class ThemeFonts(
+            |    public val display: FontId,
+            |    public val body: FontId,
+            |    public val thai: FontId,
+            |)
+            |"""
+                .trimMargin()
+
+        val BUNDLED_THEME_DECLARATION =
+            """
+            |/**
+            | * A complete theme compiled into the app, so there is always one to paint before any screen
+            | * response arrives and whenever a response names a theme the app does not bundle.
+            | */
+            |public class BundledTheme(
+            |    public val id: String,
+            |    public val version: String,
+            |    public val label: String,
+            |    public val colorScheme: ColorScheme,
+            |    public val tokenSetVersion: Int,
+            |    public val colors: ThemeColors,
+            |    public val shadows: ThemeShadows,
+            |    public val fonts: ThemeFonts,
+            |) {
+            |    /** `id@version`, the form the screen request's `knownTheme` parameter carries. */
+            |    public val knownThemeReference: String
+            |        get() = "${'$'}id@${'$'}version"
+            |}
+            |"""
+                .trimMargin()
 
         val DIMENSION_DECLARATION =
             """
@@ -1585,6 +2045,9 @@ val generateDesignTokenSource =
             "Emit the vendored design artifacts as plain Kotlin token values on commonMain."
         fontManifest.set(designSystemDirectory.file("fonts.json"))
         base.set(designSystemDirectory.file("base.json"))
+        lightTheme.set(designSystemDirectory.file("themes/light.json"))
+        darkTheme.set(designSystemDirectory.file("themes/dark.json"))
+        rules.set(designSystemDirectory.file("rules.json"))
         outputDirectory.set(layout.buildDirectory.dir("generated/designTokens/commonMain/kotlin"))
     }
 

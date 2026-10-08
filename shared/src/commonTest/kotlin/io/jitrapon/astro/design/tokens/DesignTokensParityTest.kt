@@ -1,5 +1,9 @@
 package io.jitrapon.astro.design.tokens
 
+import io.jitrapon.astro.data.calendar.ColorScheme
+import io.jitrapon.astro.data.calendar.ColorValue
+import io.jitrapon.astro.data.calendar.ThemeDocument
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,6 +30,17 @@ import kotlinx.serialization.json.jsonPrimitive
 class DesignTokensParityTest {
 
     private val base = parse(EmbeddedDesignArtifacts.BASE_JSON)
+
+    /**
+     * Each bundled theme beside its vendored document, decoded through the wire [ThemeDocument] —
+     * the contract's own reading, alpha and spread defaults included — in the order the generator
+     * is expected to list them.
+     */
+    private val themeDocuments =
+        mapOf(
+            BundledThemes.light to decodeTheme(EmbeddedDesignArtifacts.LIGHT_THEME_JSON),
+            BundledThemes.dark to decodeTheme(EmbeddedDesignArtifacts.DARK_THEME_JSON),
+        )
 
     @Test
     fun fontIdsMatchTheFontManifest() {
@@ -170,6 +185,134 @@ class DesignTokensParityTest {
         }
     }
 
+    @Test
+    fun bundledThemesAreTheVendoredThemeDocumentsInOrder() {
+        assertEquals(themeDocuments.keys.toList(), BundledThemes.all)
+        themeDocuments.forEach { (theme, document) ->
+            assertEquals(
+                ThemeIdentity(
+                    document.id,
+                    document.version,
+                    document.label,
+                    document.colorScheme,
+                    document.tokenSetVersion,
+                ),
+                ThemeIdentity(
+                    theme.id,
+                    theme.version,
+                    theme.label,
+                    theme.colorScheme,
+                    theme.tokenSetVersion,
+                ),
+            )
+            assertEquals("${document.id}@${document.version}", theme.knownThemeReference)
+        }
+    }
+
+    @Test
+    fun colorRolesAreEveryThemesColorKeysInOrder() {
+        themeDocuments.forEach { (theme, document) ->
+            assertEquals(
+                document.tokens.colors.keys.toList(),
+                ColorRole.entries.map { it.key },
+                "${theme.id} color keys",
+            )
+        }
+    }
+
+    @Test
+    fun everyThemeColorIsItsDocumentsHexAndAlphaAsArgb() {
+        themeDocuments.forEach { (theme, document) ->
+            ColorRole.entries.forEach { role ->
+                assertEquals(
+                    expectedArgb(document.tokens.colors.getValue(role.key)),
+                    theme.colors.color(role),
+                    "${theme.id}.colors.${role.key}",
+                )
+            }
+        }
+        assertEquals(LIGHT_PRIMARY_ARGB, BundledThemes.light.colors.primary)
+        assertEquals(SCRIM_ARGB, BundledThemes.light.colors.scrim)
+        assertEquals(SCRIM_ARGB, BundledThemes.dark.colors.scrim)
+    }
+
+    @Test
+    fun themeShadowsMatchTheirDocuments() {
+        themeDocuments.forEach { (theme, document) ->
+            val generated =
+                mapOf(
+                    "elevation-1" to theme.shadows.elevation1,
+                    "elevation-2" to theme.shadows.elevation2,
+                )
+            assertEquals(document.tokens.shadows.keys, generated.keys, "${theme.id} shadow keys")
+            document.tokens.shadows.forEach { (key, shadow) ->
+                val actual = generated.getValue(key)
+                assertEquals(
+                    ShadowValues(
+                        shadow.offsetX,
+                        shadow.offsetY,
+                        shadow.blur,
+                        shadow.spread,
+                        expectedArgb(shadow.color),
+                    ),
+                    ShadowValues(
+                        actual.offsetXDp,
+                        actual.offsetYDp,
+                        actual.blurDp,
+                        actual.spreadDp,
+                        actual.color,
+                    ),
+                    "${theme.id}.shadows.$key",
+                )
+            }
+        }
+        assertEquals(ELEVATION_SHADOW_ARGB, BundledThemes.dark.shadows.elevation2.color)
+    }
+
+    @Test
+    fun themeFontsMatchTheirDocuments() {
+        themeDocuments.forEach { (theme, document) ->
+            assertEquals(
+                document.tokens.fonts,
+                mapOf(
+                    "display" to theme.fonts.display.id,
+                    "body" to theme.fonts.body.id,
+                    "thai" to theme.fonts.thai.id,
+                ),
+                "${theme.id} fonts",
+            )
+        }
+    }
+
+    @Test
+    fun colorBindingsMatchTheBase() {
+        val bindings = base.getValue("bindings").jsonObject.getValue("color").jsonObject
+        val generated =
+            mapOf(
+                "focus-ring" to ColorBindings.focusRing,
+                "current-time" to ColorBindings.currentTime,
+                "calendar-fallback.accent" to ColorBindings.calendarFallbackAccent,
+                "calendar-fallback.background" to ColorBindings.calendarFallbackBackground,
+                "calendar-fallback.foreground" to ColorBindings.calendarFallbackForeground,
+            )
+
+        assertEquals(bindings.keys, generated.keys, "bindings.color keys")
+        bindings.forEach { (key, role) ->
+            assertEquals(
+                role.jsonPrimitive.content,
+                generated.getValue(key).key,
+                "bindings.color.$key",
+            )
+        }
+    }
+
+    /** `0xAARRGGBB` from a color's hex digits and its alpha, written without the generator. */
+    private fun expectedArgb(color: ColorValue): Long {
+        val alphaByte = (color.alpha * MAX_CHANNEL).roundToInt().toLong()
+        val rgb = color.hex.removePrefix("#").toLong(radix = HEX_RADIX)
+        return (alphaByte shl ALPHA_SHIFT) or rgb
+    }
+
     private fun assertDimensionsMatch(
         family: String,
         values: JsonObject,
@@ -226,6 +369,25 @@ class DesignTokensParityTest {
 
     private fun parse(json: String): JsonObject = Json.parseToJsonElement(json).jsonObject
 
+    private fun decodeTheme(json: String): ThemeDocument =
+        Json.decodeFromString(ThemeDocument.serializer(), json)
+
+    private data class ThemeIdentity(
+        val id: String,
+        val version: String,
+        val label: String?,
+        val colorScheme: ColorScheme,
+        val tokenSetVersion: Int,
+    )
+
+    private data class ShadowValues(
+        val offsetXDp: Double,
+        val offsetYDp: Double,
+        val blurDp: Double,
+        val spreadDp: Double,
+        val color: Long,
+    )
+
     private data class DimensionValues(
         val dp: Double,
         val hairline: Boolean,
@@ -243,8 +405,8 @@ class DesignTokensParityTest {
     )
 
     /**
-     * Known base.json values, pinned as literals so neither a generator change nor a re-vendor
-     * moves them unseen.
+     * Known base.json and theme values, pinned as literals so neither a generator change nor a
+     * re-vendor moves them unseen.
      */
     private companion object {
         const val CHIP_ACCENT_EDGE_WIDTH_DP = 3.0
@@ -252,5 +414,12 @@ class DesignTokensParityTest {
         const val DISPLAY_LG_LETTER_SPACING_EM = -0.02
         const val BODY_BASE_LINE_HEIGHT_SP = 22.0
         const val LABEL_SM_WEIGHT = 500
+        const val LIGHT_PRIMARY_ARGB = 0xFFB81311L
+
+        const val MAX_CHANNEL = 255
+        const val ALPHA_SHIFT = 24
+        const val HEX_RADIX = 16
+        const val SCRIM_ARGB = 0x52000000L
+        const val ELEVATION_SHADOW_ARGB = 0x26000000L
     }
 }
