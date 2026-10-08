@@ -167,7 +167,9 @@ Facts fixed at plan time (re-check before relying on them):
     the themes do not declare.
   - At generation time, check each id and version against `rules.json`'s `themeId` / `themeVersion`
     patterns, and require exactly one bundled theme per `ColorScheme`.
-- [ ] **6. Add the bundled theme registry.** Hand-write `BundledThemeRegistry` in
+- [x] **6. Add the bundled theme registry.** Precondition: `GenerateEmbeddedContractSource` now also
+  extracts each query parameter schema's `pattern` into `ContractParameter`, since the §5 pattern
+  check reads the contract's `knownTheme` pattern from there. Hand-write `BundledThemeRegistry` in
   `shared/src/commonMain/kotlin/io/jitrapon/astro/design/tokens/` over the generated `BundledThemes`.
   `fun resolve(reference: ThemeRef?, systemColorScheme: ColorScheme): BundledTheme` returns the theme
   whose id **and** version both equal the reference. With no reference, or no match (an unknown id,
@@ -244,7 +246,7 @@ Facts fixed at plan time (re-check before relying on them):
   `scrim == 0x52000000`. It also checks one shadow per theme, the fonts, ids, versions, labels and
   `colorScheme`, and each `ColorBindings` value against `bindings.color`. A fail-closed check like
   item 3's covers a binding to an undeclared role. Both host and simulator tests pass.
-- [ ] **6.** A commonTest `BundledThemeRegistryTest`, on both targets, covers:
+- [x] **6.** A commonTest `BundledThemeRegistryTest`, on both targets, covers:
   - **every** theme in `BundledThemes.all`: its exact `ThemeRef(id, version)` resolves to that theme
     under **both** system schemes, so a dark reference on a light-scheme device returns dark;
   - the fixture's `theme`, decoded from `EmbeddedContract.MONTH_SCREEN_FIXTURE_JSON`, resolves to

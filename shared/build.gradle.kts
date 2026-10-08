@@ -153,6 +153,7 @@ abstract class GenerateEmbeddedContractSource : DefaultTask() {
         val enumValues: List<String>,
         val minimum: Int?,
         val maximum: Int?,
+        val pattern: String?,
     )
 
     /**
@@ -222,6 +223,7 @@ abstract class GenerateEmbeddedContractSource : DefaultTask() {
                     schema["enum"]?.let { asStrings(it, "parameter $name's enum") }.orEmpty(),
                 minimum = (schema["minimum"] as? String)?.toIntOrNull(),
                 maximum = (schema["maximum"] as? String)?.toIntOrNull(),
+                pattern = schema["pattern"] as? String,
             )
         }
     }
@@ -471,6 +473,7 @@ abstract class GenerateEmbeddedContractSource : DefaultTask() {
                     appendLine("    val enumValues: List<String>,")
                     appendLine("    val minimum: Int?,")
                     appendLine("    val maximum: Int?,")
+                    appendLine("    val pattern: String?,")
                     appendLine(")")
                     appendLine()
                     appendLine(
@@ -499,6 +502,9 @@ abstract class GenerateEmbeddedContractSource : DefaultTask() {
             appendLine("                enumValues = ${renderStrings(parameter.enumValues)},")
             appendLine("                minimum = ${parameter.minimum},")
             appendLine("                maximum = ${parameter.maximum},")
+            appendLine(
+                "                pattern = ${parameter.pattern?.let { asKotlinLiteral(it) }},"
+            )
             appendLine("            ),")
         }
         appendLine("        )")
