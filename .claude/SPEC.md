@@ -176,7 +176,7 @@ Facts fixed at plan time (re-check before relying on them):
   or a known id at another version), it returns the bundled theme whose `colorScheme` equals
   `systemColorScheme`. That is a boot default only; nothing observes the OS scheme. KDoc states that
   M-5 sends `knownThemeReference` and that this is not follow-system.
-- [ ] **7. Confirm the generated surface reaches Swift as plain values.** No code change expected.
+- [x] **7. Confirm the generated surface reaches Swift as plain values.** No code change expected.
   Link the debug simulator framework and inspect `shared.h` for the generated types. The plan
   checks are listed in §5 item 7.
 - [ ] **8. Documentation.** Update `.claude/CLAUDE.md`:
@@ -256,7 +256,7 @@ Facts fixed at plan time (re-check before relying on them):
   - `null` resolves to `light` / `dark` for each scheme;
   - every `knownThemeReference` matches the contract's `knownTheme` pattern from
     `EmbeddedContract.CALENDAR_SCREEN_PARAMETERS`.
-- [ ] **7.** `./gradlew :shared:verifyFrameworkHeaderSurface` passes with `shared.h` unmodified.
+- [x] **7.** `./gradlew :shared:verifyFrameworkHeaderSurface` passes with `shared.h` unmodified.
   `grep` of the generated declarations in `shared.h` shows `int64_t` for every color, `double` for
   dimensions, and the generated enums and classes under their `Shared` names. It must show no
   `SharedKotlinx_serialization`, `SharedKotlinLong`, `SharedKotlinULong`, `SharedKotlinUInt` or
