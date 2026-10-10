@@ -188,7 +188,7 @@ Facts fixed at plan time (re-check before relying on them):
     numbers), the registry's resolve-or-scheme fallback, and parts 2/3 still to come;
   - the package layout names `design/tokens/`;
   - "Documented config files" adds `shared/design-system/`.
-- [ ] **9. Full gate, with and without the submodule.** Run `./gradlew ktfmtFormat`, then
+- [x] **9. Full gate, with and without the submodule.** Run `./gradlew ktfmtFormat`, then
   `./gradlew check` in the main checkout. Then build and test from a fresh worktree with no submodule
   and no build outputs, including the CLAUDE.md `xcodebuild` iOS app build, as §5 item 9 sets out.
 
@@ -264,7 +264,7 @@ Facts fixed at plan time (re-check before relying on them):
 - [x] **8.** `grep -n "design-system\|verifyVendoredDesignArtifactParity\|design/tokens"
   .claude/CLAUDE.md` shows each named place updated, and the CLAUDE.md `xcodebuild` command row is
   untouched.
-- [ ] **9.** `./gradlew check` exits 0 in the main checkout. Quote `BUILD SUCCESSFUL` and confirm
+- [x] **9.** `./gradlew check` exits 0 in the main checkout. Quote `BUILD SUCCESSFUL` and confirm
   `verifyVendoredDesignArtifactParity`, `verifyCheckPartition`, `:androidApp:lint` and
   `:shared:verifyFrameworkHeaderSurface` ran. Then, in a fresh `git worktree` of `HEAD` under the
   scratchpad, with `docs/astro-docs` left uninitialized and no `build/` (the state of `verify-ios` and
