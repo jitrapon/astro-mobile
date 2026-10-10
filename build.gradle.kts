@@ -266,6 +266,71 @@ subprojects {
     tasks.matching { it.name == "check" }.configureEach { dependsOn(verifyVendoredContractParity) }
 }
 
+// Vendored design-artifact drift guard. `shared/design-system/` holds byte-for-byte copies of the
+// design system's published build output under the mirror's `design/build/` — both theme
+// documents, the theme-invariant base, the font manifest and the validation rules — laid out
+// path-for-path. They are vendored rather than read from the submodule because the token
+// generator must run where the mirror is absent: the iOS CI job never checks it out, and a fresh
+// clone has none. So the generator reads only the copies, and this task is the one place the
+// mirror is consulted. They are not under `shared/design/build/`, the obvious mirror of the
+// upstream path, because the repo's `**/build/` ignore rule would swallow them.
+//
+// Every artifact is held to byte identity — none carries a sanctioned local adaptation the way the
+// contract fixture's `_comment` does — so a copy is refreshed by re-copying, never by editing.
+// Same configuration-cache-safe, never-UP-TO-DATE shape as verifyVendoredContractParity above.
+val verifyVendoredDesignArtifactParity =
+    tasks.register("verifyVendoredDesignArtifactParity") {
+        group = "verification"
+        description =
+            "Fail if a vendored design artifact under shared/design-system/ has drifted from the " +
+                "astro-docs mirror."
+
+        val artifactPaths =
+            listOf("themes/light.json", "themes/dark.json", "base.json", "fonts.json", "rules.json")
+        val vendoredRoot = file("shared/design-system")
+        val mirroredRoot = file("docs/astro-docs/design/build")
+        val pairs = artifactPaths.map { File(vendoredRoot, it) to File(mirroredRoot, it) }
+        val treeRoot = rootDir
+
+        doLast {
+            fun rel(f: File) = f.relativeTo(treeRoot).path
+
+            // Never skip when the mirror is absent: a parity check that quietly passes when it
+            // could not run is indistinguishable from one that ran and found nothing.
+            val absentMirror = pairs.map { it.second }.filterNot { it.isFile }
+            check(absentMirror.isEmpty()) {
+                "The astro-docs mirror is not checked out, so the vendored design artifacts " +
+                    "cannot be verified:\n" +
+                    absentMirror.joinToString("\n") { "  - missing ${rel(it)}" } +
+                    "\nRun `git submodule update --init` to fetch it."
+            }
+
+            val absentVendored = pairs.map { it.first }.filterNot { it.isFile }
+            check(absentVendored.isEmpty()) {
+                "Vendored design artifacts are missing from this repository:\n" +
+                    absentVendored.joinToString("\n") { "  - missing ${rel(it)}" }
+            }
+
+            val drifted = pairs.firstOrNull { (vendored, mirrored) ->
+                !vendored.readBytes().contentEquals(mirrored.readBytes())
+            }
+            check(drifted == null) {
+                val (vendored, mirrored) = drifted!!
+                "${rel(vendored)} is not byte-identical to the astro-docs mirror at " +
+                    "${rel(mirrored)}. The mirror is upstream: re-copy its file over the vendored " +
+                    "one rather than editing the vendored copy."
+            }
+        }
+    }
+
+// Wired into every module's `check` exactly as verifyVendoredContractParity is, and for the same
+// reason: the copies are a repo-wide artifact, not one subproject's.
+subprojects {
+    tasks
+        .matching { it.name == "check" }
+        .configureEach { dependsOn(verifyVendoredDesignArtifactParity) }
+}
+
 // Kotlin ↔ Compose stability analyzer lockstep guard. The analyzer is a Kotlin compiler plugin
 // built
 // against one exact Kotlin release, so the catalog's `kotlin` and `compose-stability-analyzer` refs
@@ -797,6 +862,9 @@ val androidCommonVerification =
         // no Mac. It sits in this half because the astro-docs submodule is fetched on the Linux
         // job.
         ":" to "verifyVendoredContractParity",
+        // Same reasoning as the contract guard: it byte-compares checked-out files, and this is the
+        // only CI half that checks the astro-docs submodule out.
+        ":" to "verifyVendoredDesignArtifactParity",
         // Host-portable: the guard compares two version-catalog strings against a recorded table,
         // so it needs neither a Mac nor a compiled module.
         ":" to "verifyStabilityAnalyzerKotlinAlignment",

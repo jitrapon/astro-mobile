@@ -1,0 +1,115 @@
+{
+  "rulesVersion": 1,
+  "themeId": {
+    "pattern": "^[a-z][a-z0-9-]{0,31}$",
+    "userAuthoredPrefix": "user-"
+  },
+  "themeVersion": {
+    "pattern": "^[A-Za-z0-9._-]{1,64}$"
+  },
+  "vendoredFontIds": [
+    "ibm-plex-sans-thai",
+    "space-mono",
+    "trispace"
+  ],
+  "fontBindableRoles": {
+    "ibm-plex-sans-thai": [
+      "thai"
+    ],
+    "space-mono": [
+      "body",
+      "display"
+    ],
+    "trispace": [
+      "body",
+      "display"
+    ]
+  },
+  "contrastPairs": [
+    {
+      "foreground": "on-surface",
+      "background": "surface",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-surface",
+      "background": "surface-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-surface-variant",
+      "background": "surface",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-surface-variant",
+      "background": "surface-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-surface-variant",
+      "background": "surface-container-high",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-primary",
+      "background": "primary",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-primary-container",
+      "background": "primary-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-error",
+      "background": "error",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-error-container",
+      "background": "error-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "inverse-on-surface",
+      "background": "inverse-surface",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "outline",
+      "background": "surface",
+      "minimumRatio": 3
+    },
+    {
+      "foreground": "on-success",
+      "background": "success",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-success-container",
+      "background": "success-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-warning",
+      "background": "warning",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-warning-container",
+      "background": "warning-container",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-info",
+      "background": "info",
+      "minimumRatio": 4.5
+    },
+    {
+      "foreground": "on-info-container",
+      "background": "info-container",
+      "minimumRatio": 4.5
+    }
+  ]
+}

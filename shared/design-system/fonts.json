@@ -1,0 +1,93 @@
+{
+  "fontSetVersion": 1,
+  "fonts": {
+    "ibm-plex-sans-thai": {
+      "family": "IBM Plex Sans Thai",
+      "upstream": {
+        "source": "https://github.com/IBM/plex",
+        "release": "1.1",
+        "license": "OFL-1.1"
+      },
+      "scripts": [
+        "thai"
+      ],
+      "bindableRoles": [
+        "thai"
+      ],
+      "static": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "variable": null,
+      "pinnedAxes": {},
+      "requiredWeights": [
+        400,
+        500,
+        700
+      ]
+    },
+    "space-mono": {
+      "family": "Space Mono",
+      "upstream": {
+        "source": "https://github.com/googlefonts/spacemono",
+        "release": "1.003",
+        "license": "OFL-1.1"
+      },
+      "scripts": [
+        "latin",
+        "latin-ext",
+        "vietnamese"
+      ],
+      "bindableRoles": [
+        "display",
+        "body"
+      ],
+      "static": [
+        400,
+        700
+      ],
+      "variable": null,
+      "pinnedAxes": {},
+      "requiredWeights": [
+        400,
+        700
+      ]
+    },
+    "trispace": {
+      "family": "Trispace",
+      "upstream": {
+        "source": "https://github.com/Etcetera-Type-Co/Trispace",
+        "release": "1.210",
+        "license": "OFL-1.1"
+      },
+      "scripts": [
+        "latin",
+        "latin-ext",
+        "vietnamese"
+      ],
+      "bindableRoles": [
+        "display",
+        "body"
+      ],
+      "static": [],
+      "variable": {
+        "axes": {
+          "wght": {
+            "min": 100,
+            "max": 800
+          }
+        }
+      },
+      "pinnedAxes": {
+        "wdth": 100
+      },
+      "requiredWeights": [
+        400,
+        500,
+        700
+      ]
+    }
+  }
+}
