@@ -179,7 +179,7 @@ Facts fixed at plan time (re-check before relying on them):
 - [x] **7. Confirm the generated surface reaches Swift as plain values.** No code change expected.
   Link the debug simulator framework and inspect `shared.h` for the generated types. The plan
   checks are listed in §5 item 7.
-- [ ] **8. Documentation.** Update `.claude/CLAUDE.md`:
+- [x] **8. Documentation.** Update `.claude/CLAUDE.md`:
   - the command table gains `verifyVendoredDesignArtifactParity`;
   - the `verify-android-common` bullet says the submodule job now also feeds the design parity gate;
   - a new "Design tokens and the bundled theme registry" key-pattern bullet covers the vendored
@@ -261,7 +261,7 @@ Facts fixed at plan time (re-check before relying on them):
   dimensions, and the generated enums and classes under their `Shared` names. It must show no
   `SharedKotlinx_serialization`, `SharedKotlinLong`, `SharedKotlinULong`, `SharedKotlinUInt` or
   `SharedKotlinDouble` in them, and no `NSDictionary`. Quote the relevant header lines.
-- [ ] **8.** `grep -n "design-system\|verifyVendoredDesignArtifactParity\|design/tokens"
+- [x] **8.** `grep -n "design-system\|verifyVendoredDesignArtifactParity\|design/tokens"
   .claude/CLAUDE.md` shows each named place updated, and the CLAUDE.md `xcodebuild` command row is
   untouched.
 - [ ] **9.** `./gradlew check` exits 0 in the main checkout. Quote `BUILD SUCCESSFUL` and confirm
