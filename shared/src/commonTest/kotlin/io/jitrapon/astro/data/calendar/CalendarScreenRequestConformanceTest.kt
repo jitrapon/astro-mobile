@@ -50,7 +50,7 @@ class CalendarScreenRequestConformanceTest {
             emittedRequestFor(
                 monthScreenRequest(
                     view = RequestedCalendarView.TimeGrid(dayCount = 3),
-                    knownTheme = "light@8a95f0d5c35fdec5eab641a121ae068f",
+                    knownTheme = "light@72b388da3a0737d9630429d471334101",
                 )
             )
 

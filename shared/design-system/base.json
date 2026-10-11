@@ -1,0 +1,170 @@
+{
+  "baseSetVersion": 1,
+  "spacing": {
+    "unit": "dp",
+    "values": {
+      "grid-unit": 4,
+      "gutter": {
+        "hairline": true
+      },
+      "margin-page": 24,
+      "event-gap": {
+        "value": 2,
+        "scalesWithType": true
+      }
+    }
+  },
+  "radius": {
+    "unit": "dp",
+    "values": {
+      "sm": 4,
+      "base": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 24,
+      "full": {
+        "full": true
+      }
+    }
+  },
+  "component": {
+    "metrics": {
+      "unit": "dp",
+      "values": {
+        "grid.line-width": {
+          "hairline": true
+        },
+        "chip.accent-edge-width": 3,
+        "current-time.line-width": 2,
+        "sidebar.active-accent-width": 3,
+        "layout.page-margin": 24,
+        "layout.event-gap": {
+          "value": 2,
+          "scalesWithType": true
+        }
+      }
+    },
+    "radius": {
+      "unit": "dp",
+      "values": {
+        "chip.radius": 8
+      }
+    }
+  },
+  "typography": {
+    "sizeUnit": "sp",
+    "ramps": {
+      "display-lg": {
+        "fontRole": "display",
+        "size": 32,
+        "weight": 700,
+        "lineHeight": 40,
+        "letterSpacing": {
+          "value": -0.02,
+          "unit": "em"
+        }
+      },
+      "headline-md": {
+        "fontRole": "display",
+        "size": 20,
+        "weight": 700,
+        "lineHeight": 28
+      },
+      "body-base": {
+        "fontRole": "body",
+        "size": 14,
+        "weight": 400,
+        "lineHeight": 22
+      },
+      "label-sm": {
+        "fontRole": "body",
+        "size": 12,
+        "weight": 500,
+        "lineHeight": 18,
+        "letterSpacing": {
+          "value": 0.01,
+          "unit": "em"
+        }
+      },
+      "mono-data": {
+        "fontRole": "display",
+        "size": 13,
+        "weight": 400,
+        "lineHeight": 18
+      }
+    }
+  },
+  "bindings": {
+    "color": {
+      "focus-ring": "on-surface",
+      "current-time": "primary",
+      "calendar-fallback.accent": "outline-variant",
+      "calendar-fallback.background": "surface-container",
+      "calendar-fallback.foreground": "on-surface-variant"
+    }
+  },
+  "states": {
+    "hover": {
+      "opacity": 0.08,
+      "platforms": [
+        "web"
+      ]
+    },
+    "focus": {
+      "opacity": 0.1,
+      "platforms": [
+        "android",
+        "ios",
+        "web"
+      ]
+    },
+    "pressed": {
+      "opacity": 0.1,
+      "platforms": [
+        "android",
+        "ios",
+        "web"
+      ]
+    },
+    "dragged": {
+      "opacity": 0.16,
+      "platforms": [
+        "android",
+        "ios",
+        "web"
+      ]
+    },
+    "selected": {
+      "opacity": 0.08,
+      "platforms": [
+        "android",
+        "ios",
+        "web"
+      ]
+    },
+    "disabled": {
+      "content": 0.38,
+      "container": 0.12,
+      "platforms": [
+        "android",
+        "ios",
+        "web"
+      ]
+    }
+  },
+  "layout": {
+    "web": {
+      "unit": "px",
+      "values": {
+        "sidebar-width": 260,
+        "header-height": 64
+      },
+      "breakpoints": {
+        "unit": "px",
+        "values": {
+          "sidebar-collapse": 840
+        }
+      }
+    }
+  }
+}
