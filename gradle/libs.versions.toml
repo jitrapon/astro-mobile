@@ -117,7 +117,7 @@ compose-material-icons = "1.7.8"
 # ref, the three libraries below and every constraint reading them once the AGP on the classpath
 # selects Bouncy Castle at or above this ref on its own — from then on they select nothing and are
 # stale config.
-bouncycastle = "1.85"
+bouncycastle = "1.86"
 
 [libraries]
 # The structured-coroutines ruleset jar. Consumed off this one coordinate in two ways: `detektPlugins`

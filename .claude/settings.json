@@ -7,13 +7,20 @@
     "github@claude-plugins-official": true,
     "kotlin-lsp@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true,
-    "chrisbanes-skills@chrisbanes-skills": true
+    "chrisbanes-skills@chrisbanes-skills": true,
+    "gradle-skills@gradle-skills": true
   },
   "extraKnownMarketplaces": {
     "chrisbanes-skills": {
       "source": {
         "source": "github",
         "repo": "chrisbanes/skills"
+      }
+    },
+    "gradle-skills": {
+      "source": {
+        "source": "github",
+        "repo": "gradle/gradle-skills"
       }
     }
   }
