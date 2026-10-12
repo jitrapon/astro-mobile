@@ -75,7 +75,7 @@ mockwebserver = "5.5.0"
 # Gradle 8.4+ and serializes CycloneDX schema 1.6 by default, which osv-scanner's CycloneDX
 # extractor parses — opting into schema 1.7 requires re-proving the scanner still reads the
 # document, so the default is left alone.
-cyclonedx = "3.4.1"
+cyclonedx = "3.5.1"
 # kotlinx.serialization RUNTIME. Versioned independently of the compiler plugin above: the plugin
 # generates the serializers, this library supplies the format (JSON) they are encoded through.
 kotlinx-serialization = "1.11.0"
