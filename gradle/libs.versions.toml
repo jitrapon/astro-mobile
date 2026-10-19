@@ -38,7 +38,7 @@
 # — it is a compiler plugin versioned on its own, with an exact-match Kotlin build rather than a
 # range — so `verifyStabilityAnalyzerKotlinAlignment` fails every `check` when this ref moves
 # without it, including a move to a Kotlin version the guard's table does not cover yet.
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ktfmt = "0.27.0"
 ktfmt-cli = "0.64"
 detekt = "1.23.8"
